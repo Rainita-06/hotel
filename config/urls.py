@@ -49,7 +49,53 @@ urlpatterns = [
 
     # Dashboard
     path('dashboard/', include('hotel_app.dashboard_urls', namespace='dashboard')),
+      path('locations/', views.locations_list, name='locations_list'),
+    path('locations/add/', views.location_form, name='location_add'),
+    
+     path('location/', views.location_manage_view, name='location_manage'),
+    path('locations/add/', views.add_family, name='add_family'),
+    # path('locations/search/', views.search_families, name='search_families'),
+    path('locations/search/', views.search_locations, name='search_locations'),
 
+    path('locations/edit/<int:location_id>/', views.location_form, name='location_edit'),
+    path('locations/delete/<int:location_id>/', views.location_delete, name='location_delete'),
+    # path('request-types/', views.request_types_list, name='request_types_list'),
+     path('family/delete/<int:family_id>/', views.family_delete, name='family_delete'),
+      path('type/delete/<int:type_id>/', views.type_delete, name='type_delete'),
+       path('floor/delete/<int:floor_id>/', views.floor_delete, name='floor_delete'),
+        path('building/delete/<int:building_id>/', views.building_delete, name='building_delete'),
+    # path("checklists/", views.checklist_list, name="checklist_list"),
+    path("families/", views.location_manage_view, name="location_manage_view"),
+     path("families/add/", views.family_form, name="family_add"),
+    path("families/edit/<int:family_id>/", views.family_form, name="family_edit"),
+    path("families/delete/<int:family_id>/", views.family_delete, name="family_delete"),
+    path('buildings/<int:building_id>/upload-image/', views.upload_building_image, name='upload_building_image'),
+    # Types
+    path("types/", views.types_list, name="types_list"),
+    path("types/add/", views.type_form, name="type_add"),
+    path("types/edit/<int:type_id>/", views.type_form, name="type_edit"),
+    path("types/delete/<int:type_id>/", views.type_delete, name="type_delete"),
+
+    # Floors
+    path("floors/", views.floors_list, name="floors_list"),
+    # path("floors/add/", views.floor_form, name="floor_add"),
+    # path("floors/edit/<int:floor_id>/", views.floor_form, name="floor_edit"),
+    # path("floors/delete/<int:floor_id>/", views.floor_delete, name="floor_delete"),
+      path("floors/add/", views.floor_form, name="floor_form"),
+    path("floors/<int:floor_id>/edit/", views.floor_form, name="floor_form"),
+    path("floors/<int:floor_id>/delete/", views.floor_delete, name="floor_delete"),
+
+    # urls.py
+path('buildings/cards/', views.building_cards, name='building_cards'),
+# path('buildings/<int:pk>/', views.building_detail, name='building_detail'),
+path('buildings/<int:pk>/edit/', views.building_edit, name='building_edit'),
+
+    # Buildings
+    path("buildings/add/", views.building_form, name="building_add"),
+    path("buildings/edit/<int:building_id>/", views.building_form, name="building_edit"),
+    path("buildings/delete/<int:building_id>/", views.building_delete, name="building_delete"),
+     path("bulk_import_locations/",views.bulk_import_locations,name="bulk_import_locations"),
+    path("export_locations_csv/",views.export_locations_csv,name="export_locations_csv"),
 ]
 
 # Serve media files during development

@@ -66,7 +66,7 @@ class VoucherAdmin(admin.ModelAdmin):
 
 
 # Voucher Scan admin for tracking redemptions
-@admin.register(models.VoucherScan)
+# @admin.register(models.VoucherScan)
 class VoucherScanAdmin(admin.ModelAdmin):
     list_display = ('voucher', 'scanned_at', 'scanned_by', 'scan_result', 'redemption_successful', 'scan_source')
     search_fields = ('voucher__voucher_code', 'voucher__guest_name', 'scanned_by__username')

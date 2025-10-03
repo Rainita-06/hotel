@@ -1,0 +1,52 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block content %}
+<div class="max-w-4xl mx-auto mt-8 bg-white rounded-xl shadow p-6 border border-gray-200">
+    <h2 class="text-2xl font-bold text-gray-900 mb-6">
+        {% if type %}Edit{% else %}Add{% endif %} Type
+    </h2>
+
+    <form method="post" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {% csrf_token %}
+
+        <!-- Type Name -->
+        <div>
+            <label for="name" class="block text-sm font-medium text-gray-700">Type Name</label>
+            <input type="text" id="name" name="name"
+                   value="{{ type.name|default_if_none:'' }}"
+                   required
+                   class="mt-1 block w-full rounded-lg border border-gray-300 shadow-sm 
+                          focus:border-sky-500 focus:ring-sky-500 sm:text-sm p-2">
+        </div>
+
+        <!-- Family -->
+        <div>
+            <label for="family" class="block text-sm font-medium text-gray-700">Family</label>
+            <select id="family" name="family" required
+                    class="mt-1 block w-full rounded-lg border border-gray-300 shadow-sm 
+                           focus:border-sky-500 focus:ring-sky-500 sm:text-sm p-2 bg-white">
+                <option value="">-- Select Family --</option>
+                {% for fam in families %}
+                    <option value="{{ fam.family_id }}"
+                        {% if type and type.family.family_id == fam.family_id %}selected{% endif %}>
+                        {{ fam.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Buttons -->
+        <div class="col-span-2 flex items-center gap-4 mt-4">
+            <button type="submit"
+                    class="px-6 py-2 bg-sky-600 text-white rounded-lg shadow 
+                           hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                {% if type %}Update{% else %}Save{% endif %}
+            </button>
+            <a href="{% url 'types_list' %}"
+               class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg shadow 
+                      hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

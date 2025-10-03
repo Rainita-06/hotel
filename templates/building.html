@@ -1,0 +1,166 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+
+{% block content %}
+<div class="w-[1184px] h-28 relative bg-white border-b border-gray-200">
+    <div class="w-[1136px] h-20 left-[24px] top-[16px] absolute bg-black/0 border-gray-200 inline-flex justify-between items-center">
+        <div class="w-80 h-20 relative bg-black/0 border-gray-200">
+            <div class="w-80 h-5 left-0 top-0 absolute bg-black/0 border-gray-200 inline-flex justify-start items-center gap-2">
+                <div class="w-11 h-5 relative bg-black/0 border-gray-200">
+                    <div class="w-11 h-5 left-0 top-[1px] absolute justify-start text-gray-400 text-sm font-normal font-['Inter']">Admin</div>
+                </div>
+                <div class="w-2 h-4 relative bg-black/0 border-gray-200">
+                    <div class="w-2 h-3 left-0 top-[1.50px] absolute inline-flex justify-center items-center">
+                        <img src="{% static 'icon/arrow.svg'%}" class="w-2 h-3 relative bg-black/0 border-gray-200 overflow-hidden">
+                            <!-- <div class="w-1.5 h-2.5 left-[1.50px] top-[0.75px] absolute bg-gray-400">></div> -->
+                        <!-- </div> -->
+                    </div>
+                </div>
+                <div class="w-28 h-5 relative bg-black/0 border-gray-200">
+                    <div class="w-28 h-5 left-0 top-[1px] absolute justify-start text-gray-600 text-sm font-normal font-['Inter'] truncate">Buildings </div>
+                </div>
+            </div>
+            <div class="w-80 h-8 left-0 top-[24px] absolute bg-black/0 border-gray-200">
+                <div class="w-52 h-8 left-0 top-[1px] absolute justify-start text-gray-900 text-2xl font-bold font-['Inter'] ">Buildings </div>
+            </div>
+            <div class="w-80 h-5 left-0 top-[56px] absolute bg-black/0 border-gray-200">
+                <div class="w-80 h-5 left-0 top-[1px] absolute justify-start text-gray-600 text-sm font-normal font-['Inter'] truncate">Manage your property structure and floor layouts</div>
+            </div>
+        </div>
+        <div class="w-95 h-10 bg-black/0 border-gray-200 flex justify-start items-center gap-4">
+            <div class="w-64 h-10 relative bg-black/0 border-gray-200">
+                <div class="w-64 h-10 left-0 top-0 absolute bg-white rounded-lg outline outline-1 outline-offset-[-1px] outline-gray-200">
+                     <input 
+        id="buildingSearchInput" 
+        type="text" 
+        placeholder="Search buildings..."  class="w-64 h-10 left-[40px] top-0 px-9 focus:outline none rounded-lg justify-center text-gray-400 text-base font-normal font-['Inter'] leading-normal"/>
+                </div>
+                <div class="w-4 h-6 left-[12px] top-[9px] absolute bg-black/0 border-gray-200">
+                    <div class="w-4 h-4 left-0 top-[4px] absolute inline-flex justify-center items-center">
+                        <img src="{% static 'icon/search.svg'%}" class="w-4 h-4 relative bg-black/0 border-gray-200 overflow-hidden">
+                            <!-- <div class="w-4 h-4 left-0 top-0 absolute bg-gray-400"></div> -->
+                        <!-- </div> -->
+                    </div>
+                </div>
+            </div>
+            <div class="w-36 h-10 px-4 py-2 bg-sky-600 rounded-lg border-gray-200 flex justify-start items-center gap-2">
+                <div class="w-3.5 h-6 relative bg-black/0 border-gray-200">
+                    <div class="w-3.5 h-4 left-0 top-[4px] absolute inline-flex justify-center items-center">
+                        <img src="{% static 'icon/plus.svg'%}" class="w-3.5 h-4 relative bg-black/0 border-gray-200 overflow-hidden">
+                            <!-- <div class="w-3 h-3 left-[0.50px] top-[1.50px] absolute bg-white"></div> -->
+                        <!-- </div> -->
+                    </div>
+                </div>
+                <div class="w-24 h-6 relative bg-black/0 border-gray-200">
+                    <a href="{% url 'building_add'%}">
+                    <div class="w-24 h-6 left-0 top-[2px] absolute text-center justify-start text-white text-base font-normal font-['Inter']">Add Building</div>
+                </a></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include "partials/location_tab.html" %}
+
+
+
+<div class="w-[1184px] h-[1382px] relative bg-black/0 border-gray-200">
+    <div class="w-[1136px] h-96 left-[24px] top-[24px] absolute bg-black/0 border-gray-200 grid grid-cols-3 gap-6">
+        {% for b in buildings %}
+        <div class="building-card w-96 h-96 left-0 top-0 relative bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200 overflow-hidden" data-name="{{ b.name|lower }}">
+            <div class="w-96 h-48 left-[1px] top-[1px] absolute bg-gradient-to-r from-sky-600/10 to-teal-500/10 border-gray-200">
+               <form id="imageForm{{b.building_id}}" action="{% url 'upload_building_image' b.building_id %}" method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="file" name="image" id="imageInput{{b.building_id}}" class="hidden" accept="image/*" onchange="this.form.submit()" />
+        <img 
+            id="previewImage{{b.building_id}}"
+            src="{% if b.image %}{{ b.image.url }}{% else %}https://placehold.co/361x192{% endif %}" 
+            alt="{{ b.name }}" 
+            class="w-96 h-48 object-cover rounded-lg"
+            onclick="document.getElementById('imageInput{{b.building_id}}').click()"
+        />
+    </form>
+                <div class="w-16 h-6 left-[16px] top-[152px] absolute bg-black/0 border-gray-200">
+                     {% if b.status == "active" %}
+                    <div class="w-16 h-6 left-0 top-[2px] absolute bg-green-500/90 rounded-full border-gray-200">
+                        <div class="w-10 h-4 left-[12px] top-[4px] relative justify-start text-white text-xs font-medium font-['Inter']">Active</div>
+                        {% else %}
+                         <div class="w-16 h-6 left-0 top-[2px] absolute bg-yellow-500/90 rounded-full border-gray-200">
+                        <div class="w-10 h-4 left-[12px] top-[4px] relative justify-start text-white text-xs font-medium font-['Inter']">Maintenance</div>
+                    </div>{% endif %}</div>
+                </div>
+            </div>
+            <div class="w-96 h-52 left-[1px] top-[193px] absolute bg-black/0 border-gray-200">
+                <div class="w-80 h-12 left-[24px] top-[24px] absolute bg-black/0 border-gray-200 inline-flex justify-start items-start">
+                    <div class="w-52 h-12 relative bg-black/0 border-gray-200">
+                        <div class="w-52 h-7 left-0 top-0 absolute bg-black/0 border-gray-200">
+                            <div class="w-28 h-7 left-0 top-[3px] relative justify-start text-gray-900 text-lg font-semibold font-['Inter'] truncate whitespace-nowrap overflow-hidden">{{b.name}}</div>
+                        </div>
+                        <div class="w-52 h-5 left-0 top-[28px] absolute bg-black/0 border-gray-200">
+                            <div class="w-52 h-5 left-0 top-[1px] relative justify-start text-gray-600 text-sm font-normal font-['Inter']">{{b.description}}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="w-80 h-16 left-[24px] top-[88px] absolute bg-black/0 border-gray-200">
+                    <div class="w-36 h-16 left-0 top-0 absolute bg-neutral-50 rounded-lg border-gray-200">
+                        <div class="w-32 h-7 left-[12px] top-[12px] absolute bg-black/0 border-gray-200">
+                            <div class="w-7 h-7 left-[51.62px] top-[2px] relative text-center justify-start text-gray-900 text-xl font-bold font-['Inter']">{{b.floors_count}}</div>
+                        </div>
+                        <div class="w-32 h-4 left-[12px] top-[40px] absolute bg-black/0 border-gray-200">
+                            <div class="w-10 h-4 left-[44.55px] top-0 absolute text-center justify-start text-gray-600 text-xs font-normal font-['Inter']">Floors</div>
+                        </div>
+                    </div>
+                    <div class="w-36 h-16 left-[164.33px] top-0 absolute bg-neutral-50 rounded-lg border-gray-200">
+                        <div class="w-32 h-7 left-[12px] top-[12px] absolute bg-black/0 border-gray-200">
+                            <div class="w-10 h-7 left-[44.59px] top-[2px] relative text-center justify-start text-gray-900 text-xl font-bold font-['Inter']">{{b.rooms_count}}</div>
+                        </div>
+                        <div class="w-32 h-4 left-[12px] top-[40px] absolute bg-black/0 border-gray-200">
+                            <div class="w-11 h-4 left-[42.77px] top-0 relative text-center justify-start text-gray-600 text-xs font-normal font-['Inter']">Rooms</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="w-80 h-5 left-[24px] top-[172px] absolute bg-black/0 border-gray-200 inline-flex justify-between items-center">
+                    <div class="w-20 h-5 relative bg-black/0 border-gray-200">
+                        <div class="w-20 h-5 left-0 top-[1px] relativetext-center justify-start text-sky-600 text-sm font-medium font-['Inter']">View Details</div>
+                    </div>
+                    <div class="w-6 h-5 relative bg-black/0 border-gray-200">
+                        <a href="{% url 'building_edit' b.building_id %}">
+                        <div class="w-6 h-5 left-0 top-[1px] relative text-center justify-start text-gray-600 text-sm font-normal font-['Inter']">Edit</div>
+                    </a></div>
+                </div>
+            </div>
+        </div>
+{% endfor %}
+    </div>
+    
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div><script>
+
+document.getElementById('imageInput{{b.building_id}}').addEventListener('change', function(event) {
+    const [file] = event.target.files;
+    if(file){
+        // Preview the selected image
+        document.getElementById('previewImage{{b.building_id}}').src = URL.createObjectURL(file);
+
+        // Auto-submit the form
+        document.getElementById('imageForm{{b.building_id}}').submit();
+    }
+});
+
+</script>
+<script>
+document.getElementById('buildingSearchInput').addEventListener('input', function() {
+    const query = this.value.toLowerCase();
+    document.querySelectorAll('.building-card').forEach(card => {
+        const name = card.dataset.name;
+        card.style.display = name.includes(query) ? 'block' : 'none';
+    });
+});
+</script>
+
+
+{% endblock %}

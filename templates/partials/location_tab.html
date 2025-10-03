@@ -1,0 +1,54 @@
+<div class="w-[1184px] h-14 relative bg-white border-b border-gray-200">
+  <div class="w-full h-14 left-[24px] top-0 absolute flex gap-8">
+    <!-- Families Tab -->
+    <a href="{% url 'location_manage' %}"
+       class="w-32 self-stretch text-center text-sm font-medium font-['Inter'] 
+              {% if request.resolver_match.url_name == 'location_manage' %}
+                text-sky-600 border-b-2 border-sky-600
+              {% else %}
+                text-gray-600 border-b-2 border-transparent
+              {% endif %}">
+      Location Families
+    </a>
+
+    <!-- Types Tab -->
+    <a href="{% url 'building_cards' %}"
+       class="w-28 self-stretch text-center text-sm font-medium font-['Inter']
+              {% if request.resolver_match.url_name == 'building_cards' %}
+                text-sky-600 border-b-2 border-sky-600
+              {% else %}
+                text-gray-600 border-b-2 border-transparent
+              {% endif %}">
+      Building
+    </a>
+
+    <a href="{% url 'dashboard:locations' %}"
+       class="w-28 self-stretch text-center text-sm font-medium font-['Inter']
+              {% if request.resolver_match.url_name == 'dashboard:locations' %}
+                text-sky-600 border-b-2 border-sky-600
+              {% else %}
+                text-gray-600 border-b-2 border-transparent
+              {% endif %}">
+      Location Manage
+    </a>
+    <a href="{% url 'floors_list' %}"
+       class="w-28 self-stretch text-center text-sm font-medium font-['Inter']
+              {% if request.resolver_match.url_name == 'floors_list' %}
+                text-sky-600 border-b-2 border-sky-600
+              {% else %}
+                text-gray-600 border-b-2 border-transparent
+              {% endif %}">
+      Floors
+    </a>
+    <a href="{% url 'types_list' %}"
+       class="w-28 self-stretch text-center text-sm font-medium font-['Inter']
+              {% if request.resolver_match.url_name == 'types_list' %}
+                text-sky-600 border-b-2 border-sky-600
+              {% else %}
+                text-gray-600 border-b-2 border-transparent
+              {% endif %}">
+      Location Types
+    </a>
+
+  </div>
+</div>

@@ -1,0 +1,67 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block content %}
+<div class="max-w-3xl mx-auto mt-10 bg-white shadow rounded-lg p-6">
+    <h2 class="text-2xl font-semibold text-gray-800 mb-6">
+        {% if floor %}Edit{% else %}Add{% endif %} Floor
+    </h2>
+
+    <form method="post" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {% csrf_token %}
+
+        <!-- Floor Name -->
+        <div>
+            <label for="floor_name" class="block text-sm font-medium text-gray-700">
+                Floor Name
+            </label>
+            <input type="text" id="floor_name" name="floor_name"
+                   value="{% if floor %}{{ floor.floor_name }}{% endif %}"
+                   required
+                   class="mt-1 block w-full rounded-lg border border-gray-300 shadow-sm 
+                          focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2 text-gray-900"/>
+        </div>
+
+        <!-- Floor Number -->
+        <div>
+            <label for="floor_number" class="block text-sm font-medium text-gray-700">
+                Floor Number
+            </label>
+            <input type="number" id="floor_number" name="floor_number"
+                   value="{% if floor %}{{ floor.floor_number }}{% endif %}"
+                   class="mt-1 block w-full rounded-lg border border-gray-300 shadow-sm 
+                          focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2 text-gray-900"/>
+        </div>
+
+        <!-- Building -->
+        <div>
+            <label for="building" class="block text-sm font-medium text-gray-700">
+                Building
+            </label>
+            <select name="building_id" id="building" required
+                    class="mt-1 block w-full rounded-lg border border-gray-300 shadow-sm 
+                           focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2 text-gray-900 bg-white">
+                <option value="">Select Building</option>
+                {% for building in buildings %}
+                    <option value="{{ building.building_id }}"
+                        {% if floor and floor.building.building_id == building.building_id %}selected{% endif %}>
+                        {{ building.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Buttons -->
+        <div class="col-span-2 flex items-center space-x-3 mt-4">
+            <button type="submit"
+                    class="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium 
+                           hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                {% if floor %}Update{% else %}Save{% endif %}
+            </button>
+            <a href="{% url 'floors_list' %}"
+               class="px-4 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium 
+                      hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

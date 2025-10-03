@@ -1,0 +1,396 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block content %}
+{%load static%}
+
+<div class="w-[1184px] h-20 relative bg-white border-b border-gray-200">
+    <div class="w-full h-12 left-[24px] top-[16px]  bg-black/0 border-gray-200 inline-flex justify-between items-center">
+        <div class="w-96 h-12 relative bg-black/0 border-gray-200">
+            <div class="w-96 h-8 left-0 top-0 absolute bg-black/0 border-gray-200">
+                <div class="w-28 h-8 left-0 top-[1px] absolute justify-start text-gray-900 text-2xl font-bold font-['Inter']">Floors</div>
+            </div>
+            <div class="w-96 h-5 left-0 top-[32px] absolute bg-black/0 border-gray-200">
+                <div class="w-96 h-5 left-0 top-[1px] absolute justify-start text-gray-600 text-sm font-normal font-['Inter']">Manage property locations, buildings, floors, and areas</div>
+            </div>
+        </div>
+        <div class="w-80 h-10 bg-black/0 border-gray-200 flex justify-start items-center gap-4">
+            <div class="w-64 h-10 relative bg-black/0 border-gray-200">
+                <form method="GET" class="w-64 h-10 left-0 top-0 absolute bg-white rounded-lg outline outline-1 outline-offset-[-1px] outline-gray-200">
+                   <input type="text"
+         name="search"
+         value="{{ search_query|default:'' }}"
+         placeholder="Search locations..."
+         class="w-full h-full bg-transparent border-none text-gray-700 text-base font-normal font-['Inter'] px-10 focus:outline-none">
+                </form>
+                <div class="w-4 h-6 left-[12px] top-[9px] absolute bg-black/0 border-gray-200">
+                    <div class="w-4 h-4 left-0 top-[4px] absolute inline-flex justify-center items-center">
+                        <img src="{% static 'icon/search.svg'%}"class="w-4 h-4 relative bg-black/0 border-gray-200 overflow-hidden"/>
+                            <!-- <div class="w-4 h-4 left-0 top-0 absolute bg-gray-400"></div> -->
+                        <!-- </div> -->
+                    </div>
+                </div>
+            </div>
+            <div class="w-7 h-10 relative bg-black/0 rounded-lg border-gray-200">
+                <div class="w-3.5 h-5 left-[8px] top-[10px] absolute bg-black/0 border-gray-200">
+                    <div class="w-3.5 h-4 left-0 top-[2px] absolute inline-flex justify-center items-center">
+                        <div class="w-3.5 h-4 relative bg-black/0 border-gray-200 overflow-hidden">
+                            <!-- <div class="w-3.5 h-4 left-0 top-0 absolute bg-gray-600"></div> -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="w-7 h-10 relative bg-black/0 rounded-lg border-gray-200">
+                <div class="w-3.5 h-5 left-[8px] top-[10px] absolute bg-black/0 border-gray-200">
+                    <div class="w-3.5 h-4 left-0 top-[2px] absolute inline-flex justify-center items-center">
+                        <div class="w-3.5 h-4 relative bg-black/0 border-gray-200 overflow-hidden">
+                            <!-- <div class="w-3.5 h-4 left-0 top-0 absolute bg-gray-600"></div> -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include "partials/location_tab.html" %}
+<!-- <div class="w-[1184px] h-[506px] relative bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200">
+    <div class="w-[1086px] h-12 left-[25px] top-[25px] absolute bg-black/0 border-gray-200 inline-flex justify-between items-center">
+        <div class="w-80 h-12 relative bg-black/0 border-gray-200">
+            <div class="w-80 h-7 left-0 top-0 absolute bg-black/0 border-gray-200">
+                <div class="w-28 h-7 left-0 top-[2px] absolute justify-start text-gray-900 text-xl font-semibold font-['Inter']">Floor Plans</div>
+            </div>
+            <div class="w-80 h-5 left-0 top-[28px] absolute bg-black/0 border-gray-200">
+                <div class="w-80 h-5 left-0 top-[1px] absolute justify-start text-gray-600 text-sm font-normal font-['Inter']">Interactive floor layouts and room assignments</div>
+            </div>
+        </div>
+        <div class="w-96 h-10 bg-black/0 border-gray-200 flex justify-start items-center gap-3">
+            <select class="w-44 h-9 relative bg-white rounded-lg outline outline-1 outline-offset-[-1px] outline-gray-200">
+                {% for building in buildings %}
+                <option value="{{ building.id }}"class="w-20 h-9 left-[12px] top-0 absolute justify-center text-black text-sm font-normal font-['Inter']">{{ building.name }}</</option>
+                <div class="w-5 h-5 left-[143px] top-[8px] relative overflow-hidden">
+                    <div class="w-2.5 h-1.5 left-[5.25px] top-[7.33px] absolute bg-black"></div>
+                </div>{% endfor %}
+            </select>
+            
+            <select class="w-24 h-9 relative bg-white rounded-lg outline outline-1 outline-offset-[-1px] outline-gray-200">
+                {% for floor in floors %}
+                <option value="{{floor.floor_id}}" class="w-11 h-9 left-[12px] top-0 absolute justify-center text-black text-sm font-normal font-['Inter']">{{floor.floor_name}}</option>
+                <div class="w-5 h-5 left-[64px] top-[8px] absolute overflow-hidden">
+                    <div class="w-2.5 h-1.5 left-[5.25px] top-[7.33px] absolute bg-black"></div>
+                </div>{% endfor %}
+            </select>
+            <div class="w-36 h-10 relative bg-sky-600 rounded-lg border-gray-200">
+                <div class="w-4 h-5 left-[20.50px] top-[10px] absolute bg-black/0 border-gray-200">
+                    <div class="w-4 h-4 left-0 top-[2px] absolute inline-flex justify-center items-center">
+                        <div class="w-4 h-4 relative bg-black/0 border-gray-200 overflow-hidden">
+                            <div class="w-4 h-4 left-0 top-0 absolute bg-white"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="w-24 h-6 left-[44.50px] top-[10px] absolute text-center justify-start text-white text-base font-normal font-['Inter']">Upload Plan</div>
+            </div>
+        </div>
+    </div>
+    <div class="w-[1086px] h-96 left-[25px] top-[97px] absolute bg-neutral-50 rounded-xl outline outline-2 outline-offset-[-2px] outline-gray-200 inline-flex justify-center items-center">
+        <div class="w-96 h-48 relative bg-black/0 border-gray-200">
+            <div class="w-16 h-16 left-[162.31px] top-0 absolute bg-gray-200 rounded-full border-gray-200 inline-flex justify-center items-center">
+                <div class="w-6 h-7 relative bg-black/0 border-gray-200">
+                    <div class="w-6 h-5 left-0 top-[3.50px] absolute inline-flex justify-center items-center">
+                        <div class="w-6 h-5 relative bg-black/0 border-gray-200 overflow-hidden">
+                            <div class="w-6 h-4 left-0 top-[1.40px] absolute bg-gray-400"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="w-96 h-7 left-0 top-[80px] absolute bg-black/0 border-gray-200">
+                <div class="w-40 h-7 left-[114.78px] top-[3px] absolute text-center justify-start text-gray-900 text-lg font-medium font-['Inter']">Floor Plan Preview</div>
+            </div>
+            <div class="w-96 h-5 left-0 top-[116px] absolute bg-black/0 border-gray-200">
+                <div class="w-96 h-5 left-0 top-[1px] absolute text-center justify-start text-gray-600 text-sm font-normal font-['Inter']">Select a building and floor to view the interactive floor plan</div>
+            </div>
+            <div class="w-40 h-9 left-[113.92px] top-[152px] absolute bg-black/0 rounded-lg outline outline-1 outline-offset-[-1px] outline-neutral-300">
+                <div class="w-32 h-5 left-[17px] top-[10px] absolute text-center justify-start text-gray-600 text-sm font-normal font-['Inter']">Browse Floor Plans</div>
+            </div>
+        </div>
+    </div>
+</div> -->
+
+<div class="w-[1184px] h-full relative bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200">
+    <div class="w-[1134px] h-24 left-[1px] top-[1px] absolute bg-black/0 border-b border-gray-200">
+        <div class="w-[1086px] h-12 left-[24px] top-[24px] absolute bg-black/0 border-gray-200 inline-flex justify-between items-center">
+            <div class="w-56 h-12 relative bg-black/0 border-gray-200">
+                <div class="w-56 h-7 left-0 top-0 absolute bg-black/0 border-gray-200">
+                    <div class="w-48 h-7 left-0 top-[2px] absolute justify-start text-gray-900 text-xl font-semibold font-['Inter']">Floor Management</div>
+                </div>
+                <div class="w-56 h-5 left-0 top-[28px] absolute bg-black/0 border-gray-200">
+                    <div class="w-56 h-5 left-0 top-[1px] absolute justify-start text-gray-600 text-sm font-normal font-['Inter']">Manage floors across all buildings</div>
+                </div>
+            </div>
+            <div class="w-32 h-10 px-4 py-2 bg-sky-600 rounded-lg border-gray-200 flex justify-start items-center gap-2">
+                <div class="w-3.5 h-6 relative bg-black/0 border-gray-200">
+                    <div class="w-3.5 h-4 left-0 top-[4px] absolute inline-flex justify-center items-center">
+                        <img src="{% static 'icon/plus.svg'%}" class="w-3.5 h-4 relative bg-black/0 border-gray-200 overflow-hidden">
+                            <!-- <div class="w-3 h-3 left-[0.50px] top-[1.50px] absolute bg-white"></div> -->
+                        <!-- </div> -->
+                    </div>
+                </div>
+                <div class="w-20 h-6 relative bg-black/0 border-gray-200">
+                   <a href="{% url 'floor_form' %}" class="inline-flex items-center justify-center w-20 h-6 bg-blue-600 rounded text-white text-base font-normal font-['Inter']">
+    Add Floor
+</a>
+
+                    <!-- <div class="w-20 h-6 left-0 top-[2px] absolute text-center justify-start text-white text-base font-normal font-['Inter']">Add Floor</div> -->
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="w-[1134px] h-full left-[1px] top-[98px] relative bg-black/0 border-gray-200 overflow-full">
+        <div class="w-[1134px] h-64 left-0 top-0 absolute bg-black/0 border-gray-200">
+            <div class="w-[1134px] h-12 left-0 top-0 absolute bg-black/0 border-gray-200">
+                <div class="w-[1134px] h-12 left-0 top-0 absolute bg-neutral-50 border-b border-gray-200">
+                    <div class="w-64 h-12 left-0 top-0 absolute bg-black/0 border-gray-200">
+                        <div class="w-12 h-4 left-[24px] top-[16px] absolute justify-start text-gray-600 text-xs font-medium font-['Inter'] tracking-wide">Floor</div>
+                    </div>
+                    <div class="w-60 h-12 left-[271.08px] top-0 absolute bg-black/0 border-gray-200">
+                        <div class="w-16 h-4 left-[24px] top-[16px] absolute justify-start text-gray-600 text-xs font-medium font-['Inter'] tracking-wide">Building</div>
+                    </div>
+                    <div class="w-32 h-12 left-[506.17px] top-0 absolute bg-black/0 border-gray-200">
+                        <div class="w-14 h-4 left-[24px] top-[16px] absolute justify-start text-gray-600 text-xs font-medium font-['Inter'] tracking-wide">Rooms</div>
+                    </div>
+                    <div class="w-48 h-12 left-[635.77px] top-0 absolute bg-black/0 border-gray-200">
+                        <div class="w-20 h-4 left-[24px] top-[16px] absolute justify-start text-gray-600 text-xs font-medium font-['Inter'] tracking-wide">Occupancy</div>
+                    </div>
+                    <div class="w-32 h-12 left-[833.83px] top-0 absolute bg-black/0 border-gray-200">
+                        <div class="w-14 h-4 left-[24px] top-[16px] absolute justify-start text-gray-600 text-xs font-medium font-['Inter'] tracking-wide">Status</div>
+                    </div>
+                    <div class="w-40 h-12 left-[969.22px] top-0 absolute bg-black/0 border-gray-200">
+                        <div class="w-16 h-4 left-[24px] top-[16px] absolute justify-start text-gray-600 text-xs font-medium font-['Inter'] tracking-wide">Actions</div>
+                    </div>
+                </div>
+            </div>
+            <div class="w-[1134px] h-full left-0 top-[48.50px] relative bg-black/0 border-gray-200">
+                {% for floor in floors %}
+                <div class="w-[1134px] h-16 left-0 top-0 relative bg-black/0 border-gray-200">
+                    <div class="w-64 h-16 left-0 top-0 absolute bg-black/0 border-gray-200">
+                        <div class="w-56 h-9 left-[24px] top-[16.50px] absolute bg-black/0 border-gray-200 inline-flex justify-start items-center">
+                            <div class="pr-3 bg-black/0 inline-flex flex-col justify-start items-start overflow-hidden">
+                                <div class="w-8 h-8 bg-sky-600/10 rounded-lg border-gray-200 inline-flex justify-center items-center">
+                                    <div class="w-1.5 h-5 relative bg-black/0 border-gray-200">
+                                        <div class="w-1.5 h-5 left-0 top-[1px]  justify-start text-sky-600 text-sm font-medium font-['Inter']">{{ forloop.counter }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="w-28 h-9 relative bg-black/0 border-gray-200">
+                                <div class="w-28 h-5 left-0 top-0 absolute bg-black/0 border-gray-200">
+                                    <div class="w-24 h-5 left-0 top-[1px] relative justify-start text-gray-900 text-sm font-medium font-['Inter']">{{ floor.floor_name }}</</div>
+                                </div>
+                                <div class="w-28 h-4 left-0 top-[20px] absolute bg-black/0 border-gray-200">
+                                    <div class="w-28 h-4 left-0 top-0relative justify-start text-gray-600 text-xs font-normal font-['Inter']">{{ floor.description }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="w-60 h-16 left-[271.08px] top-0 absolute bg-black/0 border-gray-200">
+                        <div class="w-20 h-5 left-[24px] top-[25.50px] relative text-gray-600 text-sm font-normal font-['Inter']">{{ floor.building.name }}</div>
+                    </div>
+                    <div class="w-32 h-16 left-[506.17px] top-0 absolute bg-black/0 border-gray-200">
+                        <div class="w-5 h-5 left-[24px] top-[25.50px] relative text-gray-900 text-sm font-normal font-['Inter']">12</div>
+                    </div>
+                    <div class="w-48 h-16 left-[635.77px] top-0 absolute bg-black/0 border-gray-200">
+                        <div class="w-36 h-4 left-[24px] top-[26.50px] absolute bg-black/0 border-gray-200 inline-flex justify-start items-center">
+                            <div class="pr-2 bg-black/0 inline-flex flex-col justify-start items-start overflow-hidden">
+                                <div class="w-16 h-2 relative bg-gray-200 rounded-full border-gray-200">
+                                    <div class="w-14 h-2 left-0 top-0 absolute bg-green-500 rounded-full border-gray-200"></div>
+                                </div>
+                            </div>
+                            <div class="w-7 h-4 relative bg-black/0 border-gray-200">
+                                <div class="w-7 h-4 left-0 top-0  justify-start text-gray-600 text-xs font-normal font-['Inter']">85%</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="w-32 h-16 left-[833.83px] top-0 absolute bg-black/0 border-gray-200">
+                        <div class="w-14 h-6 left-[24px] top-[24.50px] absolute bg-green-500/10 rounded-full border-gray-200">
+                            <div class="w-10 h-4 left-[8px] top-[4px] absolute justify-start text-green-500 text-xs font-medium font-['Inter']">Active</div>
+                        </div>
+                    </div>
+                    <div class="w-40 h-16 left-[969.22px] top-0 absolute bg-black/0 border-gray-200">
+                        <div class="w-3.5 h-5 left-[24px] top-[24.50px] absolute bg-black/0 border-gray-200">
+                            <div class="w-3.5 h-4 left-0 top-[1px] absolute bg-black/0 border-gray-200">
+                                <div class="w-3.5 h-3.5 left-0 top-[1.75px] absolute inline-flex justify-center items-center">
+                                    <img src="{% static 'icon/edit.svg'%}" class="w-3.5 h-3.5 relative bg-black/0 border-gray-200 overflow-hidden">
+                                        <!-- <div class="w-3.5 h-3.5 left-0 top-[0.14px] absolute bg-gray-400"></div> -->
+                                    <!-- </div> -->
+                                </div>
+                            </div>
+                        </div>
+                        <div class="w-4 h-5 left-[53.94px] top-[24.50px] absolute bg-black/0 border-gray-200">
+                            <div class="w-4 h-4 left-0 top-[1px] absolute bg-black/0 border-gray-200">
+                                <div class="w-4 h-3.5 left-0 top-[1.75px] absolute inline-flex justify-center items-center">
+                                    <div class="w-4 h-3.5 relative bg-black/0 border-gray-200 overflow-hidden">
+                                        <!-- <div class="w-4 h-3 left-0 top-[0.98px] absolute bg-gray-400"></div> -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="w-3 h-5 left-[85.62px] top-[24.50px] absolute bg-black/0 border-gray-200">
+                            <div class="w-3 h-4 left-0 top-[1px] absolute bg-black/0 border-gray-200">
+                                <div class="w-3 h-3.5 left-0 top-[1.75px] absolute inline-flex justify-center items-center">
+                                    <img src="{% static 'icon/delete.svg'%}"  class="w-3 h-3.5 relative bg-black/0 border-gray-200 overflow-hidden">
+                                        <!-- <div class="w-3 h-3.5 left-0 top-0 absolute bg-gray-400"></div> -->
+                                    <!-- </div> -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="w-[1134px] h-16 left-0 top-[69px] absolute bg-black/0 border-t border-gray-200"></div>
+                <!-- <div class="w-[1134px] h-16 left-0 top-[69px] absolute bg-black/0 border-t border-gray-200">
+                    <div class="w-64 h-16 left-0 top-0 absolute bg-black/0 border-gray-200">
+                        <div class="w-56 h-9 left-[24px] top-[16.50px] absolute bg-black/0 border-gray-200 inline-flex justify-start items-center">
+                            <div class="pr-3 bg-black/0 inline-flex flex-col justify-start items-start overflow-hidden">
+                                <div class="w-8 h-8 bg-sky-600/10 rounded-lg border-gray-200 inline-flex justify-center items-center">
+                                    <div class="w-2 h-5 relative bg-black/0 border-gray-200">
+                                        <div class="w-2 h-5 left-0 top-[1px] absolute justify-start text-sky-600 text-sm font-medium font-['Inter']">2</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="w-24 h-9 relative bg-black/0 border-gray-200">
+                                <div class="w-24 h-5 left-0 top-0 absolute bg-black/0 border-gray-200">
+                                    <div class="w-24 h-5 left-0 top-[1px] absolute justify-start text-gray-900 text-sm font-medium font-['Inter']">Second Floor</div>
+                                </div>
+                                <div class="w-24 h-4 left-0 top-[20px] absolute bg-black/0 border-gray-200">
+                                    <div class="w-24 h-4 left-0 top-0 absolute justify-start text-gray-600 text-xs font-normal font-['Inter']">Standard Rooms</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="w-60 h-16 left-[271.08px] top-0 absolute bg-black/0 border-gray-200">
+                        <div class="w-20 h-5 left-[24px] top-[25.50px] absolute justify-start text-gray-600 text-sm font-normal font-['Inter']">Main Tower</div>
+                    </div>
+                    <div class="w-32 h-16 left-[506.17px] top-0 absolute bg-black/0 border-gray-200">
+                        <div class="w-5 h-5 left-[24px] top-[25.50px] absolute justify-start text-gray-900 text-sm font-normal font-['Inter']">15</div>
+                    </div>
+                    <div class="w-48 h-16 left-[635.77px] top-0 absolute bg-black/0 border-gray-200">
+                        <div class="w-36 h-4 left-[24px] top-[26.50px] absolute bg-black/0 border-gray-200 inline-flex justify-start items-center">
+                            <div class="pr-2 bg-black/0 inline-flex flex-col justify-start items-start overflow-hidden">
+                                <div class="w-16 h-2 relative bg-gray-200 rounded-full border-gray-200">
+                                    <div class="w-14 h-2 left-0 top-0 absolute bg-green-500 rounded-full border-gray-200"></div>
+                                </div>
+                            </div>
+                            <div class="w-7 h-4 relative bg-black/0 border-gray-200">
+                                <div class="w-7 h-4 left-0 top-0 absolute justify-start text-gray-600 text-xs font-normal font-['Inter']">92%</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="w-32 h-16 left-[833.83px] top-0 absolute bg-black/0 border-gray-200">
+                        <div class="w-14 h-6 left-[24px] top-[24.50px] absolute bg-green-500/10 rounded-full border-gray-200">
+                            <div class="w-10 h-4 left-[8px] top-[4px] absolute justify-start text-green-500 text-xs font-medium font-['Inter']">Active</div>
+                        </div>
+                    </div>
+                    <div class="w-40 h-16 left-[969.22px] top-0 absolute bg-black/0 border-gray-200">
+                        <div class="w-3.5 h-5 left-[24px] top-[24.50px] absolute bg-black/0 border-gray-200">
+                            <div class="w-3.5 h-4 left-0 top-[1px] absolute bg-black/0 border-gray-200">
+                                <div class="w-3.5 h-3.5 left-0 top-[1.75px] absolute inline-flex justify-center items-center">
+                                    <div class="w-3.5 h-3.5 relative bg-black/0 border-gray-200 overflow-hidden">
+                                        <div class="w-3.5 h-3.5 left-0 top-[0.14px] absolute bg-gray-400"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="w-4 h-5 left-[53.94px] top-[24.50px] absolute bg-black/0 border-gray-200">
+                            <div class="w-4 h-4 left-0 top-[1px] absolute bg-black/0 border-gray-200">
+                                <div class="w-4 h-3.5 left-0 top-[1.75px] absolute inline-flex justify-center items-center">
+                                    <div class="w-4 h-3.5 relative bg-black/0 border-gray-200 overflow-hidden">
+                                        <div class="w-4 h-3 left-0 top-[0.98px] absolute bg-gray-400"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="w-3 h-5 left-[85.62px] top-[24.50px] absolute bg-black/0 border-gray-200">
+                            <div class="w-3 h-4 left-0 top-[1px] absolute bg-black/0 border-gray-200">
+                                <div class="w-3 h-3.5 left-0 top-[1.75px] absolute inline-flex justify-center items-center">
+                                    <div class="w-3 h-3.5 relative bg-black/0 border-gray-200 overflow-hidden">
+                                        <div class="w-3 h-3.5 left-0 top-0 absolute bg-gray-400"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="w-[1134px] h-16 left-0 top-[138px] absolute bg-black/0 border-t border-gray-200">
+                    <div class="w-64 h-16 left-0 top-0 absolute bg-black/0 border-gray-200">
+                        <div class="w-56 h-9 left-[24px] top-[16.50px] absolute bg-black/0 border-gray-200 inline-flex justify-start items-center">
+                            <div class="pr-3 bg-black/0 inline-flex flex-col justify-start items-start overflow-hidden">
+                                <div class="w-8 h-8 bg-teal-500/10 rounded-lg border-gray-200 inline-flex justify-center items-center">
+                                    <div class="w-1.5 h-5 relative bg-black/0 border-gray-200">
+                                        <div class="w-1.5 h-5 left-0 top-[1px] absolute justify-start text-teal-500 text-sm font-medium font-['Inter']">1</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="w-28 h-9 relative bg-black/0 border-gray-200">
+                                <div class="w-28 h-5 left-0 top-0 absolute bg-black/0 border-gray-200">
+                                    <div class="w-20 h-5 left-0 top-[1px] absolute justify-start text-gray-900 text-sm font-medium font-['Inter']">Main Level</div>
+                                </div>
+                                <div class="w-28 h-4 left-0 top-[20px] absolute bg-black/0 border-gray-200">
+                                    <div class="w-28 h-4 left-0 top-0 absolute justify-start text-gray-600 text-xs font-normal font-['Inter']">Conference Rooms</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="w-60 h-16 left-[271.08px] top-0 absolute bg-black/0 border-gray-200">
+                        <div class="w-32 h-5 left-[24px] top-[25.50px] absolute justify-start text-gray-600 text-sm font-normal font-['Inter']">Conference Center</div>
+                    </div>
+                    <div class="w-32 h-16 left-[506.17px] top-0 absolute bg-black/0 border-gray-200">
+                        <div class="w-3.5 h-5 left-[24px] top-[25.50px] absolute justify-start text-gray-900 text-sm font-normal font-['Inter']">8</div>
+                    </div>
+                    <div class="w-48 h-16 left-[635.77px] top-0 absolute bg-black/0 border-gray-200">
+                        <div class="w-36 h-4 left-[24px] top-[26.50px] absolute bg-black/0 border-gray-200 inline-flex justify-start items-center">
+                            <div class="pr-2 bg-black/0 inline-flex flex-col justify-start items-start overflow-hidden">
+                                <div class="w-16 h-2 relative bg-gray-200 rounded-full border-gray-200">
+                                    <div class="w-11 h-2 left-0 top-0 absolute bg-yellow-400 rounded-full border-gray-200"></div>
+                                </div>
+                            </div>
+                            <div class="w-7 h-4 relative bg-black/0 border-gray-200">
+                                <div class="w-7 h-4 left-0 top-0 absolute justify-start text-gray-600 text-xs font-normal font-['Inter']">67%</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="w-32 h-16 left-[833.83px] top-0 absolute bg-black/0 border-gray-200">
+                        <div class="w-14 h-6 left-[24px] top-[24.50px] absolute bg-green-500/10 rounded-full border-gray-200">
+                            <div class="w-10 h-4 left-[8px] top-[4px] absolute justify-start text-green-500 text-xs font-medium font-['Inter']">Active</div>
+                        </div>
+                    </div>
+                    <div class="w-40 h-16 left-[969.22px] top-0 absolute bg-black/0 border-gray-200">
+                        <div class="w-3.5 h-5 left-[24px] top-[24.50px] absolute bg-black/0 border-gray-200">
+                            <div class="w-3.5 h-4 left-0 top-[1px] absolute bg-black/0 border-gray-200">
+                                <div class="w-3.5 h-3.5 left-0 top-[1.75px] absolute inline-flex justify-center items-center">
+                                    <div class="w-3.5 h-3.5 relative bg-black/0 border-gray-200 overflow-hidden">
+                                        <div class="w-3.5 h-3.5 left-0 top-[0.14px] absolute bg-gray-400"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="w-4 h-5 left-[53.94px] top-[24.50px] absolute bg-black/0 border-gray-200">
+                            <div class="w-4 h-4 left-0 top-[1px] absolute bg-black/0 border-gray-200">
+                                <div class="w-4 h-3.5 left-0 top-[1.75px] absolute inline-flex justify-center items-center">
+                                    <div class="w-4 h-3.5 relative bg-black/0 border-gray-200 overflow-hidden">
+                                        <div class="w-4 h-3 left-0 top-[0.98px] absolute bg-gray-400"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="w-3 h-5 left-[85.62px] top-[24.50px] absolute bg-black/0 border-gray-200">
+                            <div class="w-3 h-4 left-0 top-[1px] absolute bg-black/0 border-gray-200">
+                                <div class="w-3 h-3.5 left-0 top-[1.75px] absolute inline-flex justify-center items-center">
+                                    <div class="w-3 h-3.5 relative bg-black/0 border-gray-200 overflow-hidden">
+                                        <div class="w-3 h-3.5 left-0 top-0 absolute bg-gray-400"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div> -->
+            </div>{% endfor %}
+        </div>
+    </div>
+</div>
+{%endblock %}

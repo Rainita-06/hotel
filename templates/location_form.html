@@ -1,0 +1,106 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block content %}
+{% load static %}
+
+<div class="max-w-5xl mx-auto mt-8 bg-white rounded-xl shadow p-6 border border-gray-200">
+    <h2 class="text-2xl font-bold text-gray-900 mb-6">
+        {% if location %}Edit{% else %}Add{% endif %} Location
+    </h2>
+
+    <form method="post" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {% csrf_token %}
+
+        <!-- Name -->
+        <div>
+            <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
+            <input type="text" id="name" name="name"
+                   value="{% if location %}{{ location.name }}{% endif %}"
+                   class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">
+        </div>
+
+        <!-- Room No -->
+        <div>
+            <label for="room_no" class="block text-sm font-medium text-gray-700">Room No</label>
+            <input type="text" id="room_no" name="room_no"
+                   value="{% if location %}{{ location.room_no }}{% endif %}"
+                   class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">
+        </div>
+
+        <!-- Pavilion -->
+        <div>
+            <label for="pavilion" class="block text-sm font-medium text-gray-700">Pavilion</label>
+            <input type="text" id="pavilion" name="pavilion"
+                   value="{% if location %}{{ location.pavilion }}{% endif %}"
+                   class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">
+        </div>
+
+        <!-- Capacity -->
+        <div>
+            <label for="capacity" class="block text-sm font-medium text-gray-700">Capacity</label>
+            <input type="number" id="capacity" name="capacity"
+                   value="{% if location %}{{ location.capacity }}{% endif %}"
+                   class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">
+        </div>
+
+        <!-- Family -->
+        <div>
+            <label for="family" class="block text-sm font-medium text-gray-700">Family</label>
+            <select id="family" name="family"
+                    class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">
+                <option value="">--Select--</option>
+                {% for f in families %}
+                    <option value="{{ f.family_id }}" {% if location and location.family_id == f.family_id %}selected{% endif %}>{{ f.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Type -->
+        <div>
+            <label for="type" class="block text-sm font-medium text-gray-700">Type</label>
+            <select id="type" name="type"
+                    class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">
+                <option value="">--Select--</option>
+                {% for t in types %}
+                    <option value="{{ t.type_id }}" {% if location and location.type_id == t.type_id %}selected{% endif %}>{{ t.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Floor -->
+        <div>
+            <label for="floor" class="block text-sm font-medium text-gray-700">Floor</label>
+            <select id="floor" name="floor"
+                    class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">
+                <option value="">--Select--</option>
+                {% for f in floors %}
+                    <option value="{{ f.floor_id }}" {% if location and location.floor_id == f.floor_id %}selected{% endif %}>{{ f.floor_number }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Building -->
+        <div>
+            <label for="building" class="block text-sm font-medium text-gray-700">Building</label>
+            <select id="building" name="building"
+                    class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">
+                <option value="">--Select--</option>
+                {% for b in buildings %}
+                    <option value="{{ b.building_id }}" {% if location and location.building_id == b.building_id %}selected{% endif %}>{{ b.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Buttons -->
+        <div class="col-span-2 flex items-center gap-4 mt-4">
+            <button type="submit"
+                    class="px-6 py-2 bg-sky-600 text-white rounded-lg shadow hover:bg-sky-700">
+                {% if location %}Update{% else %}Save{% endif %}
+            </button>
+            <a href="{% url 'locations_list' %}"
+               class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

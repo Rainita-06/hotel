@@ -8,13 +8,45 @@ User = get_user_model()
 
 # ---- Department & Groups ----
 
+from django.contrib.auth.models import User
 class Department(models.Model):
-    name = models.CharField(max_length=120, unique=True)
-    description = models.TextField(blank=True, null=True)
+    department_id = models.BigAutoField(primary_key=True)
+    name = models.CharField(max_length=100,blank=False, null=False)   # updated (was 120)
+    description = models.CharField(max_length=255, null=True, blank=True)  
+    lead = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)       # added
 
+    class Meta:
+        db_table = 'department'
     def __str__(self):
-        return str(self.name)
+        return self.name
 
+    @property
+    def total_users(self):
+        return User.objects.filter(department=self).count()  
+# class Department(models.Model):
+#     name = models.CharField(max_length=120, unique=True)
+#     description = models.TextField(blank=True, null=True)
+
+#     def __str__(self):
+#         return str(self.name)
+
+
+class Checklist(models.Model):
+    checklist_id = models.BigAutoField(primary_key=True)
+    name = models.CharField(max_length=100,blank=False, null=False)
+    location = models.ForeignKey('Location',blank=False, null=False, on_delete=models.CASCADE)
+    class Meta:
+        db_table = 'checklist'
+
+
+class ChecklistItem(models.Model):
+    item_id = models.BigAutoField(primary_key=True)
+    checklist = models.ForeignKey('Checklist', models.DO_NOTHING,blank=False, null=False)
+    label = models.CharField(max_length=240, blank=True, null=True)
+    required = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'checklist_item'
 
 class UserGroup(models.Model):
     name = models.CharField(max_length=120, unique=True)
@@ -73,53 +105,154 @@ class AuditLog(models.Model):
 
 # ---- Locations ----
 
-class Building(models.Model):
-    name = models.CharField(max_length=120, unique=True)
+# class Building(models.Model):
+#     name = models.CharField(max_length=120, unique=True)
 
-    def __str__(self):
-        return str(self.name)
+#     def __str__(self):
+#         return str(self.name)
+
+
+# class Floor(models.Model):
+#     building = models.ForeignKey(Building, on_delete=models.CASCADE)
+#     floor_number = models.IntegerField()
+
+#     class Meta:
+#         unique_together = ("building", "floor_number")
+
+#     def __str__(self):
+#         return f'{self.building.name} - Floor {self.floor_number}'
+
+
+# class LocationFamily(models.Model):
+#     name = models.CharField(max_length=120, unique=True)
+
+#     def __str__(self):
+#         return str(self.name)
+
+
+# class LocationType(models.Model):
+#     name = models.CharField(max_length=120, unique=True)
+
+#     def __str__(self):
+#         return str(self.name)
+
+
+# class Location(models.Model):
+#     family = models.ForeignKey(LocationFamily, on_delete=models.SET_NULL, null=True, blank=True)
+#     type = models.ForeignKey(LocationType, on_delete=models.SET_NULL, null=True, blank=True)
+#     building = models.ForeignKey(Building, on_delete=models.SET_NULL, null=True, blank=True)
+#     floor = models.ForeignKey(Floor, on_delete=models.SET_NULL, null=True, blank=True)
+#     name = models.CharField(max_length=160)
+#     description = models.TextField(blank=True, null=True)
+#     room_no = models.CharField(max_length=40, blank=True, null=True)
+#     capacity = models.PositiveIntegerField(blank=True, null=True)
+
+#     class Meta:
+#         unique_together = ("building", "room_no")
+
+#     def __str__(self):
+#         return str(self.name)
+
+class Building(models.Model):
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('maintenance', 'Maintenance'),
+    ]
+    building_id = models.BigAutoField(primary_key=True)
+    name = models.CharField(max_length=120,blank=False, null=False)
+    description = models.CharField(max_length=255, blank=True, null=True)
+    image = models.ImageField(upload_to='building_images/', null=True, blank=True)  # NEW
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active') 
+
+    class Meta:
+        db_table = 'building'
+    
+    @property
+    def floors_count(self):
+        return self.floors.count()   # thanks to related_name='floors'
+
+    @property
+    def rooms_count(self):
+        return self.locations.count()  
+
+    
 
 
 class Floor(models.Model):
-    building = models.ForeignKey(Building, on_delete=models.CASCADE)
-    floor_number = models.IntegerField()
+    floor_name=models.CharField(max_length=50,blank=False,null=False)
+    floor_id = models.BigAutoField(primary_key=True)
+    building = models.ForeignKey('Building', models.DO_NOTHING,blank=False, null=False,related_name='floors')
+    floor_number = models.IntegerField(blank=False, null=False)
+    description = models.CharField(max_length=255, blank=True)  # e.g. “Lobby & Reception”
+    rooms = models.PositiveIntegerField(default=0)
+    occupancy = models.PositiveIntegerField(default=0)     # percent (0-100)
+    is_active = models.BooleanField(default=True)
+    
+    @property
+    def total_rooms(self):
+        return self.locations.count()
+
+    @property
+    def occupied_rooms_count(self):
+        return self.locations.filter(is_occupied=True).count()
+
+    @property
+    def occupancy_percent(self):
+        total = self.total_rooms
+        if total == 0:
+            return 0
+        return round((self.occupied_rooms_count / total) * 100, 2)
 
     class Meta:
-        unique_together = ("building", "floor_number")
-
-    def __str__(self):
-        return f'{self.building.name} - Floor {self.floor_number}'
+        db_table = 'floor'
 
 
 class LocationFamily(models.Model):
-    name = models.CharField(max_length=120, unique=True)
-
+    family_id = models.BigAutoField(primary_key=True)
+    name = models.CharField(max_length=120,blank=False, null=False)
+    
     def __str__(self):
-        return str(self.name)
+        return self.name
+    class Meta:
+        db_table = 'location_family'
 
 
 class LocationType(models.Model):
-    name = models.CharField(max_length=120, unique=True)
-
+    type_id = models.BigAutoField(primary_key=True)
+    name = models.CharField(max_length=120,blank=False, null=False)
+    family = models.ForeignKey(LocationFamily, on_delete=models.CASCADE, related_name='types',null=False)
+    is_active = models.BooleanField(default=True) 
+    
     def __str__(self):
-        return str(self.name)
+        return self.name
+    class Meta:
+        db_table = 'location_type'
 
 
 class Location(models.Model):
-    family = models.ForeignKey(LocationFamily, on_delete=models.SET_NULL, null=True, blank=True)
-    type = models.ForeignKey(LocationType, on_delete=models.SET_NULL, null=True, blank=True)
-    building = models.ForeignKey(Building, on_delete=models.SET_NULL, null=True, blank=True)
-    floor = models.ForeignKey(Floor, on_delete=models.SET_NULL, null=True, blank=True)
-    name = models.CharField(max_length=160)
-    description = models.TextField(blank=True, null=True)
-    room_no = models.CharField(max_length=40, blank=True, null=True)
-    capacity = models.PositiveIntegerField(blank=True, null=True)
+    STATUS_CHOICES = [
+    ('active', 'Active'),
+    ('maintenance', 'Maintenance'),
+]
 
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    description = models.CharField(max_length=255, blank=True, null=True)
+    location_id = models.BigAutoField(primary_key=True)
+    name = models.CharField(max_length=50,blank=False, null=False)       # updated (was 160)
+    family = models.ForeignKey(LocationFamily, on_delete=models.CASCADE,blank=False, null=False)
+    # updated (was FK)
+    type = models.ForeignKey(LocationType, on_delete=models.CASCADE, null=True, blank=True)
+      # updated (was FK)
+    floor = models.ForeignKey(Floor, on_delete=models.CASCADE, blank=False, null=False,related_name='locations')
+            # updated (was FK)
+    pavilion = models.CharField(max_length=120, null=True, blank=True)   # added
+    room_no = models.CharField(max_length=40,blank=False, null=False)
+    capacity = models.IntegerField(blank=True, null=True)
+    building = models.ForeignKey('Building', models.DO_NOTHING,blank=False, null=False,related_name='locations')  # kept for compatibility
+    is_occupied = models.BooleanField(default=False)
     class Meta:
-        unique_together = ("building", "room_no")
+        db_table = 'location'
 
-    def __str__(self):
-        return str(self.name)
 
 
 # ---- Workflow ----
