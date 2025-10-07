@@ -18,3 +18,145 @@
 .hidden {
   display: none;
 }
+
+/* Tailwind color classes for ticket priorities and statuses */
+/* Red colors */
+.bg-red-100 {
+  background-color: #fee2e2;
+}
+.bg-red-500 {
+  background-color: #ef4444;
+}
+.bg-red-700 {
+  background-color: #b91c1c;
+}
+.text-red-100 {
+  color: #fee2e2;
+}
+.text-red-500 {
+  color: #ef4444;
+}
+.text-red-700 {
+  color: #b91c1c;
+}
+
+/* Yellow colors */
+.bg-yellow-100 {
+  background-color: #fef3c7;
+}
+.bg-yellow-400 {
+  background-color: #fbbf24;
+}
+.bg-yellow-700 {
+  background-color: #b45309;
+}
+.text-yellow-100 {
+  color: #fef3c7;
+}
+.text-yellow-400 {
+  color: #fbbf24;
+}
+.text-yellow-700 {
+  color: #b45309;
+}
+
+/* Sky colors */
+.bg-sky-100 {
+  background-color: #e0f2fe;
+}
+.bg-sky-500 {
+  background-color: #0ea5e9;
+}
+.bg-sky-600 {
+  background-color: #0284c7;
+}
+.bg-sky-700 {
+  background-color: #0369a1;
+}
+.text-sky-100 {
+  color: #e0f2fe;
+}
+.text-sky-500 {
+  color: #0ea5e9;
+}
+.text-sky-600 {
+  color: #0284c7;
+}
+.text-sky-700 {
+  color: #0369a1;
+}
+
+/* Green colors */
+.bg-green-100 {
+  background-color: #dcfce7;
+}
+.bg-green-500 {
+  background-color: #22c55e;
+}
+.bg-green-700 {
+  background-color: #15803d;
+}
+.text-green-100 {
+  color: #dcfce7;
+}
+.text-green-500 {
+  color: #22c55e;
+}
+.text-green-700 {
+  color: #15803d;
+}
+
+/* Gray colors */
+.bg-gray-100 {
+  background-color: #f3f4f6;
+}
+.bg-gray-200 {
+  background-color: #e5e7eb;
+}
+.bg-gray-300 {
+  background-color: #d1d5db;
+}
+.bg-gray-500 {
+  background-color: #6b7280;
+}
+.bg-gray-700 {
+  background-color: #374151;
+}
+.bg-gray-900 {
+  background-color: #111827;
+}
+.text-gray-100 {
+  color: #f3f4f6;
+}
+.text-gray-200 {
+  color: #e5e7eb;
+}
+.text-gray-300 {
+  color: #d1d5db;
+}
+.text-gray-500 {
+  color: #6b7280;
+}
+.text-gray-600 {
+  color: #4b5563;
+}
+.text-gray-700 {
+  color: #374151;
+}
+.text-gray-900 {
+  color: #111827;
+}
+
+/* Blue colors */
+.bg-blue-500 {
+  background-color: #3b82f6;
+}
+.bg-blue-700 {
+  background-color: #1d4ed8;
+}
+.text-blue-500 {
+  color: #3b82f6;
+}
+.text-blue-700 {
+  color: #1d4ed8;
+}

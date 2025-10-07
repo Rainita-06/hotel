@@ -7,6 +7,7 @@ from django.contrib.auth.models import Group
 from django.conf import settings
 from django.shortcuts import redirect
 from django.contrib import messages
+from .models import Notification
 
 def user_in_group(user, group_name):
     """Check if user is in a specific group"""
@@ -85,3 +86,81 @@ def generate_guest_details_qr_base64(guest, size='xxlarge'):
     """Generate QR code for guest details and return as base64 string"""
     data = generate_guest_details_qr_data(guest)
     return generate_qr_code(data, size)
+
+# Notification utility functions
+def create_notification(recipient, title, message, notification_type='info', related_object=None):
+    """
+    Create a notification for a user
+    
+    Args:
+        recipient: User object to receive the notification
+        title: Title of the notification
+        message: Message content of the notification
+        notification_type: Type of notification (info, warning, error, success, request, voucher, system)
+        related_object: Optional related object (e.g., ServiceRequest, Voucher)
+    """
+    notification_data = {
+        'recipient': recipient,
+        'title': title,
+        'message': message,
+        'notification_type': notification_type
+    }
+    
+    if related_object:
+        notification_data['related_object_id'] = related_object.id
+        notification_data['related_object_type'] = related_object.__class__.__name__
+    
+    return Notification.objects.create(**notification_data)
+
+def create_bulk_notifications(recipients, title, message, notification_type='info', related_object=None):
+    """
+    Create notifications for multiple users
+    
+    Args:
+        recipients: List or QuerySet of User objects
+        title: Title of the notification
+        message: Message content of the notification
+        notification_type: Type of notification
+        related_object: Optional related object
+    """
+    notifications = []
+    for recipient in recipients:
+        notification_data = {
+            'recipient': recipient,
+            'title': title,
+            'message': message,
+            'notification_type': notification_type
+        }
+        
+        if related_object:
+            notification_data['related_object_id'] = related_object.id
+            notification_data['related_object_type'] = related_object.__class__.__name__
+        
+        notifications.append(Notification(**notification_data))
+    
+    return Notification.objects.bulk_create(notifications)
+
+def mark_notification_as_read(notification_id, user):
+    """
+    Mark a notification as read for a specific user
+    
+    Args:
+        notification_id: ID of the notification
+        user: User object who owns the notification
+    """
+    try:
+        notification = Notification.objects.get(id=notification_id, recipient=user)
+        notification.is_read = True
+        notification.save()
+        return True
+    except Notification.DoesNotExist:
+        return False
+
+def mark_all_notifications_as_read(user):
+    """
+    Mark all notifications as read for a specific user
+    
+    Args:
+        user: User object
+    """
+    return Notification.objects.filter(recipient=user, is_read=False).update(is_read=True)

@@ -1,13 +1,6 @@
-{% comment %}
-- Removed duplicated and absolutely positioned divs.
-- Replaced placeholder Font Awesome icons with actual SVGs to match the design.
-- Styled the "Dashboard" link as the active item.
-- Modified bottom section as per given layout.
-{% endcomment %}
 {% load static %}
 
-<div class="w-64 h-screen bg-white border-r border-gray-200 flex flex-col">
-  <!-- Brand -->
+<div id="sidebar" class="sidebar w-64 h-screen bg-white border-r border-gray-200 flex flex-col sidebar-transition">
   <div class="px-6 py-5 border-b border-gray-200">
     <div class="flex items-center gap-3">
       <div
@@ -27,36 +20,30 @@
     </div>
   </div>
 
-  <!-- Navigation -->
-  <nav class="flex-1 px-4 py-4 space-y-2">
+  <nav class="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
     <div>
       <div
-        class="w-16 h-4 justify-start text-gray-400 text-xs font-semibold font-['Inter'] tracking-tight"
+        class="px-3 py-1 text-gray-400 text-xs font-semibold tracking-tight"
       >
         Overview
       </div>
 
       <a
         href="{% url 'dashboard:main' %}"
-  class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:main' %} text-sky-600 bg-sky-100 {% else %} text-gray-600 {% endif %}"
+        class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:main' %} text-sky-600 bg-sky-100 {% else %} text-gray-600 hover:bg-gray-100 {% endif %}"
       >
         <img
-          src="{% if request.resolver_match.view_name == 'dashboard:main' %}
-                 {% static 'images/sidebar/dashboard_highlighted.svg' %}
-               {% else %}
-                 {% static 'images/sidebar/dashboard.svg' %}
-               {% endif %}"
+          src="{% if request.resolver_match.view_name == 'dashboard:main' %}{% static 'images/sidebar/dashboard_highlighted.svg' %}{% else %}{% static 'images/sidebar/dashboard.svg' %}{% endif %}"
           alt="Dashboard Icon"
           class="w-5 h-5"
         />
-
         <span class="font-medium">Dashboard</span>
       </a>
     </div>
 
     <div>
       <div
-        class="w-24 h-4 justify-start text-gray-400 text-xs font-semibold font-['Inter'] tracking-tight"
+        class="px-3 py-1 text-gray-400 text-xs font-semibold tracking-tight"
       >
         Management
       </div>
@@ -66,15 +53,10 @@
           class="flex items-center gap-3 px-3 py-2 rounded-lg {% if '/dashboard/manage-users' in request.path %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
         >
           <img
-            src="{% if '/dashboard/manage-users' in request.path %}
-               {% static 'images/sidebar/manage_users_highlighted.svg' %}
-             {% else %}
-               {% static 'images/sidebar/manage_users.svg' %}
-             {% endif %}"
+            src="{% if '/dashboard/manage-users' in request.path %}{% static 'images/sidebar/manage_users_highlighted.svg' %}{% else %}{% static 'images/sidebar/manage_users.svg' %}{% endif %}"
             alt="Manage Users Icon"
             class="w-5 h-5"
           />
-
           <span class="font-medium">Manage Users</span>
         </a>
         <a
@@ -82,30 +64,20 @@
           class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:tickets' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
         >
           <img
-            src="{% if request.resolver_match.view_name == 'dashboard:tickets' %}
-               {% static 'images/sidebar/configure_requests_highlighted.svg' %}
-             {% else %}
-               {% static 'images/sidebar/configure_request.svg' %}
-             {% endif %}"
+            src="{% if request.resolver_match.view_name == 'dashboard:tickets' %}{% static 'images/sidebar/configure_requests_highlighted.svg' %}{% else %}{% static 'images/sidebar/configure_request.svg' %}{% endif %}"
             alt="Tickets Icon"
             class="w-5 h-5"
           />
-
           <span class="font-medium">Tickets</span>
         </a>
         <a
-          href="{% url 'dashboard:locations' %}"
+          href="{% url 'dashboard:locations'%}"
           class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:locations' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}">
           <img
-            src="{% if request.resolver_match.view_name == 'dashboard:locations' %}
-               {% static 'images/sidebar/locations_highlighted.svg' %}
-             {% else %}
-               {% static 'images/sidebar/locations.svg' %}
-             {% endif %}"
+            src="{% if request.resolver_match.view_name == 'dashboard:locations' %}{% static 'images/sidebar/locations_highlighted.svg' %}{% else %}{% static 'images/sidebar/locations.svg' %}{% endif %}"
             alt="Locations Icon"
             class="w-5 h-5"
           />
-
           <span class="font-medium">Locations </span>
         </a>
         <a
@@ -113,42 +85,42 @@
           class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:messaging_setup' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
         >
           <img
-            src="{% if request.resolver_match.view_name == 'dashboard:messaging_setup' %}
-               {% static 'images/sidebar/messaging_highlighted.svg' %}
-             {% else %}
-               {% static 'images/sidebar/messaging.svg' %}
-             {% endif %}"
+            src="{% if request.resolver_match.view_name == 'dashboard:messaging_setup' %}{% static 'images/sidebar/messaging_highlighted.svg' %}{% else %}{% static 'images/sidebar/messaging.svg' %}{% endif %}"
             alt="Messaging Setup Icon"
             class="w-5 h-5"
           />
-
           <span class="font-medium">Messaging Setup</span>
         </a>
-        <!-- Camera Settings and Data & Exports removed per request -->
       </div>
     </div>
 
     <div>
       <div
-        class="w-14 h-4 justify-start text-gray-400 text-xs font-semibold font-['Inter'] tracking-tight"
+        class="px-3 py-1 text-gray-400 text-xs font-semibold tracking-tight"
       >
         System
       </div>
       <div class="space-y-1">
         <a
+          href="{% url 'dashboard:feedback_inbox' %}"
+          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:feedback_inbox' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
+        >
+          <img
+            src="{% if request.resolver_match.view_name == 'dashboard:feedback_inbox' %}{% static 'images/sidebar/feedback.svg' %}{% else %}{% static 'images/sidebar/feedback.svg' %}{% endif %}"
+            alt="Feedback Icon"
+            class="w-5 h-5"
+          />
+          <span class="font-medium">Feedback</span>
+        </a>
+        <a
           href="#"
           class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.path == '/settings/' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
         >
           <img
-            src="{% if request.path == '/settings/' %}
-                  {% static 'images/sidebar/settings_highlighted.svg' %}
-              {% else %}
-                  {% static 'images/sidebar/settings.svg' %}
-              {% endif %}"
+            src="{% if request.path == '/settings/' %}{% static 'images/sidebar/settings_highlighted.svg' %}{% else %}{% static 'images/sidebar/settings.svg' %}{% endif %}"
             alt="Settings Icon"
             class="w-5 h-5"
           />
-
           <span class="font-medium">Settings</span>
         </a>
         <a
@@ -156,84 +128,41 @@
           class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.path == '/analytics/' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
         >
           <img
-            src="{% if request.path == '/analytics/' %}
-                  {% static 'images/sidebar/analytics_highlighted.svg' %}
-              {% else %}
-                  {% static 'images/sidebar/analytics.svg' %}
-              {% endif %}"
+            src="{% if request.path == '/analytics/' %}{% static 'images/sidebar/analytics_highlighted.svg' %}{% else %}{% static 'images/sidebar/analytics.svg' %}{% endif %}"
             alt="Analytics Icon"
             class="w-5 h-5"
           />
-
           <span class="font-medium">Analytics</span>
         </a>
       </div>
     </div>
   </nav>
 
-  <!-- Bottom User Section -->
-  <div class="w-64 h-20 relative bg-black/0 border-t border-gray-200">
-    <div
-      class="w-56 h-10 left-[16px] top-[17px] absolute bg-black/0 border-gray-200 inline-flex justify-start items-center gap-3"
-    >
-      <!-- Avatar: prefer user's uploaded avatar (userprofile.avatar_url), fallback to generated avatar -->
-      {% with full_name=request.user.get_full_name|default:request.user.username %}
-      <img
-        class="w-10 h-10 relative rounded-full border-gray-200 object-cover"
-        src="{% if request.user and request.user.userprofile and request.user.userprofile.avatar_url %}{{ request.user.userprofile.avatar_url }}{% else %}https://ui-avatars.com/api/?name={{ full_name|urlencode }}&background=random{% endif %}"
-        alt="{{ full_name }}"
-        onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name='+encodeURIComponent('{{ full_name }}')+'&background=random'"
-      />
-      {% endwith %}
+  <div class="p-4 border-t border-gray-200">
+    <div class="flex items-center gap-3">
+        {% with full_name=request.user.get_full_name|default:request.user.username %}
+        <img
+            class="w-10 h-10 rounded-full object-cover flex-shrink-0"
+            src="{% if request.user and request.user.userprofile and request.user.userprofile.avatar_url %}{{ request.user.userprofile.avatar_url }}{% else %}https://ui-avatars.com/api/?name={{ full_name|urlencode }}&background=random{% endif %}"
+            alt="{{ full_name }}"
+            onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name='+encodeURIComponent('{{ full_name|escapejs }}')+'&background=random'"
+        />
+        {% endwith %}
 
-      <!-- User Info -->
-      <div class="w-36 h-9 relative bg-black/0 border-gray-200">
-        <div class="w-36 h-5 left-0 top-0 absolute bg-black/0 border-gray-200">
-          <div
-            class="w-20 h-5 left-0 top-[1px] absolute justify-start text-gray-900 text-sm font-medium font-['Inter']"
-          >
-            {{ request.user.get_full_name|default:request.user.username }}
-          </div>
+        <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-gray-900 truncate">
+                {{ request.user.get_full_name|default:request.user.username }}
+            </p>
+            <p class="text-xs text-gray-600 truncate">
+                {{ request.user.email }}
+            </p>
         </div>
-        <div class="w-36 h-4 left-0 top-[20px] absolute bg-black/0 border-gray-200">
-          <div
-            class="w-32 h-4 left-0 top-0 absolute justify-start text-gray-600 text-xs font-normal font-['Inter']"
-          >
-            {{ request.user.email }}
-          </div>
-        </div>
-      </div>
 
-      <!-- Logout Icon -->
-      <div class="w-4 h-6 relative bg-black/0 border-gray-200">
-        <div class="w-4 h-5 left-0 top-[2px] absolute bg-black/0 border-gray-200">
-          <div
-            class="w-4 h-4 left-0 top-[2px] absolute inline-flex justify-center items-center"
-          >
-            <a
-              href="{% url 'logout' %}"
-              class="text-gray-500 hover:text-gray-900"
-              title="Logout"
-            >
-              <!-- Heroicons Logout (Outline) -->
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke-width="2"
-                stroke="currentColor"
-                class="w-4 h-4"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6A2.25 2.25 0 005.25 5.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"
-                />
-              </svg>
-            </a>
-          </div>
-        </div>
-      </div>
+        <a href="{% url 'logout' %}" class="text-gray-500 hover:text-gray-900 flex-shrink-0" title="Logout">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6A2.25 2.25 0 005.25 5.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+            </svg>
+        </a>
     </div>
   </div>
 </div>

@@ -1,17 +1,25 @@
 <!DOCTYPE html>
+{% load static %}
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <title>{% block title %}Hotel Admin{% endblock %}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  {% load static %}
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Inter Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   {% block extra_css %}{% endblock %}
 </head>
-<body class="bg-gray-50 text-gray-900">
+<body class="bg-gray-50 text-gray-900 font-['Inter']">
+  <!-- CSRF token for JavaScript -->
+  {% csrf_token %}
+  <script>
+    // Make CSRF token available to JavaScript
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+  </script>
 
   <!-- Top Navbar -->
   <nav class="w-full border-b border-gray-200 bg-white">

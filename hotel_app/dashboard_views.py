@@ -22,7 +22,8 @@ import os
 from hotel_app.models import (
     Department, Location, RequestType, Checklist,
     Complaint, BreakfastVoucher, Review, Guest,
-    Voucher, VoucherScan, ServiceRequest, UserProfile, UserGroup, UserGroupMembership
+    Voucher, VoucherScan, ServiceRequest, UserProfile, UserGroup, UserGroupMembership,
+    Notification  # Add Notification model
 )
 
 # Import all forms from the local forms.py
@@ -33,25 +34,7 @@ from .forms import (
 )
 
 # Import local utils and services
-from .utils import user_in_group
-from hotel_app.whatsapp_service import WhatsAppService
-
-# Import all models from hotel_app
-from hotel_app.models import (
-    Department, Location, RequestType, Checklist,
-    Complaint, BreakfastVoucher, Review, Guest,
-    Voucher, VoucherScan, ServiceRequest, UserProfile
-)
-
-# Import all forms from the local forms.py
-from .forms import (
-    UserForm, DepartmentForm, GroupForm, LocationForm,
-    RequestTypeForm, ChecklistForm, ComplaintForm,
-    BreakfastVoucherForm, ReviewForm, VoucherForm
-)
-
-# Import local utils and services
-from .utils import user_in_group
+from .utils import user_in_group, create_notification
 from hotel_app.whatsapp_service import WhatsAppService
 
 # ---- Constants ----
@@ -154,6 +137,62 @@ def require_permission(group_names):
         return wrapper
     return decorator
 
+
+# ---- Notification Examples ----
+# These are examples of how notifications would be created in real scenarios
+
+def create_voucher_notification(voucher):
+    """Create a notification when a voucher is issued"""
+    # Create notification for the staff member who issued the voucher
+    if voucher.issued_by:
+        create_notification(
+            recipient=voucher.issued_by,
+            title="Voucher Issued",
+            message=f"Voucher for {voucher.guest_name} has been issued successfully.",
+            notification_type="voucher"
+        )
+    
+    # Create notification for the guest (if we have a user account for them)
+    # This would typically be implemented when guests have user accounts
+
+def create_voucher_scan_notification(voucher, scanned_by):
+    """Create a notification when a voucher is scanned"""
+    # Create notification for the staff member who scanned the voucher
+    create_notification(
+        recipient=scanned_by,
+        title="Voucher Scanned",
+        message=f"Voucher for {voucher.guest_name} has been scanned successfully.",
+        notification_type="voucher"
+    )
+    
+    # Create notification for the staff member who issued the voucher
+    if voucher.issued_by and voucher.issued_by != scanned_by:
+        create_notification(
+            recipient=voucher.issued_by,
+            title="Voucher Redeemed",
+            message=f"Voucher for {voucher.guest_name} has been redeemed.",
+            notification_type="voucher"
+        )
+
+def create_service_request_notification(service_request):
+    """Create a notification when a service request is created"""
+    # Create notification for the department head
+    if service_request.department and service_request.department.head:
+        create_notification(
+            recipient=service_request.department.head,
+            title="New Service Request",
+            message=f"A new service request has been submitted: {service_request.title}",
+            notification_type="request"
+        )
+    
+    # Create notification for the requester
+    if service_request.requester:
+        create_notification(
+            recipient=service_request.requester,
+            title="Service Request Submitted",
+            message=f"Your service request '{service_request.title}' has been submitted successfully.",
+            notification_type="request"
+        )
 
 # ---- Dashboard Home ----
 @login_required
@@ -1219,6 +1258,16 @@ def api_group_permissions_update(request, group_id):
         
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+import json
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, get_object_or_404
+from django.http import JsonResponse
+
+from hotel_app.models import User
+# Constants
+ADMINS_GROUP = 'Admins'
+STAFF_GROUP = 'Staff'
 
 
 @login_required
@@ -1276,6 +1325,13 @@ def tickets(request):
     from django.db.models import Count, Q
     from datetime import timedelta
     from django.utils import timezone
+    from django.core.paginator import Paginator
+    
+    # Get filter parameters from request
+    department_filter = request.GET.get('department', '')
+    priority_filter = request.GET.get('priority', '')
+    status_filter = request.GET.get('status', '')
+    search_query = request.GET.get('search', '')
     
     # Get departments with active ticket counts
     departments_data = []
@@ -1312,56 +1368,101 @@ def tickets(request):
         
         dept_colors = color_mapping.get(dept.name, {'color': 'blue-500', 'icon_color': 'sky-600'})
         
+        # Get logo URL if available using the new method
+        logo_url = dept.get_logo_url() if dept.get_logo_url() else f'/static/images/manage_users/{dept.name.lower().replace(" ", "_")}.svg'
+        
         departments_data.append({
+            'id': dept.department_id,
             'name': dept.name,
             'active_tickets': active_tickets_count,
             'sla_compliance': sla_compliance,
-            'color': dept_colors['color'],
-            'icon_color': dept_colors['icon_color'],
+            'sla_color': dept_colors['color'],
+            'icon_url': logo_url,
         })
     
-    # Get service requests for the table
-    service_requests = ServiceRequest.objects.select_related(
+    # Get all service requests with filters applied
+    tickets_queryset = ServiceRequest.objects.select_related(
         'request_type', 'location', 'requester_user', 'assignee_user'
-    ).all()[:10]  # Limit to 10 for performance
+    ).all().order_by('-id')
     
-    tickets_data = []
-    for sr in service_requests:
+    # Apply filters
+    if department_filter and department_filter != 'All Departments':
+        tickets_queryset = tickets_queryset.filter(
+            request_type__name__icontains=department_filter
+        )
+    
+    if priority_filter and priority_filter != 'All Priorities':
+        # Map display values to model values
+        priority_mapping = {
+            'High': 'high',
+            'Medium': 'normal',
+            'Low': 'low'
+        }
+        model_priority = priority_mapping.get(priority_filter)
+        if model_priority:
+            tickets_queryset = tickets_queryset.filter(priority=model_priority)
+    
+    if status_filter and status_filter != 'All Statuses':
+        # Map display values to model values
+        status_mapping = {
+            'Pending': 'pending',
+            'Assigned': 'assigned',
+            'Accepted': 'accepted',
+            'In Progress': 'in_progress',
+            'Completed': 'completed',
+            'Closed': 'closed',
+            'Escalated': 'escalated',
+            'Rejected': 'rejected'
+        }
+        model_status = status_mapping.get(status_filter)
+        if model_status:
+            tickets_queryset = tickets_queryset.filter(status=model_status)
+    
+    if search_query:
+        tickets_queryset = tickets_queryset.filter(
+            Q(request_type__name__icontains=search_query) |
+            Q(location__name__icontains=search_query) |
+            Q(notes__icontains=search_query)
+        )
+    
+    # Process tickets to add color attributes
+    processed_tickets = []
+    for ticket in tickets_queryset:
         # Map priority to display values
         priority_mapping = {
-            'high': {'label': 'Critical', 'color': 'red-500'},
-            'normal': {'label': 'Medium', 'color': 'sky-600'},
-            'low': {'label': 'Low', 'color': 'gray-100'},
+            'high': {'label': 'High', 'color': 'red'},
+            'normal': {'label': 'Medium', 'color': 'sky'},
+            'low': {'label': 'Low', 'color': 'gray'},
         }
         
-        priority_data = priority_mapping.get(sr.priority, {'label': 'Medium', 'color': 'sky-600'})
+        priority_data = priority_mapping.get(ticket.priority, {'label': 'Medium', 'color': 'sky'})
         
         # Map status to display values
         status_mapping = {
-            'pending': {'label': 'Pending', 'color': 'yellow-400'},
-            'assigned': {'label': 'Assigned', 'color': 'yellow-400'},
-            'accepted': {'label': 'Accepted', 'color': 'blue-500'},
-            'in_progress': {'label': 'In Progress', 'color': 'sky-600'},
-            'completed': {'label': 'Resolved', 'color': 'green-500'},
-            'closed': {'label': 'Closed', 'color': 'green-500'},
-            'escalated': {'label': 'Escalated', 'color': 'red-500'},
-            'rejected': {'label': 'Rejected', 'color': 'red-500'},
+            'pending': {'label': 'Pending', 'color': 'yellow'},
+            'assigned': {'label': 'Assigned', 'color': 'yellow'},
+            'accepted': {'label': 'Accepted', 'color': 'blue'},
+            'in_progress': {'label': 'In Progress', 'color': 'sky'},
+            'completed': {'label': 'Completed', 'color': 'green'},
+            'closed': {'label': 'Closed', 'color': 'green'},
+            'escalated': {'label': 'Escalated', 'color': 'red'},
+            'rejected': {'label': 'Rejected', 'color': 'red'},
         }
         
-        status_data = status_mapping.get(sr.status, {'label': 'Pending', 'color': 'yellow-400'})
+        status_data = status_mapping.get(ticket.status, {'label': 'Pending', 'color': 'yellow'})
         
         # Calculate SLA percentage
         sla_percentage = 0
         sla_color = 'green-500'
-        if sr.created_at and sr.due_at:
+        if ticket.created_at and ticket.due_at:
             # Calculate time taken so far or total time if completed
-            if sr.completed_at:
-                time_taken = sr.completed_at - sr.created_at
+            if ticket.completed_at:
+                time_taken = ticket.completed_at - ticket.created_at
             else:
-                time_taken = timezone.now() - sr.created_at
+                time_taken = timezone.now() - ticket.created_at
             
             # Calculate SLA percentage (time taken / total allowed time)
-            total_allowed_time = sr.due_at - sr.created_at
+            total_allowed_time = ticket.due_at - ticket.created_at
             if total_allowed_time.total_seconds() > 0:
                 sla_percentage = min(100, int((time_taken.total_seconds() / total_allowed_time.total_seconds()) * 100))
             
@@ -1373,177 +1474,32 @@ def tickets(request):
             else:
                 sla_color = 'green-500'
         
-        # Get requester name
-        requester_name = 'Unknown'
-        if sr.requester_user:
-            requester_name = sr.requester_user.get_full_name() or sr.requester_user.username
+        # Add attributes to the ticket object
+        ticket.priority_label = priority_data['label']
+        ticket.priority_color = priority_data['color']
+        ticket.status_label = status_data['label']
+        ticket.status_color = status_data['color']
+        ticket.sla_percentage = sla_percentage
+        ticket.sla_color = sla_color
+        ticket.owner_avatar = 'https://placehold.co/24x24'
         
-        # Get assignee name
-        assignee_name = 'Unassigned'
-        if sr.assignee_user:
-            assignee_name = sr.assignee_user.get_full_name() or sr.assignee_user.username
-        
-        # Create subject line
-        subject = f'{sr.request_type.name if sr.request_type else "Unknown Request"}'
-        if sr.location:
-            subject += f' - {sr.location}'
-        
-        # Check if current user is the assignee
-        is_assignee = (sr.assignee_user == request.user)
-        
-        tickets_data.append({
-            'id': sr.id,
-            'priority': priority_data['label'],
-            'priority_color': priority_data['color'],
-            'subject': subject,
-            'owner': assignee_name,
-            'owner_avatar': 'https://placehold.co/24x24',
-            'sla_percentage': sla_percentage,
-            'sla_color': sla_color,
-            'status': status_data['label'],
-            'status_color': status_data['color'],
-            'is_assignee': is_assignee,
-        })
+        processed_tickets.append(ticket)
     
-    # Get total ticket count
-    total_tickets = ServiceRequest.objects.count()
-    
-    # If there are no service requests, create some sample data
-    if total_tickets == 0:
-        create_sample_service_requests()
-        # Refresh the data
-        service_requests = ServiceRequest.objects.select_related(
-            'request_type', 'location', 'requester_user', 'assignee_user'
-        ).all()[:10]
-        
-        tickets_data = []
-        for sr in service_requests:
-            # Map priority to display values
-            priority_mapping = {
-                'high': {'label': 'Critical', 'color': 'red-500'},
-                'normal': {'label': 'Medium', 'color': 'sky-600'},
-                'low': {'label': 'Low', 'color': 'gray-100'},
-            }
-            
-            priority_data = priority_mapping.get(sr.priority, {'label': 'Medium', 'color': 'sky-600'})
-            
-            # Map status to display values
-            status_mapping = {
-                'pending': {'label': 'Pending', 'color': 'yellow-400'},
-                'assigned': {'label': 'Assigned', 'color': 'yellow-400'},
-                'accepted': {'label': 'Accepted', 'color': 'blue-500'},
-                'in_progress': {'label': 'In Progress', 'color': 'sky-600'},
-                'completed': {'label': 'Resolved', 'color': 'green-500'},
-                'closed': {'label': 'Closed', 'color': 'green-500'},
-                'escalated': {'label': 'Escalated', 'color': 'red-500'},
-                'rejected': {'label': 'Rejected', 'color': 'red-500'},
-            }
-            
-            status_data = status_mapping.get(sr.status, {'label': 'Pending', 'color': 'yellow-400'})
-            
-            # Calculate SLA percentage
-            sla_percentage = 0
-            sla_color = 'green-500'
-            if sr.created_at and sr.due_at:
-                # Calculate time taken so far or total time if completed
-                if sr.completed_at:
-                    time_taken = sr.completed_at - sr.created_at
-                else:
-                    time_taken = timezone.now() - sr.created_at
-                
-                # Calculate SLA percentage (time taken / total allowed time)
-                total_allowed_time = sr.due_at - sr.created_at
-                if total_allowed_time.total_seconds() > 0:
-                    sla_percentage = min(100, int((time_taken.total_seconds() / total_allowed_time.total_seconds()) * 100))
-                
-                # Determine color based on SLA
-                if sla_percentage > 90:
-                    sla_color = 'red-500'
-                elif sla_percentage > 70:
-                    sla_color = 'yellow-400'
-                else:
-                    sla_color = 'green-500'
-            
-            # Get requester name
-            requester_name = 'Unknown'
-            if sr.requester_user:
-                requester_name = sr.requester_user.get_full_name() or sr.requester_user.username
-            
-            # Get assignee name
-            assignee_name = 'Unassigned'
-            if sr.assignee_user:
-                assignee_name = sr.assignee_user.get_full_name() or sr.assignee_user.username
-            
-            # Create subject line
-            subject = f'{sr.request_type.name if sr.request_type else "Unknown Request"}'
-            if sr.location:
-                subject += f' - {sr.location}'
-            
-            # Check if current user is the assignee
-            is_assignee = (sr.assignee_user == request.user)
-            
-            tickets_data.append({
-                'id': sr.id,
-                'priority': priority_data['label'],
-                'priority_color': priority_data['color'],
-                'subject': subject,
-                'owner': assignee_name,
-                'owner_avatar': 'https://placehold.co/24x24',
-                'sla_percentage': sla_percentage,
-                'sla_color': sla_color,
-                'status': status_data['label'],
-                'status_color': status_data['color'],
-                'is_assignee': is_assignee,
-            })
-        
-        total_tickets = ServiceRequest.objects.count()
-        # Refresh departments data after creating sample requests
-        departments_data = []
-        departments = Department.objects.all()
-        
-        for dept in departments:
-            # Count active tickets for this department
-            active_tickets_count = ServiceRequest.objects.filter(
-                request_type__name__icontains=dept.name
-            ).exclude(
-                status__in=['completed', 'closed']
-            ).count()
-            
-            # Calculate SLA compliance (simplified calculation)
-            total_tickets_dept = ServiceRequest.objects.filter(
-                request_type__name__icontains=dept.name
-            ).count()
-            
-            completed_tickets = ServiceRequest.objects.filter(
-                request_type__name__icontains=dept.name,
-                status='completed'
-            ).count()
-            
-            sla_compliance = 0
-            if total_tickets_dept > 0:
-                sla_compliance = int((completed_tickets / total_tickets_dept) * 100)
-            
-            # Determine colors based on department
-            color_mapping = {
-                'Housekeeping': {'color': 'sky-600', 'icon_color': 'sky-600'},
-                'Maintenance': {'color': 'yellow-400', 'icon_color': 'sky-600'},
-                'Guest Services': {'color': 'green-500', 'icon_color': 'sky-600'},
-            }
-            
-            dept_colors = color_mapping.get(dept.name, {'color': 'blue-500', 'icon_color': 'sky-600'})
-            
-            departments_data.append({
-                'name': dept.name,
-                'active_tickets': active_tickets_count,
-                'sla_compliance': sla_compliance,
-                'color': dept_colors['color'],
-                'icon_color': dept_colors['icon_color'],
-            })
+    # --- Pagination Logic ---
+    paginator = Paginator(processed_tickets, 10)  # Show 10 tickets per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
     
     context = {
         'departments': departments_data,
-        'tickets': tickets_data,
-        'total_tickets': total_tickets,
+        'tickets': page_obj,  # Pass the page_obj to the template
+        'page_obj': page_obj,  # Pass it again as page_obj for clarity
+        'total_tickets': tickets_queryset.count(),
+        # Pass filter values back to template
+        'department_filter': department_filter,
+        'priority_filter': priority_filter,
+        'status_filter': status_filter,
+        'search_query': search_query,
     }
     return render(request, 'dashboard/tickets.html', context)
 
@@ -1632,6 +1588,10 @@ def ticket_detail(request, ticket_id):
     # Format created time
     created_time = service_request.created_at.strftime("%b %d, %H:%M") if service_request.created_at else "Unknown"
     
+    # Get notification count (for now, we'll simulate this with a static value)
+    # In a real implementation, this would come from a notification model
+    notification_count = 3  # This will be replaced with dynamic count
+    
     context = {
         'ticket': service_request,
         'ticket_priority_label': priority_data['label'],
@@ -1650,6 +1610,7 @@ def ticket_detail(request, ticket_id):
         'room_type': room_type,
         'department_name': department_name,
         'created_time': created_time,
+        'notification_count': notification_count,
     }
     
     return render(request, 'dashboard/ticket_detail.html', context)
@@ -2490,6 +2451,97 @@ def user_create(request):
     })
 
 
+@require_http_methods(['POST'])
+@require_http_methods(['POST'])
+@csrf_protect
+@require_permission([ADMINS_GROUP])
+def department_create(request):
+    """Create a department with optional logo."""
+    form = DepartmentForm(request.POST, request.FILES)
+    if form.is_valid():
+        try:
+            dept = form.save()
+            
+            # Handle logo upload if provided (from FormData)
+            logo = request.FILES.get('logo') if hasattr(request, 'FILES') else None
+            if logo:
+                try:
+                    # Create department directory if it doesn't exist
+                    dept_dir = os.path.join(settings.MEDIA_ROOT, 'departments', str(dept.pk))
+                    os.makedirs(dept_dir, exist_ok=True)
+
+                    filename = f"logo{os.path.splitext(logo.name)[1]}"
+                    file_path = os.path.join(dept_dir, filename)
+
+                    with open(file_path, 'wb+') as destination:
+                        for chunk in logo.chunks():
+                            destination.write(chunk)
+
+                    media_url = settings.MEDIA_URL or '/media/'
+                    if not media_url.endswith('/'):
+                        media_url = media_url + '/'
+                    dept.logo = f"{media_url}departments/{dept.pk}/{filename}"
+                    dept.save(update_fields=['logo'])
+                except Exception:
+                    # Non-fatal: continue but log if available
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.exception('Failed to save uploaded logo for department %s', dept.pk)
+
+            return JsonResponse({
+                "success": True, 
+                "department": {
+                    "id": dept.id, 
+                    "name": dept.name,
+                    "logo_url": dept.logo.url if dept.logo else None
+                }
+            })
+        except Exception as e:
+            return JsonResponse({"success": False, "errors": {"non_field_errors": [str(e)]}}, status=500)
+    else:
+        return JsonResponse({"success": False, "errors": form.errors}, status=400)
+
+
+@require_permission([ADMINS_GROUP])
+def department_update(request, dept_id):
+    department = get_object_or_404(Department, pk=dept_id)
+    if request.method == "POST":
+        form = DepartmentForm(request.POST, request.FILES, instance=department)
+        if form.is_valid():
+            dept = form.save()
+            
+            # Handle logo upload if provided (from FormData)
+            logo = request.FILES.get('logo') if hasattr(request, 'FILES') else None
+            if logo:
+                try:
+                    # Create department directory if it doesn't exist
+                    dept_dir = os.path.join(settings.MEDIA_ROOT, 'departments', str(dept.pk))
+                    os.makedirs(dept_dir, exist_ok=True)
+
+                    filename = f"logo{os.path.splitext(logo.name)[1]}"
+                    file_path = os.path.join(dept_dir, filename)
+
+                    with open(file_path, 'wb+') as destination:
+                        for chunk in logo.chunks():
+                            destination.write(chunk)
+
+                    media_url = settings.MEDIA_URL or '/media/'
+                    if not media_url.endswith('/'):
+                        media_url = media_url + '/'
+                    dept.logo = f"{media_url}departments/{dept.pk}/{filename}"
+                    dept.save(update_fields=['logo'])
+                except Exception:
+                    # Non-fatal: continue but log if available
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.exception('Failed to save uploaded logo for department %s', dept.pk)
+            
+            messages.success(request, "Department updated successfully.")
+        else:
+            messages.error(request, "Error updating department. Please check the form.")
+    return redirect("dashboard:departments")
+
+
 @require_permission([ADMINS_GROUP, STAFF_GROUP])
 def user_update(request, user_id):
     user = get_object_or_404(User, pk=user_id)
@@ -2700,9 +2752,32 @@ def dashboard_departments(request):
                 if p.title and 'department head' in p.title.lower():
                     lead = {'user_id': getattr(p, 'user_id', None), 'full_name': p.full_name, 'email': getattr(p, 'user', None).email if getattr(p, 'user', None) else None, 'avatar_url': getattr(p, 'avatar_url', None)}
 
-            # Basic visual metadata (defaults)
-            # set image relative path for template to call {% static %}; template will fallback if file missing
-            image = f'images/manage_users/{slugify(d.name)}.svg' if d.name else ''
+            # Get logo URL if available using the new method
+            logo_url = d.get_logo_url()
+            if logo_url:
+                image = logo_url
+            else:
+                # Provide proper fallback icons based on department name
+                dept_name_slug = d.name.lower().replace(" ", "_").replace("-", "_").replace("&", "_").replace("___", "_")
+                # Map common department names to their icons
+                icon_mapping = {
+                    'front_office': 'front_office.svg',
+                    'housekeeping': 'housekeeping.svg',
+                    'food_beverage': 'food_beverage.svg',
+                    'food&beverage': 'food_beverage.svg',
+                    'food_&_beverage': 'food_beverage.svg',
+                    'security': 'security.svg',
+                    'maintenance': 'maintainence.svg',
+                    'it': 'name.svg',
+                    'hr': 'name.svg',
+                    'finance': 'name.svg',
+                    'marketing': 'name.svg',
+                    'sales': 'name.svg',
+                }
+                # Try to find a matching icon or use default
+                icon_file = icon_mapping.get(dept_name_slug, 'name.svg')
+                image = f'images/manage_users/{icon_file}'
+
             icon_bg = 'bg-gray-500/10'
             tag_bg = 'bg-gray-500/10'
             icon_color = 'gray-500'
@@ -2764,7 +2839,32 @@ def dashboard_departments(request):
     except Exception:
         # fallback to simple data matching the expected structure
         for index, d in enumerate(depts_page):
-            featured_group = {'id': getattr(d, 'pk', ''), 'name': getattr(d, 'name', ''), 'description': getattr(d, 'description', '') or '', 'members_count': getattr(d, 'user_count', 0), 'image': '', 'icon_bg': 'bg-gray-500/10', 'tag_bg': 'bg-gray-500/10', 'icon_color': 'gray-500', 'dot_bg': 'bg-gray-500', 'position_top': index * 270}
+            # Get logo URL if available using the new method
+            logo_url = d.get_logo_url()
+            if logo_url:
+                image = logo_url
+            else:
+                # Provide proper fallback icons based on department name
+                dept_name_slug = d.name.lower().replace(" ", "_").replace("-", "_").replace("&", "_").replace("___", "_")
+                # Map common department names to their icons
+                icon_mapping = {
+                    'front_office': 'front_office.svg',
+                    'housekeeping': 'housekeeping.svg',
+                    'food_beverage': 'food_beverage.svg',
+                    'food&beverage': 'food_beverage.svg',
+                    'food_&_beverage': 'food_beverage.svg',
+                    'security': 'security.svg',
+                    'maintenance': 'maintainence.svg',
+                    'it': 'name.svg',
+                    'hr': 'name.svg',
+                    'finance': 'name.svg',
+                    'marketing': 'name.svg',
+                    'sales': 'name.svg',
+                }
+                # Try to find a matching icon or use default
+                icon_file = icon_mapping.get(dept_name_slug, 'name.svg')
+                image = f'images/manage_users/{icon_file}'
+            featured_group = {'id': getattr(d, 'pk', ''), 'name': getattr(d, 'name', ''), 'description': getattr(d, 'description', '') or '', 'members_count': getattr(d, 'user_count', 0), 'image': image, 'icon_bg': 'bg-gray-500/10', 'tag_bg': 'bg-gray-500/10', 'icon_color': 'gray-500', 'dot_bg': 'bg-gray-500', 'position_top': index * 270}
             departments.append({'featured_group': featured_group, 'members': [], 'lead': None, 'open_tickets': 0, 'sla_label': 'N/A', 'sla_tag_bg': 'bg-gray-200', 'sla_color': 'gray-600', 'performance_pct': '0%', 'performance_color': 'gray-500', 'performance_width': '2', 'status_label': 'Unknown', 'status_bg': 'bg-gray-200', 'status_color': 'gray-500'})
 
     # Render the Manage Users base template when navigated via the Manage Users tabs.
@@ -2851,36 +2951,88 @@ def remove_group_member(request, group_id):
 @csrf_protect
 @require_permission([ADMINS_GROUP])
 def department_create(request):
-    name = (request.POST.get("name") or "").strip()
-    description = (request.POST.get("description") or "").strip()
+    """Create a department with optional logo."""
+    form = DepartmentForm(request.POST, request.FILES)
+    if form.is_valid():
+        try:
+            dept = form.save()
+            
+            # Handle logo upload if provided (from FormData)
+            logo = request.FILES.get('logo') if hasattr(request, 'FILES') else None
+            if logo:
+                try:
+                    # Create department directory if it doesn't exist
+                    dept_dir = os.path.join(settings.MEDIA_ROOT, 'departments', str(dept.pk))
+                    os.makedirs(dept_dir, exist_ok=True)
 
-    errors = {}
-    if not name:
-        errors["name"] = ["Department name is required."]
-    if Department.objects.filter(name__iexact=name).exists():
-        errors["name"] = [f"Department '{name}' already exists."]
+                    filename = f"logo{os.path.splitext(logo.name)[1]}"
+                    file_path = os.path.join(dept_dir, filename)
 
-    if errors:
-        return JsonResponse({"success": False, "errors": errors}, status=400)
+                    with open(file_path, 'wb+') as destination:
+                        for chunk in logo.chunks():
+                            destination.write(chunk)
 
-    try:
-        dept = Department.objects.create(
-            name=name,
-            description=description or None
-        )
-    except Exception as e:
-        return JsonResponse({"success": False, "errors": {"non_field_errors": [str(e)]}}, status=500)
+                    media_url = settings.MEDIA_URL or '/media/'
+                    if not media_url.endswith('/'):
+                        media_url = media_url + '/'
+                    dept.logo = f"{media_url}departments/{dept.pk}/{filename}"
+                    dept.save(update_fields=['logo'])
+                except Exception:
+                    # Non-fatal: continue but log if available
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.exception('Failed to save uploaded logo for department %s', dept.pk)
 
-    return JsonResponse({"success": True, "department": {"id": dept.id, "name": dept.name}})
+            return JsonResponse({
+                "success": True, 
+                "department": {
+                    "id": dept.department_id, 
+                    "name": dept.name,
+                    "logo_url": dept.logo.url if dept.logo else None
+                }
+            })
+        except Exception as e:
+            return JsonResponse({"success": False, "errors": {"non_field_errors": [str(e)]}}, status=500)
+    else:
+        return JsonResponse({"success": False, "errors": form.errors}, status=400)
 
 @require_permission([ADMINS_GROUP])
 def department_update(request, dept_id):
     department = get_object_or_404(Department, pk=dept_id)
     if request.method == "POST":
-        form = DepartmentForm(request.POST, instance=department)
+        form = DepartmentForm(request.POST, request.FILES, instance=department)
         if form.is_valid():
-            form.save()
+            dept = form.save()
+            
+            # Handle logo upload if provided (from FormData)
+            logo = request.FILES.get('logo') if hasattr(request, 'FILES') else None
+            if logo:
+                try:
+                    # Create department directory if it doesn't exist
+                    dept_dir = os.path.join(settings.MEDIA_ROOT, 'departments', str(dept.pk))
+                    os.makedirs(dept_dir, exist_ok=True)
+
+                    filename = f"logo{os.path.splitext(logo.name)[1]}"
+                    file_path = os.path.join(dept_dir, filename)
+
+                    with open(file_path, 'wb+') as destination:
+                        for chunk in logo.chunks():
+                            destination.write(chunk)
+
+                    media_url = settings.MEDIA_URL or '/media/'
+                    if not media_url.endswith('/'):
+                        media_url = media_url + '/'
+                    dept.logo = f"{media_url}departments/{dept.pk}/{filename}"
+                    dept.save(update_fields=['logo'])
+                except Exception:
+                    # Non-fatal: continue but log if available
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.exception('Failed to save uploaded logo for department %s', dept.pk)
+            
             messages.success(request, "Department updated successfully.")
+        else:
+            messages.error(request, "Error updating department. Please check the form.")
     return redirect("dashboard:departments")
 
 @require_permission([ADMINS_GROUP])
@@ -2890,9 +3042,6 @@ def department_delete(request, dept_id):
         department.delete()
         messages.success(request, "Department deleted successfully.")
     return redirect("dashboard:departments")
-
-
-@require_permission([ADMINS_GROUP, STAFF_GROUP])
 @require_http_methods(['POST'])
 def assign_department_lead(request, dept_id):
     """Assign a department lead.
@@ -4125,16 +4274,6 @@ def delete_item(request, item_id):
     messages.success(request,f"Item  {item_label} deleted successfully!")
     return redirect("checklist_list")
 
-# ---- Request Type Management ----
-@require_permission([ADMINS_GROUP, STAFF_GROUP])
-def dashboard_request_types(request):
-    request_types = RequestType.objects.all()
-    form = RequestTypeForm()
-    context = {
-        "request_types": request_types,
-        "form": form,
-    }
-    return render(request, "dashboard/request_types.html", context)
 
 @require_permission([ADMINS_GROUP])
 def request_type_create(request):
@@ -4165,15 +4304,7 @@ def request_type_delete(request, rt_id):
 
 
 # ---- Checklist Management ----
-@require_permission([ADMINS_GROUP, STAFF_GROUP])
-def dashboard_checklists(request):
-    checklists = Checklist.objects.all()
-    form = ChecklistForm()
-    context = {
-        "checklists": checklists,
-        "form": form,
-    }
-    return render(request, "dashboard/checklists.html", context)
+
 
 @require_permission([ADMINS_GROUP])
 def checklist_create(request):
@@ -4203,18 +4334,6 @@ def checklist_delete(request, cl_id):
     return redirect("dashboard:checklists")
 
 
-# ---- Complaint Management ----
-@require_permission([ADMINS_GROUP, STAFF_GROUP])
-def complaints(request):
-    complaints_list = Complaint.objects.all().order_by('-created_at')
-    form = ComplaintForm()
-    context = {
-        "complaints": complaints_list,
-        "form": form,
-        "users": User.objects.all(),
-        "guests": Guest.objects.all(),
-    }
-    return render(request, "dashboard/complaints.html", context)
 
 @require_permission([ADMINS_GROUP])
 def complaint_create(request):
@@ -4244,31 +4363,7 @@ def complaint_delete(request, complaint_id):
     return redirect("dashboard:complaints")
 
 
-# ---- Legacy Breakfast Voucher Management ----
-@require_permission([ADMINS_GROUP, STAFF_GROUP])
-def breakfast_vouchers(request):
-    vouchers_list = BreakfastVoucher.objects.all().order_by('-created_at')
-    form = BreakfastVoucherForm()
-    context = {
-        "vouchers": vouchers_list,
-        "form": form,
-        "guests": Guest.objects.all(),
-        "locations": Location.objects.all(),
-    }
-    return render(request, "dashboard/breakfast_vouchers.html", context)
-
-
 # ---- Review Management ----
-@require_permission([ADMINS_GROUP, STAFF_GROUP])
-def reviews(request):
-    reviews_list = Review.objects.all().order_by('-created_at')
-    form = ReviewForm()
-    context = {
-        "reviews": reviews_list,
-        "form": form,
-        "guests": Guest.objects.all(),
-    }
-    return render(request, "dashboard/reviews.html", context)
 
 @require_permission([ADMINS_GROUP])
 def review_create(request):
@@ -4870,6 +4965,137 @@ def get_guest_whatsapp_message(request, guest_id):
         'guest_name': guest.full_name,
         'guest_phone': guest.phone
     })
+
+
+# ---- Feedback View ----
+@login_required
+@user_passes_test(is_staff)
+def feedback_inbox(request):
+    """Feedback inbox view showing all guest feedback."""
+    # Sample feedback data - in a real implementation, this would come from the database
+    feedback_data = [
+        {
+            'id': 1,
+            'date': 'Dec 15, 2024',
+            'guest': 'Maria Rodriguez',
+            'room': 'Room 304',
+            'rating': 2.0,
+            'feedback': 'Room was not clean upon arrival, found hair in bathroom. AC was too noisy...',
+            'keywords': ['cleanliness', 'noise'],
+            'sentiment': 'Negative',
+            'status': 'needs_attention'
+        },
+        {
+            'id': 2,
+            'date': 'Dec 15, 2024',
+            'guest': 'John Smith',
+            'room': 'Room 218',
+            'rating': 4.0,
+            'feedback': 'Great location and friendly staff. Room was comfortable but breakfast could be improved...',
+            'keywords': ['staff', 'breakfast'],
+            'sentiment': 'Positive',
+            'status': 'responded'
+        },
+        {
+            'id': 3,
+            'date': 'Dec 14, 2024',
+            'guest': 'David Chen',
+            'room': 'Suite 405',
+            'rating': 5.0,
+            'feedback': 'Exceptional service throughout our stay! The concierge went above and beyond...',
+            'keywords': ['service', 'concierge'],
+            'sentiment': 'Positive',
+            'status': 'responded'
+        },
+        {
+            'id': 4,
+            'date': 'Dec 14, 2024',
+            'guest': 'Emma Thompson',
+            'room': 'Room 156',
+            'rating': 3.0,
+            'feedback': 'Average experience. WiFi was slow and pool was crowded. Food was decent...',
+            'keywords': ['wifi', 'pool'],
+            'sentiment': 'Neutral',
+            'status': 'needs_attention'
+        },
+        {
+            'id': 5,
+            'date': 'Dec 13, 2024',
+            'guest': 'Lisa Anderson',
+            'room': 'Room 289',
+            'rating': 5.0,
+            'feedback': 'Perfect getaway! Beautiful views, excellent spa services, and amazing breakfast buffet...',
+            'keywords': ['spa', 'breakfast', 'views'],
+            'sentiment': 'Positive',
+            'status': 'responded'
+        }
+    ]
+    
+    context = {
+        'feedback_data': feedback_data,
+        'stats': {
+            'total_feedback': 1247,
+            'avg_rating': 4.6,
+            'needs_attention': 23,
+            'response_rate': 87
+        }
+    }
+    
+    return render(request, 'dashboard/feedback_inbox.html', context)
+
+
+@login_required
+@user_passes_test(is_staff)
+def feedback_detail(request, feedback_id):
+    """Feedback detail view showing detailed information about a specific feedback."""
+    # Sample feedback data - in a real implementation, this would come from the database
+    feedback = {
+        'id': feedback_id,
+        'date': 'March 15, 2024',
+        'time': '2:30 PM',
+        'guest': 'Michael Johnson',
+        'room': 'Room 304',
+        'room_type': 'Premium Suite',
+        'rating': 4.0,
+        'sentiment': 'Positive',
+        'title': 'Great stay but room service was slow',
+        'comment': 'Overall, I had a wonderful stay at your hotel. The room was clean and comfortable, and the staff was very friendly and helpful. The location is perfect for exploring the city center.\n\nHowever, I did have some issues with room service. I ordered dinner on my second night, and it took over an hour to arrive. When it finally came, the food was lukewarm. This was disappointing, especially considering the premium I paid for the suite.\n\nDespite this issue, I would still recommend the hotel to others, but I hope you can improve the room service response times. The breakfast buffet was excellent, and the concierge was particularly helpful with restaurant recommendations.',
+        'keywords': ['Clean Room', 'Friendly Staff', 'Great Location', 'Room Service', 'Slow Response', 'Breakfast', 'Concierge'],
+        'department_impact': [
+            {'department': 'Room Service', 'sentiment': 'Negative'},
+            {'department': 'Housekeeping', 'sentiment': 'Positive'},
+            {'department': 'Front Desk', 'sentiment': 'Positive'}
+        ],
+        'activity_timeline': [
+            {'event': 'Feedback received', 'time': 'March 15, 2:30 PM', 'description': 'Guest submitted feedback via email', 'status': 'completed'},
+            {'event': 'Auto-tagged by AI', 'time': 'March 15, 2:31 PM', 'description': 'System identified keywords and sentiment', 'status': 'completed'},
+            {'event': 'Assigned to manager', 'time': 'March 15, 3:15 PM', 'description': 'Escalated to Sarah Wilson for review', 'status': 'completed'},
+            {'event': 'Pending action', 'time': 'Now', 'description': 'Awaiting manager response', 'status': 'pending'}
+        ],
+        'attachments': [
+            {'name': 'Room Service Receipt', 'type': 'PDF', 'size': '245 KB', 'color': 'red'},
+            {'name': 'Room Photo', 'type': 'JPG', 'size': '1.2 MB', 'color': 'blue'}
+        ],
+        'guest_info': {
+            'name': 'Michael Johnson',
+            'loyalty_member': True,
+            'check_in': 'March 13, 2024',
+            'check_out': 'March 16, 2024',
+            'stay_duration': '3 nights',
+            'previous_stays': 7
+        },
+        'response_status': {
+            'status': 'Pending Review',
+            'priority': 'High',
+            'due_date': 'March 17, 2024'
+        }
+    }
+    
+    context = {
+        'feedback': feedback
+    }
+    
+    return render(request, 'dashboard/feedback_detail.html', context)
 
 
 # ---- Tailwind Test ----

@@ -1,49 +1,39 @@
-# hotel_app/urls_api.py
-
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from hotel_app import views
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-
-router = DefaultRouter()
-
-# 1. Authentication & User Management
-router.register(r'users', views.UserViewSet, basename='user')
-
-# 2. Department Management
-router.register(r'departments', views.DepartmentViewSet, basename='department')
-
-# 3. User Groups
-router.register(r'user-groups', views.UserGroupViewSet, basename='usergroup')
-
-# 4. Master Location
-router.register(r'locations', views.LocationViewSet, basename='location')
-
-# 5. Complaints (Service Requests)
-router.register(r'complaints', views.ServiceRequestViewSet, basename='complaint')
-
-# 6. Food Vouchers
-router.register(r'vouchers', views.BreakfastVoucherViewSet, basename='voucher')
-
-# 7. Guest Reviews
-router.register(r'reviews', views.GuestCommentViewSet, basename='review')
-
+from django.urls import path
+from . import api_views
 
 urlpatterns = [
-    # Router-based endpoints
-    path('', include(router.urls)),
-
-    # 1. Authentication
-    # (use DRF SimpleJWT or your own custom view)
-    path("auth/login/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
-    path("auth/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
-
-
-    # 8. Dashboards
-    path('dashboard/overview/', views.DashboardOverview.as_view(), name='dashboard-overview'),
-    path('dashboard/complaints/', views.DashboardComplaints.as_view(), name='dashboard-complaints'),
-    path('dashboard/reviews/', views.DashboardReviews.as_view(), name='dashboard-reviews'),
-    path("issue-voucher/<int:guest_id>/", views.issue_voucher, name="issue_voucher"),
-    path("scan-voucher/<uuid:code>/", views.scan_voucher, name="scan_voucher"),
-    path("voucher-report/", views.voucher_report, name="voucher_report"),
+    # User Management
+    path('users/', api_views.UserList.as_view(), name='user-list'),
+    path('users/<int:pk>/', api_views.UserDetail.as_view(), name='user-detail'),
+    
+    # Department Management
+    path('departments/', api_views.DepartmentList.as_view(), name='department-list'),
+    path('departments/<int:pk>/', api_views.DepartmentDetail.as_view(), name='department-detail'),
+    
+    # User Group Management
+    path('groups/', api_views.UserGroupList.as_view(), name='group-list'),
+    path('groups/<int:pk>/', api_views.UserGroupDetail.as_view(), name='group-detail'),
+    
+    # Location Management
+    path('locations/', api_views.LocationList.as_view(), name='location-list'),
+    path('locations/<int:pk>/', api_views.LocationDetail.as_view(), name='location-detail'),
+    
+    # Service Request Management
+    path('service-requests/', api_views.ServiceRequestList.as_view(), name='service-request-list'),
+    path('service-requests/<int:pk>/', api_views.ServiceRequestDetail.as_view(), name='service-request-detail'),
+    
+    # Voucher Management
+    path('vouchers/', api_views.VoucherList.as_view(), name='voucher-list'),
+    path('vouchers/<int:pk>/', api_views.VoucherDetail.as_view(), name='voucher-detail'),
+    
+    # Guest Comment Management
+    path('guest-comments/', api_views.GuestCommentList.as_view(), name='guest-comment-list'),
+    path('guest-comments/<int:pk>/', api_views.GuestCommentDetail.as_view(), name='guest-comment-detail'),
+    
+    # Notification Management
+    path('notifications/', api_views.get_notifications, name='get-notifications'),
+    path('notifications/all/', api_views.get_all_notifications, name='get-all-notifications'),
+    path('notifications/<int:notification_id>/read/', api_views.mark_notification_as_read, name='mark-notification-as-read'),
+    path('notifications/read-all/', api_views.mark_all_notifications_as_read, name='mark-all-notifications-as-read'),
+    path('notifications/<int:notification_id>/delete/', api_views.delete_notification, name='delete-notification'),
 ]

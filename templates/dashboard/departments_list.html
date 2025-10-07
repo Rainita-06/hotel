@@ -50,45 +50,17 @@
             <td class="px-6 py-4 max-w-xs">
               <div class="flex items-center gap-4 min-w-0">
                 <div class="h-10 w-10 {{ dept.featured_group.icon_bg|default:'bg-gray-100' }} rounded-lg ring-1 ring-inset ring-gray-200 flex items-center justify-center flex-shrink-0">
-                  {% with dept.featured_group.name|slugify as slug %}
-                    {% if dept.featured_group.image %}
-                      <img src="{% static dept.featured_group.image %}" class="h-6 w-6" alt="{{ dept.featured_group.name }} icon" />
-                    {% elif slug == 'front-office' %}
-                      <img src="{% static 'images/manage_users/front_office.svg' %}" class="h-6 w-6" alt="Front Office icon" />
-                    {% elif slug == 'housekeeping' %}
-                      <img src="{% static 'images/manage_users/housekeeping.svg' %}" class="h-6 w-6" alt="Housekeeping icon" />
-                    {% elif slug == 'food-beverage' or slug == 'food_beverage' %}
-                      <img src="{% static 'images/manage_users/food_beverage.svg' %}" class="h-6 w-6" alt="Food & Beverage icon" />
-                    {% elif slug == 'security' %}
-                      <img src="{% static 'images/manage_users/security.svg' %}" class="h-6 w-6" alt="Security icon" />
-                    {% elif slug == 'maintenance' or slug == 'maintainence' %}
-                      <img src="{% static 'images/manage_users/maintainence.svg' %}" class="h-6 w-6" alt="Maintenance icon" />
-                    {% elif slug == 'open' %}
-                      <img src="{% static 'images/manage_users/open.svg' %}" class="h-6 w-6" alt="Open icon" />
-                    {% elif slug == 'close' %}
-                      <img src="{% static 'images/manage_users/close.svg' %}" class="h-6 w-6" alt="Close icon" />
-                    {% elif slug == 'enable' %}
-                      <img src="{% static 'images/manage_users/enable.svg' %}" class="h-6 w-6" alt="Enable icon" />
-                    {% elif slug == 'disable' %}
-                      <img src="{% static 'images/manage_users/disable.svg' %}" class="h-6 w-6" alt="Disable icon" />
-                    {% elif slug == 'bulk-notifications' %}
-                      <img src="{% static 'images/manage_users/bulk_notifications.svg' %}" class="h-6 w-6" alt="Bulk notifications icon" />
-                    {% elif slug == 'filter' %}
-                      <img src="{% static 'images/manage_users/filter.svg' %}" class="h-6 w-6" alt="Filter icon" />
-                    {% elif slug == 'notify' %}
-                      <img src="{% static 'images/manage_users/notify.svg' %}" class="h-6 w-6" alt="Notify icon" />
-                    {% elif slug == 'total-groups' %}
-                      <img src="{% static 'images/manage_users/total_groups.svg' %}" class="h-6 w-6" alt="Total groups icon" />
-                    {% elif slug == 'members-assigned' %}
-                      <img src="{% static 'images/manage_users/members_assigned.svg' %}" class="h-6 w-6" alt="Members assigned icon" />
-                    {% elif slug == 'recent-additions' %}
-                      <img src="{% static 'images/manage_users/recent_additions.svg' %}" class="h-6 w-6" alt="Recent additions icon" />
-                    {% elif slug == 'plus' %}
-                      <img src="{% static 'images/manage_users/plus.svg' %}" class="h-6 w-6" alt="Plus icon" />
+                  {% if dept.featured_group.image %}
+                    <!-- Check if it's a full URL (new department logo), media path, or static path -->
+                    {% if 'http' in dept.featured_group.image or '/media/' in dept.featured_group.image %}
+                      <img src="{{ dept.featured_group.image }}" class="h-10 w-10 rounded-lg object-cover" alt="{{ dept.featured_group.name }} logo" />
                     {% else %}
-                      <img src="{% static 'images/manage_users/name.svg' %}" class="h-6 w-6" alt="Department icon" />
+                      <!-- Static image fallback -->
+                      <img src="{% static dept.featured_group.image %}" class="h-6 w-6" alt="{{ dept.featured_group.name }} icon" />
                     {% endif %}
-                  {% endwith %}
+                  {% else %}
+                    <img src="{% static 'images/manage_users/name.svg' %}" class="h-6 w-6" alt="Department icon" />
+                  {% endif %}
                 </div>
                 <div class="min-w-0">
                   <div class="truncate text-sm font-medium text-gray-900">{{ dept.featured_group.name }}</div>
@@ -247,15 +219,20 @@
       <h3 class="text-lg font-semibold">Add Department</h3>
       <button onclick="closeModal('addDepartmentModal')" class="rounded p-1 text-gray-500 hover:bg-gray-100">✕</button>
     </div>
-    <form id="addDepartmentForm" class="mt-4 space-y-4" onsubmit="submitAddDepartment(event)">
+    <form id="addDepartmentForm" class="mt-4 space-y-4" onsubmit="submitAddDepartment(event)" enctype="multipart/form-data">
       {% csrf_token %}
       <div>
         <label class="block text-sm font-medium text-gray-700">Department Name</label>
-        <input type="text" id="departmentName" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="e.g. Housekeeping" required />
+        <input type="text" id="departmentName" name="name" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="e.g. Housekeeping" required />
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700">Description</label>
-        <textarea id="departmentDescription" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Brief description of the department"></textarea>
+        <textarea id="departmentDescription" name="description" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Brief description of the department"></textarea>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Department Logo</label>
+        <input type="file" id="departmentLogo" name="logo" accept="image/*" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+        <p class="mt-1 text-xs text-gray-500">Upload a JPG, JPEG, PNG, GIF, or SVG image (max 5MB)</p>
       </div>
       <div class="flex items-center justify-end gap-2">
         <button type="button" class="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-800 hover:bg-gray-50" onclick="closeModal('addDepartmentModal')">Cancel</button>
@@ -417,22 +394,25 @@ function submitAddDepartment(e){
   const btn = document.getElementById('addDepartmentSubmit');
   const name = document.getElementById('departmentName').value.trim();
   const desc = document.getElementById('departmentDescription').value.trim();
+  const logo = document.getElementById('departmentLogo').files[0];
   const errorEl = document.getElementById('addDepartmentError');
   if(!name){ errorEl.textContent = 'Department name is required.'; errorEl.classList.remove('hidden'); return; }
   btn.disabled = true; errorEl.classList.add('hidden');
 
-  const form = new URLSearchParams();
-  form.set('name', name);
-  form.set('description', desc);
+  const formData = new FormData();
+  formData.append('name', name);
+  formData.append('description', desc);
+  if (logo) {
+    formData.append('logo', logo);
+  }
 
   fetch('{% url "dashboard:department_create" %}', {
     method: 'POST',
     headers: { 
-      'Content-Type': 'application/x-www-form-urlencoded', 
       'X-CSRFToken': getCookie('csrftoken'),
       'Accept': 'application/json'
     },
-    body: form.toString()
+    body: formData
   })
   .then(async response => {
     const contentType = response.headers.get('content-type') || '';

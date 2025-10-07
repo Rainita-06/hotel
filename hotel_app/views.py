@@ -20,14 +20,15 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 
 from hotel_app.models import (
     User, Department, UserGroup, UserGroupMembership,
-    Location, ServiceRequest, Voucher, GuestComment, Guest
+    Location, ServiceRequest, Voucher, GuestComment, Guest,
+    Notification  # Add Notification model
 )
 from hotel_app.serializers import (
     UserSerializer, DepartmentSerializer, UserGroupSerializer,
     UserGroupMembershipSerializer, LocationSerializer,
     ServiceRequestSerializer, GuestCommentSerializer
 )
-from hotel_app.utils import generate_qr_code, user_in_group, group_required, admin_required
+from hotel_app.utils import generate_qr_code, user_in_group, group_required, admin_required, create_notification  # Add create_notification
 from .forms import GuestForm
 from .models import Guest
 from django.contrib.auth.forms import UserCreationForm
@@ -167,7 +168,7 @@ from .models import Voucher
 
 def breakfast_vouchers(request):
     vouchers = Voucher.objects.all()
-    return render(request, "dashboard/breakfast_vouchers.html", {"vouchers": vouchers})
+    return render(request, "dashboard/", {"vouchers": vouchers})
 
 
 def issue_voucher(request, guest_id):
@@ -185,12 +186,25 @@ def issue_voucher(request, guest_id):
         guest_name=guest.full_name,
         expiry_date=guest.checkout_date,
     )
+    
+    # Set the issued_by field to the current user
+    voucher.issued_by = request.user
 
     if created or not voucher.qr_code:
         # Generate QR code with larger size for better visibility
         qr_data = f"Voucher: {voucher.voucher_code}\nGuest: {voucher.guest_name}"
         voucher.qr_image = generate_qr_code(qr_data, size='xxlarge')
-        voucher.save(update_fields=['qr_image'])
+    
+    voucher.save()
+    
+    # Create a notification for the user who issued the voucher
+    create_notification(
+        recipient=request.user,
+        title="Voucher Issued",
+        message=f"Voucher for {voucher.guest_name} has been issued successfully.",
+        notification_type="voucher",
+        related_object=voucher
+    )
 
     return render(request, "dashboard/voucher_detail.html", {"voucher": voucher})
 
@@ -213,6 +227,25 @@ def scan_voucher(request, code=None):
 
     voucher.redeemed = True
     voucher.save()
+    
+    # Create a notification for the user who scanned the voucher
+    create_notification(
+        recipient=request.user,
+        title="Voucher Scanned",
+        message=f"Voucher for {voucher.guest_name} has been scanned successfully.",
+        notification_type="voucher",
+        related_object=voucher
+    )
+    
+    # Create a notification for the user who issued the voucher (if different)
+    if voucher.issued_by and voucher.issued_by != request.user:
+        create_notification(
+            recipient=voucher.issued_by,
+            title="Voucher Redeemed",
+            message=f"Voucher for {voucher.guest_name} has been redeemed.",
+            notification_type="voucher",
+            related_object=voucher
+        )
 
     return JsonResponse({
         "status": "success",
@@ -242,6 +275,25 @@ def validate_voucher(request):
     # Redeem the voucher
     voucher.redeemed = True
     voucher.save()
+    
+    # Create a notification for the user who validated the voucher
+    create_notification(
+        recipient=request.user,
+        title="Voucher Validated",
+        message=f"Voucher for {voucher.guest_name} has been validated successfully.",
+        notification_type="voucher",
+        related_object=voucher
+    )
+    
+    # Create a notification for the user who issued the voucher (if different)
+    if voucher.issued_by and voucher.issued_by != request.user:
+        create_notification(
+            recipient=voucher.issued_by,
+            title="Voucher Redeemed",
+            message=f"Voucher for {voucher.guest_name} has been redeemed.",
+            notification_type="voucher",
+            related_object=voucher
+        )
 
     return JsonResponse({
         "status": "success",
@@ -347,9 +399,6 @@ class MainDashboardView(BaseNavView):
         return context
 
 
-def api_gui_view(request):
-    return render(request, 'api_gui.html')
-
 
 # ------------------- Bulk Actions -------------------
 @require_http_methods(['POST'])
@@ -398,51 +447,19 @@ def register_guest(request):
                 # Check if voucher was created
                 vouchers_created = guest.vouchers.count()
                 
-                # Prepare success message
-                if vouchers_created > 0:
-                    messages.success(
-                        request, 
-                        f"Guest {guest.full_name} registered successfully! "
-                        f"{vouchers_created} voucher(s) created."
-                    )
-                else:
-                    messages.success(
-                        request,
-                        f"Guest {guest.full_name} registered successfully!"
-                    )
+                # Create a notification for the user who registered the guest
+                create_notification(
+                    recipient=request.user,
+                    title="Guest Registered",
+                    message=f"Guest {guest.full_name} has been registered successfully.",
+                    notification_type="info",
+                    related_object=guest
+                )
                 
-                # Check if guest details QR code was generated
-                if guest.details_qr_code:
-                    messages.info(
-                        request,
-                        "Guest details QR code generated successfully! You can view it on the guest details page."
-                    )
-                
-                # Redirect based on user preference or default
-                redirect_to = request.POST.get('redirect_to', 'guest_qr_success')
-                if redirect_to == 'create_another':
-                    return redirect('register_guest')
-                elif redirect_to == 'view_vouchers':
-                    return redirect('dashboard:vouchers')
-                elif redirect_to == 'guest_qr_success':
-                    return redirect('guest_qr_success', guest_id=guest.id)
-                else:
-                    return redirect('dashboard:guests')
+                return redirect('dashboard:guest_detail', guest_id=guest.id)
             except Exception as e:
-                # Add error message and log the exception
-                messages.error(request, f"Error saving guest: {str(e)}")
-                import logging
-                logger = logging.getLogger(__name__)
-                logger.error(f"Error in guest registration: {str(e)}")
-        else:
-            # Add form validation errors to messages
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f"{field}: {error}")
-            
-            # Add non-field errors
-            for error in form.non_field_errors():
-                messages.error(request, error)
+                messages.error(request, f"Error registering guest: {str(e)}")
+                return render(request, "dashboard/register_guest.html", {"form": form})
     else:
         form = GuestForm()
     
@@ -1571,3 +1588,4 @@ def delete_item(request, item_id):
     item.delete()
     messages.success(request,f"Item  {item_label} deleted successfully!")
     return redirect("checklist_list")
+    return render(request, "dashboard/register_guest.html", {"form": form})

@@ -3,6 +3,7 @@ from django.db import models
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+import os
 
 User = get_user_model()
 
@@ -14,6 +15,9 @@ class Department(models.Model):
     name = models.CharField(max_length=100,blank=False, null=False)   # updated (was 120)
     description = models.CharField(max_length=255, null=True, blank=True)  
     lead = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)       # added
+    name = models.CharField(max_length=120, unique=True)
+    description = models.TextField(blank=True, null=True)
+    logo = models.ImageField(upload_to='department_logos/', blank=True, null=True)
 
     class Meta:
         db_table = 'department'
@@ -22,7 +26,17 @@ class Department(models.Model):
 
     @property
     def total_users(self):
-        return User.objects.filter(department=self).count()  
+        return User.objects.filter(department=self).count() 
+    def get_logo_url(self):
+        """Get the logo URL for this department, handling both old and new storage methods"""
+        if self.logo:
+            # Check if it's a new-style logo (stored in department directory)
+            if f'departments/{self.pk}/' in self.logo.name:
+                return self.logo.url
+            else:
+                # Old-style logo, return as is
+                return self.logo.url
+        return None 
 # class Department(models.Model):
 #     name = models.CharField(max_length=120, unique=True)
 #     description = models.TextField(blank=True, null=True)
@@ -101,6 +115,43 @@ class AuditLog(models.Model):
 
     def __str__(self):
         return str(f"{self.action} {self.model_name} {self.object_pk} by {self.actor}")
+
+
+# ---- Notification System ----
+
+class Notification(models.Model):
+    NOTIFICATION_TYPES = [
+        ('info', 'Information'),
+        ('warning', 'Warning'),
+        ('error', 'Error'),
+        ('success', 'Success'),
+        ('request', 'Service Request'),
+        ('voucher', 'Voucher'),
+        ('system', 'System'),
+    ]
+    
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notifications')
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    notification_type = models.CharField(max_length=20, choices=NOTIFICATION_TYPES, default='info')
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(default=timezone.now)
+    related_object_id = models.CharField(max_length=100, blank=True, null=True)
+    related_object_type = models.CharField(max_length=100, blank=True, null=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.title} - {self.recipient.username}"
+    
+    def mark_as_read(self):
+        self.is_read = True
+        self.save()
+    
+    def mark_as_unread(self):
+        self.is_read = False
+        self.save()
 
 
 # ---- Locations ----
@@ -475,6 +526,191 @@ class ServiceRequestChecklist(models.Model):
     def __str__(self):
         return f'{self.request} - {self.item}'
 
+
+# ---- Guests ----
+
+class Guest(models.Model):
+    full_name = models.CharField(max_length=160, blank=True, null=True)
+    phone = models.CharField(max_length=15, blank=True, null=True)
+    email = models.EmailField(max_length=100, blank=True, null=True)
+    room_number = models.CharField(max_length=20, blank=True, null=True)
+    
+    # Enhanced check-in/checkout with time support
+    checkin_date = models.DateField(blank=True, null=True)  # Legacy date field
+    checkout_date = models.DateField(blank=True, null=True)  # Legacy date field
+    checkin_datetime = models.DateTimeField(blank=True, null=True, verbose_name="Check-in Date & Time")
+    checkout_datetime = models.DateTimeField(blank=True, null=True, verbose_name="Check-out Date & Time")
+    
+    # Guest Details QR Code - stored as base64 in database
+    details_qr_code = models.TextField(blank=True, null=True, verbose_name="Guest Details QR Code (Base64)")
+    details_qr_data = models.TextField(blank=True, null=True, verbose_name="Guest Details QR Data")
+    
+    breakfast_included = models.BooleanField(default=False)
+    guest_id = models.CharField(max_length=20, unique=True, blank=True, null=True, db_index=True)  # Hotel guest ID
+    package_type = models.CharField(max_length=50, blank=True, null=True)  # Package or room type
+    created_at = models.DateTimeField(null=True, blank=True, default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['guest_id']),
+            models.Index(fields=['room_number']),
+            models.Index(fields=['checkin_date', 'checkout_date']),
+        ]
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        
+        # Check date fields (legacy)
+        if self.checkin_date and self.checkout_date:
+            if self.checkout_date <= self.checkin_date:
+                raise ValidationError('Checkout date must be after check-in date.')
+        
+        # Check datetime fields (new)
+        if self.checkin_datetime and self.checkout_datetime:
+            if self.checkout_datetime <= self.checkin_datetime:
+                raise ValidationError('Check-out datetime must be after check-in datetime.')
+        
+        # Sync date fields with datetime fields
+        if self.checkin_datetime and not self.checkin_date:
+            self.checkin_date = self.checkin_datetime.date() if hasattr(self.checkin_datetime, "date") else None
+        if self.checkout_datetime and not self.checkout_date:
+            self.checkout_date = self.checkout_datetime.date() if hasattr(self.checkout_datetime, "date") else None
+        
+        if self.phone and len(str(self.phone)) < 10:
+            raise ValidationError('Phone number must be at least 10 digits.')
+
+    def __str__(self):
+        return str(self.full_name or f'Guest {self.pk}')
+    
+    def save(self, *args, **kwargs):
+        # Generate unique guest ID if not provided
+        if not self.guest_id:
+            import random
+            import string
+            while True:
+                guest_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+                if not Guest.objects.filter(guest_id=guest_id).exists():
+                    self.guest_id = guest_id
+                    break
+        
+        # Call clean method for validation
+        self.full_clean()
+        super().save(*args, **kwargs)
+    
+    def generate_details_qr_code(self, size='xxlarge'):
+        """Generate QR code with all guest details and store as base64"""
+        from .utils import generate_guest_details_qr_base64, generate_guest_details_qr_data
+        
+        try:
+            # Generate QR data and base64 image
+            self.details_qr_data = generate_guest_details_qr_data(self)
+            self.details_qr_code = generate_guest_details_qr_base64(self, size=size)
+            self.save(update_fields=['details_qr_data', 'details_qr_code'])
+            return True
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f'Failed to generate guest details QR code for {self.guest_id}: {str(e)}')
+            return False
+    
+    def get_details_qr_data_url(self):
+        """Get data URL for guest details QR code"""
+        if self.details_qr_code:
+            return f"data:image/png;base64,{self.details_qr_code}"
+        return None
+    
+    def has_qr_code(self):
+        """Check if guest has a QR code"""
+        return bool(self.details_qr_code)
+
+
+class GuestComment(models.Model):
+    guest = models.ForeignKey("Guest", on_delete=models.CASCADE, null=True, blank=True)
+    location = models.ForeignKey(Location, on_delete=models.SET_NULL, null=True, blank=True)
+    channel = models.CharField(max_length=20)
+    source = models.CharField(max_length=20)
+    rating = models.PositiveIntegerField(blank=True, null=True)
+    comment_text = models.TextField()
+    linked_flag = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'Comment {self.pk}'
+
+
+# ---- Vouchers ----
+
+class Voucher(models.Model):
+    voucher_code = models.CharField(max_length=50, unique=True, blank=True)
+    guest_name = models.CharField(max_length=100)
+    room_number = models.CharField(max_length=10, blank=True, null=True)
+    issue_date = models.DateTimeField(default=timezone.now)
+    expiry_date = models.DateField()
+    redeemed = models.BooleanField(default=False)
+    redeemed_at = models.DateTimeField(blank=True, null=True)
+    qr_image = models.TextField(blank=True, null=True)  # Base64 encoded QR image
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    issued_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='issued_vouchers')  # Add this field
+
+    def __str__(self):
+        return f"{self.guest_name} - {self.voucher_code}"
+
+    def is_valid(self):
+        """Check if the voucher is still valid (not expired and not redeemed)"""
+        return not self.redeemed and self.expiry_date >= timezone.now().date()
+
+    def save(self, *args, **kwargs):
+        if not self.voucher_code:
+            self.voucher_code = self.generate_unique_code()
+        super().save(*args, **kwargs)
+
+    def generate_unique_code(self):
+        """Generate a unique voucher code"""
+        while True:
+            code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+            if not Voucher.objects.filter(voucher_code=code).exists():
+                return code
+
+
+class VoucherScan(models.Model):
+    voucher = models.ForeignKey(Voucher, on_delete=models.CASCADE, related_name='scans')
+    scanned_by_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    scanned_at = models.DateTimeField(auto_now_add=True)
+    notes = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Scan of {self.voucher.voucher_code} at {self.scanned_at}"
+
+
+# ---- Complaints & Reviews ----
+
+class Complaint(models.Model):
+    guest = models.ForeignKey(Guest, on_delete=models.SET_NULL, null=True, blank=True)
+    subject = models.CharField(max_length=200)
+    description = models.TextField()
+    status = models.CharField(max_length=20, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    resolved_at = models.DateTimeField(blank=True, null=True)
+    assigned_to = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    due_at = models.DateTimeField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Complaint #{self.pk}: {self.subject}"
+
+
+class Review(models.Model):
+    guest = models.ForeignKey(Guest, on_delete=models.SET_NULL, null=True, blank=True)
+    rating = models.IntegerField(choices=[(i, i) for i in range(1, 6)])  # 1-5 stars
+    comment = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Review #{self.pk}: {self.rating} stars"
 
 # ---- Guests ----
 

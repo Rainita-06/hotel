@@ -190,9 +190,25 @@ class UserForm(forms.ModelForm):
         return user
 
 class DepartmentForm(forms.ModelForm):
+    logo = forms.ImageField(required=False, label="Department Logo")
+
     class Meta:
         model = Department
-        fields = ['name', 'description']
+        fields = ['name', 'description', 'logo']
+        
+    def clean_logo(self):
+        logo = self.cleaned_data.get('logo')
+        if logo:
+            # Check file size (limit to 5MB)
+            if logo.size > 5 * 1024 * 1024:
+                raise forms.ValidationError("Image file too large ( > 5MB )")
+            
+            # Check file extension
+            ext = os.path.splitext(logo.name)[1].lower()
+            valid_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.svg']
+            if ext not in valid_extensions:
+                raise forms.ValidationError("Unsupported file extension. Please upload a JPG, JPEG, PNG, GIF, or SVG image.")
+        return logo
 
 class GroupForm(forms.ModelForm):
     class Meta:
