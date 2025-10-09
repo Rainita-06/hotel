@@ -1,0 +1,204 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+
+{% block content %}
+<main class="p-6 bg-gray-50 min-h-screen">
+    <div class="max-w-7xl mx-auto">
+        
+        <header class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pb-6 mb-6 border-b border-gray-200">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Integrations</h1>
+                <p class="text-sm text-gray-600 mt-1">Connect your external systems and manage API configurations</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="relative w-64">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <img src="{% static 'images/integrations/search.svg' %}" alt="Search Icon" class="w-5 h-5 text-gray-400">
+                    </div>
+                    <input type="search" placeholder="Search integrations..." class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-base focus:ring-sky-500 focus:border-sky-500" />
+                </div>
+                <button class="flex items-center justify-center gap-2 w-44 h-10 bg-sky-600 text-white font-medium rounded-lg hover:bg-sky-700 transition-colors">
+                    <img src="{% static 'images/integrations/plus.svg' %}" alt="Add Icon" class="w-5 h-5">
+                    <span>Add Integration</span>
+                </button>
+            </div>
+        </header>
+
+        <nav class="flex items-center space-x-8 border-b border-gray-200 mb-6">
+            <a href="#" class="py-4 px-1 border-b-2 border-sky-600 text-sm font-medium text-sky-600">All Integrations</a>
+            <a href="#" class="py-4 px-1 border-b-2 border-transparent text-sm font-medium text-gray-600 hover:text-gray-800 hover:border-gray-300 transition-colors">PMS/CRM</a>
+            <a href="#" class="py-4 px-1 border-b-2 border-transparent text-sm font-medium text-gray-600 hover:text-gray-800 hover:border-gray-300 transition-colors">Reviews</a>
+            <a href="#" class="py-4 px-1 border-b-2 border-transparent text-sm font-medium text-gray-600 hover:text-gray-800 hover:border-gray-300 transition-colors">Communication</a>
+            <a href="#" class="py-4 px-1 border-b-2 border-transparent text-sm font-medium text-gray-600 hover:text-gray-800 hover:border-gray-300 transition-colors">Payments</a>
+            <a href="#" class="py-4 px-1 border-b-2 border-transparent text-sm font-medium text-gray-600 hover:text-gray-800 hover:border-gray-300 transition-colors">API Keys</a>
+        </nav>
+        
+        <div class="space-y-8">
+            <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="p-2 bg-green-100 rounded-lg"><img src="{% static 'images/integrations/connected_integration.svg' %}" alt="Connected Icon" class="w-5 h-5"></div>
+                        <span class="text-xs font-medium text-green-700">Active</span>
+                    </div>
+                    <p class="text-3xl font-bold text-gray-900">12</p>
+                    <p class="text-sm text-gray-600">Connected Integrations</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="p-2 bg-yellow-100 rounded-lg"><img src="{% static 'images/integrations/setup_required.svg' %}" alt="Pending Icon" class="w-5 h-5"></div>
+                        <span class="text-xs font-medium text-yellow-700">Pending</span>
+                    </div>
+                    <p class="text-3xl font-bold text-gray-900">3</p>
+                    <p class="text-sm text-gray-600">Setup Required</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="p-2 bg-teal-100 rounded-lg"><img src="{% static 'images/integrations/data_syncs.svg' %}" alt="Data Syncs Icon" class="w-5 h-5"></div>
+                        <span class="text-xs font-medium text-teal-700">Today</span>
+                    </div>
+                    <p class="text-3xl font-bold text-gray-900">1,247</p>
+                    <p class="text-sm text-gray-600">Data Syncs</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="p-2 bg-red-100 rounded-lg"><img src="{% static 'images/integrations/failed_connections.svg' %}" alt="Errors Icon" class="w-5 h-5"></div>
+                        <span class="text-xs font-medium text-red-700">Errors</span>
+                    </div>
+                    <p class="text-3xl font-bold text-gray-900">2</p>
+                    <p class="text-sm text-gray-600">Failed Connections</p>
+                </div>
+            </section>
+
+            <section>
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">PMS/CRM Systems</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-start mb-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center"><img src="{% static 'images/integrations/opera_pms.svg' %}" alt="Opera PMS Logo" class="w-8 h-8"></div>
+                                    <div>
+                                        <h3 class="font-semibold text-gray-900">Opera PMS</h3>
+                                        <p class="text-xs text-gray-600">Property Management</p>
+                                    </div>
+                                </div>
+                                <span class="text-xs font-medium text-green-700 bg-green-100 px-2.5 py-0.5 rounded-full">Connected</span>
+                            </div>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between"><span class="text-gray-600">Last Sync</span><span class="text-gray-900 font-medium">2 min ago</span></div>
+                                <div class="flex justify-between"><span class="text-gray-600">Records Synced</span><span class="text-gray-900 font-medium">1,247</span></div>
+                            </div>
+                        </div>
+                        <div class="mt-6 flex gap-2">
+                            <button class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded-lg text-sm transition-colors">Configure</button>
+                            <button class="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"><img src="{% static 'images/integrations/three_dots.svg' %}" alt="Options" class="w-5 h-5"></button>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-start mb-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center"><img src="{% static 'images/integrations/salesforce_crm.svg' %}" alt="Salesforce CRM Logo" class="w-8 h-8"></div>
+                                    <div>
+                                        <h3 class="font-semibold text-gray-900">Salesforce CRM</h3>
+                                        <p class="text-xs text-gray-600">Customer Relations</p>
+                                    </div>
+                                </div>
+                                <span class="text-xs font-medium text-yellow-800 bg-yellow-100 px-2.5 py-0.5 rounded-full">Setup Required</span>
+                            </div>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between"><span class="text-gray-600">Status</span><span class="text-yellow-700 font-medium">Authentication Needed</span></div>
+                                <div class="flex justify-between"><span class="text-gray-600">Progress</span><span class="text-gray-900 font-medium">60%</span></div>
+                            </div>
+                        </div>
+                        <div class="mt-6 flex gap-2">
+                            <button class="flex-1 bg-sky-600 hover:bg-sky-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors">Complete Setup</button>
+                            <button class="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"><img src="{% static 'images/integrations/three_dots.svg' %}" alt="Options" class="w-5 h-5"></button>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-start mb-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center"><img src="{% static 'images/integrations/cloudbeds.svg' %}" alt="Cloudbeds Logo" class="w-8 h-8"></div>
+                                    <div>
+                                        <h3 class="font-semibold text-gray-900">Cloudbeds</h3>
+                                        <p class="text-xs text-gray-600">Booking Management</p>
+                                    </div>
+                                </div>
+                                <span class="text-xs font-medium text-green-700 bg-green-100 px-2.5 py-0.5 rounded-full">Connected</span>
+                            </div>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between"><span class="text-gray-600">Last Sync</span><span class="text-gray-900 font-medium">15 min ago</span></div>
+                                <div class="flex justify-between"><span class="text-gray-600">Reservations</span><span class="text-gray-900 font-medium">89</span></div>
+                            </div>
+                        </div>
+                        <div class="mt-6 flex gap-2">
+                             <button class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded-lg text-sm transition-colors">Configure</button>
+                             <button class="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"><img src="{% static 'images/integrations/three_dots.svg' %}" alt="Options" class="w-5 h-5"></button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Review Platforms</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center"><img src="{% static 'images/integrations/yelp.svg' %}" alt="Yelp Logo" class="w-6 h-6"></div>
+                                <h3 class="font-semibold text-gray-900">Yelp</h3>
+                            </div>
+                            <span class="text-xs font-medium text-green-700 bg-green-100 px-2.5 py-0.5 rounded-full">Active</span>
+                        </div>
+                        <div class="space-y-2 text-sm text-gray-600">
+                            <p>New Reviews: <span class="font-medium text-gray-800">12</span></p>
+                            <p>Avg Rating: <span class="font-medium text-gray-800">4.2</span></p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center"><img src="{% static 'images/integrations/google.svg' %}" alt="Google Logo" class="w-6 h-6"></div>
+                                <h3 class="font-semibold text-gray-900">Google</h3>
+                            </div>
+                            <span class="text-xs font-medium text-green-700 bg-green-100 px-2.5 py-0.5 rounded-full">Active</span>
+                        </div>
+                        <div class="space-y-2 text-sm text-gray-600">
+                            <p>New Reviews: <span class="font-medium text-gray-800">8</span></p>
+                            <p>Avg Rating: <span class="font-medium text-gray-800">4.5</span></p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center"><img src="{% static 'images/integrations/trip_advisor.svg' %}" alt="TripAdvisor Logo" class="w-6 h-6"></div>
+                                <h3 class="font-semibold text-gray-900">TripAdvisor</h3>
+                            </div>
+                            <span class="text-xs font-medium text-green-700 bg-green-100 px-2.5 py-0.5 rounded-full">Active</span>
+                        </div>
+                        <div class="space-y-2 text-sm text-gray-600">
+                            <p>New Reviews: <span class="font-medium text-gray-800">5</span></p>
+                            <p>Avg Rating: <span class="font-medium text-gray-800">4.1</span></p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center"><img src="{% static 'images/integrations/booking.com.svg' %}" alt="Booking.com Logo" class="w-6 h-6"></div>
+                                <h3 class="font-semibold text-gray-900">Booking.com</h3>
+                            </div>
+                            <span class="text-xs font-medium text-yellow-800 bg-yellow-100 px-2.5 py-0.5 rounded-full">Pending</span>
+                        </div>
+                        <div class="space-y-2 text-sm text-gray-600">
+                            <p>Setup Required</p>
+                            <p class="font-medium text-sky-600">Connect API</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</main>
+{% endblock %}

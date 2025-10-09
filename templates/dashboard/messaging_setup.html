@@ -1,51 +1,462 @@
 {% extends 'dashboard/base_dashboard.html' %}
 {% load static %}
+
 {% block content %}
-<div class="w-full min-h-screen bg-black/0 border-gray-200">
-  {% include 'dashboard/components/messaging_setup/header.html' %}
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 
-  <div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div class="col-span-2">
-        {% include 'dashboard/components/messaging_setup/connection_panel.html' %}
-        <div class="mt-6">
-          {% include 'dashboard/components/messaging_setup/templates_panel.html' with templates=templates %}
-        </div>
-      </div>
-      <div>
-        {% include 'dashboard/components/messaging_setup/stats_panel.html' with stats=stats %}
-      </div>
-    </div>
+<div class="bg-gray-50 min-h-screen font-['Inter']">
+    <div class="max-w-[1184px] mx-auto">
+        
+        <header class="h-24 bg-white border-b border-gray-200 flex items-center px-6" data-aos="fade-down">
+            <div class="w-full flex justify-between items-center">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <img src="{% static 'images/messaging_setup/whatsapp.svg' %}" alt="WhatsApp Icon" class="w-7 h-7">
+                        <h1 class="text-gray-900 text-2xl font-bold">WhatsApp Messaging Setup</h1>
+                    </div>
+                    <p class="text-gray-600 text-sm mt-1">Configure your WhatsApp Business API and message templates for automated guest communication</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button class="flex items-center justify-center gap-2 w-40 h-10 bg-gray-100 hover:bg-gray-200 text-neutral-700 font-medium rounded-lg transition-colors">
+                        <img src="{% static 'images/messaging_setup/export.svg' %}" alt="Export Icon" class="w-4 h-4">
+                        <span>Export Config</span>
+                    </button>
+                    <button class="flex items-center justify-center gap-2 w-40 h-10 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-lg transition-colors">
+                        <img src="{% static 'images/messaging_setup/save.svg' %}" alt="Save Icon" class="w-3.5 h-3.5">
+                        <span>Save Changes</span>
+                    </button>
+                </div>
+            </div>
+        </header>
 
-    <div>
-      <!-- Default Schedules and other sections included inline to match design -->
-      <div class="bg-white rounded-xl shadow p-6 outline outline-1 outline-gray-200">
-        <div class="flex justify-between items-center mb-4">
-          <div>
-            <div class="text-xl font-semibold">Default Schedules</div>
-            <div class="text-sm text-gray-600">Configure when automated messages are sent to guests</div>
-          </div>
-        </div>
-        <!-- small static mock of schedules -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="rounded-lg p-4 bg-neutral-50">
-            <div class="font-semibold">Pre-Arrival</div>
-            <div class="text-xs text-gray-600">Send Before</div>
-            <div class="mt-2 bg-white rounded-lg p-2">24 hours</div>
-          </div>
-          <div class="rounded-lg p-4 bg-neutral-50">
-            <div class="font-semibold">Mid-Stay Check-in</div>
-            <div class="text-xs text-gray-600">Send On Day</div>
-            <div class="mt-2 bg-white rounded-lg p-2">Day 2</div>
-          </div>
-          <div class="rounded-lg p-4 bg-neutral-50">
-            <div class="font-semibold">Post-Checkout Review</div>
-            <div class="text-xs text-gray-600">Send After</div>
-            <div class="mt-2 bg-white rounded-lg p-2">2 hours</div>
-          </div>
-        </div>
-      </div>
+        <main class="p-6 space-y-6">
+            <div class="bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-gray-200 p-6" data-aos="fade-up" data-aos-delay="100">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-green-500/10 rounded-lg flex justify-center items-center">
+                            <img src="{% static 'images/messaging_setup/api_configuration.svg' %}" alt="API Icon" class="w-5 h-5">
+                        </div>
+                        <div>
+                            <h2 class="text-gray-900 text-xl font-semibold">WhatsApp Business API Configuration</h2>
+                            <p class="text-gray-600 text-sm">Connect your WhatsApp Business API to enable automated messaging</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                        <span class="text-gray-600 text-sm font-normal">Disconnected</span>
+                    </div>
+                </div>
+
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
+                    <div class="space-y-6">
+                        <div>
+                            <label class="text-gray-900 text-sm font-medium block">Phone Number</label>
+                            <input type="text" placeholder="+1 (555) 123-4567" class="mt-2 w-full h-12 px-4 bg-white rounded-lg border border-gray-200 text-base placeholder-gray-400 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                            <p class="text-gray-600 text-xs mt-1">Your verified WhatsApp Business phone number</p>
+                        </div>
+                        <div>
+                            <label class="text-gray-900 text-sm font-medium block">Access Token</label>
+                            <input type="password" placeholder="Enter your WhatsApp Business API token" class="mt-2 w-full h-12 px-4 bg-white rounded-lg border border-gray-200 text-base placeholder-gray-400 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="text-gray-900 text-sm font-medium block">Webhook URL</label>
+                            <input type="text" placeholder="https://your-domain.com/webhook" class="mt-2 w-full h-12 px-4 bg-white rounded-lg border border-gray-200 text-base placeholder-gray-400 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                            <p class="text-gray-600 text-xs mt-1">Endpoint to receive message updates</p>
+                        </div>
+                        <div>
+                            <label class="text-gray-900 text-sm font-medium block">Verify Token</label>
+                            <input type="text" placeholder="your_verify_token" class="mt-2 w-full h-12 px-4 bg-white rounded-lg border border-gray-200 text-base placeholder-gray-400 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                        </div>
+                    </div>
+                    <div class="bg-neutral-50 rounded-lg p-6">
+                        <h3 class="text-gray-900 text-lg font-semibold">Connection Status</h3>
+                        <div class="mt-4 space-y-4">
+                            <div class="p-3 bg-white rounded-lg border border-gray-200 flex justify-between items-center">
+                                <span class="text-gray-600 text-sm">API Connection</span>
+                                <span class="px-2 py-0.5 bg-red-500/10 text-red-500 text-xs font-medium rounded-full">Not Connected</span>
+                            </div>
+                            <div class="p-3 bg-white rounded-lg border border-gray-200 flex justify-between items-center">
+                                <span class="text-gray-600 text-sm">Webhook Verification</span>
+                                <span class="px-2 py-0.5 bg-gray-200 text-gray-600 text-xs font-medium rounded-full">Pending</span>
+                            </div>
+                            <div class="p-3 bg-white rounded-lg border border-gray-200 flex justify-between items-center">
+                                <span class="text-gray-600 text-sm">Message Templates</span>
+                                <span class="px-2 py-0.5 bg-gray-200 text-gray-600 text-xs font-medium rounded-full">0 Approved</span>
+                            </div>
+                        </div>
+                        <button class="mt-6 w-full h-12 bg-green-500 hover:bg-green-600 text-white rounded-lg flex items-center justify-center gap-2 transition-colors">
+                            <img src="{% static 'images/messaging_setup/test_connection.svg' %}" alt="Test Connection Icon" class="w-5 h-5">
+                            <span>Test Connection</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-gray-200 p-6" data-aos="fade-up" data-aos-delay="200">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-sky-600/10 rounded-lg flex justify-center items-center">
+                            <img src="{% static 'images/messaging_setup/message_templates.svg' %}" alt="Templates Icon" class="w-5 h-5">
+                        </div>
+                        <div>
+                            <h2 class="text-gray-900 text-xl font-semibold">Message Templates</h2>
+                            <p class="text-gray-600 text-sm">Configure automated message templates for different guest touchpoints</p>
+                        </div>
+                    </div>
+                    <button class="flex items-center justify-center gap-2 w-40 h-10 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-lg transition-colors">
+                        <img src="{% static 'images/messaging_setup/plus.svg' %}" alt="Add Icon" class="w-3.5 h-3.5">
+                        <span>Add Template</span>
+                    </button>
+                </div>
+                
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <div class="p-4 rounded-lg outline outline-1 outline-gray-200 flex flex-col justify-between" data-aos="fade-up" data-aos-delay="300">
+                        <div>
+                            <div class="flex justify-between items-center">
+                                <div class="flex items-center gap-2">
+                                    <img src="{% static 'images/messaging_setup/pre_arrival.svg' %}" alt="Pre-arrival icon" class="w-4 h-4">
+                                    <h3 class="text-gray-900 text-base font-semibold">Pre-Arrival</h3>
+                                </div>
+                                <span class="px-2 py-0.5 bg-yellow-400/10 text-yellow-500 text-xs font-medium rounded-full">Pending Approval</span>
+                            </div>
+                            <p class="mt-2 text-gray-600 text-sm">Welcome message sent 24 hours before check-in.</p>
+                            <div class="mt-4 p-3 bg-neutral-50 rounded-lg text-gray-600 text-xs">
+                                <p>Hello {{guest_name}}! We're excited to welcome you to {{hotel_name}} tomorrow. Your room will be ready by {{checkin_time}}.</p>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex justify-between items-center text-sm">
+                            <span class="text-gray-600">Last updated: 2 days ago</span>
+                            <a href="#" class="text-sky-600 hover:underline font-medium">Edit</a>
+                        </div>
+                    </div>
+
+                    <div class="p-4 rounded-lg outline outline-1 outline-gray-200 flex flex-col justify-between" data-aos="fade-up" data-aos-delay="350">
+                        <div>
+                            <div class="flex justify-between items-center">
+                                <div class="flex items-center gap-2">
+                                    <img src="{% static 'images/messaging_setup/check_in.svg' %}" alt="Check-in icon" class="w-4 h-4">
+                                    <h3 class="text-gray-900 text-base font-semibold">Check-In</h3>
+                                </div>
+                                <span class="px-2 py-0.5 bg-green-500/10 text-green-600 text-xs font-medium rounded-full">Approved</span>
+                            </div>
+                            <p class="mt-2 text-gray-600 text-sm">Welcome message sent upon guest arrival.</p>
+                            <div class="mt-4 p-3 bg-neutral-50 rounded-lg text-gray-600 text-xs">
+                                <p>Welcome to {{hotel_name}}, {{guest_name}}! Your room {{room_number}} is ready. Need assistance? Reply to this message anytime.</p>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex justify-between items-center text-sm">
+                            <span class="text-gray-600">Last updated: 1 week ago</span>
+                            <a href="#" class="text-sky-600 hover:underline font-medium">Edit</a>
+                        </div>
+                    </div>
+
+                    <div class="p-4 rounded-lg outline outline-1 outline-gray-200 flex flex-col justify-between" data-aos="fade-up" data-aos-delay="400">
+                        <div>
+                            <div class="flex justify-between items-center">
+                                <div class="flex items-center gap-2">
+                                    <img src="{% static 'images/messaging_setup/mid_stay.svg' %}" alt="Mid-stay icon" class="w-5 h-5">
+                                    <h3 class="text-gray-900 text-base font-semibold">Mid-Stay</h3>
+                                </div>
+                                <span class="px-2 py-0.5 bg-green-500/10 text-green-600 text-xs font-medium rounded-full">Approved</span>
+                            </div>
+                            <p class="mt-2 text-gray-600 text-sm">Check-in message sent during guest stay.</p>
+                            <div class="mt-4 p-3 bg-neutral-50 rounded-lg text-gray-600 text-xs">
+                                <p>Hi {{guest_name}}! How's your stay at {{hotel_name}}? If you need anything, we're here to help!</p>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex justify-between items-center text-sm">
+                            <span class="text-gray-600">Last updated: 3 days ago</span>
+                            <a href="#" class="text-sky-600 hover:underline font-medium">Edit</a>
+                        </div>
+                    </div>
+
+                    <div class="p-4 rounded-lg outline outline-1 outline-gray-200 flex flex-col justify-between" data-aos="fade-up" data-aos-delay="450">
+                        <div>
+                            <div class="flex justify-between items-center">
+                                <div class="flex items-center gap-2">
+                                    <img src="{% static 'images/messaging_setup/service_recovery.svg' %}" alt="Service Recovery icon" class="w-4 h-4">
+                                    <h3 class="text-gray-900 text-base font-semibold">Service Recovery</h3>
+                                </div>
+                                <span class="px-2 py-0.5 bg-red-500/10 text-red-500 text-xs font-medium rounded-full">Rejected</span>
+                            </div>
+                            <p class="mt-2 text-gray-600 text-sm">Apology message for service issues.</p>
+                            <div class="mt-4 p-3 bg-neutral-50 rounded-lg text-gray-600 text-xs">
+                                <p>We sincerely apologize for the inconvenience, {{guest_name}}. We're working to resolve this immediately.</p>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex justify-between items-center text-sm">
+                            <span class="text-gray-600">Last updated: 5 days ago</span>
+                            <a href="#" class="text-sky-600 hover:underline font-medium">Edit</a>
+                        </div>
+                    </div>
+
+                    <div class="p-4 rounded-lg outline outline-1 outline-gray-200 flex flex-col justify-between" data-aos="fade-up" data-aos-delay="500">
+                        <div>
+                            <div class="flex justify-between items-center">
+                                <div class="flex items-center gap-2">
+                                    <img src="{% static 'images/messaging_setup/offers.svg' %}" alt="Offers icon" class="w-3 h-4">
+                                    <h3 class="text-gray-900 text-base font-semibold">Offers</h3>
+                                </div>
+                                <span class="px-2 py-0.5 bg-green-500/10 text-green-600 text-xs font-medium rounded-full">Approved</span>
+                            </div>
+                            <p class="mt-2 text-gray-600 text-sm">Promotional offers and special deals.</p>
+                            <div class="mt-4 p-3 bg-neutral-50 rounded-lg text-gray-600 text-xs">
+                                <p>Exclusive offer for {{guest_name}}! Enjoy 20% off spa services during your stay at {{hotel_name}}.</p>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex justify-between items-center text-sm">
+                            <span class="text-gray-600">Last updated: 1 day ago</span>
+                            <a href="#" class="text-sky-600 hover:underline font-medium">Edit</a>
+                        </div>
+                    </div>
+
+                    <div class="p-4 rounded-lg outline outline-1 outline-gray-200 flex flex-col justify-between" data-aos="fade-up" data-aos-delay="550">
+                        <div>
+                            <div class="flex justify-between items-center">
+                                <div class="flex items-center gap-2">
+                                    <img src="{% static 'images/messaging_setup/post_checkout.svg' %}" alt="Post-checkout icon" class="w-4 h-4">
+                                    <h3 class="text-gray-900 text-base font-semibold">Post-Checkout</h3>
+                                </div>
+                                <span class="px-2 py-0.5 bg-green-500/10 text-green-600 text-xs font-medium rounded-full">Approved</span>
+                            </div>
+                            <p class="mt-2 text-gray-600 text-sm">Feedback request after checkout.</p>
+                            <div class="mt-4 p-3 bg-neutral-50 rounded-lg text-gray-600 text-xs">
+                                <p>Thank you for staying at {{hotel_name}}, {{guest_name}}! Please share your experience with us.</p>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex justify-between items-center text-sm">
+                            <span class="text-gray-600">Last updated: 2 weeks ago</span>
+                            <a href="#" class="text-sky-600 hover:underline font-medium">Edit</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6" data-aos="fade-up" data-aos-delay="300">
+                <div class="lg:col-span-2 bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-gray-200 p-6">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-teal-500/10 rounded-lg flex justify-center items-center">
+                            <img src="{% static 'images/messaging_setup/default_schedules.svg' %}" alt="Schedules Icon" class="w-5 h-5">
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-semibold">Default Schedules</h2>
+                            <p class="text-sm text-gray-600">Configure when automated messages are sent to guests</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 space-y-4">
+                        <div class="p-4 rounded-lg outline outline-1 outline-gray-200">
+                            <div class="flex justify-between items-center">
+                                <h3 class="text-gray-900 text-base font-semibold">Pre-Arrival Messages</h3>
+                                <div class="flex items-center gap-3">
+                                    <button class="text-sm bg-gray-100 px-3 py-1 rounded-md hover:bg-gray-200 transition-colors">Edit</button>
+                                    <div class="toggle-switch w-11 h-6 bg-sky-600 rounded-full p-1 flex justify-end cursor-pointer transition-colors duration-300" data-enabled="true">
+                                        <div class="w-4 h-4 bg-white rounded-full shadow"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-3 grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="text-xs text-gray-600 block">Send Before</label>
+                                    <select class="mt-1 w-full bg-white rounded-lg p-2 border border-gray-200 text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                                        <option>24 hours</option>
+                                        <option>48 hours</option>
+                                        <option>72 hours</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-xs text-gray-600 block">Time</label>
+                                    <input type="time" value="10:00" class="mt-1 w-full bg-white rounded-lg p-2 border border-gray-200 text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                                </div>
+                            </div>
+                            <div class="mt-4 flex justify-end">
+                                <button class="text-sm bg-sky-600 text-white px-4 py-1.5 rounded-md hover:bg-sky-700 transition">Save</button>
+                            </div>
+                        </div>
+
+                        <div class="p-4 rounded-lg outline outline-1 outline-gray-200">
+                            <div class="flex justify-between items-center">
+                                <h3 class="text-gray-900 text-base font-semibold">Mid-Stay Check-in</h3>
+                                <div class="flex items-center gap-3">
+                                    <button class="text-sm bg-gray-100 px-3 py-1 rounded-md hover:bg-gray-200 transition-colors">Edit</button>
+                                    <div class="toggle-switch w-11 h-6 bg-sky-600 rounded-full p-1 flex justify-end cursor-pointer transition-colors duration-300" data-enabled="true">
+                                        <div class="w-4 h-4 bg-white rounded-full shadow"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-3 grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="text-xs text-gray-600 block">Send On Day</label>
+                                    <select class="mt-1 w-full bg-white rounded-lg p-2 border border-gray-200 text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                                        <option>Day 1</option>
+                                        <option selected>Day 2</option>
+                                        <option>Day 3</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-xs text-gray-600 block">Time</label>
+                                    <input type="time" value="14:00" class="mt-1 w-full bg-white rounded-lg p-2 border border-gray-200 text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                                </div>
+                            </div>
+                            <div class="mt-4 flex justify-end">
+                                <button class="text-sm bg-sky-600 text-white px-4 py-1.5 rounded-md hover:bg-sky-700 transition">Save</button>
+                            </div>
+                        </div>
+
+                        <div class="p-4 rounded-lg outline outline-1 outline-gray-200">
+                            <div class="flex justify-between items-center">
+                                <h3 class="text-gray-900 text-base font-semibold">Post-Checkout Review</h3>
+                                <div class="flex items-center gap-3">
+                                    <button class="text-sm bg-gray-100 px-3 py-1 rounded-md hover:bg-gray-200 transition-colors">Edit</button>
+                                    <div class="toggle-switch w-11 h-6 bg-sky-600 rounded-full p-1 flex justify-end cursor-pointer transition-colors duration-300" data-enabled="true">
+                                        <div class="w-4 h-4 bg-white rounded-full shadow"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-3 grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="text-xs text-gray-600 block">Send After</label>
+                                    <select class="mt-1 w-full bg-white rounded-lg p-2 border border-gray-200 text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                                        <option>1 hour</option>
+                                        <option selected>2 hours</option>
+                                        <option>4 hours</option>
+                                        <option>24 hours</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-xs text-gray-600 block">Max Attempts</label>
+                                    <input type="number" value="2" min="1" max="5" class="mt-1 w-full bg-white rounded-lg p-2 border border-gray-200 text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                                </div>
+                            </div>
+                            <div class="mt-4 flex justify-end">
+                                <button class="text-sm bg-sky-600 text-white px-4 py-1.5 rounded-md hover:bg-sky-700 transition">Save</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-neutral-50 rounded-lg p-6 h-fit">
+                    <h3 class="text-gray-900 text-lg font-semibold">Messaging Statistics</h3>
+                    <div class="mt-4 space-y-4 text-sm">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Messages sent today</span>
+                            <span class="text-gray-900 text-lg font-semibold">247</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Response rate</span>
+                            <span class="text-green-500 text-lg font-semibold">98%</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Template approval rate</span>
+                            <span class="text-yellow-500 text-lg font-semibold">83%</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Active templates</span>
+                            <span class="text-sky-600 text-lg font-semibold">4/6</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 p-4 bg-white rounded-lg border border-gray-200">
+                        <h4 class="text-gray-900 text-base font-semibold">Next Scheduled Messages</h4>
+                        <div class="mt-3 space-y-3 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Pre-arrival (Room 205)</span>
+                                <span class="text-gray-900">Tomorrow 10:00 AM</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Mid-stay check-in (Room 312)</span>
+                                <span class="text-gray-900">Today 2:00 PM</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Post-checkout review</span>
+                                <span class="text-gray-900">In 3 hours</span>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex justify-end">
+                            <button class="text-sm bg-sky-600 text-white px-4 py-1.5 rounded-md hover:bg-sky-700 transition">View All</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
-  </div>
 </div>
+
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // 3. Initialize AOS
+        AOS.init({
+            duration: 800, // values from 0 to 3000, with step 50ms
+            once: true, // whether animation should happen only once
+        });
+
+        const toggleSwitches = document.querySelectorAll('.toggle-switch');
+
+        toggleSwitches.forEach(switchEl => {
+            switchEl.addEventListener('click', () => {
+                const isEnabled = switchEl.getAttribute('data-enabled') === 'true';
+                
+                if (isEnabled) {
+                    // Turn OFF
+                    switchEl.classList.remove('justify-end', 'bg-sky-600');
+                    switchEl.classList.add('justify-start', 'bg-gray-300');
+                    switchEl.setAttribute('data-enabled', 'false');
+                } else {
+                    // Turn ON
+                    switchEl.classList.remove('justify-start', 'bg-gray-300');
+                    switchEl.classList.add('justify-end', 'bg-sky-600');
+                    switchEl.setAttribute('data-enabled', 'true');
+                }
+            });
+        });
+
+        // Handle form inputs - Note: This selector is not standard and might not work.
+        // A better approach would be to add a class to the save buttons.
+        const saveButtons = document.querySelectorAll('button');
+        saveButtons.forEach(button => {
+            if (button.textContent.trim() === 'Save') {
+                button.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    // Add your save logic here
+                    alert('Settings saved successfully!');
+                });
+            }
+        });
+    });
+</script>
+
+<style>
+    /* Additional custom styles for better visual appearance */
+    .toggle-switch {
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .toggle-switch div {
+        transition: all 0.3s ease;
+    }
+    
+    input[type="text"],
+    input[type="password"],
+    input[type="time"],
+    input[type="number"],
+    select {
+        transition: all 0.2s ease;
+    }
+    
+    input:focus,
+    select:focus {
+        border-color: #0284c7;
+    }
+    
+    button {
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    button:active {
+        transform: scale(0.98);
+    }
+</style>
 {% endblock %}

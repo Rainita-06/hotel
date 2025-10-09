@@ -29,14 +29,26 @@ DEBUG = True
 ALLOWED_HOSTS = ['*']
 
 
-CELERY_TASK_ALWAYS_EAGER = True
-CELERY_TASK_EAGER_PROPAGATES = True
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'django-db'
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = 'UTC'
+# CELERY_TASK_ALWAYS_EAGER = True
+# CELERY_TASK_EAGER_PROPAGATES = True
+# CELERY_BROKER_URL = 'redis://localhost:6379/0'
+# CELERY_RESULT_BACKEND = 'django-db'
+# CELERY_ACCEPT_CONTENT = ['json']
+# CELERY_TASK_SERIALIZER = 'json'
+# CELERY_RESULT_SERIALIZER = 'json'
+# CELERY_TIMEZONE = 'UTC'
+
+# # Celery Beat Settings
+# CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+# # Periodic Tasks
+# from celery.schedules import crontab
+# CELERY_BEAT_SCHEDULE = {
+#     'check-sla-breaches': {
+#         'task': 'hotel_app.tasks.check_sla_breaches',
+#         'schedule': 300.0,  # Run every 5 minutes
+#     },
+# }
 
 # Application definition
 
@@ -47,8 +59,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # 'django_celery_results',  # Temporarily disabled
-    # 'django_celery_beat',     # Temporarily disabled
+    # 'django_celery_results',
+    # 'django_celery_beat',
     'rest_framework',
     'rest_framework.authtoken',
     'hotel_app',
@@ -157,6 +169,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/login/'
+
+# Custom Authentication Backend
+AUTHENTICATION_BACKENDS = [
+    'hotel_app.backends.EmailOrUsernameModelBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
 
 # Django REST Framework Configuration
 REST_FRAMEWORK = {

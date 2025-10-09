@@ -29,7 +29,7 @@
         
         <!-- Edit Permissions Modal -->
         <div id="editPermissionsModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50">
-          <div class="w-full max-w-2xl rounded-lg bg-white p-6 max-h-[90vh] overflow-y-auto">
+          <div class="w-full max-w-4xl rounded-lg bg-white p-6 max-h-[90vh] overflow-y-auto">
             <div class="flex items-start justify-between">
               <h3 class="modal-title text-lg font-semibold">Edit Permissions</h3>
               <button onclick="closeEditPermissionsModal()" class="text-gray-500">Close</button>
@@ -41,82 +41,210 @@
                 <p class="text-sm text-gray-600">Select the permissions for this group</p>
               </div>
               
-              <!-- Permission Categories -->
+              <!-- Permission Categories with Switch Buttons -->
               <div class="space-y-6">
                 <!-- Core Permissions -->
                 <div>
                   <h5 class="text-sm font-medium text-gray-900 mb-2">Core Permissions</h5>
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div class="flex items-center">
-                      <input type="checkbox" id="perm_view_profile" name="permissions" value="view_profile" class="h-4 w-4 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
-                      <label for="perm_view_profile" class="ml-2 block text-sm text-gray-900">View own profile</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input type="checkbox" id="perm_update_profile" name="permissions" value="update_profile" class="h-4 w-4 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
-                      <label for="perm_update_profile" class="ml-2 block text-sm text-gray-900">Update own profile</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input type="checkbox" id="perm_view_requests" name="permissions" value="view_requests" class="h-4 w-4 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
-                      <label for="perm_view_requests" class="ml-2 block text-sm text-gray-900">View assigned requests</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input type="checkbox" id="perm_update_requests" name="permissions" value="update_requests" class="h-4 w-4 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
-                      <label for="perm_update_requests" class="ml-2 block text-sm text-gray-900">Update request status</label>
-                    </div>
+                  <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                      <thead class="bg-gray-50">
+                        <tr>
+                          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permission</th>
+                          <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody class="bg-white divide-y divide-gray-200">
+                        <tr>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">View own profile</td>
+                          <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="flex items-center justify-center">
+                              <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="perm_view_profile" class="sr-only peer permission-toggle" data-permission="view_profile">
+                                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                              </label>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Update own profile</td>
+                          <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="flex items-center justify-center">
+                              <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="perm_update_profile" class="sr-only peer permission-toggle" data-permission="update_profile">
+                                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                              </label>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">View assigned requests</td>
+                          <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="flex items-center justify-center">
+                              <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="perm_view_requests" class="sr-only peer permission-toggle" data-permission="view_requests">
+                                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                              </label>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Update request status</td>
+                          <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="flex items-center justify-center">
+                              <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="perm_update_requests" class="sr-only peer permission-toggle" data-permission="update_requests">
+                                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                              </label>
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 </div>
                 
                 <!-- Admin Permissions -->
                 <div>
                   <h5 class="text-sm font-medium text-gray-900 mb-2">Admin Permissions</h5>
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div class="flex items-center">
-                      <input type="checkbox" id="perm_manage_users" name="permissions" value="manage_users" class="h-4 w-4 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
-                      <label for="perm_manage_users" class="ml-2 block text-sm text-gray-900">Manage users</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input type="checkbox" id="perm_manage_groups" name="permissions" value="manage_groups" class="h-4 w-4 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
-                      <label for="perm_manage_groups" class="ml-2 block text-sm text-gray-900">Manage groups</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input type="checkbox" id="perm_system_config" name="permissions" value="system_config" class="h-4 w-4 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
-                      <label for="perm_system_config" class="ml-2 block text-sm text-gray-900">System configuration</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input type="checkbox" id="perm_view_reports" name="permissions" value="view_reports" class="h-4 w-4 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
-                      <label for="perm_view_reports" class="ml-2 block text-sm text-gray-900">View all reports</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input type="checkbox" id="perm_manage_departments" name="permissions" value="manage_departments" class="h-4 w-4 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
-                      <label for="perm_manage_departments" class="ml-2 block text-sm text-gray-900">Manage departments</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input type="checkbox" id="perm_full_access" name="permissions" value="full_access" class="h-4 w-4 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
-                      <label for="perm_full_access" class="ml-2 block text-sm text-gray-900">Full system access</label>
-                    </div>
+                  <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                      <thead class="bg-gray-50">
+                        <tr>
+                          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permission</th>
+                          <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody class="bg-white divide-y divide-gray-200">
+                        <tr>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Manage users</td>
+                          <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="flex items-center justify-center">
+                              <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="perm_manage_users" class="sr-only peer permission-toggle" data-permission="manage_users">
+                                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                              </label>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Manage groups</td>
+                          <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="flex items-center justify-center">
+                              <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="perm_manage_groups" class="sr-only peer permission-toggle" data-permission="manage_groups">
+                                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                              </label>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">System configuration</td>
+                          <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="flex items-center justify-center">
+                              <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="perm_system_config" class="sr-only peer permission-toggle" data-permission="system_config">
+                                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                              </label>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">View all reports</td>
+                          <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="flex items-center justify-center">
+                              <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="perm_view_reports" class="sr-only peer permission-toggle" data-permission="view_reports">
+                                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                              </label>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Manage departments</td>
+                          <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="flex items-center justify-center">
+                              <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="perm_manage_departments" class="sr-only peer permission-toggle" data-permission="manage_departments">
+                                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                              </label>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Full system access</td>
+                          <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="flex items-center justify-center">
+                              <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="perm_full_access" class="sr-only peer permission-toggle" data-permission="full_access">
+                                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                              </label>
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 </div>
                 
                 <!-- Staff Permissions -->
                 <div>
                   <h5 class="text-sm font-medium text-gray-900 mb-2">Staff Permissions</h5>
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div class="flex items-center">
-                      <input type="checkbox" id="perm_view_team_reports" name="permissions" value="view_team_reports" class="h-4 w-4 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
-                      <label for="perm_view_team_reports" class="ml-2 block text-sm text-gray-900">View team reports</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input type="checkbox" id="perm_manage_team" name="permissions" value="manage_team" class="h-4 w-4 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
-                      <label for="perm_manage_team" class="ml-2 block text-sm text-gray-900">Manage team members</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input type="checkbox" id="perm_assign_requests" name="permissions" value="assign_requests" class="h-4 w-4 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
-                      <label for="perm_assign_requests" class="ml-2 block text-sm text-gray-900">Assign requests</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input type="checkbox" id="perm_view_dept_data" name="permissions" value="view_dept_data" class="h-4 w-4 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
-                      <label for="perm_view_dept_data" class="ml-2 block text-sm text-gray-900">View department data</label>
-                    </div>
+                  <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                      <thead class="bg-gray-50">
+                        <tr>
+                          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permission</th>
+                          <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody class="bg-white divide-y divide-gray-200">
+                        <tr>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">View team reports</td>
+                          <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="flex items-center justify-center">
+                              <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="perm_view_team_reports" class="sr-only peer permission-toggle" data-permission="view_team_reports">
+                                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                              </label>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Manage team members</td>
+                          <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="flex items-center justify-center">
+                              <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="perm_manage_team" class="sr-only peer permission-toggle" data-permission="manage_team">
+                                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                              </label>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Assign requests</td>
+                          <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="flex items-center justify-center">
+                              <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="perm_assign_requests" class="sr-only peer permission-toggle" data-permission="assign_requests">
+                                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                              </label>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">View department data</td>
+                          <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="flex items-center justify-center">
+                              <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="perm_view_dept_data" class="sr-only peer permission-toggle" data-permission="view_dept_data">
+                                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                              </label>
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>
@@ -131,7 +259,7 @@
         
         <!-- Bulk Edit Permissions Modal -->
         <div id="bulkEditPermissionsModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50">
-          <div class="w-full max-w-2xl rounded-lg bg-white p-6 max-h-[90vh] overflow-y-auto">
+          <div class="w-full max-w-4xl rounded-lg bg-white p-6 max-h-[90vh] overflow-y-auto">
             <div class="flex items-start justify-between">
               <h3 class="modal-title text-lg font-semibold">Bulk Edit Permissions</h3>
               <button onclick="closeBulkEditPermissionsModal()" class="text-gray-500">Close</button>
@@ -154,82 +282,210 @@
                 </div>
               </div>
               
-              <!-- Permission Categories -->
+              <!-- Permission Categories with Switch Buttons -->
               <div class="space-y-6">
                 <!-- Core Permissions -->
                 <div>
                   <h5 class="text-sm font-medium text-gray-900 mb-2">Core Permissions</h5>
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div class="flex items-center">
-                      <input type="checkbox" id="bulk_perm_view_profile" name="permissions" value="view_profile" class="h-4 w-4 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
-                      <label for="bulk_perm_view_profile" class="ml-2 block text-sm text-gray-900">View own profile</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input type="checkbox" id="bulk_perm_update_profile" name="permissions" value="update_profile" class="h-4 w-4 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
-                      <label for="bulk_perm_update_profile" class="ml-2 block text-sm text-gray-900">Update own profile</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input type="checkbox" id="bulk_perm_view_requests" name="permissions" value="view_requests" class="h-4 w-4 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
-                      <label for="bulk_perm_view_requests" class="ml-2 block text-sm text-gray-900">View assigned requests</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input type="checkbox" id="bulk_perm_update_requests" name="permissions" value="update_requests" class="h-4 w-4 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
-                      <label for="bulk_perm_update_requests" class="ml-2 block text-sm text-gray-900">Update request status</label>
-                    </div>
+                  <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                      <thead class="bg-gray-50">
+                        <tr>
+                          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permission</th>
+                          <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody class="bg-white divide-y divide-gray-200">
+                        <tr>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">View own profile</td>
+                          <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="flex items-center justify-center">
+                              <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="perm_view_profile" class="sr-only peer permission-toggle" data-permission="view_profile">
+                                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                              </label>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Update own profile</td>
+                          <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="flex items-center justify-center">
+                              <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="perm_update_profile" class="sr-only peer permission-toggle" data-permission="update_profile">
+                                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                              </label>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">View assigned requests</td>
+                          <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="flex items-center justify-center">
+                              <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="perm_view_requests" class="sr-only peer permission-toggle" data-permission="view_requests">
+                                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                              </label>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Update request status</td>
+                          <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="flex items-center justify-center">
+                              <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="perm_update_requests" class="sr-only peer permission-toggle" data-permission="update_requests">
+                                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                              </label>
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 </div>
                 
                 <!-- Admin Permissions -->
                 <div>
                   <h5 class="text-sm font-medium text-gray-900 mb-2">Admin Permissions</h5>
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div class="flex items-center">
-                      <input type="checkbox" id="bulk_perm_manage_users" name="permissions" value="manage_users" class="h-4 w-4 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
-                      <label for="bulk_perm_manage_users" class="ml-2 block text-sm text-gray-900">Manage users</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input type="checkbox" id="bulk_perm_manage_groups" name="permissions" value="manage_groups" class="h-4 w-4 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
-                      <label for="bulk_perm_manage_groups" class="ml-2 block text-sm text-gray-900">Manage groups</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input type="checkbox" id="bulk_perm_system_config" name="permissions" value="system_config" class="h-4 w-4 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
-                      <label for="bulk_perm_system_config" class="ml-2 block text-sm text-gray-900">System configuration</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input type="checkbox" id="bulk_perm_view_reports" name="permissions" value="view_reports" class="h-4 w-4 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
-                      <label for="bulk_perm_view_reports" class="ml-2 block text-sm text-gray-900">View all reports</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input type="checkbox" id="bulk_perm_manage_departments" name="permissions" value="manage_departments" class="h-4 w-4 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
-                      <label for="bulk_perm_manage_departments" class="ml-2 block text-sm text-gray-900">Manage departments</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input type="checkbox" id="bulk_perm_full_access" name="permissions" value="full_access" class="h-4 w-4 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
-                      <label for="bulk_perm_full_access" class="ml-2 block text-sm text-gray-900">Full system access</label>
-                    </div>
+                  <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                      <thead class="bg-gray-50">
+                        <tr>
+                          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permission</th>
+                          <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody class="bg-white divide-y divide-gray-200">
+                        <tr>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Manage users</td>
+                          <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="flex items-center justify-center">
+                              <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="perm_manage_users" class="sr-only peer permission-toggle" data-permission="manage_users">
+                                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                              </label>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Manage groups</td>
+                          <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="flex items-center justify-center">
+                              <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="perm_manage_groups" class="sr-only peer permission-toggle" data-permission="manage_groups">
+                                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                              </label>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">System configuration</td>
+                          <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="flex items-center justify-center">
+                              <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="perm_system_config" class="sr-only peer permission-toggle" data-permission="system_config">
+                                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                              </label>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">View all reports</td>
+                          <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="flex items-center justify-center">
+                              <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="perm_view_reports" class="sr-only peer permission-toggle" data-permission="view_reports">
+                                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                              </label>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Manage departments</td>
+                          <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="flex items-center justify-center">
+                              <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="perm_manage_departments" class="sr-only peer permission-toggle" data-permission="manage_departments">
+                                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                              </label>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Full system access</td>
+                          <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="flex items-center justify-center">
+                              <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="perm_full_access" class="sr-only peer permission-toggle" data-permission="full_access">
+                                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                              </label>
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 </div>
                 
                 <!-- Staff Permissions -->
                 <div>
                   <h5 class="text-sm font-medium text-gray-900 mb-2">Staff Permissions</h5>
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div class="flex items-center">
-                      <input type="checkbox" id="bulk_perm_view_team_reports" name="permissions" value="view_team_reports" class="h-4 w-4 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
-                      <label for="bulk_perm_view_team_reports" class="ml-2 block text-sm text-gray-900">View team reports</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input type="checkbox" id="bulk_perm_manage_team" name="permissions" value="manage_team" class="h-4 w-4 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
-                      <label for="bulk_perm_manage_team" class="ml-2 block text-sm text-gray-900">Manage team members</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input type="checkbox" id="bulk_perm_assign_requests" name="permissions" value="assign_requests" class="h-4 w-4 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
-                      <label for="bulk_perm_assign_requests" class="ml-2 block text-sm text-gray-900">Assign requests</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input type="checkbox" id="bulk_perm_view_dept_data" name="permissions" value="view_dept_data" class="h-4 w-4 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
-                      <label for="bulk_perm_view_dept_data" class="ml-2 block text-sm text-gray-900">View department data</label>
-                    </div>
+                  <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                      <thead class="bg-gray-50">
+                        <tr>
+                          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permission</th>
+                          <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody class="bg-white divide-y divide-gray-200">
+                        <tr>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">View team reports</td>
+                          <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="flex items-center justify-center">
+                              <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="perm_view_team_reports" class="sr-only peer permission-toggle" data-permission="view_team_reports">
+                                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                              </label>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Manage team members</td>
+                          <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="flex items-center justify-center">
+                              <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="perm_manage_team" class="sr-only peer permission-toggle" data-permission="manage_team">
+                                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                              </label>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Assign requests</td>
+                          <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="flex items-center justify-center">
+                              <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="perm_assign_requests" class="sr-only peer permission-toggle" data-permission="assign_requests">
+                                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                              </label>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">View department data</td>
+                          <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="flex items-center justify-center">
+                              <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="perm_view_dept_data" class="sr-only peer permission-toggle" data-permission="view_dept_data">
+                                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                              </label>
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>
@@ -443,6 +699,12 @@
 // Load permissions for each group
 document.addEventListener('DOMContentLoaded', function() {
   {% for group in groups %}
+  // Show loading state
+  const permissionsList{{ group.id }} = document.getElementById('permissions-list-{{ group.id }}');
+  if (permissionsList{{ group.id }}) {
+    permissionsList{{ group.id }}.innerHTML = '<li class="flex items-center justify-between text-sm text-gray-700"><span>Loading permissions...</span></li>';
+  }
+  
   fetch('{% url "dashboard:api_group_permissions" group.id %}')
     .then(response => response.json())
     .then(data => {
@@ -528,27 +790,44 @@ function exportPermissions() {
 
 // Load group permissions
 function loadGroupPermissions(groupId) {
+  // Show loading state in the modal
+  const switches = document.querySelectorAll('#editPermissionsForm .permission-toggle');
+  switches.forEach(switchEl => {
+    switchEl.checked = false;
+    switchEl.disabled = true; // Disable while loading
+  });
+  
   fetch(`/dashboard/api/groups/${groupId}/permissions/`)
     .then(response => response.json())
     .then(data => {
-      // Reset all checkboxes
-      const checkboxes = document.querySelectorAll('#editPermissionsForm input[type="checkbox"]');
-      checkboxes.forEach(checkbox => {
-        checkbox.checked = false;
+      // Re-enable switches
+      switches.forEach(switchEl => {
+        switchEl.disabled = false;
       });
       
-      // Check permissions that are currently set
+      // Reset all switches to off state
+      switches.forEach(switchEl => {
+        switchEl.checked = false;
+      });
+      
+      // Check switches for permissions that are currently set
       if (data.permissions) {
         data.permissions.forEach(permission => {
-          const checkbox = document.getElementById(`perm_${permission.replace(/\s+/g, '_').toLowerCase()}`);
-          if (checkbox) {
-            checkbox.checked = true;
+          const switchEl = document.querySelector(`#editPermissionsForm .permission-toggle[data-permission="${permission}"]`);
+          if (switchEl) {
+            switchEl.checked = true;
           }
         });
       }
     })
     .catch(error => {
       console.error('Error loading group permissions:', error);
+      // Re-enable switches
+      switches.forEach(switchEl => {
+        switchEl.disabled = false;
+      });
+      // Show error message to user
+      alert('Failed to load permissions. Please try again.');
     });
 }
 
@@ -557,12 +836,18 @@ function handleEditPermissionsSubmit(event) {
   event.preventDefault();
   
   const groupId = document.getElementById('editGroupId').value;
-  const formData = new FormData(event.target);
-  const permissions = [];
+  const saveButton = document.querySelector('#editPermissionsForm button[type="submit"]');
+  const originalText = saveButton.textContent;
   
-  // Collect selected permissions
-  formData.getAll('permissions').forEach(permission => {
-    permissions.push(permission);
+  // Show loading state
+  saveButton.disabled = true;
+  saveButton.textContent = 'Saving...';
+  
+  // Collect selected permissions from switches
+  const permissions = [];
+  const switches = document.querySelectorAll('#editPermissionsForm .permission-toggle:checked');
+  switches.forEach(switchEl => {
+    permissions.push(switchEl.dataset.permission);
   });
   
   // Send update request
@@ -586,7 +871,12 @@ function handleEditPermissionsSubmit(event) {
   })
   .catch(error => {
     console.error('Error updating permissions:', error);
-    alert('Failed to update permissions');
+    alert('Failed to update permissions. Please try again.');
+  })
+  .finally(() => {
+    // Restore button state
+    saveButton.disabled = false;
+    saveButton.textContent = originalText;
   });
 }
 
@@ -596,10 +886,24 @@ function handleBulkEditPermissionsSubmit(event) {
   
   const formData = new FormData(event.target);
   const groupIds = formData.getAll('groups');
-  const permissions = formData.getAll('permissions');
+  const saveButton = document.querySelector('#bulkEditPermissionsForm button[type="submit"]');
+  const originalText = saveButton.textContent;
+  
+  // Show loading state
+  saveButton.disabled = true;
+  saveButton.textContent = 'Applying...';
+  
+  // Collect selected permissions from switches
+  const permissions = [];
+  const switches = document.querySelectorAll('#bulkEditPermissionsForm .permission-toggle:checked');
+  switches.forEach(switchEl => {
+    permissions.push(switchEl.dataset.permission);
+  });
   
   if (groupIds.length === 0) {
     alert('Please select at least one group');
+    saveButton.disabled = false;
+    saveButton.textContent = originalText;
     return;
   }
   
@@ -627,7 +931,12 @@ function handleBulkEditPermissionsSubmit(event) {
   })
   .catch(error => {
     console.error('Error updating permissions:', error);
-    alert('Failed to update permissions');
+    alert('Failed to update permissions. Please try again.');
+  })
+  .finally(() => {
+    // Restore button state
+    saveButton.disabled = false;
+    saveButton.textContent = originalText;
   });
 }
 </script>

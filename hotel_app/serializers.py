@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from .models import (
-    Department, UserGroup, UserGroupMembership, 
+    Building, Department, Floor, LocationFamily, LocationType, UserGroup, UserGroupMembership, 
     Location, ServiceRequest, Voucher, GuestComment,
     Notification
 )
@@ -31,6 +31,31 @@ class UserGroupMembershipSerializer(serializers.ModelSerializer):
 class LocationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Location
+        fields = '__all__'
+
+class LocationFamilySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LocationFamily
+        fields = '__all__'
+
+class BuildingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Building
+        fields = '__all__'
+
+class FloorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Floor
+        fields = '__all__'
+
+class LocationFamilySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LocationFamily
+        fields = '__all__'
+
+class LocationTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LocationType
         fields = '__all__'
 
 class ServiceRequestSerializer(serializers.ModelSerializer):

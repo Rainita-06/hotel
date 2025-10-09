@@ -1,9 +1,6 @@
 {% load static %}
-<!-- departments_list.html: Responsive, functional with pagination, actions dropdown, modals, exact logos -->
-
-<div class="mx-auto w-full max-w-[1184px]">
-  <div class="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-    <!-- Header -->
+<div class="mx-auto w-full max-w-[100%] px-4 sm:px-0">
+  <div class="   rounded-xl border border-gray-200 bg-white shadow-sm">
     <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-6 py-4">
       <h2 class="text-lg font-semibold text-gray-900">All Departments</h2>
 
@@ -15,47 +12,41 @@
           <option value="archived">Archived</option>
         </select>
 
-        <button type="button" onclick="exportVisible()" class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 hover:bg-gray-50">
+        <button type="button" onclick="exportVisible()" class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500">
           <img src="{% static 'images/manage_users/export.svg' %}" alt="Export" class="h-4 w-4" />
           <span class="whitespace-nowrap">Export</span>
         </button>
         
-        <!-- Add Department Button -->
-        <button type="button" onclick="openAddDepartmentModal()" class="inline-flex items-center gap-2 rounded-lg bg-sky-600 px-3 py-2 text-sm text-white hover:bg-sky-700">
+        <button type="button" onclick="openAddDepartmentModal()" class="inline-flex items-center gap-2 rounded-lg bg-sky-600 px-3 py-2 text-sm font-medium text-white hover:bg-sky-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-sky-500">
           <img src="{% static 'images/manage_users/plus.svg' %}" alt="Add" class="h-4 w-4" />
           <span class="whitespace-nowrap">Add Department</span>
         </button>
       </div>
     </div>
 
-    <!-- Table -->
-    <div class="overflow-x-auto">
+    <div>
       <table id="departmentsTable" class="min-w-full divide-y divide-gray-200">
         <thead class="bg-neutral-50">
           <tr>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 whitespace-nowrap">Name</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 whitespace-nowrap">Department Head</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 whitespace-nowrap">Users</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 whitespace-nowrap">Open Tickets</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 whitespace-nowrap">SLA Performance</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 whitespace-nowrap">Status</th>
-            <th scope="col" class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-neutral-500 whitespace-nowrap">Actions</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500">Name</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500">Department Head</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500">Users</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500">Open Tickets</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500">SLA Performance</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500">Status</th>
+            <th scope="col" class="relative px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-neutral-500">Actions</th>
           </tr>
         </thead>
-
         <tbody class="divide-y divide-gray-100 bg-white">
           {% for dept in departments %}
           <tr class="hover:bg-gray-50" data-dept-id="{{ dept.featured_group.id }}">
-            <!-- Name -->
-            <td class="px-6 py-4 max-w-xs">
-              <div class="flex items-center gap-4 min-w-0">
-                <div class="h-10 w-10 {{ dept.featured_group.icon_bg|default:'bg-gray-100' }} rounded-lg ring-1 ring-inset ring-gray-200 flex items-center justify-center flex-shrink-0">
+            <td class="max-w-xs px-6 py-4">
+              <div class="flex min-w-0 items-center gap-4">
+                <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg ring-1 ring-inset ring-gray-200 {{ dept.featured_group.icon_bg|default:'bg-gray-100' }}">
                   {% if dept.featured_group.image %}
-                    <!-- Check if it's a full URL (new department logo), media path, or static path -->
                     {% if 'http' in dept.featured_group.image or '/media/' in dept.featured_group.image %}
                       <img src="{{ dept.featured_group.image }}" class="h-10 w-10 rounded-lg object-cover" alt="{{ dept.featured_group.name }} logo" />
                     {% else %}
-                      <!-- Static image fallback -->
                       <img src="{% static dept.featured_group.image %}" class="h-6 w-6" alt="{{ dept.featured_group.name }} icon" />
                     {% endif %}
                   {% else %}
@@ -68,33 +59,27 @@
                 </div>
               </div>
             </td>
-
-            <!-- Department Head -->
-            <td class="px-6 py-4 max-w-xs">
+            <td class="max-w-xs px-6 py-4">
               {% if dept.lead %}
-              <div class="flex items-center gap-3 min-w-0">
-                <img class="h-8 w-8 rounded-full ring-1 ring-gray-200 flex-shrink-0" src="{{ dept.lead.avatar_url|default:'https://placehold.co/32x32' }}" alt="Lead avatar" />
+              <div class="flex min-w-0 items-center gap-3">
+                <img class="h-8 w-8 flex-shrink-0 rounded-full ring-1 ring-gray-200" src="{{ dept.lead.avatar_url|default:'https://placehold.co/32x32' }}" alt="Lead avatar" />
                 <div class="min-w-0">
                   <div class="truncate text-sm font-medium text-gray-900">{{ dept.lead.full_name }}</div>
                   <div class="truncate text-sm text-gray-500">{{ dept.lead.email }}</div>
                 </div>
               </div>
               {% else %}
-              <div class="text-sm text-gray-500 min-w-0">
-                <span class="font-medium text-gray-900 truncate block">No lead assigned</span>
-                <span class="truncate block">Assign a department lead</span>
+              <div class="min-w-0 text-sm text-gray-500">
+                <span class="block truncate font-medium text-gray-900">No lead assigned</span>
+                <span class="block truncate">Assign a department lead</span>
               </div>
               {% endif %}
             </td>
-
-            <!-- Users -->
-            <td class="px-6 py-4 whitespace-nowrap">
+            <td class="px-6 py-4">
               <div class="text-sm font-medium text-gray-900">{{ dept.featured_group.members_count }}</div>
               <div class="text-xs text-gray-500">Active staff</div>
             </td>
-
-            <!-- Open Tickets -->
-            <td class="px-6 py-4 whitespace-nowrap">
+            <td class="px-6 py-4">
               <div class="flex items-center gap-2">
                 <span class="text-sm font-medium text-gray-900">{{ dept.open_tickets|default:0 }}</span>
                 <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ dept.sla_tag_bg|default:'bg-gray-100' }} {{ dept.sla_color|default:'text-gray-700' }}">
@@ -102,36 +87,29 @@
                 </span>
               </div>
             </td>
-
-            <!-- SLA Performance -->
-            <td class="px-6 py-4 max-w-xs">
-              <div class="flex items-center gap-3 min-w-0">
-                <div class="h-2 w-32 rounded-full bg-gray-200 flex-shrink-0">
+            <td class="max-w-xs px-6 py-4">
+              <div class="flex min-w-0 items-center gap-3">
+                <div class="h-2 w-32 flex-shrink-0 rounded-full bg-gray-200">
                   <div class="h-2 rounded-full {{ dept.performance_color|default:'bg-green-500' }}" style="width: {{ dept.performance_pct|default:'0%' }};"></div>
                 </div>
-                <div class="text-sm font-medium {{ dept.performance_color|default:'text-green-600' }} whitespace-nowrap">{{ dept.performance_pct|default:'0%' }}</div>
+                <div class="text-sm font-medium {{ dept.performance_color|default:'text-green-600' }}">{{ dept.performance_pct|default:'0%' }}</div>
               </div>
             </td>
-
-            <!-- Status -->
-            <td class="px-6 py-4 whitespace-nowrap">
+            <td class="px-6 py-4">
               <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold {{ dept.status_bg|default:'bg-green-500/10' }} {{ dept.status_color|default:'text-green-600' }}">
                 {{ dept.status_label|default:'Active' }}
               </span>
             </td>
-
-            <!-- Actions -->
-            <td class="px-6 py-4 text-right whitespace-nowrap">
+            <td class="px-6 py-4 text-right">
               <div class="relative inline-block text-left">
-                <button type="button" id="actionsBtn-{{ dept.featured_group.id }}" onclick="toggleActionsMenu({{ dept.featured_group.id }})" class="inline-flex items-center justify-center rounded-md border border-gray-200 bg-white p-2 text-xs font-medium text-gray-800 hover:bg-gray-50">
+                <button type="button" id="actionsBtn-{{ dept.featured_group.id }}" onclick="toggleActionsMenu({{ dept.featured_group.id }})" class="inline-flex items-center justify-center rounded-md border border-gray-200 bg-white p-2 text-sm font-medium text-gray-800 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500">
                   <img src="{% static 'images/manage_users/action.svg' %}" alt="Actions" class="h-4 w-4" />
                 </button>
-
-                <!-- Dropdown -->
-                <div id="actionsMenu-{{ dept.featured_group.id }}" class="absolute right-0 z-50 mt-2 w-44 origin-top-right rounded-md border border-gray-200 bg-white shadow-lg hidden">
-                  <div class="py-1">
-                    <button class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50" onclick="closeActionsMenu(); openMembersModal({{ dept.featured_group.id }}, 1)">View Members</button>
-                    <button class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50" onclick="closeActionsMenu(); openAssignLeadModal({{ dept.featured_group.id }})">Assign Lead</button>
+                <div id="actionsMenu-{{ dept.featured_group.id }}" class="absolute right-0 z-50 mt-2 hidden w-48 origin-top-right rounded-md border border-gray-200 bg-white shadow-lg focus:outline-none">
+                  <div class="py-1" role="menu" aria-orientation="vertical" aria-labelledby="actionsBtn-{{ dept.featured_group.id }}">
+                    <button role="menuitem" class="flex w-full items-center gap-3 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100" onclick="closeActionsMenu(); openMembersModal({{ dept.featured_group.id }}, 1)">View Members</button>
+                    <button role="menuitem" class="flex w-full items-center gap-3 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100" onclick="closeActionsMenu(); openAssignLeadModal({{ dept.featured_group.id }})">Assign Lead</button>
+                    <button role="menuitem" class="flex w-full items-center gap-3 px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50" onclick="closeActionsMenu(); confirmDeleteDepartment({{ dept.featured_group.id }}, '{{ dept.featured_group.name|escapejs }}')">Delete Department</button>
                   </div>
                 </div>
               </div>
@@ -146,7 +124,6 @@
       </table>
     </div>
 
-    <!-- Footer / Pagination -->
     <div class="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 bg-neutral-50 px-6 py-3">
       <p class="text-sm text-gray-600">
         Showing {{ departments|length }}{% if total_departments %} of {{ total_departments }} departments{% endif %}
@@ -154,34 +131,35 @@
 
       {% if is_paginated %}
       <div id="serverPagination" class="inline-flex items-center gap-2">
-        <button class="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-800 hover:bg-gray-50 disabled:opacity-50"
+        <button class="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-800 hover:bg-gray-50 disabled:opacity-50"
                 onclick="goToPage({{ page_obj.previous_page_number }})" {% if not page_obj.has_previous %}disabled{% endif %}>Previous</button>
 
         {% for i in page_obj.paginator.page_range %}
-          <button class="rounded-md px-3 py-1.5 text-sm {% if page_obj.number == i %}bg-sky-600 text-white{% else %}border border-gray-200 bg-white text-gray-800 hover:bg-gray-50{% endif %}"
+          <button class="rounded-md px-3 py-1.5 text-sm font-medium {% if page_obj.number == i %}bg-sky-600 text-white{% else %}border border-gray-200 bg-white text-gray-800 hover:bg-gray-50{% endif %}"
                   onclick="goToPage({{ i }})">{{ i }}</button>
         {% endfor %}
 
-        <button class="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-800 hover:bg-gray-50 disabled:opacity-50"
+        <button class="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-800 hover:bg-gray-50 disabled:opacity-50"
                 onclick="goToPage({{ page_obj.next_page_number }})" {% if not page_obj.has_next %}disabled{% endif %}>Next</button>
       </div>
       {% else %}
       <div id="clientPagination" class="inline-flex items-center gap-2">
-        <button id="clientPrev" class="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-800 hover:bg-gray-50">Previous</button>
+        <button id="clientPrev" class="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-800 hover:bg-gray-50">Previous</button>
         <div id="clientPages" class="flex items-center gap-2"></div>
-        <button id="clientNext" class="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-800 hover:bg-gray-50">Next</button>
+        <button id="clientNext" class="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-800 hover:bg-gray-50">Next</button>
       </div>
       {% endif %}
     </div>
   </div>
 </div>
 
-<!-- Members Modal -->
-<div id="membersModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50">
-  <div class="w-full max-w-2xl rounded-lg bg-white p-6" onclick="event.stopPropagation()">
+<div id="membersModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50" onclick="closeModal('membersModal')">
+  <div class="w-full max-w-2xl rounded-lg bg-white p-6 shadow-lg" onclick="event.stopPropagation()">
     <div class="flex items-start justify-between">
-      <h3 class="modal-title text-lg font-semibold">Members</h3>
-      <button onclick="closeModal('membersModal')" class="rounded p-1 text-gray-500 hover:bg-gray-100">✕</button>
+      <h3 class="modal-title text-lg font-semibold text-gray-900">Members</h3>
+      <button onclick="closeModal('membersModal')" class="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-sky-500">
+        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
     </div>
     <div class="modal-body mt-4 min-h-[120px] text-sm text-gray-700">
       <div class="text-gray-500">Loading...</div>
@@ -189,68 +167,108 @@
   </div>
 </div>
 
-<!-- Assign Lead Modal -->
-<div id="assignLeadModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50">
-  <div class="w-full max-w-md rounded-lg bg-white p-6" onclick="event.stopPropagation()">
+<div id="assignLeadModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50" onclick="closeModal('assignLeadModal')">
+  <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-lg" onclick="event.stopPropagation()">
     <div class="flex items-start justify-between">
-      <h3 class="text-lg font-semibold">Assign Lead</h3>
-      <button onclick="closeModal('assignLeadModal')" class="rounded p-1 text-gray-500 hover:bg-gray-100">✕</button>
+      <h3 class="text-lg font-semibold text-gray-900">Assign Lead</h3>
+      <button onclick="closeModal('assignLeadModal')" class="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-sky-500">
+        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
     </div>
     <form id="assignLeadForm" class="mt-4 space-y-4" onsubmit="submitAssignLead(event)">
       <input type="hidden" id="assignLeadDeptId" name="dept_id" />
       <div>
-        <label class="block text-sm font-medium text-gray-700">User Email or ID</label>
-        <input id="assignLeadValue" type="text" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="e.g. jane@company.com or 123" required />
-        <p class="mt-1 text-xs text-gray-500">Paste an email address or a numeric user ID.</p>
+        <label for="assignLeadValue" class="block text-sm font-medium text-gray-700">User Email or ID</label>
+        <input id="assignLeadValue" type="text" class="mt-1 w-full rounded-lg border-gray-200 px-3 py-2 text-sm shadow-sm focus:border-sky-500 focus:ring-sky-500" placeholder="e.g. jane@company.com or 123" required />
+        <p class="mt-1 text-xs text-gray-500">Provide an email address or a numeric user ID.</p>
       </div>
-      <div class="flex items-center justify-end gap-2">
-        <button type="button" class="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-800 hover:bg-gray-50" onclick="closeModal('assignLeadModal')">Cancel</button>
-        <button id="assignLeadSubmit" type="submit" class="rounded-md bg-sky-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-700">Assign</button>
+      <div class="flex items-center justify-end gap-3 pt-2">
+        <button type="button" class="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-800 shadow-sm hover:bg-gray-50" onclick="closeModal('assignLeadModal')">Cancel</button>
+        <button id="assignLeadSubmit" type="submit" class="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-sky-700">Assign</button>
       </div>
-      <div id="assignLeadError" class="text-sm text-red-600 hidden"></div>
+      <div id="assignLeadError" class="hidden text-sm text-red-600"></div>
     </form>
   </div>
 </div>
 
-<!-- Add Department Modal -->
-<div id="addDepartmentModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50">
-  <div class="w-full max-w-md rounded-lg bg-white p-6" onclick="event.stopPropagation()">
-    <div class="flex items-start justify-between">
-      <h3 class="text-lg font-semibold">Add Department</h3>
-      <button onclick="closeModal('addDepartmentModal')" class="rounded p-1 text-gray-500 hover:bg-gray-100">✕</button>
+<div id="addDepartmentModal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/50" onclick="closeModal('addDepartmentModal')">
+  <div class="flex h-full w-full max-w-[600px] flex-col bg-white shadow-xl" onclick="event.stopPropagation()">
+    <div class="flex flex-shrink-0 items-center justify-between border-b border-gray-200 px-6 py-4">
+      <h3 class="text-lg font-semibold text-gray-900">Add Department</h3>
+      <button onclick="closeModal('addDepartmentModal')" class="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-sky-500">
+        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
     </div>
-    <form id="addDepartmentForm" class="mt-4 space-y-4" onsubmit="submitAddDepartment(event)" enctype="multipart/form-data">
+
+    <form id="addDepartmentForm" onsubmit="submitAddDepartment(event)" class="flex flex-1 flex-col overflow-y-auto">
       {% csrf_token %}
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Department Name</label>
-        <input type="text" id="departmentName" name="name" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="e.g. Housekeeping" required />
+      <div class="space-y-6 px-6 py-5">
+        <div>
+          <label for="departmentName" class="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700"><img src="{% static 'images/manage_users/dept_name.svg' %}" alt="" class="h-4 w-4" /><span>Department Name</span></label>
+          <input type="text" id="departmentName" name="name" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-sky-500 focus:ring-sky-500" placeholder="e.g., Housekeeping, Maintenance" required />
+        </div>
+        <div>
+          <label for="departmentDescription" class="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700"><img src="{% static 'images/manage_users/dept_desc.svg' %}" alt="" class="h-4 w-4" /><span>Department Description</span></label>
+          <textarea id="departmentDescription" name="description" rows="3" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-sky-500 focus:ring-sky-500" placeholder="Describe the responsibilities of this department..."></textarea>
+        </div>
+        <div>
+          <label for="departmentHead" class="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700"><img src="{% static 'images/manage_users/dept_head.svg' %}" alt="" class="h-4 w-4" /><span>Department Head</span></label>
+          <select id="departmentHead" name="head" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-sky-500 focus:ring-sky-500"><option value="">Select department head...</option></select>
+        </div>
+        <div>
+          <label class="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700"><img src="{% static 'images/manage_users/assign_staff.svg' %}" alt="" class="h-4 w-4" /><span>Assign Staff</span></label>
+          <div id="assignStaffList" class="h-40 overflow-y-auto rounded-lg border border-gray-200 bg-white"></div>
+        </div>
+        <div>
+          <label for="departmentEmail" class="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700"><img src="{% static 'images/manage_users/dept_mail.svg' %}" alt="" class="h-4 w-4" /><span>Department Email</span><span class="text-xs font-normal text-gray-400">(Optional)</span></label>
+          <input type="email" id="departmentEmail" name="email" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-sky-500 focus:ring-sky-500" placeholder="e.g., housekeeping@hotel.com" />
+        </div>
+        <div>
+          <label class="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700"><img src="{% static 'images/manage_users/dept_status.svg' %}" alt="" class="h-4 w-4" /><span>Status</span></label>
+          <div class="flex items-center gap-3">
+            <label for="departmentStatusToggle" class="relative inline-flex cursor-pointer items-center">
+              <input type="checkbox" id="departmentStatusToggle" name="is_active" class="peer sr-only" checked>
+              <div class="peer h-6 w-11 rounded-full bg-gray-200 after:absolute after:start-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-sky-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-sky-300"></div>
+            </label>
+            <span class="text-sm font-medium text-gray-700">Active</span>
+          </div>
+        </div>
       </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Description</label>
-        <textarea id="departmentDescription" name="description" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Brief description of the department"></textarea>
+      <div id="addDepartmentError" class="hidden px-6 pb-4 text-sm text-red-600"></div>
+      <div class="mt-auto flex flex-shrink-0 justify-start gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4">
+        <button type="button" class="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-800 shadow-sm hover:bg-gray-50" onclick="closeModal('addDepartmentModal')">Cancel</button>
+        <button id="addDepartmentSubmit" type="submit" class="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-sky-700">Add Department</button>
       </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Department Logo</label>
-        <input type="file" id="departmentLogo" name="logo" accept="image/*" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" />
-        <p class="mt-1 text-xs text-gray-500">Upload a JPG, JPEG, PNG, GIF, or SVG image (max 5MB)</p>
-      </div>
-      <div class="flex items-center justify-end gap-2">
-        <button type="button" class="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-800 hover:bg-gray-50" onclick="closeModal('addDepartmentModal')">Cancel</button>
-        <button id="addDepartmentSubmit" type="submit" class="rounded-md bg-sky-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-700">Add Department</button>
-      </div>
-      <div id="addDepartmentError" class="text-sm text-red-600 hidden"></div>
     </form>
   </div>
 </div>
 
-<!-- Toast Notification provided by base template -->
+<div id="deleteDepartmentModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50" onclick="closeModal('deleteDepartmentModal')">
+  <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-lg" onclick="event.stopPropagation()">
+    <div class="flex items-start justify-between">
+      <h3 class="text-lg font-semibold text-gray-900">Confirm Delete</h3>
+      <button onclick="closeModal('deleteDepartmentModal')" class="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-sky-500">
+        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
+    </div>
+    <form id="deleteDepartmentForm" class="mt-4 space-y-4" onsubmit="submitDeleteDepartment(event)">
+      <input type="hidden" id="deleteDepartmentId" name="dept_id" />
+      <div>
+        <p class="text-sm text-gray-600">
+          Are you sure you want to delete the department <strong id="deleteDepartmentName" class="font-semibold text-gray-800"></strong>? This action cannot be undone.
+        </p>
+      </div>
+      <div class="flex items-center justify-end gap-3 pt-2">
+        <button type="button" class="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-800 shadow-sm hover:bg-gray-50" onclick="closeModal('deleteDepartmentModal')">Cancel</button>
+        <button id="deleteDepartmentSubmit" type="submit" class="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700">Delete</button>
+      </div>
+      <div id="deleteDepartmentError" class="hidden text-sm text-red-600"></div>
+    </form>
+  </div>
+</div>
 
-<!-- Tailwind safelist to ensure dynamic color classes are available in production builds -->
-<span class="hidden
-  bg-green-500 bg-yellow-500 bg-red-500 bg-sky-600 bg-gray-100 bg-sky-100 bg-blue-100 bg-indigo-100 bg-purple-100 bg-pink-100 bg-orange-100 bg-amber-100 bg-lime-100 bg-teal-100 bg-cyan-100
-  text-green-600 text-yellow-600 text-red-600 text-sky-600 text-gray-700
-  bg-green-500/10 bg-yellow-500/10 bg-red-500/10
-"></span>
+
+<span class="hidden bg-green-500 bg-yellow-500 bg-red-500 bg-sky-600 bg-gray-100 bg-sky-100 bg-blue-100 bg-indigo-100 bg-purple-100 bg-pink-100 bg-orange-100 bg-amber-100 bg-lime-100 bg-teal-100 bg-cyan-100 text-green-600 text-yellow-600 text-red-600 text-sky-600 text-gray-700 bg-green-500/10 bg-yellow-500/10 bg-red-500/10"></span>
 
 <script>
 // --------------- Utils ---------------
@@ -269,102 +287,73 @@ function getCookie(name) {
   return cookieValue;
 }
 
-function getParam(name) {
-  const url = new URL(window.location);
-  return url.searchParams.get(name);
-}
+const getParam = (name) => new URL(window.location).searchParams.get(name);
 
-function setParam(name, value, replaceOthers = false) {
+function setParam(name, value) {
   const url = new URL(window.location);
-  if (replaceOthers) url.searchParams.delete('page'); // reset pagination when filter changes
-  if (!value) url.searchParams.delete(name);
-  else url.searchParams.set(name, value);
-  window.location = url.toString();
-}
-
-// --------------- Status filter ---------------
-(function initStatusFilter() {
-  const statusFilter = document.getElementById('statusFilter');
-  const current = getParam('status') || '';
-  if (statusFilter) {
-    statusFilter.value = current;
-    statusFilter.addEventListener('change', function() {
-      setParam('status', this.value, true);
-    });
+  url.searchParams.delete('page'); // Always reset pagination on filter change
+  if (!value) {
+    url.searchParams.delete(name);
+  } else {
+    url.searchParams.set(name, value);
   }
-})();
-
-// --------------- Pagination (server-side) ---------------
-function goToPage(page) {
-  const url = new URL(window.location);
-  url.searchParams.set('page', page);
-  window.location = url.toString();
+  window.location.href = url.toString();
 }
 
-// --------------- Client-side pagination (fallback if no server paginator) ---------------
-(function initClientPagination() {
-  const server = document.getElementById('serverPagination');
-  if (server) return; // server-side is present; skip client-side pagination
-
-  const tbody = document.querySelector('#departmentsTable tbody');
-  if (!tbody) return;
-
-  const rows = Array.from(tbody.querySelectorAll('tr'));
-  const perPage = 10;
-  let currentPage = 1;
-  let totalPages = Math.max(1, Math.ceil(rows.length / perPage));
-
-  function render() {
-    rows.forEach((r, idx) => {
-      const pageIndex = Math.floor(idx / perPage) + 1;
-      r.style.display = pageIndex === currentPage ? '' : 'none';
-    });
-
-    // Render page buttons
-    const pagesEl = document.getElementById('clientPages');
-    const prevEl = document.getElementById('clientPrev');
-    const nextEl = document.getElementById('clientNext');
-    if (!pagesEl) return;
-
-    pagesEl.innerHTML = '';
-    for (let i = 1; i <= totalPages; i++) {
-      const btn = document.createElement('button');
-      btn.className = 'rounded-md px-3 py-1.5 text-sm ' + (i === currentPage ? 'bg-sky-600 text-white' : 'border border-gray-200 bg-white text-gray-800 hover:bg-gray-50');
-      btn.textContent = i;
-      btn.addEventListener('click', () => { currentPage = i; render(); });
-      pagesEl.appendChild(btn);
-    }
-    prevEl.disabled = currentPage === 1;
-    nextEl.disabled = currentPage === totalPages;
+// --------------- Modal Management ---------------
+function showModal(id, open) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.classList.toggle('hidden', !open);
+    el.classList.toggle('flex', open);
   }
+}
+const closeModal = (id) => showModal(id, false);
 
-  document.getElementById('clientPrev')?.addEventListener('click', () => { if (currentPage > 1) { currentPage--; render(); } });
-  document.getElementById('clientNext')?.addEventListener('click', () => { if (currentPage < totalPages) { currentPage++; render(); } });
-
-  render();
-})();
-
-// --------------- Actions dropdown ---------------
+// --------------- Global Event Listeners ---------------
 let openMenuId = null;
+
 function toggleActionsMenu(deptId) {
-  const id = 'actionsMenu-' + deptId;
-  const menu = document.getElementById(id);
+  const menuId = `actionsMenu-${deptId}`;
+  const menu = document.getElementById(menuId);
   if (!menu) return;
 
-  // Close previous
-  if (openMenuId && openMenuId !== id) {
-    document.getElementById(openMenuId)?.classList.add('hidden');
+  // Close any other menu that is open
+  if (openMenuId && openMenuId !== menuId) {
+    const otherMenu = document.getElementById(openMenuId);
+    if (otherMenu) {
+      otherMenu.classList.add('hidden');
+    }
   }
 
-  const willOpen = menu.classList.contains('hidden');
-  if (willOpen) {
+  const isCurrentlyHidden = menu.classList.contains('hidden');
+
+  if (isCurrentlyHidden) {
+    const btn = document.getElementById(`actionsBtn-${deptId}`);
+    const btnRect = btn.getBoundingClientRect();
+
+    // Clear previous position classes to avoid conflicts
+    menu.classList.remove('mt-2', 'bottom-full', 'mb-2', 'origin-top-right', 'origin-bottom-right');
+
+    // Heuristic: If button is in the bottom half of the viewport, open upwards.
+    // A 60% threshold prevents the menu from opening up too eagerly.
+    if (btnRect.top > window.innerHeight * 0.6) {
+      // Open upwards
+      menu.classList.add('bottom-full', 'mb-2', 'origin-bottom-right');
+    } else {
+      // Open downwards (default)
+      menu.classList.add('mt-2', 'origin-top-right');
+    }
+
     menu.classList.remove('hidden');
-    openMenuId = id;
+    openMenuId = menuId;
   } else {
     menu.classList.add('hidden');
     openMenuId = null;
   }
 }
+
+
 function closeActionsMenu() {
   if (openMenuId) {
     document.getElementById(openMenuId)?.classList.add('hidden');
@@ -372,181 +361,211 @@ function closeActionsMenu() {
   }
 }
 
-// Modal helpers (ensure compatibility with base template)
-function showModal(id, open) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  if (open) { el.classList.remove('hidden'); el.classList.add('flex'); } else { el.classList.add('hidden'); el.classList.remove('flex'); }
-}
-function closeModal(id){ showModal(id, false); }
+document.addEventListener('click', (e) => {
+  if (!openMenuId) return;
+  const btn = document.getElementById(openMenuId.replace('Menu', 'Btn'));
+  const menu = document.getElementById(openMenuId);
+  // If the click is not on the button and not inside the menu, close it.
+  if (btn && !btn.contains(e.target) && menu && !menu.contains(e.target)) {
+    closeActionsMenu();
+  }
+});
 
-// Open Add Department Modal
-function openAddDepartmentModal(){
-  document.getElementById('departmentName').value = '';
-  document.getElementById('departmentDescription').value = '';
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeActionsMenu();
+    ['membersModal', 'assignLeadModal', 'addDepartmentModal', 'deleteDepartmentModal'].forEach(closeModal);
+  }
+});
+
+
+// --------------- Page Initializers ---------------
+(function initPage() {
+  // Status filter
+  const statusFilter = document.getElementById('statusFilter');
+  if (statusFilter) {
+    statusFilter.value = getParam('status') || '';
+    statusFilter.addEventListener('change', (e) => setParam('status', e.target.value));
+  }
+
+  // Client-side pagination (fallback)
+  if (!document.getElementById('serverPagination')) {
+    initClientPagination();
+  }
+})();
+
+
+// --------------- Pagination ---------------
+function goToPage(page) {
+  const url = new URL(window.location);
+  url.searchParams.set('page', page);
+  window.location.href = url.toString();
+}
+
+function initClientPagination() {
+  const tbody = document.querySelector('#departmentsTable tbody');
+  if (!tbody) return;
+
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  const perPage = 10;
+  let currentPage = 1;
+  const totalPages = Math.max(1, Math.ceil(rows.length / perPage));
+
+  const render = () => {
+    rows.forEach((r, idx) => {
+      const pageIndex = Math.floor(idx / perPage) + 1;
+      r.style.display = pageIndex === currentPage ? '' : 'none';
+    });
+
+    const pagesEl = document.getElementById('clientPages');
+    if (!pagesEl) return;
+    pagesEl.innerHTML = '';
+    for (let i = 1; i <= totalPages; i++) {
+      const btn = document.createElement('button');
+      btn.className = `rounded-md px-3 py-1.5 text-sm font-medium ${i === currentPage ? 'bg-sky-600 text-white' : 'border border-gray-200 bg-white text-gray-800 hover:bg-gray-50'}`;
+      btn.textContent = i;
+      btn.addEventListener('click', () => { currentPage = i; render(); });
+      pagesEl.appendChild(btn);
+    }
+    document.getElementById('clientPrev').disabled = currentPage === 1;
+    document.getElementById('clientNext').disabled = currentPage === totalPages;
+  };
+
+  document.getElementById('clientPrev')?.addEventListener('click', () => { if (currentPage > 1) { currentPage--; render(); } });
+  document.getElementById('clientNext')?.addEventListener('click', () => { if (currentPage < totalPages) { currentPage++; render(); } });
+  render();
+}
+
+// --------------- Add Department ---------------
+function openAddDepartmentModal() {
+  const form = document.getElementById('addDepartmentForm');
+  form.reset();
   document.getElementById('addDepartmentError').classList.add('hidden');
+  
+  const headSelect = document.getElementById('departmentHead');
+  headSelect.innerHTML = '<option value="">Select department head...</option>';
+  const staffList = document.getElementById('assignStaffList');
+  staffList.innerHTML = '<div class="p-4 text-center text-gray-500">Loading staff...</div>';
+  
+  fetch('{% url "dashboard:api_manage_users_filters" %}')
+    .then(response => response.json())
+    .then(data => {
+      data.users?.forEach(user => {
+        headSelect.add(new Option(user.full_name || user.username, user.id));
+      });
+
+      staffList.innerHTML = '';
+      if (data.unassigned_users?.length) {
+        data.unassigned_users.forEach(user => {
+          const label = document.createElement('label');
+          label.className = 'flex items-center gap-4 px-3 py-2.5 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0';
+          label.innerHTML = `
+            <input type="checkbox" name="assigned_staff" value="${user.id}" class="h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500">
+            <img class="h-8 w-8 rounded-full" src="${user.avatar_url || 'https://placehold.co/32x32'}" alt="User avatar" />
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-medium text-gray-900">${user.full_name || user.username}</p>
+              <p class="truncate text-xs text-gray-500">${user.role || 'Staff'} &bull; ${user.department || 'Unassigned'}</p>
+            </div>`;
+          staffList.appendChild(label);
+        });
+      } else {
+        staffList.innerHTML = '<div class="p-4 text-center text-gray-500">No unassigned staff available</div>';
+      }
+    })
+    .catch(error => {
+      console.error('Error loading user data:', error);
+      staffList.innerHTML = '<div class="p-4 text-center text-red-500">Failed to load staff</div>';
+    });
+  
   showModal('addDepartmentModal', true);
 }
 
-// Submit Add Department via fetch
-function submitAddDepartment(e){
+function submitAddDepartment(e) {
   e.preventDefault();
   const btn = document.getElementById('addDepartmentSubmit');
-  const name = document.getElementById('departmentName').value.trim();
-  const desc = document.getElementById('departmentDescription').value.trim();
-  const logo = document.getElementById('departmentLogo').files[0];
   const errorEl = document.getElementById('addDepartmentError');
-  if(!name){ errorEl.textContent = 'Department name is required.'; errorEl.classList.remove('hidden'); return; }
-  btn.disabled = true; errorEl.classList.add('hidden');
-
-  const formData = new FormData();
-  formData.append('name', name);
-  formData.append('description', desc);
-  if (logo) {
-    formData.append('logo', logo);
-  }
+  const form = e.target;
+  
+  btn.disabled = true;
+  errorEl.classList.add('hidden');
 
   fetch('{% url "dashboard:department_create" %}', {
     method: 'POST',
-    headers: { 
-      'X-CSRFToken': getCookie('csrftoken'),
-      'Accept': 'application/json'
-    },
-    body: formData
+    headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Accept': 'application/json' },
+    body: new FormData(form)
   })
   .then(async response => {
-    const contentType = response.headers.get('content-type') || '';
-    const payload = contentType.includes('application/json')
-      ? await response.json().catch(() => ({}))
-      : { detail: await response.text().catch(() => '') };
-
-    if (!response.ok || payload.success === false) {
-      console.error('Department creation failed', { status: response.status, payload });
-      const msg = payload.errors ? Object.values(payload.errors).flat().join(', ') :
-                payload.detail || 'Failed to create department.';
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      const msg = payload.errors ? Object.values(payload.errors).flat().join(', ') : (payload.detail || 'Failed to create department.');
       throw new Error(msg);
     }
-
-    return payload;
   })
   .then(() => {
-    console.info('Department created successfully:', name);
-    btn.disabled = false;
     closeModal('addDepartmentModal');
-    showToast('Department created successfully!', 'success');
-    setTimeout(() => {
-      window.location = '{% url "dashboard:departments" %}';
-    }, 700);
+    // Assuming showToast is a global function from your base template
+    if(typeof showToast === 'function') showToast('Department created successfully!', 'success');
+    setTimeout(() => location.reload(), 700);
   })
   .catch(err => {
-    console.error('Error creating department:', err);
-    errorEl.textContent = err.message || 'Failed to create department. Try again.';
+    errorEl.textContent = err.message;
     errorEl.classList.remove('hidden');
+  })
+  .finally(() => {
     btn.disabled = false;
   });
 }
 
-
-// Close menus on outside click or Escape
-document.addEventListener('click', (e) => {
-  if (!openMenuId) return;
-  const menu = document.getElementById(openMenuId);
-  const btnId = openMenuId.replace('Menu', 'Btn');
-  const btn = document.getElementById(btnId);
-  if (!menu || !btn) return;
-
-  const clickedInside = menu.contains(e.target) || btn.contains(e.target);
-  if (!clickedInside) closeActionsMenu();
-});
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    closeActionsMenu();
-    closeModal('membersModal');
-    closeModal('assignLeadModal');
-    closeModal('addDepartmentModal');
-  }
-});
-
-// --------------- Members modal with pagination ---------------
+// --------------- Members Modal ---------------
 function openMembersModal(deptId, page = 1) {
   showModal('membersModal', true);
   const modal = document.getElementById('membersModal');
-  modal.querySelector('.modal-title').textContent = 'Members — Department ' + deptId;
+  modal.querySelector('.modal-title').textContent = `Department Members`;
   const body = modal.querySelector('.modal-body');
   body.innerHTML = '<div class="text-gray-500">Loading...</div>';
 
-  // Fetch members with pagination
-  fetch('{% url "dashboard:api_department_members" 0 %}'.replace('/0/', '/' + deptId + '/') + '?page=' + page)
+  fetch(`{% url "dashboard:api_department_members" 0 %}`.replace('/0/', `/${deptId}/`) + `?page=${page}`)
     .then(r => r.json())
     .then(data => {
-      if (!data.members || data.members.length === 0) {
-        body.innerHTML = '<p class="text-sm text-gray-500">No members found.</p>';
+      if (!data.members?.length) {
+        body.innerHTML = '<p class="text-sm text-gray-500">No members found in this department.</p>';
         return;
       }
       
-      // Create members list
       const list = document.createElement('div');
       list.className = 'divide-y divide-gray-100';
-      
-      // Add members
       data.members.forEach(m => {
         const row = document.createElement('div');
         row.className = 'flex items-center justify-between gap-3 py-3';
         row.innerHTML = `
-          <div class="min-w-0">
-            <div class="truncate text-sm font-medium text-gray-900">${m.full_name || ''}</div>
-            <div class="truncate text-xs text-gray-500">${m.email || ''}</div>
+          <div class="flex items-center gap-3 min-w-0">
+            <img class="h-8 w-8 rounded-full" src="${m.avatar_url || 'https://placehold.co/32x32'}" alt="">
+            <div class="min-w-0">
+              <div class="truncate text-sm font-medium text-gray-900">${m.full_name || ''}</div>
+              <div class="truncate text-xs text-gray-500">${m.email || ''}</div>
+            </div>
           </div>
-          <div>
-            <button class="px-2 py-1 text-xs bg-sky-600 text-white rounded hover:bg-sky-700" onclick="assignLeadById(${deptId}, ${m.id})">Assign Lead</button>
-          </div>`;
+          <button class="flex-shrink-0 rounded-md bg-sky-600 px-2 py-1 text-xs text-white hover:bg-sky-700" onclick="assignLeadById(${deptId}, ${m.id})">Make Lead</button>`;
         list.appendChild(row);
       });
       
-      // Add pagination if needed
       if (data.total_pages > 1) {
         const pagination = document.createElement('div');
         pagination.className = 'flex items-center justify-between mt-4 pt-4 border-t border-gray-200';
-        
-        const pageInfo = document.createElement('div');
-        pageInfo.className = 'text-sm text-gray-500';
-        pageInfo.textContent = `Page ${data.page} of ${data.total_pages}`;
-        
-        const buttons = document.createElement('div');
-        buttons.className = 'flex gap-2';
-        
-        // Previous button
-        if (data.page > 1) {
-          const prevBtn = document.createElement('button');
-          prevBtn.className = 'px-3 py-1 text-sm border border-gray-200 rounded hover:bg-gray-50';
-          prevBtn.textContent = 'Previous';
-          prevBtn.onclick = () => openMembersModal(deptId, data.page - 1);
-          buttons.appendChild(prevBtn);
-        }
-        
-        // Next button
-        if (data.page < data.total_pages) {
-          const nextBtn = document.createElement('button');
-          nextBtn.className = 'px-3 py-1 text-sm border border-gray-200 rounded hover:bg-gray-50';
-          nextBtn.textContent = 'Next';
-          nextBtn.onclick = () => openMembersModal(deptId, data.page + 1);
-          buttons.appendChild(nextBtn);
-        }
-        
-        pagination.appendChild(pageInfo);
-        pagination.appendChild(buttons);
+        pagination.innerHTML = `<div class="text-sm text-gray-500">Page ${data.page} of ${data.total_pages}</div><div class="flex gap-2"></div>`;
+        const buttons = pagination.querySelector('.flex.gap-2');
+        if (data.page > 1) buttons.innerHTML += `<button class="rounded-md border border-gray-200 px-3 py-1 text-sm hover:bg-gray-50" onclick="openMembersModal(${deptId}, ${data.page - 1})">Previous</button>`;
+        if (data.page < data.total_pages) buttons.innerHTML += `<button class="rounded-md border border-gray-200 px-3 py-1 text-sm hover:bg-gray-50" onclick="openMembersModal(${deptId}, ${data.page + 1})">Next</button>`;
         list.appendChild(pagination);
       }
       
       body.innerHTML = '';
       body.appendChild(list);
     })
-    .catch(() => {
-      body.innerHTML = '<p class="text-sm text-red-600">Failed to fetch members.</p>';
-    });
+    .catch(() => { body.innerHTML = '<p class="text-sm text-red-600">Failed to fetch members.</p>'; });
 }
 
-// Assign lead directly by member id
+// --------------- Assign Lead ---------------
 function assignLeadById(deptId, userId) {
   fetch(`/dashboard/manage-users/departments/${deptId}/assign-lead/`, {
     method: 'POST',
@@ -554,14 +573,22 @@ function assignLeadById(deptId, userId) {
     body: `user_id=${encodeURIComponent(userId)}`
   })
   .then(r => r.json())
-  .then(j => { if (j.success) location.reload(); else alert('Failed: ' + (j.error || 'unknown')); })
-  .catch(() => alert('Error assigning lead'));
+  .then(j => { 
+    if (j.success) {
+      if(typeof showToast === 'function') showToast('Lead assigned successfully!', 'success');
+      setTimeout(() => location.reload(), 700);
+    } else {
+      throw new Error(j.error || 'Unknown error');
+    }
+  })
+  .catch(err => {
+    if(typeof showToast === 'function') showToast(`Error: ${err.message}`, 'error');
+  });
 }
 
-// --------------- Assign Lead modal ---------------
 function openAssignLeadModal(deptId) {
   document.getElementById('assignLeadDeptId').value = String(deptId);
-  document.getElementById('assignLeadValue').value = '';
+  document.getElementById('assignLeadForm').reset();
   document.getElementById('assignLeadError').classList.add('hidden');
   showModal('assignLeadModal', true);
 }
@@ -569,18 +596,20 @@ function openAssignLeadModal(deptId) {
 function submitAssignLead(e) {
   e.preventDefault();
   const btn = document.getElementById('assignLeadSubmit');
+  const errorEl = document.getElementById('assignLeadError');
   const deptId = document.getElementById('assignLeadDeptId').value;
   const val = document.getElementById('assignLeadValue').value.trim();
-  const errorEl = document.getElementById('assignLeadError');
   if (!val) return;
 
   btn.disabled = true;
   errorEl.classList.add('hidden');
-  const isId = /^[0-9]+$/.test(val);
+  
   const form = new URLSearchParams();
-  form.set('dept_id', deptId);
-  if (isId) form.set('user_id', val);
-  else form.set('email', val);
+  if (/^[0-9]+$/.test(val)) {
+      form.set('user_id', val);
+  } else {
+      form.set('email', val);
+  }
 
   fetch(`/dashboard/manage-users/departments/${deptId}/assign-lead/`, {
     method: 'POST',
@@ -592,57 +621,84 @@ function submitAssignLead(e) {
     if (j.success) {
       location.reload();
     } else {
-      errorEl.textContent = 'Failed: ' + (j.error || 'unknown');
-      errorEl.classList.remove('hidden');
-      btn.disabled = false;
+      throw new Error(j.error || 'Unknown error');
     }
   })
-  .catch(() => {
-    errorEl.textContent = 'Network error assigning lead';
+  .catch(err => {
+    errorEl.textContent = `Failed: ${err.message}`;
     errorEl.classList.remove('hidden');
+  })
+  .finally(() => { btn.disabled = false; });
+}
+
+// --------------- Delete Department ---------------
+function confirmDeleteDepartment(deptId, deptName) {
+  document.getElementById('deleteDepartmentId').value = deptId;
+  document.getElementById('deleteDepartmentName').textContent = deptName;
+  document.getElementById('deleteDepartmentError').classList.add('hidden');
+  showModal('deleteDepartmentModal', true);
+}
+
+function submitDeleteDepartment(e) {
+  e.preventDefault();
+  const btn = document.getElementById('deleteDepartmentSubmit');
+  const errorEl = document.getElementById('deleteDepartmentError');
+  const deptId = document.getElementById('deleteDepartmentId').value;
+  
+  btn.disabled = true;
+  errorEl.classList.add('hidden');
+
+  fetch(`/dashboard/manage-users/departments/${deptId}/delete/`, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Accept': 'application/json' }
+  })
+  .then(async response => {
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      throw new Error(payload.detail || 'Failed to delete department.');
+    }
+  })
+  .then(() => {
+    closeModal('deleteDepartmentModal');
+    if(typeof showToast === 'function') showToast('Department deleted successfully!', 'success');
+    setTimeout(() => location.reload(), 700);
+  })
+  .catch(err => {
+    errorEl.textContent = err.message;
+    errorEl.classList.remove('hidden');
+  })
+  .finally(() => {
     btn.disabled = false;
   });
 }
 
-// --------------- Add Department modal ---------------
-function openAddDepartmentModal() {
-  // Clear form
-  document.getElementById('departmentName').value = '';
-  document.getElementById('departmentDescription').value = '';
-  document.getElementById('addDepartmentError').classList.add('hidden');
-  showModal('addDepartmentModal', true);
-}
-
-// This function was intentionally left blank to be overridden by the previous implementation
-
-// Modal helpers and backdrop listeners are provided by the base template (manage_users_base.html)
-
-// --------------- Export visible rows ---------------
+// --------------- Export ---------------
 function exportVisible() {
-  const rows = Array.from(document.querySelectorAll('#departmentsTable tbody tr')).filter(tr => tr.style.display !== 'none');
+  const rows = Array.from(document.querySelectorAll('#departmentsTable tbody tr')).filter(tr => tr.style.display !== 'none' && !tr.querySelector('td[colspan]'));
+  if (rows.length === 0) {
+    if(typeof showToast === 'function') showToast('No data to export.', 'info');
+    return;
+  }
   const head = ['Name', 'Department Head', 'Users', 'Open Tickets', 'SLA Performance', 'Status'];
   const data = rows.map(tr => {
     const tds = tr.querySelectorAll('td');
-    const name = tds[0]?.innerText.replace(/\s+/g,' ').trim() || '';
-    const headTxt = tds[1]?.innerText.replace(/\s+/g,' ').trim() || '';
-    const users = tds[2]?.innerText.replace(/\s+/g,' ').trim() || '';
-    const tickets = tds[3]?.innerText.replace(/\s+/g,' ').trim() || '';
-    const sla = tds[4]?.innerText.replace(/\s+/g,' ').trim() || '';
-    const status = tds[5]?.innerText.replace(/\s+/g,' ').trim() || '';
-    return [name, headTxt, users, tickets, sla, status];
+    return [
+      tds[0]?.innerText.replace(/\s+/g,' ').trim(),
+      tds[1]?.innerText.replace(/\s+/g,' ').trim(),
+      tds[2]?.innerText.replace(/\s+/g,' ').trim(),
+      tds[3]?.innerText.replace(/\s+/g,' ').trim(),
+      tds[4]?.innerText.replace(/\s+/g,' ').trim(),
+      tds[5]?.innerText.replace(/\s+/g,' ').trim()
+    ];
   });
 
   const csv = [head, ...data].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'departments.csv';
+  const a = Object.assign(document.createElement('a'), { href: url, download: 'departments_export.csv' });
   document.body.appendChild(a);
   a.click();
   URL.revokeObjectURL(url);
   a.remove();
 }
-
-// Toast functions are provided by the base template (manage_users_base.html)
 </script>

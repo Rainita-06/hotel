@@ -128,3 +128,76 @@ def notify_stale_request(step_id):
 
     except ServiceRequestStep.DoesNotExist:
         return
+
+
+@shared_task
+def check_sla_breaches():
+    """
+    Periodic task to check for SLA breaches in service requests
+    """
+    from .models import ServiceRequest
+    from django.contrib.auth import get_user_model
+    from .utils import create_notification, create_bulk_notifications
+    
+    User = get_user_model()
+    
+    # Get all open service requests (not closed or completed)
+    open_requests = ServiceRequest.objects.exclude(
+        status__in=['completed', 'closed']
+    ).select_related('requester_user', 'assignee_user', 'department', 'request_type')
+    
+    breach_count = 0
+    for request in open_requests:
+        # Store previous SLA status
+        previous_response_breach = request.response_sla_breached
+        previous_resolution_breach = request.resolution_sla_breached
+        
+        # Check SLA breaches
+        request.check_sla_breaches()
+        
+        # Check if this is a new breach
+        new_response_breach = request.response_sla_breached and not previous_response_breach
+        new_resolution_breach = request.resolution_sla_breached and not previous_resolution_breach
+        
+        # If SLA was newly breached, send notifications
+        if new_response_breach or new_resolution_breach:
+            # Notify assignee if exists
+            if request.assignee_user:
+                breach_type = "Response" if new_response_breach else "Resolution"
+                create_notification(
+                    recipient=request.assignee_user,
+                    title=f"SLA Breach Alert: Ticket #{request.id}",
+                    message=f"{breach_type} SLA has been breached for ticket #{request.id}: {request.request_type.name}. Please take immediate action.",
+                    notification_type='warning',
+                    related_object=request
+                )
+            
+            # Notify department staff if department exists
+            if request.department:
+                department_users = User.objects.filter(userprofile__department=request.department)
+                if department_users.exists():
+                    breach_type = "Response" if new_response_breach else "Resolution"
+                    create_bulk_notifications(
+                        recipients=department_users,
+                        title=f"SLA Breach Alert: Ticket #{request.id}",
+                        message=f"{breach_type} SLA has been breached for ticket #{request.id}: {request.request_type.name}. Please take immediate action.",
+                        notification_type='warning',
+                        related_object=request
+                    )
+            
+            # Notify requester
+            if request.requester_user:
+                create_notification(
+                    recipient=request.requester_user,
+                    title=f"SLA Breach: Ticket #{request.id}",
+                    message=f"Your ticket #{request.id} is experiencing delays. We're working to resolve it as quickly as possible.",
+                    notification_type='warning',
+                    related_object=request
+                )
+            
+            breach_count += 1
+        
+        # Save the updated SLA status
+        request.save()
+    
+    return f"Checked {open_requests.count()} open requests. Found {breach_count} new SLA breaches."

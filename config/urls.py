@@ -3,11 +3,24 @@ from django.urls import path, include
 from hotel_app import views
 from django.contrib.auth import views as auth_views
 from django.views.generic import TemplateView
-from hotel_app.views import logout_view, signup_view  # custom logout view
+from hotel_app.views import BuildingViewSet, FloorViewSet, LocationTypeViewSet, logout_view, signup_view  # custom logout view
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import RedirectView
+from django.contrib import admin
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from rest_framework.authtoken.views import obtain_auth_token
+from hotel_app.views import LocationFamilyViewSet, LocationViewSet
 
+router = DefaultRouter()
+router.register(r'location-families', LocationFamilyViewSet, basename='locationfamily')
+router.register(r'locations', LocationViewSet, basename='location')
+router.register(r"locations", LocationViewSet, basename="locations")
+router.register(r'buildings', BuildingViewSet,basename="buildings")
+router.register(r'floors',FloorViewSet,basename="floors")
+
+router.register(r'types',LocationTypeViewSet,basename="types")
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', RedirectView.as_view(url='/dashboard/', permanent=False), name='home'),
@@ -85,6 +98,9 @@ path('buildings/<int:pk>/edit/', views.building_edit, name='building_edit'),
     path("buildings/delete/<int:building_id>/", views.building_delete, name="building_delete"),
      path("bulk_import_locations/",views.bulk_import_locations,name="bulk_import_locations"),
     path("export_locations_csv/",views.export_locations_csv,name="export_locations_csv"),
+      path('api/', include(router.urls)), 
+    
+      path("api/token-auth/", obtain_auth_token, name="api_token_auth"),
 ]
 
 # Serve media files during development

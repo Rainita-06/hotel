@@ -49,6 +49,7 @@ class Checklist(models.Model):
     checklist_id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=100,blank=False, null=False)
     location = models.ForeignKey('Location',blank=False, null=False, on_delete=models.CASCADE)
+    description = models.TextField(blank=True, null=True)
     class Meta:
         db_table = 'checklist'
 
@@ -284,6 +285,7 @@ class Location(models.Model):
     STATUS_CHOICES = [
     ('active', 'Active'),
     ('maintenance', 'Maintenance'),
+    ('Inactive', 'Inactive'),
 ]
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
@@ -354,21 +356,21 @@ class WorkflowTransition(models.Model):
 
 # ---- Checklist ----
 
-class Checklist(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-    description = models.TextField(blank=True, null=True)
+# class Checklist(models.Model):
+#     name = models.CharField(max_length=100, unique=True)
+#     description = models.TextField(blank=True, null=True)
 
-    def __str__(self):
-        return str(self.name)
+#     def __str__(self):
+#         return str(self.name)
 
 
-class ChecklistItem(models.Model):
-    checklist = models.ForeignKey(Checklist, on_delete=models.CASCADE)
-    label = models.CharField(max_length=240, blank=True, null=True)
-    required = models.BooleanField(default=False)
+# class ChecklistItem(models.Model):
+#     checklist = models.ForeignKey(Checklist, on_delete=models.CASCADE)
+#     label = models.CharField(max_length=240, blank=True, null=True)
+#     required = models.BooleanField(default=False)
 
-    def __str__(self):
-        return self.label or f'Item {self.pk}'
+#     def __str__(self):
+#         return self.label or f'Item {self.pk}'
 
 
 # ---- Requests ----
@@ -406,6 +408,7 @@ class ServiceRequest(models.Model):
     location = models.ForeignKey(Location, on_delete=models.SET_NULL, null=True, blank=True)
     requester_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='requests_made')
     assignee_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='requests_assigned')
+    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True)
     priority = models.CharField(max_length=20, blank=True, null=True, choices=PRIORITY_CHOICES)
     status = models.CharField(max_length=50, blank=True, null=True, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -417,6 +420,9 @@ class ServiceRequest(models.Model):
     due_at = models.DateTimeField(blank=True, null=True)
     sla_hours = models.PositiveIntegerField(default=24, help_text='SLA time in hours to resolve')
     sla_breached = models.BooleanField(default=False)
+    response_sla_hours = models.PositiveIntegerField(default=1, help_text='SLA time in hours to respond')
+    response_sla_breached = models.BooleanField(default=False)
+    resolution_sla_breached = models.BooleanField(default=False)
     notes = models.TextField(blank=True, null=True)
     resolution_notes = models.TextField(blank=True, null=True)
 
@@ -445,6 +451,16 @@ class ServiceRequest(models.Model):
         self.assignee_user = user
         self.status = 'assigned'
         self.save()
+        # Notify the assigned user
+        self.notify_assigned_user()
+
+    def assign_to_department(self, department):
+        """Assign the ticket to a department and notify all staff."""
+        self.department = department
+        self.status = 'pending'  # Reset status to pending for department routing
+        self.save()
+        # Notify all staff in the department
+        self.notify_department_staff()
 
     def accept_task(self):
         """Accept the assigned task."""
@@ -473,11 +489,15 @@ class ServiceRequest(models.Model):
         self.status = 'closed'
         self.closed_at = timezone.now()
         self.save()
+        # Notify requester on closure
+        self.notify_requester_on_closure()
 
     def escalate_task(self):
         """Escalate the task."""
         self.status = 'escalated'
         self.save()
+        # Notify department leader on escalation
+        self.notify_department_leader_on_escalation()
 
     def reject_task(self):
         """Reject the task."""
@@ -497,6 +517,153 @@ class ServiceRequest(models.Model):
             'rejected': ['assigned'],
         }
         return new_status in valid_transitions.get(self.status, [])
+
+    def notify_department_staff(self):
+        """Notify all staff members in the assigned department."""
+        from .utils import create_bulk_notifications
+        
+        if not self.department:
+            return
+            
+        # Get all users in the department
+        department_users = User.objects.filter(userprofile__department=self.department)
+        
+        if department_users.exists():
+            # Create notifications for all department staff
+            create_bulk_notifications(
+                recipients=department_users,
+                title=f"New Ticket Assigned: {self.request_type.name}",
+                message=f"A new ticket has been assigned to your department: {self.notes[:100]}...",
+                notification_type='request',
+                related_object=self
+            )
+
+    def notify_assigned_user(self):
+        """Notify the user assigned to the ticket."""
+        from .utils import create_notification
+        
+        if self.assignee_user:
+            create_notification(
+                recipient=self.assignee_user,
+                title=f"Ticket Assigned: {self.request_type.name}",
+                message=f"You have been assigned a new ticket: {self.notes[:100]}...",
+                notification_type='request',
+                related_object=self
+            )
+
+    def notify_requester_on_closure(self):
+        """Notify the requester when ticket is closed."""
+        from .utils import create_notification
+        
+        if self.requester_user:
+            create_notification(
+                recipient=self.requester_user,
+                title=f"Ticket Resolved: {self.request_type.name}",
+                message=f"Your ticket has been resolved: {self.resolution_notes or 'No resolution notes provided.'}",
+                notification_type='success',
+                related_object=self
+            )
+
+    def notify_department_leader_on_escalation(self):
+        """Notify department leader when ticket is escalated."""
+        from .utils import create_notification
+        
+        if self.department:
+            # In a real implementation, you would identify the department leader
+            # For now, we'll notify all department staff about the escalation
+            department_users = User.objects.filter(userprofile__department=self.department)
+            for user in department_users:
+                create_notification(
+                    recipient=user,
+                    title=f"Ticket Escalated: {self.request_type.name}",
+                    message=f"Ticket #{self.pk} has been escalated. Please take immediate action.",
+                    notification_type='warning',
+                    related_object=self
+                )
+
+    def check_sla_breaches(self):
+        """Check if SLA has been breached and update flags accordingly."""
+        if not self.created_at:
+            return
+            
+        now = timezone.now()
+        
+        # Check response SLA (time to acknowledge)
+        if self.accepted_at:
+            response_time = self.accepted_at - self.created_at
+            response_sla_seconds = self.response_sla_hours * 3600  # Convert hours to seconds
+            self.response_sla_breached = response_time.total_seconds() > response_sla_seconds
+        elif self.status in ['accepted', 'in_progress', 'completed', 'closed']:
+            # If in progress but not yet accepted, check response SLA from creation time
+            response_time = now - self.created_at
+            response_sla_seconds = self.response_sla_hours * 3600
+            self.response_sla_breached = response_time.total_seconds() > response_sla_seconds
+            
+        # Check resolution SLA (time to resolve)
+        if self.completed_at:
+            resolution_time = self.completed_at - self.created_at
+            resolution_sla_seconds = self.sla_hours * 3600
+            self.resolution_sla_breached = resolution_time.total_seconds() > resolution_sla_seconds
+        elif self.status in ['completed', 'closed']:
+            # If marked as completed but completed_at not set, check against now
+            resolution_time = now - self.created_at
+            resolution_sla_seconds = self.sla_hours * 3600
+            self.resolution_sla_breached = resolution_time.total_seconds() > resolution_sla_seconds
+        elif self.status in ['in_progress', 'accepted', 'assigned']:
+            # For open tickets, check if they're approaching or breaching SLA
+            resolution_time = now - self.created_at
+            resolution_sla_seconds = self.sla_hours * 3600
+            self.resolution_sla_breached = resolution_time.total_seconds() > resolution_sla_seconds
+            
+        # Overall SLA breach is true if either response or resolution SLA is breached
+        self.sla_breached = self.response_sla_breached or self.resolution_sla_breached
+
+    def get_sla_status(self):
+        """Get the current SLA status for display."""
+        if self.status == 'closed':
+            if self.sla_breached:
+                return "Breached"
+            else:
+                return "Met"
+        elif self.status in ['completed', 'in_progress', 'accepted', 'assigned']:
+            if self.sla_breached:
+                return "Breaching"
+            else:
+                return "On Track"
+        else:
+            return "Not Started"
+
+    def get_time_left(self):
+        """Get the time left before SLA breach."""
+        if not self.created_at:
+            return None
+            
+        now = timezone.now()
+        
+        # If already completed or closed, show time taken
+        if self.completed_at or self.status == 'completed' or self.status == 'closed':
+            completion_time = self.completed_at or self.closed_at or now
+            time_taken = completion_time - self.created_at
+            hours = int(time_taken.total_seconds() // 3600)
+            minutes = int((time_taken.total_seconds() % 3600) // 60)
+            return f"{hours}h {minutes}m"
+        
+        # For open tickets, show time left until resolution SLA breach
+        elapsed_time = now - self.created_at
+        sla_seconds = self.sla_hours * 3600
+        time_left_seconds = sla_seconds - elapsed_time.total_seconds()
+        
+        if time_left_seconds <= 0:
+            return "Breached"
+            
+        # Convert to hours and minutes
+        hours = int(time_left_seconds // 3600)
+        minutes = int((time_left_seconds % 3600) // 60)
+        
+        if hours > 0:
+            return f"{hours}h {minutes}m"
+        else:
+            return f"{minutes}m"
 
 
 class ServiceRequestStep(models.Model):
@@ -1284,8 +1451,8 @@ class MasterUser(User):
         verbose_name_plural = 'Master Users'
 
 
-class MasterLocation(Location):
-    class Meta:
-        proxy = True
-        verbose_name = 'Master Location'
-        verbose_name_plural = 'Master Locations'
+# class MasterLocation(Location):
+#     class Meta:
+#         proxy = True
+#         verbose_name = 'Master Location'
+#         verbose_name_plural = 'Master Locations'

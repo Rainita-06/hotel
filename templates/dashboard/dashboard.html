@@ -2,77 +2,100 @@
 {% load static %}
 
 {% block content %}
-<div class="p-6 pb-2 border-b">
-    <header class="w-full mb-2 flex flex-col md:flex-row items-start md:items-center justify-between">
-        <!-- Title & Subtitle -->
-        <div class="flex-1 min-w-0">
-            <h1 class="text-3xl font-bold text-gray-900 truncate">Admin Dashboard</h1>
-            <p class="mt-1 text-sm text-gray-600 truncate">
-                Welcome back! Here's what's happening at your property.
-            </p>
-        </div>
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 
-        <!-- Search + Icons -->
-        <div class="mt-4 md:mt-0 flex items-center space-x-4 min-w-0">
-            <!-- Search Box -->
-            <div class="relative w-full max-w-xs">
-                <input 
-                    type="text" 
-                    placeholder="Search..." 
-                    class="w-full pl-10 pr-3 py-2 rounded-lg border bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
-                />
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <img src="{% static 'images/dashboard/search.svg' %}" class="h-5 w-5 text-gray-400" alt="Search Icon"/>
-                </div>
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <div data-aos="fade-down" class="pb-2 border-b">
+        <header class="w-full mb-2 flex flex-col md:flex-row items-start md:items-center justify-between">
+            <div class="flex-1 min-w-0">
+                <h1 class="text-3xl font-bold text-gray-900 truncate">Admin Dashboard</h1>
+                <p class="mt-1 text-sm text-gray-600 truncate">
+                    Welcome back! Here's what's happening at your property.
+                </p>
             </div>
 
-            <!-- Notifications -->
-            <button class="p-2 rounded-full hover:bg-gray-100 flex items-center justify-center">
-                <img src="{% static 'images/dashboard/notifications.svg' %}" class="h-6 w-6" alt="Notifications"/>
-            </button>
+            <div class="mt-4 md:mt-0 flex items-center space-x-4 min-w-0">
+                <div class="relative w-full max-w-xs">
+                    <input 
+                        type="text" 
+                        placeholder="Search..." 
+                        class="w-full pl-10 pr-3 py-2 rounded-lg border bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                    />
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <img src="{% static 'images/dashboard/search.svg' %}" class="h-5 w-5 text-gray-400" alt="Search Icon"/>
+                    </div>
+                </div>
 
-            <!-- Calendar -->
-            <button class="p-2 rounded-full hover:bg-gray-100 flex items-center justify-center">
-                <img src="{% static 'images/dashboard/calender.svg' %}" class="h-6 w-6" alt="Calendar"/>
-            </button>
+                <button class="p-2 rounded-full hover:bg-gray-100 flex items-center justify-center">
+                    <img src="{% static 'images/dashboard/notifications.svg' %}" class="h-6 w-6" alt="Notifications"/>
+                </button>
+
+                <button class="p-2 rounded-full hover:bg-gray-100 flex items-center justify-center">
+                    <img src="{% static 'images/dashboard/calender.svg' %}" class="h-6 w-6" alt="Calendar"/>
+                </button>
+            </div>
+        </header>
+    </div>
+
+    <div class="pt-6">
+
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+            {# Dynamic counts with safe fallbacks to dummy values #}
+            <div data-aos="fade-up" data-aos-delay="100">
+                {% include 'dashboard/components/stats_card.html' with title="Active Users" value=total_users|default:"1,247" change="+12%" change_positive=True icon_slug="active_users" icon_bg="bg-sky-600/10" icon_color="text-sky-600" %}
+            </div>
+            <div data-aos="fade-up" data-aos-delay="200">
+                {% include 'dashboard/components/stats_card.html' with title="Active Departments" value=total_departments|default:"24" change="+3" change_positive=True icon_slug="active_departments" icon_bg="bg-teal-500/10" icon_color="text-teal-500" %}
+            </div>
+            <div data-aos="fade-up" data-aos-delay="300">
+                {% include 'dashboard/components/stats_card.html' with title="Open Tickets" value=open_complaints|default:"156" change="+8" change_positive=False icon_slug="open_tickets" icon_bg="bg-yellow-400/10" icon_color="text-yellow-400" %}
+            </div>
+            <div data-aos="fade-up" data-aos-delay="400">
+                {% include 'dashboard/components/stats_card.html' with title="SLA Breaches" value="12" change="+2" change_positive=False icon_slug="sla_breaches" icon_bg="bg-red-500/10" icon_color="text-red-500" %}
+            </div>
+            <div data-aos="fade-up" data-aos-delay="500">
+                {% include 'dashboard/components/stats_card.html' with title="Messages Today" value="2,847" change="+24%" change_positive=True icon_slug="messages_today" icon_bg="bg-green-500/10" icon_color="text-green-500" %}
+            </div>
+            <div data-aos="fade-up" data-aos-delay="600">
+                {% include 'dashboard/components/stats_card.html' with title="Gym Members Active" value="389" change="+5%" change_positive=True icon_slug="gym_members_active" icon_bg="bg-fuchsia-700/10" icon_color="text-fuchsia-700" %}
+            </div>
+        </section>
+
+        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div data-aos="fade-up" data-aos-delay="300">
+                {% include "dashboard/components/checklist_card.html" %}
+            </div>
+            <div data-aos="fade-up" data-aos-delay="400">
+                {% include "dashboard/components/whatsapp_card.html" %}
+            </div>
+            <div data-aos="fade-up" data-aos-delay="500">
+                {% include "dashboard/components/system_status_card.html" %}
+            </div>
         </div>
-    </header>
-</div>
 
-<div class="p-6">
-
-    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
-    {# Dynamic counts with safe fallbacks to dummy values #}
-    {% include 'dashboard/components/stats_card.html' with title="Active Users" value=total_users|default:"1,247" change="+12%" change_positive=True icon_slug="active_users" icon_bg="bg-sky-600/10" icon_color="text-sky-600" %}
-
-    {% include 'dashboard/components/stats_card.html' with title="Active Departments" value=total_departments|default:"24" change="+3" change_positive=True icon_slug="active_departments" icon_bg="bg-teal-500/10" icon_color="text-teal-500" %}
-
-    {% include 'dashboard/components/stats_card.html' with title="Open Tickets" value=open_complaints|default:"156" change="+8" change_positive=False icon_slug="open_tickets" icon_bg="bg-yellow-400/10" icon_color="text-yellow-400" %}
-
-        {% include 'dashboard/components/stats_card.html' with title="SLA Breaches" value="12" change="+2" change_positive=False icon_slug="sla_breaches" icon_bg="bg-red-500/10" icon_color="text-red-500" %}
-
-        {% include 'dashboard/components/stats_card.html' with title="Messages Today" value="2,847" change="+24%" change_positive=True icon_slug="messages_today" icon_bg="bg-green-500/10" icon_color="text-green-500" %}
-
-        {% include 'dashboard/components/stats_card.html' with title="Gym Members Active" value="389" change="+5%" change_positive=True icon_slug="gym_members_active" icon_bg="bg-fuchsia-700/10" icon_color="text-fuchsia-700" %}
-    </section>
-
-    
-
-    <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {% include "dashboard/components/checklist_card.html" %}
-        {% include "dashboard/components/whatsapp_card.html" %}
-        {% include "dashboard/components/system_status_card.html" %}
+        <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div data-aos="fade-up" data-aos-delay="600">
+                {% include "dashboard/components/requests_chart.html" %}
+            </div>
+            <div data-aos="fade-up" data-aos-delay="700">
+                {% include "dashboard/components/feedback_chart.html" %}
+            </div>
+        </div>
     </div>
-    <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {% include "dashboard/components/requests_chart.html" %}
-        {% include "dashboard/components/feedback_chart.html" %}
-    </div>
-</div>
+</main>
 {% endblock content %}
 
 {% block extra_js %}
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // 3. Initialize AOS
+        AOS.init({
+            duration: 800,
+            once: true, // Animation happens only once
+        });
+
         // Your Chart.js initialization code for the canvases will go here
         // For example:
         // const ctx = document.getElementById('requestsChart').getContext('2d');

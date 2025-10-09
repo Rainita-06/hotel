@@ -210,10 +210,12 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center gap-2">
-                                    <div class="w-16 h-2 bg-gray-200 rounded-full">
-                                        <div class="h-2 rounded-full" style="width: {{ ticket.sla_percentage|default:0 }}%; background-color: {{ ticket.sla_color|default:'#6b7280' }};"></div>
-                                    </div>
-                                    <span class="text-sm font-medium" style="color: {{ ticket.sla_color|default:'#6b7280' }};">{{ ticket.sla_percentage|default:0 }}%</span>
+                                    {% if ticket.response_sla_breached or ticket.resolution_sla_breached %}
+                                        <span class="px-2 py-1 text-xs font-medium text-white bg-red-500 rounded-full">Breached</span>
+                                    {% else %}
+                                        <span class="px-2 py-1 text-xs font-medium text-white bg-green-500 rounded-full">On Track</span>
+                                    {% endif %}
+                                    <span class="text-sm text-gray-500">{{ ticket.get_time_left }}</span>
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">

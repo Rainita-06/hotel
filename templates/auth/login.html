@@ -26,7 +26,7 @@
         <!-- Title -->
         <div class="text-center">
             <h2 class="text-3xl font-bold text-gray-900">Admin Dashboard</h2>
-            <p class="mt-2 text-base text-gray-600">Sign in to manage your property</p>
+            <p class="mt-2 text-base text-gray-600">Sign in with your username or email</p>
         </div>
 
         <!-- Form -->
@@ -41,11 +41,11 @@
                 </div>
             {% endif %}
 
-            <!-- Email -->
+            <!-- Username or Email -->
             <div class="space-y-2">
-                <label for="username" class="text-sm font-medium text-gray-700">Username</label>
+                <label for="username" class="text-sm font-medium text-gray-700">Username or Email</label>
                 <div class="relative">
-                    <input type="username" name="username" id="username" placeholder="Enter your email" required
+                    <input type="text" name="username" id="username" placeholder="Enter your username or email" required
                            class="block w-full pr-10 pl-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
                     <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                         <img src="{% static 'images/login/username.svg' %}" alt="Username" class="h-5 w-5">

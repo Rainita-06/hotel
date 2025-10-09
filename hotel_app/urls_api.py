@@ -1,6 +1,14 @@
 from django.urls import path
 from . import api_views
 
+from django.contrib import admin
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from hotel_app.views import LocationFamilyViewSet, LocationViewSet
+
+router = DefaultRouter()
+router.register(r'location-families', LocationFamilyViewSet, basename='locationfamily')
+router.register(r'locations', LocationViewSet, basename='location')
 urlpatterns = [
     # User Management
     path('users/', api_views.UserList.as_view(), name='user-list'),
@@ -36,4 +44,5 @@ urlpatterns = [
     path('notifications/<int:notification_id>/read/', api_views.mark_notification_as_read, name='mark-notification-as-read'),
     path('notifications/read-all/', api_views.mark_all_notifications_as_read, name='mark-all-notifications-as-read'),
     path('notifications/<int:notification_id>/delete/', api_views.delete_notification, name='delete-notification'),
+     path('api/', include(router.urls)),
 ]

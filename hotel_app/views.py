@@ -526,8 +526,41 @@ def generate_guest_qr(request, guest_id):
             'message': f'Error generating QR code: {str(e)}'
         })
     
+from rest_framework import viewsets, filters
+from .models import LocationFamily, Location,Building,Floor,LocationType
+from .serializers import  BuildingSerializer, FloorSerializer, LocationFamilySerializer, LocationSerializer, LocationTypeSerializer
+class LocationFamilyViewSet(viewsets.ModelViewSet):
+    queryset = LocationFamily.objects.all()
+    serializer_class = LocationFamilySerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['name']
+    ordering_fields = ['family_id', 'name']
+    ordering = ['family_id']
+
+class LocationViewSet(viewsets.ModelViewSet):
+    queryset = Location.objects.all()
+    serializer_class = LocationSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['name']
+
+class BuildingViewSet(viewsets.ModelViewSet):
+    queryset = Building.objects.all()
+    serializer_class = BuildingSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['name']
+
+class FloorViewSet(viewsets.ModelViewSet):
+    queryset = Floor.objects.all()
+    serializer_class = FloorSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['floor_name']
 
 
+class LocationTypeViewSet(viewsets.ModelViewSet):
+    queryset = LocationType.objects.all()
+    serializer_class = LocationTypeSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['name']
 
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Location, LocationFamily, LocationType, Floor, Building
