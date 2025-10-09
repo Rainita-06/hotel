@@ -71,7 +71,7 @@ urlpatterns = [
     # path("floors/edit/<int:floor_id>/", views.floor_form, name="floor_edit"),
     # path("floors/delete/<int:floor_id>/", views.floor_delete, name="floor_delete"),
       path("floors/add/", views.floor_form, name="floor_form"),
-    path("floors/<int:floor_id>/edit/", views.floor_form, name="floor_form"),
+    path("floors/<int:floor_id>/edit/", views.floor_form, name="floor_edit"),
     path("floors/<int:floor_id>/delete/", views.floor_delete, name="floor_delete"),
 
     # urls.py
