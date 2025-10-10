@@ -96,7 +96,7 @@ urlpatterns = [
     path('tickets/<int:ticket_id>/', dashboard_views.ticket_detail, name='ticket_detail'),
     path('api/tickets/create/', dashboard_views.create_ticket_api, name='api_create_ticket'),
     path('api/tickets/<int:ticket_id>/assign/', dashboard_views.assign_ticket_api, name='api_assign_ticket'),
-    path('api/tickets/<int:ticket_id>/claim/', dashboard_views.claim_ticket_api, name='api_claim_ticket'),
+    # Removed claim_ticket_api as we're removing the claim functionality
     path('api/tickets/<int:ticket_id>/accept/', dashboard_views.accept_ticket_api, name='api_accept_ticket'),
     path('api/tickets/<int:ticket_id>/start/', dashboard_views.start_ticket_api, name='api_start_ticket'),
     path('api/tickets/<int:ticket_id>/complete/', dashboard_views.complete_ticket_api, name='api_complete_ticket'),

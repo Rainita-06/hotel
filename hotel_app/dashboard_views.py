@@ -21,8 +21,8 @@ import os
 # Import all models from hotel_app
 from hotel_app.models import (
     Department, Location, RequestType, Checklist,
-    Complaint, BreakfastVoucher, Review, Guest,
-    Voucher, VoucherScan, ServiceRequest, UserProfile, UserGroup, UserGroupMembership,
+    Complaint, Review, Guest,
+    Voucher, ServiceRequest, UserProfile, UserGroup, UserGroupMembership,
     Notification  # Add Notification model
 )
 
@@ -30,7 +30,7 @@ from hotel_app.models import (
 from .forms import (
     UserForm, DepartmentForm, GroupForm, LocationForm,
     RequestTypeForm, ChecklistForm, ComplaintForm,
-    BreakfastVoucherForm, ReviewForm, VoucherForm
+    ReviewForm, 
 )
 
 # Import local utils and services
@@ -1490,7 +1490,6 @@ def tickets(request):
         # Map display values to model values
         status_mapping = {
             'Pending': 'pending',
-            'Assigned': 'assigned',
             'Accepted': 'accepted',
             'In Progress': 'in_progress',
             'Completed': 'completed',
@@ -1727,16 +1726,10 @@ def my_tickets(request):
     
     # Filter by department if user has one
     if user_department:
-        # Show tickets assigned to the department, or unassigned tickets in the department
-        tickets_queryset = tickets_queryset.filter(
-            Q(department=user_department) & (Q(assignee_user__isnull=True) | Q(assignee_user=request.user))
-        )
-    else:
-        # If user doesn't have a department, show only tickets assigned to them
-        tickets_queryset = tickets_queryset.filter(assignee_user=request.user)
+        tickets_queryset = tickets_queryset.filter(department=user_department)
     
-    # Apply filters
-    if priority_filter and priority_filter != 'All Priorities':
+    # Apply priority filter
+    if priority_filter:
         # Map display values to model values
         priority_mapping = {
             'High': 'high',
@@ -1747,7 +1740,8 @@ def my_tickets(request):
         if model_priority:
             tickets_queryset = tickets_queryset.filter(priority=model_priority)
     
-    if status_filter and status_filter != 'All Statuses':
+    # Apply status filter
+    if status_filter:
         # Map display values to model values
         status_mapping = {
             'Pending': 'pending',
@@ -1807,18 +1801,14 @@ def my_tickets(request):
         ticket.owner_avatar = 'https://placehold.co/24x24'
         
         # Add user-specific workflow permissions
-        ticket.can_claim = False
         ticket.can_accept = False
         ticket.can_start = False
         ticket.can_complete = False
         ticket.can_close = False
         
         # Determine what actions the user can take based on workflow
-        if ticket.status == 'pending' and ticket.department == user_department and ticket.assignee_user is None:
-            # Unassigned ticket in user's department - user can claim it
-            ticket.can_claim = True
-        elif ticket.status == 'assigned' and ticket.assignee_user == request.user:
-            # Assigned to current user - can accept
+        # For pending tickets, any user in the department can accept (which will assign to them)
+        if ticket.status == 'pending' and ticket.department == user_department:
             ticket.can_accept = True
         elif ticket.status == 'accepted' and ticket.assignee_user == request.user:
             # Accepted by current user - can start work
@@ -1854,41 +1844,8 @@ def my_tickets(request):
     return render(request, 'dashboard/my_tickets.html', context)
 
 
-@login_required
-@require_permission([ADMINS_GROUP, STAFF_GROUP])
-def claim_ticket_api(request, ticket_id):
-    """API endpoint for a user to claim an unassigned ticket."""
-    if request.method == 'POST':
-        try:
-            from hotel_app.models import ServiceRequest
-            
-            # Get the service request
-            service_request = get_object_or_404(ServiceRequest, id=ticket_id)
-            
-            # Check if the ticket is unassigned and in the user's department
-            user_department = None
-            if hasattr(request.user, 'userprofile') and request.user.userprofile.department:
-                user_department = request.user.userprofile.department
-            
-            if service_request.assignee_user is not None:
-                return JsonResponse({'error': 'Ticket is already assigned'}, status=400)
-            
-            if service_request.department != user_department:
-                return JsonResponse({'error': 'You cannot claim tickets from other departments'}, status=403)
-            
-            # Assign the ticket to the current user
-            service_request.assign_to_user(request.user)
-            
-            return JsonResponse({
-                'success': True,
-                'message': 'Ticket claimed successfully',
-                'ticket_id': service_request.id
-            })
-            
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-    
-    return JsonResponse({'error': 'Method not allowed'}, status=405)
+# Removed claim_ticket_api as we're removing the claim functionality
+# Tickets are now directly assigned when accepted
 
     # Apply filters
     if search_query:
@@ -2713,6 +2670,7 @@ def user_create(request):
     phone = (data.get("phone") or "").strip()
     department_name = (data.get("department") or "").strip()
     role = (data.get("role") or "").strip()
+    password = (data.get("password") or "").strip()
     is_active = data.get("is_active") in ("1", "true", "True", "yes")
 
     errors = {}
@@ -2744,12 +2702,16 @@ def user_create(request):
 
     try:
         with transaction.atomic():
-            # You can set a random password or an unusable one
-            random_password = User.objects.make_random_password()
+            # Set password or generate a random one if blank
+            if password:
+                user_password = password
+            else:
+                user_password = User.objects.make_random_password()
+            
             user = User.objects.create_user(
                 username=username,
                 email=email,
-                password=random_password,
+                password=user_password,
             )
             user.is_active = bool(is_active)
             user.is_staff = is_staff
@@ -4993,8 +4955,13 @@ def accept_ticket_api(request, ticket_id):
             # Get the service request
             service_request = get_object_or_404(ServiceRequest, id=ticket_id)
             
+            # Assign the ticket to the current user if not already assigned
+            if not service_request.assignee_user:
+                service_request.assignee_user = request.user
+                service_request.save()
+            
             # Check if the current user is the assignee
-            if service_request.assignee_user != request.user:
+            elif service_request.assignee_user != request.user:
                 return JsonResponse({'error': 'You are not assigned to this ticket'}, status=403)
             
             # Accept the ticket
@@ -5002,7 +4969,7 @@ def accept_ticket_api(request, ticket_id):
             
             return JsonResponse({
                 'success': True,
-                'message': 'Ticket accepted successfully',
+                'message': f'Ticket #{service_request.id} accepted successfully',
                 'ticket_id': service_request.id
             })
             
@@ -5674,41 +5641,8 @@ def assign_ticket_api(request, ticket_id):
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
-@login_required
-@require_permission([ADMINS_GROUP, STAFF_GROUP])
-def claim_ticket_api(request, ticket_id):
-    """API endpoint for a user to claim an unassigned ticket."""
-    if request.method == 'POST':
-        try:
-            from hotel_app.models import ServiceRequest
-            
-            # Get the service request
-            service_request = get_object_or_404(ServiceRequest, id=ticket_id)
-            
-            # Check if the ticket is unassigned and in the user's department
-            user_department = None
-            if hasattr(request.user, 'userprofile') and request.user.userprofile.department:
-                user_department = request.user.userprofile.department
-            
-            if service_request.assignee_user is not None:
-                return JsonResponse({'error': 'Ticket is already assigned'}, status=400)
-            
-            if service_request.department != user_department:
-                return JsonResponse({'error': 'You cannot claim tickets from other departments'}, status=403)
-            
-            # Assign the ticket to the current user
-            service_request.assign_to_user(request.user)
-            
-            return JsonResponse({
-                'success': True,
-                'message': 'Ticket claimed successfully',
-                'ticket_id': service_request.id
-            })
-            
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-    
-    return JsonResponse({'error': 'Method not allowed'}, status=405)
+# Removed claim_ticket_api as we're removing the claim functionality
+# Tickets are now directly assigned and accepted
 
 
 @login_required

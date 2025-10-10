@@ -25,10 +25,47 @@
       {% endif %}
     </div>
 
+    <!-- Full Name -->
+    <div>
+      <label for="{{ form.full_name.id_for_label }}" class="block text-sm font-medium text-gray-700">Full Name</label>
+      {{ form.full_name }}
+      {% if form.full_name.errors %}
+        <div class="text-red-600 text-sm mt-1">{{ form.full_name.errors.0 }}</div>
+      {% endif %}
+    </div>
+
+    <!-- Phone -->
+    <div>
+      <label for="{{ form.phone.id_for_label }}" class="block text-sm font-medium text-gray-700">Phone</label>
+      {{ form.phone }}
+      {% if form.phone.errors %}
+        <div class="text-red-600 text-sm mt-1">{{ form.phone.errors.0 }}</div>
+      {% endif %}
+    </div>
+
+    <!-- Department -->
+    <div>
+      <label for="{{ form.department.id_for_label }}" class="block text-sm font-medium text-gray-700">Department</label>
+      {{ form.department }}
+      {% if form.department.errors %}
+        <div class="text-red-600 text-sm mt-1">{{ form.department.errors.0 }}</div>
+      {% endif %}
+    </div>
+
+    <!-- Role -->
+    <div>
+      <label for="{{ form.role.id_for_label }}" class="block text-sm font-medium text-gray-700">Role</label>
+      {{ form.role }}
+      {% if form.role.errors %}
+        <div class="text-red-600 text-sm mt-1">{{ form.role.errors.0 }}</div>
+      {% endif %}
+    </div>
+
     <!-- Password -->
     <div>
       {{ form.password1.label_tag }}
       {{ form.password1 }}
+      <p class="text-gray-500 text-sm mt-1">Leave blank to auto-generate a password</p>
       {% if form.password1.errors %}
         <div class="text-red-600 text-sm mt-1">{{ form.password1.errors.0 }}</div>
       {% endif %}

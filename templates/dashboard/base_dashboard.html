@@ -185,7 +185,7 @@
     });
     
     function loadNotifications() {
-        fetch('/api/notifications/')
+        fetch('/api/notification/notifications/')
             .then(response => response.json())
             .then(notifications => updateNotificationUI(notifications))
             .catch(error => {
@@ -259,7 +259,7 @@
     }
     
     function markNotificationsAsRead() {
-        fetch('/api/notifications/read-all/', {
+        fetch('/api/notification/notifications/read-all/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -276,6 +276,47 @@
             }
         }).catch(error => console.error('Error marking notifications as read:', error));
     }
+    
+    // Toast notification function for consistent user feedback across all pages
+    function showToast(message, type = 'success') {
+        // Create toast container if it doesn't exist
+        let toastContainer = document.getElementById('toastNotification');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toastNotification';
+            toastContainer.className = 'fixed top-4 right-4 z-50 hidden items-center rounded-lg px-4 py-2 text-white shadow-lg';
+            toastContainer.innerHTML = '<span id="toastMessage"></span>';
+            document.body.appendChild(toastContainer);
+        }
+        
+        const toastMessage = document.getElementById('toastMessage');
+        toastMessage.textContent = message;
+        
+        // Set colors based on type
+        if (type === 'error') {
+            toastContainer.classList.remove('bg-green-500');
+            toastContainer.classList.add('bg-red-500');
+        } else if (type === 'info') {
+            toastContainer.classList.remove('bg-green-500', 'bg-red-500');
+            toastContainer.classList.add('bg-blue-500');
+        } else {
+            toastContainer.classList.remove('bg-red-500', 'bg-blue-500');
+            toastContainer.classList.add('bg-green-500');
+        }
+        
+        // Show toast
+        toastContainer.classList.remove('hidden');
+        toastContainer.classList.add('flex');
+        
+        // Auto-hide after 3 seconds
+        setTimeout(() => {
+            toastContainer.classList.add('hidden');
+            toastContainer.classList.remove('flex');
+        }, 3000);
+    }
+    
+    // Make showToast globally available
+    window.showToast = showToast;
     </script>
     
     {% block extra_js %}{% endblock %}

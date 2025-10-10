@@ -57,18 +57,17 @@
             alt="Manage Users Icon"
             class="w-5 h-5"
           />
-          <span class="font-medium">Manage Users</span>
+          <span class="font-medium">Users</span>
         </a>
         <a
-          href="{% url 'dashboard:configure_requests' %}"
-          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:configure_requests' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
-        >
+          href="{% url 'dashboard:locations' %}"
+          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:locations' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}">
           <img
-            src="{% if request.resolver_match.view_name == 'dashboard:configure_requests' %}{% static 'images/sidebar/configure_requests_highlighted.svg' %}{% else %}{% static 'images/sidebar/configure_request.svg' %}{% endif %}"
-            alt="Configure Requests Icon"
+            src="{% if request.resolver_match.view_name == 'dashboard:locations' %}{% static 'images/sidebar/locations_highlighted.svg' %}{% else %}{% static 'images/sidebar/locations.svg' %}{% endif %}"
+            alt="Locations Icon"
             class="w-5 h-5"
           />
-          <span class="font-medium">Configure Requests</span>
+          <span class="font-medium">Locations </span>
         </a>
         <a
           href="{% url 'dashboard:tickets' %}"
@@ -93,14 +92,15 @@
           <span class="font-medium">My Tickets</span>
         </a>
         <a
-          href="{% url 'dashboard:locations'%}"
-          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:locations' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}">
+          href="{% url 'dashboard:configure_requests' %}"
+          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:configure_requests' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
+        >
           <img
-            src="{% if request.resolver_match.view_name == 'dashboard:locations' %}{% static 'images/sidebar/locations_highlighted.svg' %}{% else %}{% static 'images/sidebar/locations.svg' %}{% endif %}"
-            alt="Locations Icon"
+            src="{% if request.resolver_match.view_name == 'dashboard:configure_requests' %}{% static 'images/sidebar/configure_requests_highlighted.svg' %}{% else %}{% static 'images/sidebar/configure_request.svg' %}{% endif %}"
+            alt="Configure Requests Icon"
             class="w-5 h-5"
           />
-          <span class="font-medium">Locations </span>
+          <span class="font-medium">Configure Requests</span>
         </a>
         <a
           href="{% url 'dashboard:sla_escalations' %}"
@@ -111,6 +111,17 @@
             class="w-5 h-5"
           />
           <span class="font-medium">SLA & Escalations</span>
+        </a>
+        <a
+          href="{% url 'dashboard:messaging_setup' %}"
+          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:messaging_setup' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
+        >
+          <img
+            src="{% if request.resolver_match.view_name == 'dashboard:messaging_setup' %}{% static 'images/sidebar/messaging_highlighted.svg' %}{% else %}{% static 'images/sidebar/messaging.svg' %}{% endif %}"
+            alt="Messaging Setup Icon"
+            class="w-5 h-5"
+          />
+          <span class="font-medium">Messaging Setup</span>
         </a>
         <a
           href="{% url 'dashboard:integrations' %}"
@@ -128,17 +139,6 @@
             </div>
           </div>
         </a>
-        <a
-          href="{% url 'dashboard:messaging_setup' %}"
-          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:messaging_setup' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
-        >
-          <img
-            src="{% if request.resolver_match.view_name == 'dashboard:messaging_setup' %}{% static 'images/sidebar/messaging_highlighted.svg' %}{% else %}{% static 'images/sidebar/messaging.svg' %}{% endif %}"
-            alt="Messaging Setup Icon"
-            class="w-5 h-5"
-          />
-          <span class="font-medium">Messaging Setup</span>
-        </a>
       </div>
     </div>
 
@@ -149,6 +149,17 @@
         Analytics
       </div>
       <div class="space-y-1">
+        <a
+          href="#"
+          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.path == '/analytics/' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
+        >
+          <img
+            src="{% if request.path == '/analytics/' %}{% static 'images/sidebar/analytics_highlighted.svg' %}{% else %}{% static 'images/sidebar/analytics.svg' %}{% endif %}"
+            alt="Analytics Icon"
+            class="w-5 h-5"
+          />
+          <span class="font-medium">Analytics</span>
+        </a>
         <a
           href="{% url 'dashboard:performance' %}"
           class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:performance' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
@@ -170,28 +181,6 @@
             class="w-5 h-5"
           />
           <span class="font-medium">Feedback</span>
-        </a>
-        <a
-          href="#"
-          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.path == '/settings/' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
-        >
-          <img
-            src="{% if request.path == '/settings/' %}{% static 'images/sidebar/settings_highlighted.svg' %}{% else %}{% static 'images/sidebar/settings.svg' %}{% endif %}"
-            alt="Settings Icon"
-            class="w-5 h-5"
-          />
-          <span class="font-medium">Settings</span>
-        </a>
-        <a
-          href="#"
-          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.path == '/analytics/' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
-        >
-          <img
-            src="{% if request.path == '/analytics/' %}{% static 'images/sidebar/analytics_highlighted.svg' %}{% else %}{% static 'images/sidebar/analytics.svg' %}{% endif %}"
-            alt="Analytics Icon"
-            class="w-5 h-5"
-          />
-          <span class="font-medium">Analytics</span>
         </a>
       </div>
     </div>

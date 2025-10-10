@@ -52,30 +52,29 @@ class HotelDashboardServiceAdmin(admin.ModelAdmin):
         return request.user.is_active and request.user.is_staff
 
 
-# Voucher admin (visible to staff)
-@admin.register(models.Voucher)
-class VoucherAdmin(admin.ModelAdmin):
-    list_display = ('voucher_code', 'guest_name', 'voucher_type', 'room_number', 'status', 'valid_to', 'redeemed')
-    search_fields = ('guest_name', 'voucher_code', 'room_number')
-    list_filter = ('voucher_type', 'status', 'redeemed', 'valid_to', 'created_at')
-    readonly_fields = ('voucher_code', 'qr_data', 'created_at', 'updated_at')
-    ordering = ('-created_at',)
+# # Voucher admin (visible to staff)
+# @admin.register(models.Voucher)
+# class VoucherAdmin(admin.ModelAdmin):
+#     list_display = ('voucher_code', 'guest_name', 'room_number', 'expiry_date', 'redeemed')
+#     search_fields = ('guest_name', 'voucher_code', 'room_number')
+#     list_filter = ('redeemed', 'expiry_date')
+#     readonly_fields = ('voucher_code', 'created_at', 'updated_at')
+#     ordering = ('-created_at',)
 
-    def has_module_permission(self, request):
-        return request.user.is_active and request.user.is_staff
+#     def has_module_permission(self, request):
+#         return request.user.is_active and request.user.is_staff
 
 
 # Voucher Scan admin for tracking redemptions
 # @admin.register(models.VoucherScan)
-class VoucherScanAdmin(admin.ModelAdmin):
-    list_display = ('voucher', 'scanned_at', 'scanned_by', 'scan_result', 'redemption_successful', 'scan_source')
-    search_fields = ('voucher__voucher_code', 'voucher__guest_name', 'scanned_by__username')
-    list_filter = ('scan_result', 'redemption_successful', 'scan_source', 'scanned_at')
-    readonly_fields = ('scanned_at',)
-    ordering = ('-scanned_at',)
+# class VoucherScanAdmin(admin.ModelAdmin):
+#     list_display = ('voucher', 'scanned_at', 'scanned_by_user')
+#     search_fields = ('voucher__voucher_code', 'voucher__guest_name')
+#     readonly_fields = ('scanned_at',)
+#     ordering = ('-scanned_at',)
     
-    def has_module_permission(self, request):
-        return request.user.is_active and request.user.is_staff
+#     def has_module_permission(self, request):
+#         return request.user.is_active and request.user.is_staff
 
 
 # Bulk register models (exclude Location & UserProfile since they have custom admins)

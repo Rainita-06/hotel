@@ -56,7 +56,7 @@
                 <h3 class="text-base font-semibold text-gray-900 mb-4">Attachments</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <a href="#" class="border border-gray-200 rounded-lg p-3 flex items-center gap-3 hover:bg-gray-50">
-                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0"><svg class="w-6 h-6 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg></div>
+                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0"><svg class="w-6 h-6 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></div>
                         <div>
                             <p class="text-base font-medium text-gray-900 truncate">thermostat_display.jpg</p>
                             <p class="text-sm text-gray-500">245 KB</p>
@@ -117,8 +117,6 @@
                 <div class="space-y-3">
                     {% if ticket.status == 'pending' %}
                         <!-- Removed assign ticket button -->
-                    {% elif ticket.status == 'assigned' and ticket.assignee_user == user %}
-                        <button id="acceptBtn" class="w-full py-2 text-sm font-medium text-white bg-green-500 rounded-lg hover:bg-green-600" data-ticket-id="{{ ticket.id }}">Accept Ticket</button>
                     {% elif ticket.status == 'accepted' and ticket.assignee_user == user %}
                         <button id="startBtn" class="w-full py-2 text-sm font-medium text-white bg-yellow-500 rounded-lg hover:bg-yellow-600" data-ticket-id="{{ ticket.id }}">Start Work</button>
                     {% elif ticket.status == 'in_progress' and ticket.assignee_user == user %}

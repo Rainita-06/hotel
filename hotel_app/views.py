@@ -31,7 +31,7 @@ from hotel_app.serializers import (
 from hotel_app.utils import generate_qr_code, user_in_group, group_required, admin_required, create_notification  # Add create_notification
 from .forms import GuestForm
 from .models import Guest
-from django.contrib.auth.forms import UserCreationForm
+from .forms import UserCreationForm
 from django.contrib.auth import login
 
 

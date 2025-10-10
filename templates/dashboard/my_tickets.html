@@ -47,11 +47,6 @@
         color: #B45309; /* yellow-700 */
     }
     
-    .status-assigned {
-        background-color: #FEF3C7; /* yellow-100 */
-        color: #B45309; /* yellow-700 */
-    }
-    
     .status-accepted {
         background-color: #DBEAFE; /* blue-100 */
         color: #1E40AF; /* blue-700 */
@@ -200,7 +195,6 @@
                     <select name="status" onchange="this.form.submit()" class="w-36 h-9 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer">
                         <option value="">All Statuses</option>
                         <option value="Pending" {% if status_filter == 'Pending' %}selected{% endif %}>Pending</option>
-                        <option value="Assigned" {% if status_filter == 'Assigned' %}selected{% endif %}>Assigned</option>
                         <option value="Accepted" {% if status_filter == 'Accepted' %}selected{% endif %}>Accepted</option>
                         <option value="In Progress" {% if status_filter == 'In Progress' %}selected{% endif %}>In Progress</option>
                         <option value="Completed" {% if status_filter == 'Completed' %}selected{% endif %}>Completed</option>
@@ -269,7 +263,6 @@
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
                                     {% if ticket.status == 'pending' %}status-pending
-                                    {% elif ticket.status == 'assigned' %}status-assigned
                                     {% elif ticket.status == 'accepted' %}status-accepted
                                     {% elif ticket.status == 'in_progress' %}status-in-progress
                                     {% elif ticket.status == 'completed' %}status-completed
@@ -358,42 +351,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const animatedElements = document.querySelectorAll('.animate-on-load');
     animatedElements.forEach((el, index) => { setTimeout(() => { el.classList.add('animate-slide-in-up'); }, index * 150); });
 
-    // --- CLAIM TICKET FUNCTIONALITY ---
-    const claimButtons = document.querySelectorAll('.claim-ticket-btn');
-    claimButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const ticketId = this.getAttribute('data-ticket-id');
-            if (confirm('Are you sure you want to claim this ticket?')) {
-                fetch(`/dashboard/api/tickets/${ticketId}/claim/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCookie('csrftoken')
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Ticket claimed successfully!');
-                        location.reload();
-                    } else {
-                        alert('Error: ' + data.error);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred. Please try again.');
-                });
-            }
-        });
-    });
-
     // --- ACCEPT TICKET FUNCTIONALITY ---
     const acceptButtons = document.querySelectorAll('.accept-ticket-btn');
     acceptButtons.forEach(button => {
         button.addEventListener('click', function() {
             const ticketId = this.getAttribute('data-ticket-id');
-            if (confirm('Are you sure you want to accept this ticket?')) {
+            if (confirm('Are you sure you want to accept this ticket? This will assign the ticket to you.')) {
                 fetch(`/dashboard/api/tickets/${ticketId}/accept/`, {
                     method: 'POST',
                     headers: {
@@ -404,7 +367,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        alert('Ticket accepted successfully!');
+                        alert('Ticket accepted and assigned to you successfully!');
                         location.reload();
                     } else {
                         alert('Error: ' + data.error);
