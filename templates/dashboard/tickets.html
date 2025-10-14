@@ -20,9 +20,14 @@
         }
     }
 
+    /* This class will be added by JS to trigger the animation */
     .animate-slide-in-up {
-        opacity: 0; /* Start hidden */
         animation: slideInUp 0.6s ease-out forwards;
+    }
+
+    /* Set initial state for expanded cards to be invisible before animation */
+    #expandedDepartments .dept-card-expanded {
+        opacity: 0;
     }
 </style>
 {% endblock extra_css %}
@@ -111,7 +116,7 @@
         <div id="expandedDepartments" class="hidden">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {% for dept in departments %}
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="dept-card-expanded bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <div class="flex justify-between items-start">
                         <h3 class="text-gray-900 text-lg font-semibold font-['Inter']">{{ dept.name }}</h3>
                         <img src="{{ dept.icon_url }}" alt="{{ dept.name }} Icon" class="w-6 h-6" onerror="this.src='{% static 'images/manage_users/name.svg' %}';" />
@@ -222,16 +227,10 @@
                                 <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-{{ ticket.status_color }}-100 text-{{ ticket.status_color }}-700">{{ ticket.get_status_display }}</span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                <div class="flex items-center gap-1">
-                                    <button class="p-2 rounded-lg text-gray-500 hover:bg-sky-100 hover:text-sky-600 transition-colors duration-200">
-                                        <img src="{% static 'images/tickets/eye.svg' %}" alt="View ticket" class="w-5 h-5">
-                                    </button>
+                                <div class="flex items-center">
                                     <a href="{% url 'dashboard:ticket_detail' ticket.id %}" class="p-2 rounded-lg text-gray-500 hover:bg-sky-100 hover:text-sky-600 transition-colors duration-200">
-                                        <img src="{% static 'images/tickets/edit.svg' %}" alt="Edit ticket" class="w-5 h-5">
+                                        <img src="{% static 'images/tickets/eye.svg' %}" alt="View ticket" class="w-6 h-6">
                                     </a>
-                                    <button class="p-2 rounded-lg text-gray-500 hover:bg-sky-100 hover:text-sky-600 transition-colors duration-200">
-                                        <img src="{% static 'images/tickets/more.svg' %}" alt="More options" class="w-5 h-5">
-                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -327,7 +326,10 @@
 document.addEventListener('DOMContentLoaded', function() {
     // --- PAGE LOAD ANIMATIONS ---
     const animatedElements = document.querySelectorAll('.animate-on-load');
-    animatedElements.forEach((el, index) => { setTimeout(() => { el.classList.add('animate-slide-in-up'); }, index * 150); });
+    animatedElements.forEach((el, index) => { 
+        el.style.animationDelay = `${index * 150}ms`;
+        el.classList.add('animate-slide-in-up');
+    });
 
     // --- MODAL SCRIPT ---
     const openModalBtn = document.getElementById('openCreateTicketModal');
@@ -343,26 +345,44 @@ document.addEventListener('DOMContentLoaded', function() {
     if(cancelBtn) cancelBtn.addEventListener('click', closeModal);
     if(modal) modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
 
-    // --- DEPARTMENT STATS TOGGLE ---
+    // --- DEPARTMENT STATS TOGGLE (WITH ANIMATION) ---
     const expandDepartmentsBtn = document.getElementById('expandDepartmentsBtn');
     const expandedDepartments = document.getElementById('expandedDepartments');
     const sliderWrapper = document.getElementById('sliderWrapper');
     if (expandDepartmentsBtn && expandedDepartments && sliderWrapper) {
         expandDepartmentsBtn.addEventListener('click', () => {
-            const isExpanded = expandedDepartments.classList.contains('hidden');
-            if (isExpanded) {
-                expandedDepartments.classList.remove('hidden');
+            const isHidden = expandedDepartments.classList.contains('hidden');
+            const cards = expandedDepartments.querySelectorAll('.dept-card-expanded');
+
+            if (isHidden) {
+                // --- EXPANDING VIEW ---
                 sliderWrapper.classList.add('hidden');
+                expandedDepartments.classList.remove('hidden');
+                
+                // Animate each card with a delay
+                cards.forEach((card, index) => {
+                    setTimeout(() => {
+                        card.classList.add('animate-slide-in-up');
+                    }, index * 100); // 100ms stagger effect
+                });
+                
                 expandDepartmentsBtn.innerHTML = `<span>Show Less</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>`;
             } else {
+                // --- COLLAPSING VIEW ---
                 expandedDepartments.classList.add('hidden');
                 sliderWrapper.classList.remove('hidden');
+                
+                // Reset cards for next time
+                cards.forEach(card => {
+                    card.classList.remove('animate-slide-in-up');
+                });
+
                 expandDepartmentsBtn.innerHTML = `<span>View All</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>`;
             }
         });
     }
 
-    // --- REWRITTEN & CORRECTED INFINITE DEPARTMENT SLIDER SCRIPT ---
+    // --- INFINITE DEPARTMENT SLIDER SCRIPT ---
     const slider = document.getElementById('departmentSlider');
     if (slider) {
         const prevBtn = document.getElementById('prevSlide');
@@ -373,7 +393,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (dots.length > 0) {
             const originalSlides = Array.from(slider.children);
             const totalOriginalItems = originalSlides.length;
-
             let currentIndex;
             let itemsPerScreen = 1;
             let isTransitioning = false;
@@ -451,14 +470,12 @@ document.addEventListener('DOMContentLoaded', function() {
             };
             
             setupSlider();
-
             if(nextBtn) nextBtn.addEventListener('click', () => moveTo(currentIndex + 1));
             if(prevBtn) prevBtn.addEventListener('click', () => moveTo(currentIndex - 1));
             slider.addEventListener('transitionend', handleTransitionEnd);
             dots.forEach((dot, index) => {
                 dot.addEventListener('click', () => moveTo(index + itemsPerScreen));
             });
-
             window.addEventListener('resize', () => {
                 clearTimeout(resizeTimeout);
                 resizeTimeout = setTimeout(setupSlider, 250);

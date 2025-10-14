@@ -1,0 +1,211 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+
+{% block title %}Gym Management{% endblock %}
+
+{% block content %}
+<div class="w-full max-w-7xl mx-auto p-6 bg-gray-50 font-['Inter']">
+
+    <div class="w-full p-6 bg-white border-b border-gray-200 rounded-t-xl flex flex-wrap justify-between items-center gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Data Member</h1>
+            <p class="text-sm text-gray-600">Manage and view gym member details with QR-based identification.</p>
+        </div>
+        <div class="flex flex-wrap justify-start items-center gap-4">
+            <button id="addNewBtn" class="px-4 py-2.5 bg-blue-600 text-white rounded-lg flex items-center justify-center hover:bg-blue-700 transition-colors">
+                <img src="{% static 'images/gym/plus.svg' %}" alt="Add New" class="w-5 h-5 mr-2">
+                <span class="text-base font-medium">Add New</span>
+            </button>
+            <a href="{% url 'dashboard:gym_report' %}" class="px-4 py-2.5 bg-purple-600 text-white rounded-lg flex items-center justify-center hover:bg-purple-700 transition-colors">
+                <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" />
+                    <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" />
+                </svg>
+                <span class="text-base font-medium">Report</span>
+            </a>
+            <button class="px-4 py-2.5 text-white bg-green-500 rounded-lg border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-colors">
+                <img src="{% static 'images/gym/export.svg' %}" alt="Export" class="w-5 h-5 mr-2">
+                <span class="text-base font-medium">Export</span>
+            </button>
+        </div>
+    </div>
+    
+    <div class="w-full p-6 bg-white rounded-b-xl shadow-md">
+        <div class="w-full flex flex-wrap justify-between items-center mb-6 gap-4">
+            <div class="flex items-center gap-2">
+                <label for="show-entries" class="text-gray-700 text-sm font-medium">Show</label>
+                <select id="show-entries" class="w-20 p-2 border border-gray-300 rounded-lg text-sm">
+                    <option>10</option>
+                    <option>25</option>
+                    <option>50</option>
+                </select>
+                <span class="text-gray-700 text-sm font-medium">entries</span>
+            </div>
+            <div class="relative w-72">
+                <img src="{% static 'images/gym/search.svg' %}" alt="Search" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none">
+                <input type="text" placeholder="Search members..." class="w-full h-10 pl-10 pr-4 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">ID</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Name</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">City</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Phone</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Email</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">QR Code</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-100">
+                    {% for member in gym_members %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{{ member.id }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ member.name }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ member.city }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ member.phone }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ member.email }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <img class="w-8 h-8 rounded border border-gray-200" src="{{ member.qr_code.url }}" alt="QR Code">
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div class="flex items-center gap-4">
+                                <a href="#" title="View Details">
+                                    <img src="{% static 'images/gym/eye.svg' %}" alt="View" class="w-5 h-5 text-gray-500 hover:text-blue-600">
+                                </a>
+                                <a href="#" title="Edit Member">
+                                    <img src="{% static 'images/gym/edit.svg' %}" alt="Edit" class="w-5 h-5 text-gray-500 hover:text-green-600">
+                                </a>
+                                <button title="Delete Member">
+                                    <img src="{% static 'images/gym/delete.svg' %}" alt="Delete" class="w-5 h-5 text-gray-500 hover:text-red-600">
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="w-full flex flex-wrap justify-between items-center pt-6 mt-6 border-t border-gray-200 gap-4">
+            <div class="text-gray-600 text-sm">Showing 1-{{ gym_members|length }} of {{ total_members }} results</div>
+            <div class="flex items-center gap-2">
+                <button class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50" disabled>Previous</button>
+                <button class="w-8 h-8 text-sm font-medium rounded-lg bg-blue-600 text-white">1</button>
+                <button class="w-8 h-8 text-sm rounded-lg border border-gray-300 hover:bg-gray-100">2</button>
+                <button class="w-8 h-8 text-sm rounded-lg border border-gray-300 hover:bg-gray-100">3</button>
+                <button class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 hover:bg-gray-100">Next</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="addMemberForm" class="hidden fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center p-4 z-50">
+    <div class="relative bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+        <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+             <div>
+                <h2 class="text-2xl font-bold text-gray-900">Add New Member</h2>
+                <p class="text-sm text-gray-600">Register new gym members and manage membership details.</p>
+            </div>
+            <button id="closeAddForm" class="text-gray-400 hover:text-gray-600">&times;</button>
+        </div>
+
+        <form class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">Full Name</label>
+                    <input type="text" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter full name">
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">National ID (NIK)</label>
+                    <input type="text" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter national ID">
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">Mobile Number</label>
+                    <input type="tel" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter mobile number">
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">Email</label>
+                    <input type="email" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter email address">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-gray-700 text-sm font-medium mb-2">Address</label>
+                    <textarea class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter address" rows="3"></textarea>
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">City</label>
+                    <select class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option>Select city</option>
+                        <option>New York</option>
+                        <option>Los Angeles</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">Date of Birth</label>
+                    <input type="date" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">Gender</label>
+                    <select class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option>Select gender</option>
+                        <option>Male</option>
+                        <option>Female</option>
+                    </select>
+                </div>
+                 <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">Occupation</label>
+                    <input type="text" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter occupation">
+                </div>
+            </div>
+             <div class="pt-6 border-t border-gray-200 mt-6 flex justify-end gap-4">
+                <button type="button" id="cancelAddForm" class="px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Cancel</button>
+                <button type="submit" class="px-4 py-2.5 bg-blue-600 text-white rounded-lg flex items-center justify-center hover:bg-blue-700">
+                    <img src="{% static 'images/gym/plus.svg' %}" alt="Add" class="w-5 h-5 mr-2">
+                    Save Member
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const addNewBtn = document.getElementById('addNewBtn');
+    const addMemberForm = document.getElementById('addMemberForm');
+    const closeAddForm = document.getElementById('closeAddForm');
+    const cancelAddForm = document.getElementById('cancelAddForm');
+
+    // Function to show the modal
+    const showModal = () => {
+        addMemberForm.classList.remove('hidden');
+    };
+
+    // Function to hide the modal
+    const hideModal = () => {
+        addMemberForm.classList.add('hidden');
+    };
+
+    // Event listeners
+    addNewBtn.addEventListener('click', showModal);
+    closeAddForm.addEventListener('click', hideModal);
+    cancelAddForm.addEventListener('click', hideModal);
+
+    // Hide modal when clicking outside of it
+    window.addEventListener('click', function(event) {
+        if (event.target === addMemberForm) {
+            hideModal();
+        }
+    });
+
+    // Hide modal when escape key is pressed
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            hideModal();
+        }
+    });
+});
+</script>
+{% endblock %}

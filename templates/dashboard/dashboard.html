@@ -4,14 +4,13 @@
 {% block content %}
 <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 
-<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-
+<main class="w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
     <div data-aos="fade-down" class="pb-2 border-b">
         <header class="w-full mb-2 flex flex-col md:flex-row items-start md:items-center justify-between">
             <div class="flex-1 min-w-0">
-                <h1 class="text-3xl font-bold text-gray-900 truncate">Admin Dashboard</h1>
+                <h1 class="text-3xl font-bold text-gray-900 truncate"> Dashboard</h1>
                 <p class="mt-1 text-sm text-gray-600 truncate">
-                    Welcome back! Here's what's happening at your property.
+                    Welcome back, {{ user_name }}. Here's what's happening at your property.
                 </p>
             </div>
 
@@ -23,63 +22,55 @@
                         class="w-full pl-10 pr-3 py-2 rounded-lg border bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                     />
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <img src="{% static 'images/dashboard/search.svg' %}" class="h-5 w-5 text-gray-400" alt="Search Icon"/>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                        </svg>
                     </div>
                 </div>
 
                 <button class="p-2 rounded-full hover:bg-gray-100 flex items-center justify-center">
-                    <img src="{% static 'images/dashboard/notifications.svg' %}" class="h-6 w-6" alt="Notifications"/>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
                 </button>
 
                 <button class="p-2 rounded-full hover:bg-gray-100 flex items-center justify-center">
-                    <img src="{% static 'images/dashboard/calender.svg' %}" class="h-6 w-6" alt="Calendar"/>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
                 </button>
             </div>
         </header>
     </div>
 
-    <div class="pt-6">
-
-        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
-            {# Dynamic counts with safe fallbacks to dummy values #}
-            <div data-aos="fade-up" data-aos-delay="100">
-                {% include 'dashboard/components/stats_card.html' with title="Active Users" value=total_users|default:"1,247" change="+12%" change_positive=True icon_slug="active_users" icon_bg="bg-sky-600/10" icon_color="text-sky-600" %}
-            </div>
-            <div data-aos="fade-up" data-aos-delay="200">
-                {% include 'dashboard/components/stats_card.html' with title="Active Departments" value=total_departments|default:"24" change="+3" change_positive=True icon_slug="active_departments" icon_bg="bg-teal-500/10" icon_color="text-teal-500" %}
-            </div>
-            <div data-aos="fade-up" data-aos-delay="300">
-                {% include 'dashboard/components/stats_card.html' with title="Open Tickets" value=open_complaints|default:"156" change="+8" change_positive=False icon_slug="open_tickets" icon_bg="bg-yellow-400/10" icon_color="text-yellow-400" %}
-            </div>
-            <div data-aos="fade-up" data-aos-delay="400">
-                {% include 'dashboard/components/stats_card.html' with title="SLA Breaches" value="12" change="+2" change_positive=False icon_slug="sla_breaches" icon_bg="bg-red-500/10" icon_color="text-red-500" %}
-            </div>
-            <div data-aos="fade-up" data-aos-delay="500">
-                {% include 'dashboard/components/stats_card.html' with title="Messages Today" value="2,847" change="+24%" change_positive=True icon_slug="messages_today" icon_bg="bg-green-500/10" icon_color="text-green-500" %}
-            </div>
-            <div data-aos="fade-up" data-aos-delay="600">
-                {% include 'dashboard/components/stats_card.html' with title="Gym Members Active" value="389" change="+5%" change_positive=True icon_slug="gym_members_active" icon_bg="bg-fuchsia-700/10" icon_color="text-fuchsia-700" %}
-            </div>
-        </section>
-
-        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div data-aos="fade-up" data-aos-delay="300">
-                {% include "dashboard/components/checklist_card.html" %}
-            </div>
-            <div data-aos="fade-up" data-aos-delay="400">
-                {% include "dashboard/components/whatsapp_card.html" %}
-            </div>
-            <div data-aos="fade-up" data-aos-delay="500">
-                {% include "dashboard/components/system_status_card.html" %}
-            </div>
+    <div class="pt-6 space-y-6">
+        <!-- Stats Cards Section -->
+        <div class="w-full">
+            {% include 'dashboard/components/stats_cards.html' %}
         </div>
-
-        <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div data-aos="fade-up" data-aos-delay="600">
-                {% include "dashboard/components/requests_chart.html" %}
+        
+        <!-- Secondary Stats Section -->
+        <div class="w-full">
+            {% include 'dashboard/components/secondary_stats.html' %}
+        </div>
+        
+        <!-- Charts Section -->
+        <div class="w-full">
+            {% include 'dashboard/components/charts_section.html' %}
+        </div>
+        
+        <!-- Department Performance Section -->
+        <div class="w-full">
+            {% include 'dashboard/components/department_performance.html' %}
+        </div>
+        
+        <!-- Critical Tickets and Guest Feedback Section -->
+        <div class="w-full grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2">
+                {% include 'dashboard/components/critical_tickets.html' %}
             </div>
-            <div data-aos="fade-up" data-aos-delay="700">
-                {% include "dashboard/components/feedback_chart.html" %}
+            <div class="lg:col-span-1">
+                {% include 'dashboard/components/guest_feedback.html' %}
             </div>
         </div>
     </div>
@@ -90,16 +81,11 @@
 <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // 3. Initialize AOS
+        // Initialize AOS
         AOS.init({
             duration: 800,
-            once: true, // Animation happens only once
+            once: true,
         });
-
-        // Your Chart.js initialization code for the canvases will go here
-        // For example:
-        // const ctx = document.getElementById('requestsChart').getContext('2d');
-        // new Chart(ctx, { ...config... });
     });
 </script>
 {% endblock extra_js %}

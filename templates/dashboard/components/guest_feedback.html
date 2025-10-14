@@ -1,0 +1,57 @@
+{% load dashboard2_extras %}
+<div class="p-6 bg-gradient-to-br from-white to-teal-50 rounded-xl shadow-lg border border-gray-200 h-full w-full">
+  <!-- Header -->
+  <div class="flex justify-between items-start">
+    <div>
+      <h3 class="text-lg font-semibold text-gray-900 leading-tight">Guest Feedback<br>Stream</h3>
+      <p class="text-xs text-gray-600 mt-2">Latest guest reviews and ratings</p>
+    </div>
+    <button class="w-28 h-12 bg-teal-500 text-white text-sm font-medium rounded-lg text-center leading-tight flex-shrink-0">
+      Create<br>Ticket
+    </button>
+  </div>
+
+  <!-- Feedback List -->
+  <div class="mt-6 space-y-4">
+    {% for feedback in guest_feedback %}
+      {% with sentiment=feedback.sentiment|upper %}
+      <div class="p-4 h-32 rounded-lg outline outline-1 outline-offset-[-1px] flex flex-col
+                  {% if sentiment == 'POSITIVE' %} bg-gradient-to-r from-green-50 to-emerald-50 outline-green-200
+                  {% elif sentiment == 'NEUTRAL' %} bg-gradient-to-r from-yellow-50 to-amber-50 outline-yellow-200
+                  {% elif sentiment == 'NEGATIVE' %} bg-gradient-to-r from-red-50 to-pink-50 outline-red-200
+                  {% else %} bg-gray-50 outline-gray-200 {% endif %}">
+        
+        <!-- Top Section: Rating & Location -->
+        <div>
+            <div class="flex items-center gap-2">
+                <div class="flex">
+                    <!-- Star Rating (using SVG for sharpness) -->
+                    {% for i in "12345" %}
+                    <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                    {% endfor %}
+                </div>
+                <p class="text-xs font-medium text-gray-700">{{ feedback.location }} <span class="font-normal text-gray-500">• {{ feedback.time }}</span></p>
+            </div>
+        </div>
+        
+        <!-- Middle Section: Comment -->
+        <p class="text-sm text-gray-700 mt-2 {% if sentiment == 'POSITIVE' %}font-medium{% else %}font-normal{% endif %}">
+          "{{ feedback.comment|truncatewords:15 }}"
+        </p>
+
+        <!-- Bottom Section: Guest & Sentiment Pill -->
+        <div class="flex justify-between items-center mt-auto">
+          <p class="text-xs text-gray-600">Guest: {{ feedback.guest }}</p>
+          <span class="px-3 py-1 text-xs text-white rounded-full
+                       {% if sentiment == 'POSITIVE' %} bg-green-500
+                       {% elif sentiment == 'NEUTRAL' %} bg-yellow-400
+                       {% elif sentiment == 'NEGATIVE' %} bg-red-500
+                       {% else %} bg-gray-400 {% endif %}">
+            {{ feedback.sentiment }}
+          </span>
+        </div>
+      </div>
+      {% endwith %}
+    {% endfor %}
+  </div>
+</div>

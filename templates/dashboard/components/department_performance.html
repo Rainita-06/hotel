@@ -1,0 +1,68 @@
+{% load static %}
+<div class="w-full max-w-[1136px] mx-auto h-80 relative bg-gradient-to-br from-white to-purple-50 rounded-xl shadow-lg outline outline-1 outline-offset-[-1px] outline-gray-200">
+  
+  <!-- Header -->
+  <div class="w-[calc(100%-50px)] h-7 absolute left-[25px] top-[25px] flex justify-between items-center">
+    <div class="relative">
+      <div class="text-gray-900 text-lg font-semibold font-['Inter']">
+        Department Performance Dashboard
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="text-gray-600 text-sm">Total Active:</span>
+      <span class="text-sky-600 text-sm font-bold">{{ active_tickets }} tickets</span>
+    </div>
+  </div>
+
+  <!-- Grid -->
+  <div class="w-[calc(100%-50px)] absolute left-[25px] top-[77px]">
+    <div class="grid grid-cols-6 gap-x-6 h-full">
+      
+      {% for department in departments %}
+      <div class="w-full h-56 relative">
+        
+        <!-- Icon + Name -->
+        <div class="w-full h-24 flex flex-col items-center">
+          <div class="w-16 h-16 rounded-full inline-flex justify-center items-center mb-2"
+               style="background-color: {{ department.bg_color }};">
+            {% if department.icon_html %}
+              {{ department.icon_html|safe }}
+            {% else %}
+              <div class="w-6 h-6 rounded-sm" style="background-color: {{ department.icon_color }};"></div>
+            {% endif %}
+          </div>
+          <div class="text-gray-900 text-sm font-medium font-['Inter'] text-center">
+            {{ department.name }}
+          </div>
+        </div>
+
+        <!-- Bar + Count + Label -->
+        <div class="w-full mt-2">
+          <!-- Bar Background -->
+          <div class="w-full h-20 bg-gray-200 rounded-lg overflow-hidden relative">
+            <!-- Bar Fill (scaled) -->
+            {% if active_tickets > 0 %}
+              {% widthratio department.tickets active_tickets 100 as percentage %}
+              <div class="absolute bottom-0 left-0 w-full rounded-lg transition-all duration-500"
+                   style="height: {{ percentage }}%; background-color: {{ department.bar_color }};">
+              </div>
+            {% endif %}
+          </div>
+          
+          <!-- Ticket Count -->
+          <div class="w-full mt-2 flex justify-center">
+            <div class="text-lg font-bold font-['Inter']" style="color: {{ department.bar_color }};">
+              {{ department.tickets }}
+            </div>
+          </div>
+          
+          <!-- Label -->
+          <div class="w-full mt-1 flex justify-center">
+            <div class="text-gray-600 text-xs font-normal font-['Inter']">Active tickets</div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>

@@ -1,0 +1,270 @@
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <!-- 7-Day Performance Trends -->
+  <div class="lg:col-span-2 p-6 bg-gradient-to-br from-white to-blue-50 rounded-xl shadow-lg border border-gray-200">
+    <div class="flex justify-between items-center">
+      <h3 class="text-lg font-semibold text-gray-900">7-Day Performance Trends</h3>
+      <div class="hidden md:flex items-center gap-6">
+        <div class="flex items-center">
+          <span class="w-3 h-3 rounded-full bg-sky-600 mr-2"></span>
+          <span class="text-sm text-gray-600">Tickets ({{ active_tickets }} active)</span>
+        </div>
+        <div class="flex items-center">
+          <span class="w-3 h-3 rounded-full bg-teal-500 mr-2"></span>
+          <span class="text-sm text-gray-600">Feedback ({{ feedback_total }} total)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-4 h-64">
+      <!-- Provide data via data- attributes; if your template doesn't inject values, JS below will fallback to defaults -->
+      <canvas
+        id="performanceTrendChart"
+        data-labels='{{ trend_labels }}'
+        data-tickets='{{ tickets_data }}'
+        data-feedback='{{ feedback_data }}'
+      ></canvas>
+    </div>
+
+    <div class="grid grid-cols-3 text-center mt-6">
+      <div>
+        <p class="text-lg font-bold text-sky-600">{{ peak_day_tickets }}</p>
+        <p class="text-xs text-gray-600">Peak Day Tickets</p>
+      </div>
+      <div>
+        <p class="text-lg font-bold text-teal-500">{{ peak_day_feedback }}</p>
+        <p class="text-xs text-gray-600">Peak Day Feedback</p>
+      </div>
+      <div>
+        <p class="text-lg font-bold text-green-500">+{{ weekly_growth }}%</p>
+        <p class="text-xs text-gray-600">Weekly Growth</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Guest Sentiment Analysis -->
+  <div class="p-6 bg-gradient-to-br from-white to-green-50 rounded-xl shadow-lg border border-gray-200">
+    <h3 class="text-lg font-semibold text-gray-900">Guest Sentiment Analysis</h3>
+
+    <div class="mt-4 h-48 flex items-center justify-center">
+      <!-- Pass percents via data- attributes (numbers 0–100). Center text is the overall score -->
+      <canvas
+        id="sentimentChart"
+        data-positive="{{ positive_reviews }}"
+        data-neutral="{{ neutral_reviews }}"
+        data-negative="{{ negative_reviews }}"
+        data-center="{{ overall_rating }}"
+      ></canvas>
+    </div>
+
+    <div class="space-y-2 mt-4">
+      <div class="p-2 bg-green-50 rounded-lg flex justify-between items-center">
+        <div class="flex items-center">
+          <span class="w-3 h-3 bg-green-500 rounded-full mr-3"></span>
+          <span class="text-sm font-medium text-gray-700">Positive</span>
+        </div>
+        <div class="text-right">
+          <div class="text-sm font-bold text-gray-900">{{ positive_reviews }}%</div>
+          <div class="text-xs text-gray-600">{{ positive_count }} reviews</div>
+        </div>
+      </div>
+
+      <div class="p-2 bg-yellow-50 rounded-lg flex justify-between items-center">
+        <div class="flex items-center">
+          <span class="w-3 h-3 bg-yellow-400 rounded-full mr-3"></span>
+          <span class="text-sm font-medium text-gray-700">Neutral</span>
+        </div>
+        <div class="text-right">
+          <div class="text-sm font-bold text-gray-900">{{ neutral_reviews }}%</div>
+          <div class="text-xs text-gray-600">{{ neutral_count }} reviews</div>
+        </div>
+      </div>
+
+      <div class="p-2 bg-red-50 rounded-lg flex justify-between items-center">
+        <div class="flex items-center">
+          <span class="w-3 h-3 bg-red-500 rounded-full mr-3"></span>
+          <span class="text-sm font-medium text-gray-700">Negative</span>
+        </div>
+        <div class="text-right">
+          <div class="text-sm font-bold text-gray-900">{{ negative_reviews }}%</div>
+          <div class="text-xs text-gray-600">{{ negative_count }} reviews</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts: Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // Helpers
+    const hexToRgba = (hex, alpha) => {
+      const shorthand = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+      hex = hex.replace(shorthand, (m, r, g, b) => r + r + g + g + b + b);
+      const res = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return res ? `rgba(${parseInt(res[1], 16)}, ${parseInt(res[2], 16)}, ${parseInt(res[3], 16)}, ${alpha})` : hex;
+    };
+
+    // Colors (Tailwind equivalents)
+    const colors = {
+      sky600: '#0284c7',
+      teal500: '#14b8a6',
+      green500: '#22c55e',
+      yellow400: '#facc15',
+      red500: '#ef4444',
+      grid: '#e5e7eb',
+      font: '#4b5563'
+    };
+
+    // 7-Day Performance Trends
+    const trendEl = document.getElementById('performanceTrendChart');
+
+    const parseArray = (el, attr, fallback) => {
+      try {
+        const raw = el.getAttribute(attr);
+        if (!raw) return fallback;
+        const val = JSON.parse(raw);
+        return Array.isArray(val) ? val : fallback;
+      } catch (e) {
+        return fallback;
+      }
+    };
+
+    const labels = parseArray(trendEl, 'data-labels', ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]);
+    const tickets = parseArray(trendEl, 'data-tickets', [23, 15, 21, 18, 12, 19, 17]);
+    const feedback = parseArray(trendEl, 'data-feedback', [22, 16, 18, 23, 17, 20, 19]);
+
+    const tctx = trendEl.getContext('2d');
+
+    const ticketsGradient = (() => {
+      const g = tctx.createLinearGradient(0, 0, 0, trendEl.clientHeight);
+      g.addColorStop(0, hexToRgba(colors.sky600, 0.30));
+      g.addColorStop(1, hexToRgba(colors.sky600, 0.08));
+      return g;
+    })();
+
+    const feedbackGradient = (() => {
+      const g = tctx.createLinearGradient(0, 0, 0, trendEl.clientHeight);
+      g.addColorStop(0, hexToRgba(colors.teal500, 0.30));
+      g.addColorStop(1, hexToRgba(colors.teal500, 0.08));
+      return g;
+    })();
+
+    new Chart(tctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Tickets',
+            data: tickets,
+            borderColor: colors.sky600,
+            backgroundColor: ticketsGradient,
+            fill: true,
+            tension: 0.35,
+            borderWidth: 3,
+            pointBackgroundColor: colors.sky600,
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 2.5,
+            pointRadius: 4,
+            pointHoverRadius: 5
+          },
+          {
+            label: 'Feedback',
+            data: feedback,
+            borderColor: colors.teal500,
+            backgroundColor: feedbackGradient,
+            fill: true,
+            tension: 0.35,
+            borderWidth: 3,
+            pointBackgroundColor: colors.teal500,
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 2.5,
+            pointRadius: 4,
+            pointHoverRadius: 5
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { mode: 'index', intersect: false }
+        },
+        interaction: { mode: 'nearest', intersect: false },
+        scales: {
+          x: {
+            grid: { display: false, drawBorder: false },
+            ticks: { color: colors.font, font: { size: 12 } }
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: colors.grid, drawBorder: false },
+            ticks: { color: colors.font, font: { size: 12 } }
+          }
+        }
+      }
+    });
+
+    // Donut: Guest Sentiment Analysis (with center text)
+    const donutEl = document.getElementById('sentimentChart');
+    const pos = parseFloat(donutEl.getAttribute('data-positive')) || 68;
+    const neu = parseFloat(donutEl.getAttribute('data-neutral')) || 22;
+    const neg = parseFloat(donutEl.getAttribute('data-negative')) || 10;
+    const center = donutEl.getAttribute('data-center') || '4.8';
+
+    const total = pos + neu + neg;
+    const normalized = total === 100
+      ? [pos, neu, neg]
+      : (total > 0 ? [pos / total * 100, neu / total * 100, neg / total * 100] : [68, 22, 10]);
+
+    const centerText = {
+      id: 'centerText',
+      afterDraw(chart) {
+        const { ctx, chartArea: { width, height } } = chart;
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        ctx.fillStyle = '#111827';
+        ctx.font = '600 14px Inter, ui-sans-serif, system-ui';
+        ctx.fillText(center.toString(), width / 2, height / 2 - 6);
+
+        ctx.fillStyle = '#4b5563';
+        ctx.font = '400 12px Inter, ui-sans-serif, system-ui';
+        ctx.fillText('Overall', width / 2, height / 2 + 10);
+        ctx.restore();
+      }
+    };
+
+    new Chart(donutEl.getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Positive', 'Neutral', 'Negative'],
+        datasets: [{
+          data: normalized,
+          backgroundColor: [colors.green500, colors.yellow400, colors.red500],
+          borderColor: '#ffffff',
+          borderWidth: 4,
+          hoverOffset: 4
+        }]
+      },
+      plugins: [centerText],
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '70%',
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => `${ctx.label}: ${ctx.parsed.toFixed(0)}%`
+            }
+          }
+        }
+      }
+    });
+  });
+</script>

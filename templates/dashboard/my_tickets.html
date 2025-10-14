@@ -24,322 +24,226 @@
         opacity: 0; /* Start hidden */
         animation: slideInUp 0.6s ease-out forwards;
     }
-    
-    /* SLA Status Colors */
-    .sla-breached {
-        background-color: #FEE2E2; /* red-100 */
-        color: #B91C1C; /* red-700 */
-    }
-    
-    .sla-warning {
-        background-color: #FEF3C7; /* yellow-100 */
-        color: #B45309; /* yellow-700 */
-    }
-    
-    .sla-good {
-        background-color: #D1FAE5; /* green-100 */
-        color: #047857; /* green-700 */
-    }
-    
-    /* Status Colors */
-    .status-pending {
-        background-color: #FEF3C7; /* yellow-100 */
-        color: #B45309; /* yellow-700 */
-    }
-    
-    .status-accepted {
-        background-color: #DBEAFE; /* blue-100 */
-        color: #1E40AF; /* blue-700 */
-    }
-    
-    .status-in-progress {
-        background-color: #DBEAFE; /* blue-100 */
-        color: #1E40AF; /* blue-700 */
-    }
-    
-    .status-completed {
-        background-color: #D1FAE5; /* green-100 */
-        color: #047857; /* green-700 */
-    }
-    
-    .status-closed {
-        background-color: #D1FAE5; /* green-100 */
-        color: #047857; /* green-700 */
-    }
-    
-    .status-escalated {
-        background-color: #FEE2E2; /* red-100 */
-        color: #B91C1C; /* red-700 */
-    }
-    
-    .status-rejected {
-        background-color: #FEE2E2; /* red-100 */
-        color: #B91C1C; /* red-700 */
-    }
-    
-    /* Action Button Styles */
-    .action-btn {
-        padding: 0.5rem 1rem;
-        border-radius: 0.5rem;
-        font-weight: 500;
-        transition: all 0.2s;
-        cursor: pointer;
-        border: 1px solid;
-    }
-    
-    .action-btn-primary {
-        background-color: #2563EB; /* blue-600 */
-        color: white;
-        border-color: #2563EB;
-    }
-    
-    .action-btn-primary:hover {
-        background-color: #1D4ED8; /* blue-700 */
-        border-color: #1D4ED8;
-    }
-    
-    .action-btn-secondary {
-        background-color: #F3F4F6; /* gray-100 */
-        color: #4B5563; /* gray-600 */
-        border-color: #D1D5DB; /* gray-300 */
-    }
-    
-    .action-btn-secondary:hover {
-        background-color: #E5E7EB; /* gray-200 */
-    }
-    
-    .action-btn-success {
-        background-color: #10B981; /* emerald-500 */
-        color: white;
-        border-color: #10B981;
-    }
-    
-    .action-btn-success:hover {
-        background-color: #059669; /* emerald-600 */
-        border-color: #059669;
-    }
-    
-    .action-btn-warning {
-        background-color: #F59E0B; /* amber-500 */
-        color: white;
-        border-color: #F59E0B;
-    }
-    
-    .action-btn-warning:hover {
-        background-color: #D97706; /* amber-600 */
-        border-color: #D97706;
-    }
-    
-    .action-btn-danger {
-        background-color: #EF4444; /* red-500 */
-        color: white;
-        border-color: #EF4444;
-    }
-    
-    .action-btn-danger:hover {
-        background-color: #DC2626; /* red-600 */
-        border-color: #DC2626;
-    }
 </style>
 {% endblock extra_css %}
 
 {% block content %}
-<div class="w-full max-w-[1184px] mx-auto bg-transparent">
+<div class="w-full max-w-7xl mx-auto bg-gray-50 font-['Inter']">
 
-    <div class="w-full h-20 bg-white border-b border-gray-200 flex items-center px-6">
+    <div class="w-full h-16 bg-white border-b border-gray-200 flex items-center px-4 sm:px-6">
         <div class="w-full flex justify-between items-center">
-            <div>
-                <h1 class="text-gray-900 text-2xl font-bold font-['Inter']">My Tickets</h1>
-                <p class="text-gray-600 text-sm font-normal font-['Inter']">
-                    {% if user_department %}
-                        Tickets assigned to your department: {{ user_department.name }}
-                    {% else %}
-                        Tickets assigned to you
-                    {% endif %}
-                </p>
+            <div class="flex items-center gap-4">
+                <h1 class="text-gray-900 text-2xl font-bold">My Tasks</h1>
+                <div class="hidden sm:flex items-center gap-2">
+                    <span class="px-3 py-1 bg-blue-100 text-sky-600 text-xs font-medium rounded-full">
+                        {{ page_obj.paginator.count|default:0 }} Active
+                    </span>
+                    {# Note: You must pass 'overdue_count' from your view for this to be dynamic #}
+                    <span class="px-3 py-1 bg-yellow-100 text-yellow-400 text-xs font-medium rounded-full">
+                        {{ overdue_count|default:0 }} Overdue
+                    </span>
+                </div>
             </div>
             
-            <div class="flex items-center gap-4">
-                <form id="searchForm" method="get" class="relative">
-                    <img src="{% static 'images/tickets/search.svg' %}" alt="Search Icon" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" />
-                    <input type="text" name="search" placeholder="Search by ID, Subject, Room..." value="{{ search_query|default:'' }}" class="w-80 h-10 pl-10 pr-4 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500" />
-                    {% if priority_filter %}<input type="hidden" name="priority" value="{{ priority_filter }}">{% endif %}
-                    {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
-                </form>
-                <button class="p-2 rounded-lg hover:bg-gray-100">
-                    <img src="{% static 'images/tickets/notification.svg' %}" alt="Notifications" class="w-6 h-6" />
-                </button>
-                <button class="p-2 rounded-lg hover:bg-gray-100">
-                    <img src="{% static 'images/tickets/help.svg' %}" alt="Help" class="w-6 h-6" />
-                </button>
+            <div class="flex items-center gap-2 sm:gap-4">
+                <a href="#" class="hidden sm:flex items-center justify-center gap-2 h-9 px-4 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-lg transition-colors">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path></svg>
+                    New Ticket
+                </a>
             </div>
         </div>
     </div>
 
-    <div class="p-6">
-        <div class="mt-6 w-full bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-on-load">
-            <div class="flex justify-between items-center">
-                <h2 class="text-gray-900 text-lg font-semibold font-['Inter']">My Assigned Tickets</h2>
-            </div>
-            <div class="mt-6 flex flex-wrap justify-between items-center gap-4">
-                <form id="filterForm" method="get" class="flex flex-wrap items-center gap-4">
-                    <input type="hidden" name="search" value="{{ search_query|default:'' }}">
-                    
-                    <select name="priority" onchange="this.form.submit()" class="w-36 h-9 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer">
-                        <option value="">All Priorities</option>
-                        <option value="High" {% if priority_filter == 'High' %}selected{% endif %}>High</option>
-                        <option value="Medium" {% if priority_filter == 'Medium' %}selected{% endif %}>Medium</option>
-                        <option value="Low" {% if priority_filter == 'Low' %}selected{% endif %}>Low</option>
-                    </select>
-                    
-                    <select name="status" onchange="this.form.submit()" class="w-36 h-9 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer">
-                        <option value="">All Statuses</option>
-                        <option value="Pending" {% if status_filter == 'Pending' %}selected{% endif %}>Pending</option>
-                        <option value="Accepted" {% if status_filter == 'Accepted' %}selected{% endif %}>Accepted</option>
-                        <option value="In Progress" {% if status_filter == 'In Progress' %}selected{% endif %}>In Progress</option>
-                        <option value="Completed" {% if status_filter == 'Completed' %}selected{% endif %}>Completed</option>
-                        <option value="Closed" {% if status_filter == 'Closed' %}selected{% endif %}>Closed</option>
-                    </select>
+    <div class="w-full bg-white border-b border-gray-200 px-4 sm:px-6 py-3">
+        <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <form id="filterForm" method="get" class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                <input type="hidden" name="search" value="{{ search_query|default:'' }}">
+                
+                <select name="priority" onchange="this.form.submit()" class="w-full sm:w-auto flex-grow h-9 rounded-lg border border-gray-300 bg-gray-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer">
+                    <option value="">All Priorities</option>
+                    <option value="High" {% if priority_filter == 'High' %}selected{% endif %}>High</option>
+                    <option value="Medium" {% if priority_filter == 'Medium' %}selected{% endif %}>Medium</option>
+                    <option value="Low" {% if priority_filter == 'Low' %}selected{% endif %}>Low</option>
+                </select>
+                
+                <select name="status" onchange="this.form.submit()" class="w-full sm:w-auto flex-grow h-9 rounded-lg border border-gray-300 bg-gray-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer">
+                    <option value="">All Statuses</option>
+                    <option value="Pending" {% if status_filter == 'Pending' %}selected{% endif %}>Pending</option>
+                    <option value="Accepted" {% if status_filter == 'Accepted' %}selected{% endif %}>Accepted</option>
+                    <option value="In Progress" {% if status_filter == 'In Progress' %}selected{% endif %}>In Progress</option>
+                    <option value="Completed" {% if status_filter == 'Completed' %}selected{% endif %}>Completed</option>
+                    <option value="Closed" {% if status_filter == 'Closed' %}selected{% endif %}>Closed</option>
+                </select>
+            </form>
+
+            <div class="flex w-full sm:w-auto items-center gap-3">
+                <form id="searchForm" method="get" class="relative flex-grow">
+                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    <input type="text" name="search" placeholder="Search tasks..." value="{{ search_query|default:'' }}" class="w-full h-9 pl-10 pr-4 bg-gray-50 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                    {% if priority_filter %}<input type="hidden" name="priority" value="{{ priority_filter }}">{% endif %}
+                    {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
                 </form>
-                <button class="h-10 w-40 rounded-lg border border-sky-600 text-sky-600 flex items-center justify-center gap-2 hover:bg-sky-50 transition-colors">
-                    <img src="{% static 'images/tickets/export.svg' %}" alt="Export Icon"/>
-                    <span>Export</span>
-                </button>
+                <!-- Removed View Kanban button as requested -->
+            </div>
+        </div>
+    </div>
+
+    <div class="p-4 sm:p-6">
+        <div class="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200">
+            <div class="grid" style="grid-template-columns: 3fr 1.5fr 1.5fr 1fr 1.5fr 1.5fr;">
+                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 text-left text-sm font-semibold text-gray-700">Task</div>
+                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 text-left text-sm font-semibold text-gray-700">Priority</div>
+                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 text-left text-sm font-semibold text-gray-700">Room/Location</div>
+                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 text-left text-sm font-semibold text-gray-700">Status</div>
+                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 text-left text-sm font-semibold text-gray-700">Due Date</div>
+                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 text-left text-sm font-semibold text-gray-700">Actions</div>
+            </div>
+            <div>
+                {% for ticket in tickets %}
+                <div class="grid items-center hover:bg-gray-50" style="grid-template-columns: 3fr 1.5fr 1.5fr 1fr 1.5fr 1.5fr;">
+                    <div class="px-6 py-4 border-b border-gray-100">
+                        <p class="text-base font-medium text-gray-900">{{ ticket.request_type.name }}</p>
+                        <p class="text-sm text-gray-500 truncate">{{ ticket.notes|truncatewords:10 }}</p>
+                    </div>
+                    <div class="px-6 py-4 border-b border-gray-100">
+                        <span class="px-3 py-1 inline-flex text-xs font-medium rounded-full 
+                            {% if ticket.priority_label == 'High' %}bg-red-100 text-red-600
+                            {% elif ticket.priority_label == 'Medium' %}bg-yellow-100 text-yellow-600
+                            {% else %}bg-green-100 text-green-600{% endif %}">
+                            {{ ticket.priority_label }}
+                        </span>
+                    </div>
+                    <div class="px-6 py-4 border-b border-gray-100">
+                        <p class="text-sm font-medium text-black">{{ ticket.location }}</p>
+                        <p class="text-sm text-gray-500">{{ ticket.location.floor|default:'N/A' }}</p>
+                    </div>
+                    <div class="px-6 py-4 border-b border-gray-100">
+                        <span class="px-2 py-1 inline-flex text-xs font-medium rounded-full 
+                            {% if ticket.status == 'pending' %}bg-yellow-100 text-yellow-500
+                            {% elif ticket.status == 'in_progress' %}bg-blue-100 text-sky-600
+                            {% elif ticket.status == 'accepted' %}bg-blue-100 text-sky-600
+                            {% else %}bg-green-100 text-green-700{% endif %}">
+                            {{ ticket.get_status_display }}
+                        </span>
+                    </div>
+                    <div class="px-6 py-4 border-b border-gray-100">
+                        <p class="text-sm font-medium {% if ticket.sla_breached %}text-red-500{% else %}text-black{% endif %}">
+                            {{ ticket.get_time_left }}
+                        </p>
+                        <p class="text-sm text-gray-500">
+                           {% if ticket.sla_breached %}Overdue{% else %}On Time{% endif %}
+                        </p>
+                    </div>
+                    <div class="px-6 py-4 border-b border-gray-100">
+                        <div class="flex items-center gap-2">
+                            {% if ticket.can_accept %}
+                                <button class="accept-ticket-btn text-xs font-medium text-white bg-sky-600 hover:bg-sky-700 rounded px-3 py-1.5" data-ticket-id="{{ ticket.id }}">Accept</button>
+                            {% elif ticket.can_start %}
+                                <button class="start-ticket-btn text-xs font-medium text-white bg-sky-600 hover:bg-sky-700 rounded px-3 py-1.5" data-ticket-id="{{ ticket.id }}">Start</button>
+                            {% elif ticket.can_complete %}
+                                <button class="complete-ticket-btn text-xs font-medium text-white bg-green-500 hover:bg-green-600 rounded px-3 py-1.5" data-ticket-id="{{ ticket.id }}">Complete</button>
+                            {% endif %}
+                            <a href="{% url 'dashboard:ticket_detail' ticket.id %}" class="p-2 rounded-lg text-gray-500 hover:bg-gray-100" title="View Details">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-span-full text-center py-12 text-gray-500">No tasks found.</div>
+                {% endfor %}
             </div>
         </div>
 
-        <div class="mt-6 w-full bg-white rounded-xl shadow-sm border border-gray-200 animate-on-load">
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th scope="col" class="p-4 text-left"><input type="checkbox" class="h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500"></th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Ticket ID</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Priority</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Subject</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Owner</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">SLA Status</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        {% for ticket in tickets %}
-                        <tr>
-                            <td class="p-4"><input type="checkbox" class="h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500"></td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{{ ticket.id }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                    {% if ticket.priority_color == 'red' %}bg-red-100 text-red-800
-                                    {% elif ticket.priority_color == 'sky' %}bg-sky-100 text-sky-800
-                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
-                                    {{ ticket.priority_label }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ ticket.request_type.name }}{% if ticket.location %} - {{ ticket.location }}{% endif %}
-                                <div class="text-xs text-gray-500">{{ ticket.notes|truncatewords:10 }}</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="flex items-center">
-                                    <img class="w-6 h-6 rounded-full" src="{{ ticket.requester_user.userprofile.avatar_url|default:'/static/images/default_avatar.png' }}" alt="Avatar" onerror="this.src='/static/images/default_avatar.png'">
-                                    <div class="ml-3 text-sm text-gray-900">
-                                        {% if ticket.requester_user %}{{ ticket.requester_user.get_full_name|default:ticket.requester_user.username }}{% else %}Unassigned{% endif %}
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="flex items-center gap-2">
-                                    {% if ticket.sla_breached %}
-                                        <span class="px-2 py-1 text-xs font-medium text-white bg-red-500 rounded-full">Breached</span>
-                                    {% elif ticket.response_sla_breached or ticket.resolution_sla_breached %}
-                                        <span class="px-2 py-1 text-xs font-medium text-white bg-yellow-500 rounded-full">Warning</span>
-                                    {% else %}
-                                        <span class="px-2 py-1 text-xs font-medium text-white bg-green-500 rounded-full">On Track</span>
-                                    {% endif %}
-                                    <span class="text-sm text-gray-500">{{ ticket.get_time_left }}</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                    {% if ticket.status == 'pending' %}status-pending
-                                    {% elif ticket.status == 'accepted' %}status-accepted
-                                    {% elif ticket.status == 'in_progress' %}status-in-progress
-                                    {% elif ticket.status == 'completed' %}status-completed
-                                    {% elif ticket.status == 'closed' %}status-closed
-                                    {% elif ticket.status == 'escalated' %}status-escalated
-                                    {% elif ticket.status == 'rejected' %}status-rejected{% endif %}">
-                                    {{ ticket.get_status_display }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                <div class="flex items-center gap-1">
-                                    <a href="{% url 'dashboard:ticket_detail' ticket.id %}" class="p-2 rounded-lg text-gray-500 hover:bg-sky-100 hover:text-sky-600 transition-colors duration-200">
-                                        <img src="{% static 'images/tickets/eye.svg' %}" alt="View ticket" class="w-5 h-5">
-                                    </a>
-                                    
-                                    {% if ticket.can_claim %}
-                                        <button class="claim-ticket-btn action-btn action-btn-primary text-xs" data-ticket-id="{{ ticket.id }}">
-                                            Claim Ticket
-                                        </button>
-                                    {% elif ticket.can_accept %}
-                                        <button class="accept-ticket-btn action-btn action-btn-success text-xs" data-ticket-id="{{ ticket.id }}">
-                                            Accept
-                                        </button>
-                                    {% elif ticket.can_start %}
-                                        <button class="start-ticket-btn action-btn action-btn-warning text-xs" data-ticket-id="{{ ticket.id }}">
-                                            Start Work
-                                        </button>
-                                    {% elif ticket.can_complete %}
-                                        <button class="complete-ticket-btn action-btn action-btn-success text-xs" data-ticket-id="{{ ticket.id }}">
-                                            Complete
-                                        </button>
-                                    {% elif ticket.can_close %}
-                                        <button class="close-ticket-btn action-btn action-btn-primary text-xs" data-ticket-id="{{ ticket.id }}">
-                                            Close
-                                        </button>
-                                    {% endif %}
-                                </div>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="8" class="px-6 py-4 text-center text-gray-500">
-                                No tickets found matching your criteria.
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+        <div class="block md:hidden space-y-4">
+            {% for ticket in tickets %}
+            <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+                <div class="flex justify-between items-start gap-4">
+                    <div>
+                        <p class="text-base font-medium text-gray-900">{{ ticket.request_type.name }}</p>
+                        <p class="text-sm text-gray-600">{{ ticket.location }} • {{ ticket.location.floor|default:'N/A' }}</p>
+                    </div>
+                    <span class="px-3 py-1 inline-flex text-xs font-medium rounded-full 
+                        {% if ticket.priority_label == 'High' %}bg-red-100 text-red-600
+                        {% elif ticket.priority_label == 'Medium' %}bg-yellow-100 text-yellow-600
+                        {% else %}bg-green-100 text-green-600{% endif %}">
+                        {{ ticket.priority_label }}
+                    </span>
+                </div>
 
-            <div class="px-6 py-4 border-t border-gray-200 flex justify-between items-center">
-                {% if page_obj %}
-                <div class="text-sm text-gray-500">
-                    Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }} tickets
+                <div class="flex items-center gap-4 my-3 text-xs">
+                    <span class="px-2 py-1 font-normal rounded-full 
+                        {% if ticket.status == 'pending' %}bg-yellow-100 text-yellow-500
+                        {% elif ticket.status == 'in_progress' %}bg-blue-100 text-sky-600
+                        {% elif ticket.status == 'accepted' %}bg-blue-100 text-sky-600
+                        {% else %}bg-green-100 text-green-700{% endif %}">
+                        {{ ticket.get_status_display }}
+                    </span>
+                    <span class="text-neutral-500">Due: {{ ticket.get_time_left }}</span>
                 </div>
+
+                <div class="my-4">
+                    <div class="flex justify-between items-center text-xs text-gray-600 mb-1">
+                        <span>SLA Progress</span>
+                        <span class="font-medium {% if ticket.sla_breached %}text-red-500{% else %}text-gray-600{% endif %}">
+                            {{ ticket.sla_progress_percent|default:0 }}%
+                        </span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-1.5">
+                        <div class="h-1.5 rounded-full 
+                            {% if ticket.sla_breached %}bg-red-500
+                            {% else %}bg-yellow-400{% endif %}" style="width: {{ ticket.sla_progress_percent|default:0 }}%"></div>
+                    </div>
+                </div>
+
                 <div class="flex items-center gap-2">
-                    {% if page_obj.has_previous %}
-                        <a href="?page={{ page_obj.previous_page_number }}&amp;priority={{ priority_filter }}&amp;status={{ status_filter }}&amp;search={{ search_query }}" class="px-3 h-8 text-sm rounded-lg border border-gray-300 bg-white hover:bg-gray-50 flex items-center">Previous</a>
-                    {% else %}
-                        <button class="px-3 h-8 text-sm rounded-lg border border-gray-300 bg-white disabled:opacity-50" disabled>Previous</button>
+                    {% if ticket.can_accept %}
+                        <button class="accept-ticket-btn flex-grow text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 rounded-lg h-10 flex items-center justify-center" data-ticket-id="{{ ticket.id }}">Accept</button>
+                    {% elif ticket.can_start %}
+                        <button class="start-ticket-btn flex-grow text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 rounded-lg h-10 flex items-center justify-center" data-ticket-id="{{ ticket.id }}">Start Task</button>
+                    {% elif ticket.can_complete %}
+                        <button class="complete-ticket-btn flex-grow text-sm font-medium text-white bg-green-500 hover:bg-green-600 rounded-lg h-10 flex items-center justify-center" data-ticket-id="{{ ticket.id }}">Complete</button>
                     {% endif %}
-                    {% for page_num in page_obj.paginator.page_range %}
-                        {% if page_obj.number == page_num %}
-                             <button class="w-8 h-8 text-sm rounded-lg bg-sky-600 text-white">{{ page_num }}</button>
-                        {% elif page_num > page_obj.number|add:'-3' and page_num < page_obj.number|add:'3' %}
-                             <a href="?page={{ page_num }}&amp;priority={{ priority_filter }}&amp;status={{ status_filter }}&amp;search={{ search_query }}" class="w-8 h-8 text-sm rounded-lg border border-gray-300 bg-white hover:bg-gray-50 flex items-center justify-center">{{ page_num }}</a>
-                        {% endif %}
-                    {% endfor %}
-                    {% if page_obj.has_next %}
-                        <a href="?page={{ page_obj.next_page_number }}&amp;priority={{ priority_filter }}&amp;status={{ status_filter }}&amp;search={{ search_query }}" class="px-3 h-8 text-sm rounded-lg border border-gray-300 bg-white hover:bg-gray-50 flex items-center">Next</a>
-                    {% else %}
-                         <button class="px-3 h-8 text-sm rounded-lg border border-gray-300 bg-white disabled:opacity-50" disabled>Next</button>
-                    {% endif %}
+                    <a href="{% url 'dashboard:ticket_detail' ticket.id %}" class="h-10 w-10 flex-shrink-0 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50" title="View Details">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </a>
                 </div>
+            </div>
+            {% empty %}
+            <div class="bg-white rounded-lg p-12 text-center text-gray-500">No tasks found.</div>
+            {% endfor %}
+        </div>
+        
+        {% if page_obj and page_obj.paginator.num_pages > 1 %}
+        <div class="mt-6 px-4 py-3 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white rounded-lg border border-gray-200">
+            <div class="text-sm text-gray-500">
+                Showing <span class="font-medium">{{ page_obj.start_index }}</span>-<span class="font-medium">{{ page_obj.end_index }}</span> of <span class="font-medium">{{ page_obj.paginator.count }}</span> tasks
+            </div>
+            <div class="flex items-center gap-2">
+                {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}&amp;priority={{ priority_filter }}&amp;status={{ status_filter }}&amp;search={{ search_query }}" class="px-3 h-8 text-sm rounded-lg border border-gray-300 bg-white hover:bg-gray-50 flex items-center">Previous</a>
+                {% else %}
+                    <button class="px-3 h-8 text-sm rounded-lg border border-gray-300 bg-white disabled:opacity-50" disabled>Previous</button>
+                {% endif %}
+                
+                <div class="hidden sm:flex items-center gap-2">
+                {% for page_num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == page_num %}
+                         <button class="w-8 h-8 text-sm rounded-lg bg-sky-600 text-white">{{ page_num }}</button>
+                    {% elif page_num > page_obj.number|add:'-3' and page_num < page_obj.number|add:'3' %}
+                         <a href="?page={{ page_num }}&amp;priority={{ priority_filter }}&amp;status={{ status_filter }}&amp;search={{ search_query }}" class="w-8 h-8 text-sm rounded-lg border border-gray-300 bg-white hover:bg-gray-50 flex items-center justify-center">{{ page_num }}</a>
+                    {% endif %}
+                {% endfor %}
+                </div>
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}&amp;priority={{ priority_filter }}&amp;status={{ status_filter }}&amp;search={{ search_query }}" class="px-3 h-8 text-sm rounded-lg border border-gray-300 bg-white hover:bg-gray-50 flex items-center">Next</a>
+                {% else %}
+                     <button class="px-3 h-8 text-sm rounded-lg border border-gray-300 bg-white disabled:opacity-50" disabled>Next</button>
                 {% endif %}
             </div>
         </div>
+        {% endif %}
     </div>
 </div>
 {% endblock content %}
@@ -347,135 +251,6 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // --- PAGE LOAD ANIMATIONS ---
-    const animatedElements = document.querySelectorAll('.animate-on-load');
-    animatedElements.forEach((el, index) => { setTimeout(() => { el.classList.add('animate-slide-in-up'); }, index * 150); });
-
-    // --- ACCEPT TICKET FUNCTIONALITY ---
-    const acceptButtons = document.querySelectorAll('.accept-ticket-btn');
-    acceptButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const ticketId = this.getAttribute('data-ticket-id');
-            if (confirm('Are you sure you want to accept this ticket? This will assign the ticket to you.')) {
-                fetch(`/dashboard/api/tickets/${ticketId}/accept/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCookie('csrftoken')
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Ticket accepted and assigned to you successfully!');
-                        location.reload();
-                    } else {
-                        alert('Error: ' + data.error);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred. Please try again.');
-                });
-            }
-        });
-    });
-
-    // --- START WORK ON TICKET FUNCTIONALITY ---
-    const startButtons = document.querySelectorAll('.start-ticket-btn');
-    startButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const ticketId = this.getAttribute('data-ticket-id');
-            if (confirm('Are you sure you want to start working on this ticket?')) {
-                fetch(`/dashboard/api/tickets/${ticketId}/start/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCookie('csrftoken')
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Work started on ticket successfully!');
-                        location.reload();
-                    } else {
-                        alert('Error: ' + data.error);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred. Please try again.');
-                });
-            }
-        });
-    });
-
-    // --- COMPLETE TICKET FUNCTIONALITY ---
-    const completeButtons = document.querySelectorAll('.complete-ticket-btn');
-    completeButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const ticketId = this.getAttribute('data-ticket-id');
-            const resolutionNotes = prompt('Please enter resolution notes:');
-            if (resolutionNotes !== null) {
-                fetch(`/dashboard/api/tickets/${ticketId}/complete/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCookie('csrftoken')
-                    },
-                    body: JSON.stringify({
-                        resolution_notes: resolutionNotes
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Ticket marked as completed successfully!');
-                        location.reload();
-                    } else {
-                        alert('Error: ' + data.error);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred. Please try again.');
-                });
-            }
-        });
-    });
-
-    // --- CLOSE TICKET FUNCTIONALITY ---
-    const closeButtons = document.querySelectorAll('.close-ticket-btn');
-    closeButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const ticketId = this.getAttribute('data-ticket-id');
-            if (confirm('Are you sure you want to close this ticket?')) {
-                fetch(`/dashboard/api/tickets/${ticketId}/close/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCookie('csrftoken')
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Ticket closed successfully!');
-                        location.reload();
-                    } else {
-                        alert('Error: ' + data.error);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred. Please try again.');
-                });
-            }
-        });
-    });
-
-    // Helper function to get CSRF token
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
@@ -490,6 +265,71 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         return cookieValue;
     }
+
+    function handleTicketAction(button, url, options = {}) {
+        const ticketId = button.getAttribute('data-ticket-id');
+        let confirmationMessage = options.confirmationMessage || 'Are you sure?';
+        
+        let body = {};
+        if (options.requiresNotes) {
+            const notes = prompt(options.notesPrompt);
+            if (notes === null) return; 
+            body[options.notesField] = notes;
+        }
+
+        // Use a generic confirmation unless it's a note-taking action
+        if (!options.requiresNotes && !confirm(confirmationMessage)) {
+            return;
+        }
+
+        fetch(url.replace('TICKET_ID', ticketId), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: Object.keys(body).length > 0 ? JSON.stringify(body) : null
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(options.successMessage || 'Action successful!');
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'An unknown error occurred.'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+    }
+
+    document.body.addEventListener('click', function(event) {
+        const button = event.target.closest('button');
+        if (!button) return;
+
+        if (button.classList.contains('accept-ticket-btn')) {
+            handleTicketAction(button, '/dashboard/api/tickets/TICKET_ID/accept/', {
+                confirmationMessage: 'Are you sure you want to accept this ticket?',
+                successMessage: 'Ticket accepted successfully!'
+            });
+        }
+        else if (button.classList.contains('start-ticket-btn')) {
+            handleTicketAction(button, '/dashboard/api/tickets/TICKET_ID/start/', {
+                confirmationMessage: 'Are you sure you want to start working on this ticket?',
+                successMessage: 'Work started on ticket successfully!'
+            });
+        }
+        else if (button.classList.contains('complete-ticket-btn')) {
+            handleTicketAction(button, '/dashboard/api/tickets/TICKET_ID/complete/', {
+                requiresNotes: true,
+                notesPrompt: 'Please enter resolution notes:',
+                notesField: 'resolution_notes',
+                successMessage: 'Ticket marked as completed successfully!'
+            });
+        }
+    });
 });
 </script>
 {% endblock extra_js %}

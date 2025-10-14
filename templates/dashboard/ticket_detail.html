@@ -3,36 +3,41 @@
 {% load dashboard2_extras %}
 
 {% block content %}
-<div class="w-full max-w-[1184px] mx-auto bg-gray-50 font-['Inter']">
+<div class="w-full max-w-[1184px] mx-auto bg-gray-50 font-['Inter'] pb-24 lg:pb-0">
 
-    <header class="w-full bg-white border-b border-gray-200 p-6 flex justify-between items-center">
+    <header class="w-full bg-white border-b border-gray-200 p-4 lg:p-6 flex justify-between items-center">
         <div class="flex items-center gap-4">
             <a href="{% url 'dashboard:tickets' %}" class="text-gray-600 hover:text-gray-800" aria-label="Back to tickets">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
             </a>
             <div>
-                <h1 class="text-2xl font-bold text-gray-900">Ticket #{{ ticket.id }}</h1>
-                <div class="flex items-center flex-wrap gap-3 mt-1">
+                <h1 class="text-lg lg:text-2xl font-bold text-gray-900">Ticket #{{ ticket.id }}</h1>
+                <div class="hidden lg:flex items-center flex-wrap gap-3 mt-1">
                     <span class="px-3 py-1 text-xs font-medium text-white bg-{{ ticket_priority_color }} rounded-full">{{ ticket_priority_label }}</span>
                     <span class="px-3 py-1 text-xs font-medium text-{{ ticket_status_color }} bg-{{ ticket_status_color }}/10 rounded-full">{{ ticket_status_label }}</span>
                     <p class="text-sm text-gray-500">Created {{ created_time }}</p>
                 </div>
+                <p class="text-xs text-gray-600 lg:hidden mt-1">{{ request_type_name }} not working</p>
             </div>
         </div>
         <div class="flex items-center gap-2 sm:gap-4">
-            <!-- Removed notification button -->
-            <!-- Removed assign ticket button -->
-            <!-- Removed reassign button -->
-        </div>
+            </div>
     </header>
 
-    <main class="p-6 flex flex-col lg:flex-row gap-6">
+    <div class="w-full p-3 flex justify-between items-center bg-yellow-400/10 border-b border-yellow-400 lg:hidden">
+        <div class="flex items-center gap-2">
+            <div class="w-3 h-3 bg-yellow-400 rounded-full"></div>
+            <span class="text-sm font-medium text-yellow-500">SLA: {{ ticket.get_time_left }}</span>
+        </div>
+        <span class="px-3 py-1 text-xs font-medium text-white bg-{{ ticket_priority_color }} rounded-full">{{ ticket_priority_label }}</span>
+    </div>
+
+    <main class="p-4 lg:p-6 flex flex-col lg:flex-row gap-6">
         
         <div class="flex-grow flex flex-col gap-6 lg:w-2/3">
 
-            <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <div class="flex items-start gap-4">
-                    <!-- Using a default avatar if requester doesn't have one -->
+            <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 lg:p-6">
+                <div class="hidden lg:flex items-start gap-4">
                     <img class="w-10 h-10 rounded-full" src="{{ ticket.requester_user.userprofile.avatar_url|default:'/static/images/tickets/default_avatar.png' }}" alt="Requester Avatar" onerror="this.src='/static/images/tickets/default_avatar.png'"/>
                     <div class="w-full">
                         <div class="flex justify-between items-start">
@@ -50,56 +55,43 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="block lg:hidden">
+                     <h2 class="text-lg font-semibold text-gray-900">Guest Request</h2>
+                     <div class="mt-4 space-y-3 text-sm text-gray-800">
+                        <p><strong>Room:</strong> {{ room_number }}, Floor {{ floor }} - {{ room_type }}</p>
+                        <p><strong>Guest:</strong> {{ requester_name }}</p>
+                        <p><strong>Reported:</strong> {{ created_time }}</p>
+                     </div>
+                     <div class="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                         <p class="text-sm text-gray-700 leading-relaxed">
+                            {{ ticket.notes|default:"No description provided." }}
+                         </p>
+                     </div>
+                </div>
             </section>
 
-            <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 lg:p-6">
                 <h3 class="text-base font-semibold text-gray-900 mb-4">Attachments</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <a href="#" class="border border-gray-200 rounded-lg p-3 flex items-center gap-3 hover:bg-gray-50">
                         <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0"><svg class="w-6 h-6 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></div>
                         <div>
-                            <p class="text-base font-medium text-gray-900 truncate">thermostat_display.jpg</p>
-                            <p class="text-sm text-gray-500">245 KB</p>
+                            <p class="text-sm lg:text-base font-medium text-gray-900 truncate">thermostat_display.jpg</p>
+                            <p class="text-xs lg:text-sm text-gray-500">245 KB</p>
                         </div>
                     </a>
                     <a href="#" class="border border-gray-200 rounded-lg p-3 flex items-center gap-3 hover:bg-gray-50">
                         <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0"><svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></div>
                         <div>
-                            <p class="text-base font-medium text-gray-900 truncate">ac_unit_video.mp4</p>
-                            <p class="text-sm text-gray-500">12.3 MB</p>
+                            <p class="text-sm lg:text-base font-medium text-gray-900 truncate">ac_unit_video.mp4</p>
+                            <p class="text-xs lg:text-sm text-gray-500">12.3 MB</p>
                         </div>
                     </a>
                 </div>
             </section>
-
-            <!-- Commented out the internal comments section -->
-            <!--
-            <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 class="text-base font-semibold text-gray-900 mb-4">Internal Comments</h3>
-                <div class="space-y-6">
-                    <div class="flex items-start gap-3">
-                        <img class="w-8 h-8 rounded-full" src="https://placehold.co/32x32" alt="Commenter Avatar" />
-                        <div class="flex-1 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                            <div class="flex justify-between items-center"><p class="text-base font-medium text-gray-900">Mike Chen - Maintenance</p><p class="text-sm text-gray-500">1 hour ago</p></div>
-                            <p class="mt-1 text-base text-gray-700">Checked the AC unit remotely. Looks like the compressor might be faulty. Will need to dispatch a technician to Room 312 for physical inspection and potential replacement.</p>
-                        </div>
-                    </div>
-                    <div class="flex items-start gap-3">
-                        <img class="w-8 h-8 rounded-full" src="https://placehold.co/32x32" alt="Commenter Avatar" />
-                        <div class="flex-1 p-3 bg-yellow-50 rounded-lg border border-yellow-100">
-                            <div class="flex justify-between items-center"><p class="text-base font-medium text-gray-900">Lisa Park - Guest Relations</p><p class="text-sm text-gray-500">30 minutes ago</p></div>
-                            <p class="mt-1 text-base text-gray-700">Guest is VIP member. Let's prioritize this and consider offering a room upgrade or portable AC unit as interim solution. I'll prepare a service recovery gesture.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="mt-6 border-t border-gray-200 pt-4">
-                    <textarea class="w-full p-2 border border-gray-300 rounded-lg focus:ring-sky-500 focus:border-sky-500" rows="3" placeholder="Add internal comment..."></textarea>
-                    <button class="mt-2 px-4 py-2 text-sm font-medium text-white bg-sky-600 rounded-lg hover:bg-sky-700">Add Comment</button>
-                </div>
-            </section>
-            -->
-
-            <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            
+            <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 lg:p-6">
                 <h3 class="text-base font-semibold text-gray-900 mb-4">Activity Log</h3>
                 <ul class="space-y-4">
                     <li class="flex items-start gap-3"><div class="w-2.5 h-2.5 bg-fuchsia-700 rounded-full mt-1.5 flex-shrink-0"></div><p class="text-sm"><span class="font-medium">Internal comment added</span> by Lisa Park - <span class="text-gray-500">30 minutes ago</span></p></li>
@@ -111,13 +103,12 @@
             </section>
         </div>
 
-        <aside class="flex flex-col gap-6 lg:w-1/3">
+        <aside class="hidden lg:flex flex-col gap-6 lg:w-1/3">
             <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <h3 class="text-base font-semibold text-gray-900 mb-4">Workflow Actions</h3>
                 <div class="space-y-3">
                     {% if ticket.status == 'pending' %}
-                        <!-- Removed assign ticket button -->
-                    {% elif ticket.status == 'accepted' and ticket.assignee_user == user %}
+                        {% elif ticket.status == 'accepted' and ticket.assignee_user == user %}
                         <button id="startBtn" class="w-full py-2 text-sm font-medium text-white bg-yellow-500 rounded-lg hover:bg-yellow-600" data-ticket-id="{{ ticket.id }}">Start Work</button>
                     {% elif ticket.status == 'in_progress' and ticket.assignee_user == user %}
                         <button id="completeBtn" class="w-full py-2 text-sm font-medium text-white bg-purple-500 rounded-lg hover:bg-purple-600" data-ticket-id="{{ ticket.id }}">Mark as Completed</button>
@@ -160,7 +151,7 @@
                     </div>
                 </div>
             </section>
-            <!-- Removed the maintenance checklist section -->
+
             <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <h3 class="text-base font-semibold text-gray-900 mb-4">Ticket & Room Details</h3>
                 <div class="space-y-3 text-sm">
@@ -169,203 +160,35 @@
                     <div class="flex justify-between"><span class="text-gray-600">Room Type:</span> <span class="font-medium text-gray-900">{{ room_type }}</span></div>
                     <div class="flex justify-between"><span class="text-gray-600">Department:</span> <span class="font-medium text-gray-900">{{ department_name }}</span></div>
                     <div class="flex justify-between"><span class="text-gray-600">Assigned To:</span> <span class="font-medium text-gray-900">{{ assignee_name }}</span></div>
-                    <!-- Removed the source section -->
                 </div>
             </section>
         </aside>
     </main>
     
-    <!-- Removed the assign ticket dialog -->
+    <footer class="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 p-4 lg:hidden">
+        <div class="grid grid-cols-3 gap-2">
+            {% if ticket.status == 'accepted' and ticket.assignee_user == user %}
+                <button id="startBtn_mobile" class="col-span-3 w-full py-2 text-sm font-medium text-white bg-yellow-500 rounded-lg hover:bg-yellow-600" data-ticket-id="{{ ticket.id }}">Start Work</button>
+            {% elif ticket.status == 'in_progress' and ticket.assignee_user == user %}
+                 <button id="completeBtn_mobile" class="col-span-3 w-full py-2 text-sm font-medium text-white bg-purple-500 rounded-lg hover:bg-purple-600" data-ticket-id="{{ ticket.id }}">Mark as Completed</button>
+            {% elif ticket.status == 'completed' and user == ticket.requester_user or user.groups.name == 'Front Desk' or user.is_superuser %}
+                 <button id="closeBtn_mobile" class="col-span-3 w-full py-2 text-sm font-medium text-white bg-green-700 rounded-lg hover:bg-green-800" data-ticket-id="{{ ticket.id }}">Close Ticket</button>
+            {% endif %}
+        </div>
+        {% if ticket.status != 'closed' and ticket.status != 'rejected' %}
+        <div class="grid grid-cols-2 gap-2 mt-2">
+            <button id="escalateBtn_mobile" class="w-full py-2 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600" data-ticket-id="{{ ticket.id }}">Escalate</button>
+            
+            {% if ticket.assignee_user == user or user.is_superuser %}
+                <button id="rejectBtn_mobile" class="w-full py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200" data-ticket-id="{{ ticket.id }}">Reject</button>
+            {% endif %}
+        </div>
+        {% endif %}
+    </footer>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Removed assign ticket dialog code
-    
-    // Workflow action buttons
-    const acceptBtn = document.getElementById('acceptBtn');
-    const startBtn = document.getElementById('startBtn');
-    const completeBtn = document.getElementById('completeBtn');
-    const closeBtn = document.getElementById('closeBtn');
-    const escalateBtn = document.getElementById('escalateBtn');
-    const rejectBtn = document.getElementById('rejectBtn');
-    
-    // Accept ticket
-    if (acceptBtn) {
-        acceptBtn.addEventListener('click', function() {
-            const ticketId = this.getAttribute('data-ticket-id');
-            if (confirm('Are you sure you want to accept this ticket?')) {
-                fetch(`/dashboard/api/tickets/${ticketId}/accept/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCookie('csrftoken')
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Ticket accepted successfully!');
-                        location.reload();
-                    } else {
-                        alert('Error: ' + data.error);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred. Please try again.');
-                });
-            }
-        });
-    }
-    
-    // Start working on ticket
-    if (startBtn) {
-        startBtn.addEventListener('click', function() {
-            const ticketId = this.getAttribute('data-ticket-id');
-            if (confirm('Are you sure you want to start working on this ticket?')) {
-                fetch(`/dashboard/api/tickets/${ticketId}/start/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCookie('csrftoken')
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Work started on ticket!');
-                        location.reload();
-                    } else {
-                        alert('Error: ' + data.error);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred. Please try again.');
-                });
-            }
-        });
-    }
-    
-    // Complete ticket
-    if (completeBtn) {
-        completeBtn.addEventListener('click', function() {
-            const ticketId = this.getAttribute('data-ticket-id');
-            const resolutionNotes = prompt('Please enter resolution notes:');
-            if (resolutionNotes !== null) {
-                fetch(`/dashboard/api/tickets/${ticketId}/complete/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCookie('csrftoken')
-                    },
-                    body: JSON.stringify({resolution_notes: resolutionNotes})
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Ticket marked as completed!');
-                        location.reload();
-                    } else {
-                        alert('Error: ' + data.error);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred. Please try again.');
-                });
-            }
-        });
-    }
-    
-    // Close ticket
-    if (closeBtn) {
-        closeBtn.addEventListener('click', function() {
-            const ticketId = this.getAttribute('data-ticket-id');
-            if (confirm('Are you sure you want to close this ticket?')) {
-                fetch(`/dashboard/api/tickets/${ticketId}/close/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCookie('csrftoken')
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Ticket closed successfully!');
-                        location.reload();
-                    } else {
-                        alert('Error: ' + data.error);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred. Please try again.');
-                });
-            }
-        });
-    }
-    
-    // Escalate ticket
-    if (escalateBtn) {
-        escalateBtn.addEventListener('click', function() {
-            const ticketId = this.getAttribute('data-ticket-id');
-            if (confirm('Are you sure you want to escalate this ticket?')) {
-                fetch(`/dashboard/api/tickets/${ticketId}/escalate/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCookie('csrftoken')
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Ticket escalated successfully!');
-                        location.reload();
-                    } else {
-                        alert('Error: ' + data.error);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred. Please try again.');
-                });
-            }
-        });
-    }
-    
-    // Reject ticket
-    if (rejectBtn) {
-        rejectBtn.addEventListener('click', function() {
-            const ticketId = this.getAttribute('data-ticket-id');
-            if (confirm('Are you sure you want to reject this ticket?')) {
-                fetch(`/dashboard/api/tickets/${ticketId}/reject/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCookie('csrftoken')
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Ticket rejected successfully!');
-                        location.reload();
-                    } else {
-                        alert('Error: ' + data.error);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred. Please try again.');
-                });
-            }
-        });
-    }
-    
     // Helper function to get CSRF token
     function getCookie(name) {
         let cookieValue = null;
@@ -381,6 +204,60 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         return cookieValue;
     }
+
+    // Generic function to handle API requests for workflow actions
+    function handleWorkflowAction(url, confirmMessage, successMessage, resolutionPrompt = false) {
+        let body = null;
+        
+        if (resolutionPrompt) {
+            const resolutionNotes = prompt('Please enter resolution notes:');
+            if (resolutionNotes === null) return; // User cancelled
+            body = JSON.stringify({ resolution_notes: resolutionNotes });
+        } else {
+             if (!confirm(confirmMessage)) return;
+        }
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: body
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(successMessage);
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+    }
+
+    // Attach event listeners to both desktop and mobile buttons
+    function setupButtonListeners(buttonId, url, confirmMessage, successMessage, resolutionPrompt = false) {
+        const desktopBtn = document.getElementById(buttonId);
+        const mobileBtn = document.getElementById(buttonId + '_mobile');
+        
+        const action = () => handleWorkflowAction(url, confirmMessage, successMessage, resolutionPrompt);
+
+        if (desktopBtn) desktopBtn.addEventListener('click', action);
+        if (mobileBtn) mobileBtn.addEventListener('click', action);
+    }
+    
+    const ticketId = "{{ ticket.id }}";
+
+    setupButtonListeners('startBtn', `/dashboard/api/tickets/${ticketId}/start/`, 'Are you sure you want to start working on this ticket?', 'Work started on ticket!');
+    setupButtonListeners('completeBtn', `/dashboard/api/tickets/${ticketId}/complete/`, '', 'Ticket marked as completed!', true);
+    setupButtonListeners('closeBtn', `/dashboard/api/tickets/${ticketId}/close/`, 'Are you sure you want to close this ticket?', 'Ticket closed successfully!');
+    setupButtonListeners('escalateBtn', `/dashboard/api/tickets/${ticketId}/escalate/`, 'Are you sure you want to escalate this ticket?', 'Ticket escalated successfully!');
+    setupButtonListeners('rejectBtn', `/dashboard/api/tickets/${ticketId}/reject/`, 'Are you sure you want to reject this ticket?', 'Ticket rejected successfully!');
 });
 </script>
 {% endblock %}
