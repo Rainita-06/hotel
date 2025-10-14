@@ -1,0 +1,194 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+
+{% block content %}
+<div class="w-full max-w-7xl mx-auto p-6">
+    <!-- Header Section -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">Breakfast Voucher — Report</h1>
+                <p class="text-sm text-gray-500 mt-1">Breakfast > Report</p>
+            </div>
+            <form method="get" class="flex flex-wrap gap-3">
+                {% if from_date %}
+                    <input type="hidden" name="from_date" value="{{ from_date }}">
+                {% endif %}
+                {% if to_date %}
+                    <input type="hidden" name="to_date" value="{{ to_date }}">
+                {% endif %}
+                <button type="submit" name="export" value="1" 
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200">
+                    Export
+                </button>
+            </form>
+        </div>
+    </div>
+    <!-- Tab Navigation -->
+    {% include 'partials/breakfast_tab.html' %}
+<!-- Statistics Boxes -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <!-- Today's Check-ins -->
+    <div class="self-stretch h-32 p-6 bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200 inline-flex justify-center items-center">
+        <div class="flex-1 h-20 flex justify-between items-center">
+            <div class="relative w-32">
+                 <div class="w-9 h-9 justify-start text-gray-900 text-3xl font-bold font-['Inter']">{{ daily_checkins }}</div>
+                <div class="w-28 h-4 justify-start text-gray-600 text-sm font-medium font-['Inter']">Today's Check-Ins</div>
+                <!-- <div class="absolute top-0 left-0 text-gray-600 text-sm font-medium">Today's Check-Ins</div> -->
+                <!-- <div class="absolute top-20 left-0 text-3xl font-bold text-gray-900">{{ daily_checkins }}</div> -->
+            </div>
+            <div class="w-12 h-12 bg-blue-500/10 rounded-lg flex justify-center items-center">
+                <div class="w-4 h-4 bg-blue-500"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Today's Check-outs -->
+    <div class="self-stretch h-32 p-6 bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200 inline-flex justify-center items-center">
+        <div class="flex-1 h-20 flex justify-between items-center">
+            <div class="relative w-32">
+                 <div class="w-9 h-9 justify-start text-gray-900 text-3xl font-bold font-['Inter']">{{ daily_checkouts }}</div>
+                <div class="w-28 h-4 justify-start text-gray-600 text-sm font-medium font-['Inter']">Today's Check-Outs</div>
+                <!-- <div class="absolute top-0 left-0 text-gray-600 text-sm font-medium">Today's Check-Outs:{{ daily_checkouts }}</div> -->
+                <!-- <div class="absolute top-20 left-0 text-3xl font-bold text-gray-900"></div> -->
+            </div>
+            <div class="w-12 h-12 bg-orange-500/10 rounded-lg flex justify-center items-center">
+                <div class="w-4 h-4 bg-orange-500"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weekly Check-ins -->
+    <div class="self-stretch h-32 p-6 bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200 inline-flex justify-center items-center">
+        <div class="flex-1 h-20 flex justify-between items-center">
+            <div class="relative w-32">
+                <div class="w-9 h-9 justify-start text-gray-900 text-3xl font-bold font-['Inter']">{{ weekly_checkins }}</div>
+                <div class="w-28 h-4 justify-start text-gray-600 text-sm font-medium font-['Inter']">Weekly Check-In</div>
+                <!-- <div class="absolute top-20 left-0 text-3xl font-bold text-gray-900">{{ weekly_checkins }}</div> -->
+            </div>
+            <div class="w-12 h-12 bg-green-500/10 rounded-lg flex justify-center items-center">
+                <div class="w-4 h-4 bg-green-500"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weekly Check-outs -->
+    <div class="self-stretch h-32 p-6 bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200 inline-flex justify-center items-center">
+        <div class="flex-1 h-20 flex justify-between items-center">
+            <div class="relative w-32">
+                <div class="w-9 h-9 justify-start text-gray-900 text-3xl font-bold font-['Inter']">{{ weekly_checkouts }}</div>
+                <div class="w-28 h-4 justify-start text-gray-600 text-sm font-medium font-['Inter']">Weekly Check-Outs</div>
+                <!-- <div class="absolute top-0 left-0 text-gray-600 text-sm font-medium">Weekly Check-Outs</div> -->
+                <!-- <div class="absolute top-20 left-0 text-3xl font-bold text-gray-900">{{ weekly_checkouts }}</div> -->
+            </div>
+            <div class="w-12 h-12 bg-red-500/10 rounded-lg flex justify-center items-center">
+                <div class="w-4 h-4 bg-red-500"></div>
+            </div>
+        </div>
+    </div>
+</div>
+    <!-- Filter Section -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Filter Vouchers</h2>
+        <form method="get" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">From Date</label>
+                <input type="date" name="from_date" value="{{ from_date|default:'' }}" 
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">To Date</label>
+                <input type="date" name="to_date" value="{{ to_date|default:'' }}" 
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div class="flex items-end gap-3">
+                <button type="submit" 
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200">
+                    Filter
+                </button>
+                <a href="{% url 'breakfast_voucher_report' %}" 
+                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200">
+                    Reset
+                </a>
+            </div>
+        </form>
+    </div>
+
+    
+
+    <!-- Table Section -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200" id="voucherTable">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Guest</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Room</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Adults</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kids</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">QR Sent?</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scan Count</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Redeemed?</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Redeemed At</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for v in vouchers %}
+                    <tr class="hover:bg-gray-50 transition duration-150">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ v.id }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ v.guest_name }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ v.phone_number }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ v.email }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ v.room_no }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ v.adults }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ v.kids }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ v.quantity }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                {% if v.qr_sent_whatsapp %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                {% if v.qr_sent_whatsapp %}✅{% else %}❌{% endif %}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ v.scan_count }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                {% if v.redeemed %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                {% if v.redeemed %}✅{% else %}❌{% endif %}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ v.redeemed_at|default:"-" }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- DataTables JS & CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+
+<script>
+$(document).ready(function () {
+    $('#voucherTable').DataTable({
+        pageLength: 10,
+        lengthMenu: [10, 20, 50, 100],
+        order: [[0, 'desc']],
+        responsive: true,
+        dom: 'Bfrtip',
+        buttons: [
+            'csvHtml5',
+            'pdfHtml5'
+        ]
+    });
+});
+</script>
+{% endblock %}

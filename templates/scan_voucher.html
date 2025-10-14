@@ -1,0 +1,371 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block content %}
+
+    <div class="w-[1200px] mx-auto py-6">
+        <!-- Header -->
+        <div class="bg-white  mb-6">
+            <h1 class="text-2xl font-semibold text-neutral-800">Breakfast Voucher — Scan</h1>
+            <p class="text-gray-500 text-sm mt-1">Scan QR or add manually</p>
+        </div>
+{% include 'partials/breakfast_tab.html' %}
+        <div class="flex gap-8">
+            <!-- Left Column -->
+            <div class="flex-1">
+                <!-- Scan Section -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-4">
+                    <h2 class="text-lg font-medium text-neutral-800 mb-4">Scan</h2>
+                    
+                    <div class="flex gap-4 items-end">
+                        <!-- Quantity -->
+                        <div class="w-40">
+                            <label class="text-sm font-medium text-gray-700 mb-2 block">Quantity</label>
+                            <div class="flex rounded-lg border border-gray-300 overflow-hidden">
+                                <button onclick="changeQty('scan-qty', -1)" class="w-9 h-10 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-500">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+                                    </svg>
+                                </button>
+                                <input type="number" id="scan-qty" class="flex-1 text-center border-0 outline-none" value="1" min="1">
+                                <button onclick="changeQty('scan-qty', 1)" class="w-9 h-10 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-500">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Guest Type -->
+                        <div class="w-40">
+                            <label class="text-sm font-medium text-gray-700 mb-2 block">Guest Type</label>
+                            <select id="guestType" class="w-full h-10 px-3 rounded-lg border border-gray-300 text-base">
+                                <option value="">Select type</option>
+                                <option>Adult</option>
+                                <option>Child</option>
+                            </select>
+                        </div>
+
+                        <!-- Scan QR -->
+                        <div class="w-40">
+                            <label class="text-sm font-medium text-gray-700 mb-2 block">Scan QR Here</label>
+                            <input type="text" id="qrInput" class="w-full h-10 px-3 rounded-lg border border-gray-300 bg-gray-50 text-base placeholder-gray-400" placeholder="Scan QR here">
+                        </div>
+
+                        <!-- Insert Button -->
+                        <button onclick="insertScan()" class="w-40 h-10 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700">
+                            Insert
+                        </button>
+                    </div>
+
+                    <!-- QR Scanner Camera -->
+                    <div id="reader" class="mt-6 mx-auto" style="width:300px;"></div>
+                    
+                    <!-- Scan Result Alert -->
+                    <div id="scan-result" class="mt-4 p-3 rounded-lg hidden"></div>
+                </div>
+
+                <!-- Manual Entry Section -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-lg font-medium text-neutral-800">Manual (Additional)</h2>
+                        <button onclick="toggleManualForm()" class="text-gray-500 hover:text-gray-700">
+                            <svg id="toggle-icon" class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <form id="manualForm" class="grid grid-cols-2 gap-6">
+                        <!-- Row 1 -->
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 mb-2 block">Room</label>
+                            <select id="room" class="w-full h-10 px-3 rounded-lg border border-gray-300 text-base">
+                                <option>Select room</option>
+                                <option>101</option>
+                                <option>102</option>
+                                <option>103</option>
+                                <option>201</option>
+                                <option>202</option>
+                                <option>203</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 mb-2 block">Choose Room</label>
+                            <input type="text" id="room_no" class="w-full h-10 px-3 rounded-lg border border-gray-300 text-base placeholder-gray-400" placeholder="Type room number">
+                        </div>
+
+                        <!-- Row 2 -->
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 mb-2 block">Name *</label>
+                            <input type="text" id="guest_name" class="w-full h-10 px-3 rounded-lg border border-gray-300 text-base" required>
+                        </div>
+
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 mb-2 block">Email</label>
+                            <input type="email" id="email" class="w-full h-10 px-3 rounded-lg border border-gray-300 text-base placeholder-gray-400" placeholder="guest@example.com">
+                        </div>
+
+                        <!-- Row 3 -->
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 mb-2 block">Phone</label>
+                            <input type="text" id="phone" class="w-full h-10 px-3 rounded-lg border border-gray-300 text-base placeholder-gray-400" placeholder="+62...">
+                        </div>
+
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 mb-2 block">Date *</label>
+                            <input type="date" id="date" class="w-full h-10 px-3 rounded-lg border border-gray-300 text-base" required>
+                        </div>
+
+                        <!-- Row 4 -->
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 mb-2 block">Adults</label>
+                            <div class="flex rounded-lg border border-gray-300 overflow-hidden">
+                                <button type="button" onclick="changeQty('adults', -1)" class="w-9 h-10 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-500">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+                                    </svg>
+                                </button>
+                                <input type="number" id="adults" class="flex-1 text-center border-0 outline-none" value="1" min="1">
+                                <button type="button" onclick="changeQty('adults', 1)" class="w-9 h-10 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-500">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 mb-2 block">Kids</label>
+                            <div class="flex rounded-lg border border-gray-300 overflow-hidden">
+                                <button type="button" onclick="changeQty('kids', -1)" class="w-9 h-10 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-500">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+                                    </svg>
+                                </button>
+                                <input type="number" id="kids" class="flex-1 text-center border-0 outline-none" value="0" min="0">
+                                <button type="button" onclick="changeQty('kids', 1)" class="w-9 h-10 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-500">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Row 5 -->
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 mb-2 block">Quantity *</label>
+                            <div class="flex rounded-lg border border-gray-300 overflow-hidden">
+                                <button type="button" onclick="changeQty('quantity', -1)" class="w-9 h-10 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-500">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+                                    </svg>
+                                </button>
+                                <input type="number" id="quantity" class="flex-1 text-center border-0 outline-none" value="1" min="1">
+                                <button type="button" onclick="changeQty('quantity', 1)" class="w-9 h-10 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-500">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 mb-2 block">Send QR</label>
+                            <select id="sendQR" class="w-full h-10 px-3 rounded-lg border border-gray-300 text-base">
+                                <option>Yes</option>
+                                <option>No</option>
+                            </select>
+                        </div>
+
+                        <!-- Row 6 -->
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 mb-2 block">ID</label>
+                            <select id="idSelect" class="w-full h-10 px-3 rounded-lg border border-gray-300 text-base">
+                                <option>Select ID</option>
+                                <option>Aadhar</option>
+                                <option>Passport</option>
+                                <option>Driving License</option>
+                            </select>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="col-span-2 flex gap-3 mt-4">
+                            <button type="button" onclick="clearForm()" class="px-6 py-2 text-gray-600 hover:text-gray-800">
+                                Clear
+                            </button>
+                            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700">
+                                Insert
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Right Column - Recent Scans -->
+            <div class="w-96">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <h2 class="text-lg font-medium text-neutral-800 mb-4">Recent Scans</h2>
+                    
+                    <div id="recentScans" class="space-y-4">
+                        <!-- Empty state -->
+                        <div id="empty-state" class="text-center py-8">
+                            <svg class="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                            </svg>
+                            <p class="text-gray-500 text-sm mb-1">No more recent scans</p>
+                            <p class="text-gray-400 text-xs">Scanned vouchers will appear here</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+
+<!-- QR Scanner library -->
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<script>
+// ✅ QR SCAN LOGIC (kept same)
+function onScanSuccess(decodedText, decodedResult) {
+  console.log("✅ QR Code detected:", decodedText);
+
+  fetch(`/api/vouchers/validate/?code=${decodedText}`)
+    .then(response => response.json())
+    .then(data => {
+      const resultBox = document.getElementById("scan-result");
+      resultBox.classList.remove("hidden");
+      resultBox.innerHTML = data.message;
+
+      // Determine status
+      let statusLabel = "Duplicate";
+      if (data.message && data.message.includes("expired")) {
+        statusLabel = "Expired";
+      } else if (data.success) {
+        statusLabel = "Success";
+      }
+
+      // ✅ Tailwind color alerts
+      resultBox.className =
+        "mt-4 text-base font-medium py-3 px-4 rounded-lg w-fit mx-auto transition-all duration-300";
+      if (statusLabel === "Success") {
+        resultBox.classList.add("bg-green-100", "text-green-700", "border", "border-green-300");
+      } else if (statusLabel === "Expired") {
+        resultBox.classList.add("bg-red-100", "text-red-700", "border", "border-red-300");
+      } else {
+        resultBox.classList.add("bg-yellow-100", "text-yellow-700", "border", "border-yellow-300");
+      }
+
+      // ✅ Add to Recent Scans
+      addRecentScan(
+        data.guest_name || decodedText,
+        data.room_no || "-",
+        data.quantity || "-",
+        statusLabel
+      );
+
+      // Auto-hide after 5s
+      setTimeout(() => {
+        resultBox.classList.add("hidden");
+        resultBox.innerHTML = "";
+      }, 5000);
+    })
+    .catch(err => console.error("Error validating voucher:", err));
+}
+
+// ✅ Setup scanner
+let html5QrcodeScanner = new Html5QrcodeScanner("reader", {
+  fps: 10,
+  qrbox: { width: 250, height: 250 }
+});
+html5QrcodeScanner.render(onScanSuccess);
+
+// ✅ Recent Scans Card Layout with localStorage persistence (last 10 scans)
+function addRecentScan(guestName, roomNo, qty, status) {
+  const container = document.getElementById("recentScans");
+  const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+  // Determine color/icon
+  let color = "text-yellow-500";
+  let icon = "⚠️";
+  if (status === "Success") { color = "text-green-500"; icon = "✅"; }
+  if (status === "Expired") { color = "text-red-500"; icon = "❌"; }
+
+  // Remove placeholder
+  if (container.children[0] && container.children[0].classList.contains("text-gray-400")) {
+    container.innerHTML = "";
+  }
+
+  // Create scan card element
+  const item = document.createElement("div");
+  item.className = "flex justify-between items-start border-b border-gray-100 py-2";
+  item.innerHTML = `
+    <div>
+      <p class="font-medium text-gray-900">${guestName}</p>
+      <p class="text-sm text-gray-500">Room ${roomNo} • ${qty} qty</p>
+    </div>
+    <div class="text-right">
+      <p class="text-xs text-gray-400">${time}</p>
+      <p class="${color} text-sm font-medium flex items-center gap-1 justify-end">
+        ${icon} ${status}
+      </p>
+    </div>
+  `;
+  container.prepend(item);
+
+  // Save to localStorage
+  let scans = JSON.parse(localStorage.getItem("recentScans") || "[]");
+  scans.unshift({ guestName, roomNo, qty, status, time });
+  if (scans.length > 10) scans.pop(); // keep only last 10 scans
+  localStorage.setItem("recentScans", JSON.stringify(scans));
+
+  // Render saved scans on page load
+  renderRecentScans();
+}
+
+// ✅ Load recent scans from localStorage on page load
+function renderRecentScans() {
+  const container = document.getElementById("recentScans");
+  container.innerHTML = ""; // clear current
+
+  let scans = JSON.parse(localStorage.getItem("recentScans") || "[]");
+  if (scans.length === 0) {
+    container.innerHTML = `
+      <div class="text-center py-8 text-gray-400">
+        <p>No more recent scans</p>
+        <p class="text-xs">Scanned vouchers will appear here</p>
+      </div>
+    `;
+    return;
+  }
+
+  scans.forEach(s => {
+    let color = "text-yellow-500";
+    let icon = "⚠️";
+    if (s.status === "Success") { color = "text-green-500"; icon = "✅"; }
+    if (s.status === "Expired") { color = "text-red-500"; icon = "❌"; }
+
+    const item = document.createElement("div");
+    item.className = "flex justify-between items-start border-b border-gray-100 py-2";
+    item.innerHTML = `
+      <div>
+        <p class="font-medium text-gray-900">${s.guestName}</p>
+        <p class="text-sm text-gray-500">Room ${s.roomNo} • ${s.qty} qty</p>
+      </div>
+      <div class="text-right">
+        <p class="text-xs text-gray-400">${s.time}</p>
+        <p class="${color} text-sm font-medium flex items-center gap-1 justify-end">
+          ${icon} ${s.status}
+        </p>
+      </div>
+    `;
+    container.appendChild(item);
+  });
+}
+
+// ✅ Initial load
+window.addEventListener("DOMContentLoaded", renderRecentScans);
+</script>
+
+{% endblock %}

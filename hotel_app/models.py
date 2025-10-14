@@ -1160,7 +1160,7 @@ import os
 from django.utils.html import format_html
 import string
 import random
-from datetime import timedelta, date, datetime
+from datetime import time, timedelta, date, datetime
 from django.db import models, IntegrityError, transaction
 from django.utils import timezone
 import uuid
@@ -1175,9 +1175,12 @@ def qr_upload_path(instance, filename):
 
 class Voucher(models.Model):
     # keep id as default 'id' (you previously had id)
+
     voucher_code = models.CharField(max_length=100, unique=True, blank=True)
     booking = models.ForeignKey(Booking, on_delete=models.CASCADE, null=True, blank=True)
     guest_name = models.CharField(max_length=100,blank=False, null=False)
+    country_code = models.CharField(max_length=5, default="91")  # Example: 91 for India
+
     phone_number = models.CharField(max_length=15,blank=False, null=False) 
     room_no = models.CharField(max_length=100,blank=False, null=False)   # added
     check_in_date = models.DateField(blank=True, null=True)            # added

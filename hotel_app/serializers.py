@@ -72,3 +72,32 @@ class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
         fields = ['id', 'title', 'message', 'notification_type', 'is_read', 'created_at']
+
+
+# class BreakfastVoucherSerializer(serializers.ModelSerializer):
+#     qr_absolute_url = serializers.SerializerMethodField()
+
+#     class Meta:
+#         model = Voucher
+#         fields = [
+#             'id', 'voucher_code', 'guest_name', 'phone_number', 'country_code',
+#             'room_no', 'check_in_date', 'check_out_date', 'adults', 'kids',
+#             'include_breakfast', 'qr_code_image', 'qr_absolute_url'
+#         ]
+
+#     def get_qr_absolute_url(self, obj):
+#         request = self.context.get('request')
+#         if obj.qr_code_image and request:
+#             return request.build_absolute_uri(obj.qr_code_image.url)
+#         return None
+from rest_framework import serializers
+from .models import Voucher
+
+class VoucherSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Voucher
+        fields = "__all__"
+        read_only_fields = ["voucher_code", "quantity", "created_at", "scan_count", "redeemed", "redeemed_at", "valid_dates", "scan_history"]
+
+
+

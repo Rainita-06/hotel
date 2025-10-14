@@ -1,0 +1,78 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block content %}
+<style>
+  body {
+    background-color: #111; /* Dark background */
+    color: #fff;
+    font-family: Arial, sans-serif;
+  }
+  .voucher-container {
+    max-width: 420px;
+    margin: 20px auto;
+    background: #1e1e1e;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+  }
+  .voucher-container img {
+    width: 220px;
+    margin-bottom: 20px;
+    border: 6px solid #fff;
+    border-radius: 10px;
+  }
+  .voucher-title {
+    font-weight: bold;
+    font-size: 16px;
+    margin-bottom: 5px;
+  }
+  .voucher-sub {
+    font-size: 14px;
+    color: #ccc;
+    margin-bottom: 20px;
+  }
+  .voucher-body p {
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 10px;
+  }
+  .voucher-body strong {
+    color: #fff;
+  }
+</style>
+{% include 'partials/breakfast_tab.html' %}
+<div class="voucher-container text-center">
+  <!-- QR Code -->
+  <img src="{{ qr_absolute_url }}" alt="QR Code">
+
+  <!-- Title & Time -->
+  <div class="voucher-title">Grand Sunshine Resort & Convention</div>
+  <div class="voucher-sub">
+    {{ voucher.check_in_date|date:"l, d M Y" }} <br>
+    Time: {{ voucher.check_in_date|time:"H:i" }}
+  </div>
+
+  <!-- Guest Info -->
+  <div class="voucher-body text-left">
+    <p>Dear, <strong>{{ voucher.guest_name }}</strong></p>
+    <p>Room : {{ voucher.room_no }}</p>
+
+    <p>
+      Warm greetings from Grand Sunshine Resort & Convention Bandung.  
+      This is your e-voucher for breakfast, which can be used at the Giwangkara restaurant.
+    </p>
+
+    <p>
+      The Giwangkara restaurant is located on the 2nd floor next to the lobby area.  
+      Breakfast time is from 06:00 to 10:00 on weekdays and 06:00 to 10:30 on weekends.
+    </p>
+
+    <p>
+      Thank you for choosing Grand Sunshine as your stay destination.  
+      We hope you enjoy your breakfast at Giwangkara restaurant.
+    </p>
+
+    <p>Have a pleasant day.</p>
+    <p><strong>Regards, <br> Grand Sunshine Resort & Convention Team</strong></p>
+  </div>
+</div>
+{% endblock %}

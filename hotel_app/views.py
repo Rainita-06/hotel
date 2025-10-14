@@ -528,7 +528,7 @@ def generate_guest_qr(request, guest_id):
     
 from rest_framework import viewsets, filters
 from .models import LocationFamily, Location,Building,Floor,LocationType
-from .serializers import  BuildingSerializer, FloorSerializer, LocationFamilySerializer, LocationSerializer, LocationTypeSerializer
+from .serializers import   BuildingSerializer, FloorSerializer, LocationFamilySerializer, LocationSerializer, LocationTypeSerializer
 class LocationFamilyViewSet(viewsets.ModelViewSet):
     queryset = LocationFamily.objects.all()
     serializer_class = LocationFamilySerializer
@@ -561,6 +561,60 @@ class LocationTypeViewSet(viewsets.ModelViewSet):
     serializer_class = LocationTypeSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name']
+
+# from rest_framework import viewsets, status, filters
+# from rest_framework.decorators import action, api_view
+# from rest_framework.response import Response
+# from django.shortcuts import get_object_or_404
+# from .models import Voucher
+# from .serializers import BreakfastVoucherSerializer
+# from django.utils import timezone
+
+# # ------------------------------
+# # Voucher CRUD + Check-in/Checkout
+# # ------------------------------
+# class BreakfastVoucherViewSet(viewsets.ModelViewSet):
+#     queryset = Voucher.objects.all().order_by('-check_in_date')
+#     serializer_class = BreakfastVoucherSerializer
+#     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+#     search_fields = ['guest_name', 'voucher_code', 'room_no']
+
+#     # --------------------------
+#     # Checkout Endpoint
+#     # --------------------------
+#     @action(detail=True, methods=['post'])
+#     def checkout(self, request, pk=None):
+#         voucher = self.get_object()
+#         if voucher.check_out_date:
+#             return Response({"detail": "Already checked out"}, status=status.HTTP_400_BAD_REQUEST)
+#         voucher.check_out_date = request.data.get('check_out_date') or timezone.localdate()
+#         voucher.save()
+#         serializer = self.get_serializer(voucher, context={'request': request})
+#         return Response(serializer.data)
+
+# # ------------------------------
+# # Validate Voucher (QR scan)
+# # ------------------------------
+# @api_view(['GET'])
+# def validate_voucher(request):
+#     code = request.GET.get('code')
+#     if not code:
+#         return Response({"valid": False, "message": "Voucher code missing"}, status=status.HTTP_400_BAD_REQUEST)
+    
+#     try:
+#         voucher = Voucher.objects.get(voucher_code=code)
+#         return Response({
+#             "valid": True,
+#             "guest_name": voucher.guest_name,
+#             "room_no": voucher.room_no,
+#             "check_in_date": voucher.check_in_date,
+#             "check_out_date": voucher.check_out_date,
+#             "include_breakfast": voucher.include_breakfast,
+#             "qr_code_url": request.build_absolute_uri(voucher.qr_code_image.url) if voucher.qr_code_image else None
+#         })
+#     except Voucher.DoesNotExist:
+#         return Response({"valid": False, "message": "Voucher not found"}, status=status.HTTP_404_NOT_FOUND)
+
 
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Location, LocationFamily, LocationType, Floor, Building
@@ -1622,3 +1676,414 @@ def delete_item(request, item_id):
     messages.success(request,f"Item  {item_label} deleted successfully!")
     return redirect("checklist_list")
     return render(request, "dashboard/register_guest.html", {"form": form})
+# app1/views.py (append these imports + views)
+import io, base64, qrcode
+from django.shortcuts import render, redirect, get_object_or_404
+from django.utils import timezone
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse, HttpResponseBadRequest
+from django.views.decorators.http import require_POST
+from django.db.models import Count, DateField
+from django.db.models.functions import TruncDate, ExtractHour
+
+from .models import Voucher
+
+# ---------- Helper to build absolute URL ----------
+def full_url(request, path):
+    return request.build_absolute_uri(path)
+
+# ---------- Reception check-in: create voucher + QR ----------
+import qrcode
+import io
+import base64
+from urllib.parse import quote
+from django.core.files.base import ContentFile
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from .models import Voucher
+import qrcode
+import io
+import base64
+from urllib.parse import quote
+from datetime import datetime, timedelta
+from django.core.files.base import ContentFile
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from .models import Voucher
+import datetime
+
+def _parse_yyyy_mm_dd(s: str):
+    """Return date object or None. Accepts '', None, or 'YYYY-MM-DD'."""
+    if not s:
+        return None
+    s = s.strip()
+    if not s:
+        return None
+    try:
+        return datetime.datetime.strptime(s, "%Y-%m-%d").date()
+    except ValueError:
+        # If you prefer to show an error instead, return an error message here.
+        return None
+# ---------- Reception check-in: create voucher + QR ----------
+import qrcode
+import io
+from django.core.files.base import ContentFile
+from django.urls import reverse
+@login_required
+def create_voucher_checkin(request):
+    if request.method == "POST":
+        guest_name = request.POST.get("guest_name")
+        room_no = request.POST.get("room_no")
+        adults = int(request.POST.get("adults", 1))
+        kids = int(request.POST.get("kids", 0))
+        quantity = int(request.POST.get("quantity", 0))
+        country_code = request.POST.get("country_code")
+        phone_number = request.POST.get("phone_number")
+        email = request.POST.get("email")
+        check_in_date = _parse_yyyy_mm_dd(request.POST.get("check_in_date"))
+        check_out_date = _parse_yyyy_mm_dd(request.POST.get("check_out_date"))
+        include_breakfast = request.POST.get("include_breakfast") == "on"  # checkbox
+
+        # ✅ Create voucher first
+        voucher = Voucher.objects.create(
+            guest_name=guest_name,
+            room_no=room_no,
+            country_code=country_code,
+            phone_number=phone_number,
+            email=email,
+            adults=adults,
+            kids=kids,
+            quantity=quantity,
+            check_in_date=check_in_date,
+            check_out_date=check_out_date,
+            include_breakfast=include_breakfast,
+        )
+
+        # Generate landing URL using voucher_code
+        voucher_page_url = reverse("voucher_landing", args=[voucher.voucher_code])
+        landing_url = request.build_absolute_uri(voucher_page_url)
+
+        # Generate scan URL for QR
+        scan_url = request.build_absolute_uri(reverse("scan_voucher", args=[voucher.voucher_code]))
+
+        # Generate QR code
+        qr_content = voucher.voucher_code  # you can customize
+        qr = qrcode.make(qr_content)
+        buffer = io.BytesIO()
+        qr.save(buffer, format="PNG")
+
+        # Save QR code as base64 string
+        qr_img_str = base64.b64encode(buffer.getvalue()).decode()
+        voucher.qr_code = qr_img_str
+
+        # Save QR code as image file
+        file_name = f"voucher_{voucher.id}.png"
+        voucher.qr_code_image.save(file_name, ContentFile(buffer.getvalue()), save=True)
+
+        voucher.save()
+
+        # Absolute URL for QR sharing
+        qr_absolute_url = request.build_absolute_uri(voucher.qr_code_image.url)
+
+        return render(request, "voucher_success.html", {
+            "voucher": voucher,
+            "qr_absolute_url": qr_absolute_url,
+            "include_breakfast": include_breakfast,
+            "scan_url": scan_url,
+            "landing_url": landing_url,
+        })
+
+    return render(request, "checkin_form.html")
+
+from django.shortcuts import get_object_or_404
+
+@login_required
+def voucher_landing(request, voucher_code):
+    voucher = get_object_or_404(Voucher, voucher_code=voucher_code)
+    return render(request, "voucher_landing.html", {
+        "voucher": voucher,
+        "qr_absolute_url": request.build_absolute_uri(voucher.qr_code_image.url),
+    })
+  
+
+import pandas as pd
+from django.http import HttpResponse
+from django.shortcuts import render
+from .models import Voucher
+from django.utils import timezone
+import pandas as pd
+
+def breakfast_voucher_report(request):
+    
+    
+    today = timezone.localdate()
+    week_start = today - timedelta(days=today.weekday())  # Start of week (Monday)
+
+    vouchers = Voucher.objects.all()
+
+    # Calculate counts
+    daily_checkins = vouchers.filter(check_in_date=today).count()
+    daily_checkouts = vouchers.filter(check_out_date=today).count()
+    
+    weekly_checkins = vouchers.filter(check_in_date__range=[week_start, today]).count()
+    weekly_checkouts = vouchers.filter(check_out_date__range=[week_start, today]).count()
+
+    df =  pd.DataFrame(Voucher.objects.all().values())
+
+    # ✅ Convert timezone-aware datetimes to naive datetimes
+    for col in df.select_dtypes(include=['datetimetz']).columns:
+        df[col] = df[col].dt.tz_localize(None)
+
+    if request.GET.get("export") == "1":
+        response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        response["Content-Disposition"] = 'attachment; filename="vouchers.xlsx"'
+        df.to_excel(response, index=False)
+        return response
+
+    return render(request, "breakfast_voucher_report.html", {"vouchers": vouchers,'daily_checkins': daily_checkins,
+        'daily_checkouts': daily_checkouts,
+        'weekly_checkins': weekly_checkins,
+        'weekly_checkouts': weekly_checkouts,})
+from django.utils import timezone
+from datetime import timedelta
+
+from django.utils.timezone import now
+
+@login_required
+def mark_checkout(request, voucher_id):
+    try:
+        voucher = Voucher.objects.get(id=voucher_id)
+    except Voucher.DoesNotExist:
+        return HttpResponse("Voucher not found", status=404)
+
+    # Update check-out date with today's date
+    voucher.check_out_date = now().date()
+    voucher.save()
+
+
+from django.utils import timezone
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from .models import Voucher
+from datetime import date
+
+@api_view(["GET"])
+def validate_voucher(request):
+    """
+    Validate a voucher when its QR code is scanned.
+    Increments scan_count, updates redeemed flags, and
+    returns status + updated fields.
+    """
+    code = request.GET.get("code")
+    if not code:
+        return Response({"message": "Voucher code is required."},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        voucher = Voucher.objects.get(voucher_code=code)
+    except Voucher.DoesNotExist:
+        return Response({"message": "Invalid voucher code."},
+                        status=status.HTTP_404_NOT_FOUND)
+
+    # 1. Expired?
+    if voucher.is_expired():
+        return Response({"message": "❌ Voucher has expired.","guest_name": voucher.guest_name,
+    "room_no": voucher.room_no,
+    "quantity": voucher.quantity,},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+    # 2. Valid for today?
+    if voucher.is_valid_today():
+        # ✅ increment scan_count and record history
+        today = date.today().isoformat()
+        if today not in (voucher.scan_history or []):
+            voucher.scan_history.append(today)
+        voucher.scan_count = (voucher.scan_count or 0) + 1
+
+        # ✅ mark as redeemed (if not already)
+        if not voucher.redeemed:
+            voucher.redeemed = True
+            voucher.redeemed_at = timezone.now()
+
+        voucher.save(update_fields=["scan_history",
+                                    "scan_count",
+                                    "redeemed",
+                                    "redeemed_at"])
+
+        return Response({
+            "success": True,
+            "message": "✅ Voucher redeemed successfully for today.",
+            "scan_count": voucher.scan_count,
+            "redeemed": voucher.redeemed,
+            "redeemed_at": voucher.redeemed_at,
+            "guest_name": voucher.guest_name,
+    "room_no": voucher.room_no,
+    "quantity": voucher.quantity,
+        })
+
+    # 3. Already used today or not valid
+    return Response({
+        "success": False,
+        "message": "❌ Voucher already used today or not valid for today.",
+        "scan_count": voucher.scan_count,
+        "redeemed": voucher.redeemed,
+        "redeemed_at": voucher.redeemed_at,
+        "guest_name": voucher.guest_name,
+    "room_no": voucher.room_no,
+    "quantity": voucher.quantity,
+    }, status=status.HTTP_400_BAD_REQUEST)
+
+ 
+@login_required
+def scan_voucher_page(request):
+    return render(request, "scan_voucher.html")
+
+from rest_framework import viewsets
+from .models import Voucher
+from .serializers import VoucherSerializer
+import qrcode
+import io
+from django.core.files.base import ContentFile
+
+# class VoucherViewSet(viewsets.ModelViewSet):
+#     queryset = Voucher.objects.all()
+#     serializer_class = VoucherSerializer
+
+#     def perform_create(self, serializer):
+#         # Save voucher first
+#         voucher = serializer.save()
+
+#         # Generate QR code
+#         qr = qrcode.make(voucher.voucher_code)
+#         buffer = io.BytesIO()
+#         qr.save(buffer, format="PNG")
+#         file_name = f"voucher_{voucher.id}.png"
+#         voucher.qr_code_image.save(file_name, ContentFile(buffer.getvalue()), save=True)
+
+#         # Optional: save QR as base64 string
+#         voucher.qr_code = buffer.getvalue().hex()  # or base64 if you prefer
+#         voucher.save(update_fields=["qr_code", "qr_code_image"])
+
+# views.py
+from rest_framework import viewsets, status
+from rest_framework.decorators import action, api_view
+from rest_framework.response import Response
+from django.utils import timezone
+from datetime import date, timedelta
+from django.shortcuts import get_object_or_404
+from django.core.files.base import ContentFile
+import qrcode, io, base64
+from .models import Voucher
+from .serializers import VoucherSerializer
+
+# -------------------
+# Voucher CRUD + QR
+# -------------------
+class VoucherViewSet(viewsets.ModelViewSet):
+    queryset = Voucher.objects.all()
+    serializer_class = VoucherSerializer
+
+    def perform_create(self, serializer):
+        voucher = serializer.save()
+
+        # Auto-calculate quantity
+        voucher.quantity = (voucher.adults or 0) + (voucher.kids or 0)
+
+        # Auto-generate valid_dates
+        if voucher.check_in_date and voucher.check_out_date:
+            dates = []
+            current = voucher.check_in_date
+            while current <= voucher.check_out_date:
+                dates.append(current.isoformat())
+                current += timedelta(days=1)
+            voucher.valid_dates = dates
+
+        # Generate QR code
+        qr = qrcode.make(voucher.voucher_code)
+        buffer = io.BytesIO()
+        qr.save(buffer, format="PNG")
+        file_name = f"voucher_{voucher.id}.png"
+        voucher.qr_code_image.save(file_name, ContentFile(buffer.getvalue()), save=False)
+        voucher.qr_code = base64.b64encode(buffer.getvalue()).decode()
+        voucher.save()
+
+    # -------------------
+    # Scan & Validate Voucher
+    # -------------------
+    @action(detail=False, methods=["get"], url_path="validate")
+    def validate_voucher(self, request):
+        code = request.GET.get("code")
+        if not code:
+            return Response({"message": "Voucher code is required."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            voucher = Voucher.objects.get(voucher_code=code)
+        except Voucher.DoesNotExist:
+            return Response({"message": "Invalid voucher code."}, status=status.HTTP_404_NOT_FOUND)
+
+        today = date.today().isoformat()
+        if voucher.is_expired():
+            return Response({"message": "❌ Voucher has expired."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if voucher.is_valid_today():
+            if today not in (voucher.scan_history or []):
+                voucher.scan_history.append(today)
+            voucher.scan_count = (voucher.scan_count or 0) + 1
+            if not voucher.redeemed:
+                voucher.redeemed = True
+                voucher.redeemed_at = timezone.now()
+            voucher.save(update_fields=["scan_history","scan_count","redeemed","redeemed_at"])
+            return Response({
+                "success": True,
+                "message": "✅ Voucher redeemed successfully for today.",
+                "scan_count": voucher.scan_count,
+                "redeemed": voucher.redeemed,
+                "redeemed_at": voucher.redeemed_at,
+                "guest_name": voucher.guest_name,
+                "room_no": voucher.room_no,
+                "quantity": voucher.quantity
+            })
+        return Response({"success": False, "message": "❌ Voucher already used today or not valid for today."}, status=status.HTTP_400_BAD_REQUEST)
+
+    # -------------------
+    # Daily/Weekly Checkin & Checkout Counts
+    # -------------------
+    @action(detail=False, methods=["get"], url_path="report")
+    def report(self, request):
+        today = date.today()
+        week_start = today - timedelta(days=today.weekday())
+        vouchers = Voucher.objects.all()
+
+        daily_checkins = vouchers.filter(check_in_date=today).count()
+        daily_checkouts = vouchers.filter(check_out_date=today).count()
+        weekly_checkins = vouchers.filter(check_in_date__range=[week_start, today]).count()
+        weekly_checkouts = vouchers.filter(check_out_date__range=[week_start, today]).count()
+
+        return Response({
+            "daily_checkins": daily_checkins,
+            "daily_checkouts": daily_checkouts,
+            "weekly_checkins": weekly_checkins,
+            "weekly_checkouts": weekly_checkouts
+        })
+
+    # -------------------
+    # Mark Checkout (today)
+    # -------------------
+    @action(detail=True, methods=["post"], url_path="checkout")
+    def checkout(self, request, pk=None):
+        voucher = get_object_or_404(Voucher, id=pk)
+        voucher.check_out_date = date.today()
+        voucher.save(update_fields=["check_out_date"])
+        return Response({"message": f"Checkout marked for voucher {voucher.voucher_code}", "check_out_date": voucher.check_out_date})
+
+    # -------------------
+    # Share via WhatsApp (returns URL)
+    # -------------------
+    @action(detail=True, methods=["get"], url_path="share")
+    def share_whatsapp(self, request, pk=None):
+        voucher = get_object_or_404(Voucher, id=pk)
+        message = f"Hello {voucher.guest_name}, your voucher code is {voucher.voucher_code}. QR: {request.build_absolute_uri(voucher.qr_code_image.url)}"
+        whatsapp_url = f"https://wa.me/{voucher.country_code}{voucher.phone_number}?text={message}"
+        return Response({"whatsapp_url": whatsapp_url})
+
+
