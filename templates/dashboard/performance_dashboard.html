@@ -51,7 +51,7 @@
         <div data-aos="fade-up" data-aos-delay="200" class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex justify-between items-start">
           <div>
             <p class="text-sm font-medium text-gray-600">Overall Completion Rate</p>
-            <p class="text-3xl font-bold text-gray-900 mt-1">87.5%</p>
+            <p class="text-3xl font-bold text-gray-900 mt-1">{{ completion_rate }}%</p>
             <p class="text-sm text-green-500 mt-2 flex items-center gap-1">
               <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 17a.75.75 0 01-.75-.75V5.612L6.22 8.78a.75.75 0 11-1.06-1.06l4.25-4.25a.75.75 0 011.06 0l4.25 4.25a.75.75 0 11-1.06 1.06L10.75 5.612V16.25A.75.75 0 0110 17z" clip-rule="evenodd" /></svg>
               +3.2% vs last week
@@ -64,7 +64,7 @@
         <div data-aos="fade-up" data-aos-delay="300" class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex justify-between items-start">
           <div>
             <p class="text-sm font-medium text-gray-600">SLA Breaches</p>
-            <p class="text-3xl font-bold text-gray-900 mt-1">12</p>
+            <p class="text-3xl font-bold text-gray-900 mt-1">{{ sla_breaches }}</p>
             <p class="text-sm text-red-500 mt-2 flex items-center gap-1">
               <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 3a.75.75 0 01.75.75v10.638l3.03-3.17a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.22 11.28a.75.75 0 111.06-1.06l3.03 3.17V3.75A.75.75 0 0110 3z" clip-rule="evenodd" /></svg>
               +4 vs yesterday
@@ -77,7 +77,7 @@
         <div data-aos="fade-up" data-aos-delay="400" class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex justify-between items-start">
           <div>
             <p class="text-sm font-medium text-gray-600">Avg Response Time</p>
-            <p class="text-3xl font-bold text-gray-900 mt-1">14m</p>
+            <p class="text-3xl font-bold text-gray-900 mt-1">{{ avg_response_time }}m</p>
             <p class="text-sm text-green-500 mt-2 flex items-center gap-1">
               <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 17a.75.75 0 01-.75-.75V5.612L6.22 8.78a.75.75 0 11-1.06-1.06l4.25-4.25a.75.75 0 011.06 0l4.25 4.25a.75.75 0 11-1.06 1.06L10.75 5.612V16.25A.75.75 0 0110 17z" clip-rule="evenodd" /></svg>
               -2m vs last week
@@ -90,7 +90,7 @@
         <div data-aos="fade-up" data-aos-delay="500" class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex justify-between items-start">
           <div>
             <p class="text-sm font-medium text-gray-600">Active Staff</p>
-            <p class="text-3xl font-bold text-gray-900 mt-1">24</p>
+            <p class="text-3xl font-bold text-gray-900 mt-1">{{ active_staff }}</p>
             <p class="text-sm text-gray-500 mt-2 flex items-center gap-1">
               <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 3.75a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 3.75zM5.25 5.25a.75.75 0 000 1.5h1.5a.75.75 0 000-1.5h-1.5zM15 6.75a.75.75 0 01-.75-.75v-1.5a.75.75 0 011.5 0v1.5a.75.75 0 01-.75.75zM6.75 15a.75.75 0 00-1.5 0v1.5a.75.75 0 001.5 0v-1.5zM13.25 15a.75.75 0 011.5 0v1.5a.75.75 0 01-1.5 0v-1.5zM10 15.75a.75.75 0 00-1.5 0v1.5a.75.75 0 001.5 0v-1.5zM3.75 10a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 01-.75-.75zM13.25 10a.75.75 0 000 1.5h1.5a.75.75 0 000-1.5h-1.5z" /></svg>
               No change
@@ -124,48 +124,36 @@
              <span class="text-sm text-gray-500">This Week</span>
           </div>
           <div class="mt-4 space-y-3">
-             <div class="bg-yellow-50 border border-yellow-200 p-3 rounded-lg flex items-center justify-between gap-4">
+            {% for performer in top_performers %}
+             <div class="{% if forloop.first %}bg-yellow-50 border border-yellow-200{% else %}bg-gray-50{% endif %} p-3 rounded-lg flex items-center justify-between gap-4">
                 <div class="flex items-center gap-4">
-                   <span class="flex items-center justify-center w-8 h-8 rounded-full bg-yellow-400 text-white font-bold">1</span>
-                   <img class="w-10 h-10 rounded-full" src="https://placehold.co/40x40/FFC107/FFFFFF?text=MC" alt="Michael Chen">
+                   <span class="flex items-center justify-center w-8 h-8 rounded-full {% if forloop.first %}bg-yellow-400{% elif forloop.counter == 2 %}bg-gray-400{% elif forloop.counter == 3 %}bg-orange-400{% else %}bg-gray-300{% endif %} text-white font-bold">{{ forloop.counter }}</span>
+                   <img class="w-10 h-10 rounded-full" src="https://placehold.co/40x40/{% if forloop.first %}FFC107{% elif forloop.counter == 2 %}9CA3AF{% elif forloop.counter == 3 %}F97316{% else %}6B7280{% endif %}/FFFFFF?text={{ performer.user.first_name|first }}{{ performer.user.last_name|first }}" alt="{{ performer.user.get_full_name }}">
                    <div>
-                      <p class="font-medium text-gray-900">Michael Chen</p>
-                      <p class="text-sm text-gray-600">Housekeeping</p>
+                      <p class="font-medium text-gray-900">{{ performer.user.get_full_name }}</p>
+                      <p class="text-sm text-gray-600">{{ performer.department.name|default:"Unassigned" }}</p>
                    </div>
                 </div>
                 <div class="text-right">
-                   <p class="font-bold text-green-500">98.5%</p>
-                   <p class="text-sm text-gray-500">42 tickets</p>
+                   <p class="font-bold text-green-500">{{ performer.completion_rate }}%</p>
+                   <p class="text-sm text-gray-500">{{ performer.tickets_completed }} tickets</p>
                 </div>
              </div>
+            {% empty %}
              <div class="bg-gray-50 p-3 rounded-lg flex items-center justify-between gap-4">
                 <div class="flex items-center gap-4">
-                   <span class="flex items-center justify-center w-8 h-8 rounded-full bg-gray-400 text-white font-bold">2</span>
-                   <img class="w-10 h-10 rounded-full" src="https://placehold.co/40x40/9CA3AF/FFFFFF?text=ER" alt="Emma Rodriguez">
+                   <span class="flex items-center justify-center w-8 h-8 rounded-full bg-gray-400 text-white font-bold">-</span>
                    <div>
-                      <p class="font-medium text-gray-900">Emma Rodriguez</p>
-                      <p class="text-sm text-gray-600">Guest Services</p>
+                      <p class="font-medium text-gray-900">No data available</p>
+                      <p class="text-sm text-gray-600">-</p>
                    </div>
                 </div>
                 <div class="text-right">
-                   <p class="font-bold text-green-500">95.2%</p>
-                   <p class="text-sm text-gray-500">38 tickets</p>
+                   <p class="font-bold text-gray-500">-</p>
+                   <p class="text-sm text-gray-500">-</p>
                 </div>
              </div>
-             <div class="bg-gray-50 p-3 rounded-lg flex items-center justify-between gap-4">
-                <div class="flex items-center gap-4">
-                   <span class="flex items-center justify-center w-8 h-8 rounded-full bg-orange-400 text-white font-bold">3</span>
-                   <img class="w-10 h-10 rounded-full" src="https://placehold.co/40x40/F97316/FFFFFF?text=JW" alt="James Wilson">
-                   <div>
-                      <p class="font-medium text-gray-900">James Wilson</p>
-                      <p class="text-sm text-gray-600">Maintenance</p>
-                   </div>
-                </div>
-                <div class="text-right">
-                   <p class="font-bold text-green-500">92.8%</p>
-                   <p class="text-sm text-gray-500">35 tickets</p>
-                </div>
-             </div>
+            {% endfor %}
           </div>
         </div>
         <div data-aos="fade-up" data-aos-delay="600" class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
@@ -174,48 +162,36 @@
              <span class="text-sm text-gray-500">This Week</span>
           </div>
            <div class="mt-4 space-y-3">
-             <div class="bg-green-50 border border-green-200 p-3 rounded-lg flex items-center justify-between gap-4">
+            {% for ranking in department_rankings %}
+             <div class="{% if forloop.first %}bg-green-50 border border-green-200{% else %}bg-gray-50{% endif %} p-3 rounded-lg flex items-center justify-between gap-4">
                 <div class="flex items-center gap-4">
-                   <span class="flex items-center justify-center w-8 h-8 rounded-full bg-green-500 text-white font-bold">1</span>
-                   <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center"></div>
+                   <span class="flex items-center justify-center w-8 h-8 rounded-full {% if forloop.first %}bg-green-500{% elif forloop.counter == 2 %}bg-gray-400{% elif forloop.counter == 3 %}bg-orange-400{% else %}bg-gray-300{% endif %} text-white font-bold">{{ forloop.counter }}</span>
+                   <div class="w-10 h-10 {% if forloop.first %}bg-blue-100{% elif forloop.counter == 2 %}bg-purple-100{% elif forloop.counter == 3 %}bg-orange-100{% else %}bg-gray-100{% endif %} rounded-lg flex items-center justify-center"></div>
                    <div>
-                      <p class="font-medium text-gray-900">Guest Services</p>
-                      <p class="text-sm text-gray-600">8 staff members</p>
+                      <p class="font-medium text-gray-900">{{ ranking.department.name }}</p>
+                      <p class="text-sm text-gray-600">{{ ranking.staff_count }} staff members</p>
                    </div>
                 </div>
                 <div class="text-right">
-                   <p class="font-bold text-green-500">94.2%</p>
-                   <p class="text-sm text-gray-500">127 tickets</p>
+                   <p class="font-bold {% if ranking.completion_rate >= 90 %}text-green-500{% elif ranking.completion_rate >= 80 %}text-yellow-500{% else %}text-red-500{% endif %}">{{ ranking.completion_rate }}%</p>
+                   <p class="text-sm text-gray-500">{{ ranking.tickets_handled }} tickets</p>
                 </div>
              </div>
+            {% empty %}
              <div class="bg-gray-50 p-3 rounded-lg flex items-center justify-between gap-4">
                 <div class="flex items-center gap-4">
-                   <span class="flex items-center justify-center w-8 h-8 rounded-full bg-gray-400 text-white font-bold">2</span>
-                   <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center"></div>
+                   <span class="flex items-center justify-center w-8 h-8 rounded-full bg-gray-400 text-white font-bold">-</span>
                    <div>
-                      <p class="font-medium text-gray-900">Housekeeping</p>
-                      <p class="text-sm text-gray-600">12 staff members</p>
+                      <p class="font-medium text-gray-900">No data available</p>
+                      <p class="text-sm text-gray-600">-</p>
                    </div>
                 </div>
                 <div class="text-right">
-                   <p class="font-bold text-green-500">91.7%</p>
-                   <p class="text-sm text-gray-500">203 tickets</p>
+                   <p class="font-bold text-gray-500">-</p>
+                   <p class="text-sm text-gray-500">-</p>
                 </div>
              </div>
-             <div class="bg-gray-50 p-3 rounded-lg flex items-center justify-between gap-4">
-                <div class="flex items-center gap-4">
-                   <span class="flex items-center justify-center w-8 h-8 rounded-full bg-orange-400 text-white font-bold">3</span>
-                   <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center"></div>
-                   <div>
-                      <p class="font-medium text-gray-900">Maintenance</p>
-                      <p class="text-sm text-gray-600">6 staff members</p>
-                   </div>
-                </div>
-                <div class="text-right">
-                   <p class="font-bold text-yellow-500">87.3%</p>
-                   <p class="text-sm text-gray-500">89 tickets</p>
-                </div>
-             </div>
+            {% endfor %}
           </div>
         </div>
       </section>
@@ -243,70 +219,28 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
+                    {% for staff in staff_performance %}
                     <tr>
                         <td class="p-4 whitespace-nowrap">
                             <div class="flex items-center gap-3">
-                                <img class="w-8 h-8 rounded-full" src="https://placehold.co/32x32/FFC107/FFFFFF?text=MC" alt="Michael Chen">
-                                <span class="font-medium text-gray-900">Michael Chen</span>
+                                <img class="w-8 h-8 rounded-full" src="https://placehold.co/32x32/6B7280/FFFFFF?text={{ staff.user.first_name|first }}{{ staff.user.last_name|first }}" alt="{{ staff.user.get_full_name }}">
+                                <span class="font-medium text-gray-900">{{ staff.user.get_full_name }}</span>
                             </div>
                         </td>
-                        <td class="p-4 whitespace-nowrap text-gray-600">Housekeeping</td>
-                        <td class="p-4 whitespace-nowrap text-center font-medium">42</td>
-                        <td class="p-4 whitespace-nowrap text-center font-medium text-green-500">98.5%</td>
-                        <td class="p-4 whitespace-nowrap text-center text-gray-600">8m</td>
-                        <td class="p-4 whitespace-nowrap text-center font-medium text-green-500">0</td>
+                        <td class="p-4 whitespace-nowrap text-gray-600">{{ staff.department.name|default:"Unassigned" }}</td>
+                        <td class="p-4 whitespace-nowrap text-center font-medium">{{ staff.tickets_completed }}</td>
+                        <td class="p-4 whitespace-nowrap text-center font-medium {% if staff.completion_rate >= 90 %}text-green-500{% elif staff.completion_rate >= 80 %}text-yellow-500{% else %}text-red-500{% endif %}">{{ staff.completion_rate }}%</td>
+                        <td class="p-4 whitespace-nowrap text-center text-gray-600">{{ staff.avg_response }}m</td>
+                        <td class="p-4 whitespace-nowrap text-center font-medium {% if staff.breaches == 0 %}text-green-500{% elif staff.breaches <= 2 %}text-yellow-500{% else %}text-red-500{% endif %}">{{ staff.breaches }}</td>
                         <td class="p-4 whitespace-nowrap text-center">
-                            <span class="px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">Excellent</span>
+                            <span class="px-2 py-1 text-xs font-medium {{ staff.status_class }} rounded-full">{{ staff.status }}</span>
                         </td>
                     </tr>
+                    {% empty %}
                     <tr>
-                        <td class="p-4 whitespace-nowrap">
-                            <div class="flex items-center gap-3">
-                                <img class="w-8 h-8 rounded-full" src="https://placehold.co/32x32/9CA3AF/FFFFFF?text=ER" alt="Emma Rodriguez">
-                                <span class="font-medium text-gray-900">Emma Rodriguez</span>
-                            </div>
-                        </td>
-                        <td class="p-4 whitespace-nowrap text-gray-600">Guest Services</td>
-                        <td class="p-4 whitespace-nowrap text-center font-medium">38</td>
-                        <td class="p-4 whitespace-nowrap text-center font-medium text-green-500">95.2%</td>
-                        <td class="p-4 whitespace-nowrap text-center text-gray-600">12m</td>
-                        <td class="p-4 whitespace-nowrap text-center font-medium text-green-500">0</td>
-                        <td class="p-4 whitespace-nowrap text-center">
-                            <span class="px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">Excellent</span>
-                        </td>
+                        <td colspan="7" class="p-4 text-center text-gray-500">No staff performance data available</td>
                     </tr>
-                    <tr>
-                        <td class="p-4 whitespace-nowrap">
-                            <div class="flex items-center gap-3">
-                                <img class="w-8 h-8 rounded-full" src="https://placehold.co/32x32/F97316/FFFFFF?text=JW" alt="James Wilson">
-                                <span class="font-medium text-gray-900">James Wilson</span>
-                            </div>
-                        </td>
-                        <td class="p-4 whitespace-nowrap text-gray-600">Maintenance</td>
-                        <td class="p-4 whitespace-nowrap text-center font-medium">35</td>
-                        <td class="p-4 whitespace-nowrap text-center font-medium text-green-500">92.8%</td>
-                        <td class="p-4 whitespace-nowrap text-center text-gray-600">15m</td>
-                        <td class="p-4 whitespace-nowrap text-center font-medium text-yellow-500">1</td>
-                        <td class="p-4 whitespace-nowrap text-center">
-                            <span class="px-2 py-1 text-xs font-medium text-sky-700 bg-sky-100 rounded-full">Good</span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="p-4 whitespace-nowrap">
-                            <div class="flex items-center gap-3">
-                                <img class="w-8 h-8 rounded-full" src="https://placehold.co/32x32/EC4899/FFFFFF?text=LP" alt="Lisa Park">
-                                <span class="font-medium text-gray-900">Lisa Park</span>
-                            </div>
-                        </td>
-                        <td class="p-4 whitespace-nowrap text-gray-600">Restaurant</td>
-                        <td class="p-4 whitespace-nowrap text-center font-medium">29</td>
-                        <td class="p-4 whitespace-nowrap text-center font-medium text-yellow-500">85.4%</td>
-                        <td class="p-4 whitespace-nowrap text-center text-gray-600">22m</td>
-                        <td class="p-4 whitespace-nowrap text-center font-medium text-red-500">3</td>
-                        <td class="p-4 whitespace-nowrap text-center">
-                            <span class="px-2 py-1 text-xs font-medium text-yellow-800 bg-yellow-100 rounded-full">Needs Improvement</span>
-                        </td>
-                    </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
@@ -331,10 +265,10 @@
     const completionRateChart = new Chart(completionRateCtx, {
       type: 'bar',
       data: {
-        labels: ['Guest Services', 'Housekeeping', 'Maintenance', 'Restaurant', 'Front Desk', 'Concierge'],
+        labels: {{ department_labels|safe }},
         datasets: [{
           label: 'Completion Rate',
-          data: [95, 92, 88, 85, 90, 93],
+          data: {{ department_completion_data }},
           backgroundColor: '#0284c7',
           borderColor: '#0369a1',
           borderWidth: 1,
@@ -388,10 +322,10 @@
     const slaTrendChart = new Chart(slaTrendCtx, {
       type: 'line',
       data: {
-        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        labels: {{ sla_breach_labels|safe }},
         datasets: [{
           label: 'SLA Breaches',
-          data: [3, 5, 2, 4, 3, 1, 2],
+          data: {{ sla_breach_trends }},
           borderColor: '#ef4444',
           backgroundColor: 'rgba(239, 68, 68, 0.1)',
           tension: 0.4,

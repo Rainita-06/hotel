@@ -2,7 +2,6 @@
 {% load static %}
 
 {% block content %}
-<!-- Add AOS CSS for animations -->
 <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 
 <header class="w-full bg-white border-b border-gray-200" data-aos="fade-down" data-aos-duration="600">
@@ -29,6 +28,7 @@
       <div class="flex items-center gap-4">
         <div class="relative">
           <input id="quick-search" type="text" name="q" placeholder="{{ search_placeholder|default:'Search users...' }}"
+                 autocomplete="off"
                  class="w-64 h-10 pl-10 pr-3 rounded-lg border border-gray-200 bg-white text-base text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 font-['Inter']" />
           <div class="absolute inset-y-0 left-0 flex items-center pl-3">
             <img src="{% static 'images/dashboard/search.svg' %}" alt="Search" class="w-5 h-5" />
@@ -40,16 +40,13 @@
           <img src="{% static 'images/sidebar/settings.svg' %}" alt="Plus" class="w-5 h-5" />
           <span id="primaryActionLabel">{{ primary_label|default:"Create User" }}</span>
         </button>
-
-        <!-- Test button for debugging (kept hidden) -->
-        <button id="testCreateGroupBtn" type="button" onclick="showModal('createGroupModal')" style="display: none;">Test Create Group</button>
       </div>
     </div>
   </div>
 
   <div class="w-full bg-white border-t border-gray-200">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-start gap-8 border-b border-gray-200 -mb-px">
+      <nav class="flex items-start gap-8 border-b border-gray-200 -mb-px">
         <a href="{% url 'dashboard:manage_users_all' %}"
            class="py-4 px-1 inline-flex items-center gap-2 border-b-2 text-sm font-medium {% if active_tab|default:'all' == 'all' %}border-sky-600 text-sky-600{% else %}border-transparent text-gray-600 hover:text-gray-800{% endif %}">
           All Users
@@ -66,27 +63,32 @@
            class="py-4 px-1 inline-flex items-center gap-2 border-b-2 text-sm font-medium {% if active_tab == 'departments' %}border-sky-600 text-sky-600{% else %}border-transparent text-gray-600 hover:text-gray-800{% endif %}">
           Departments
         </a>
-      </div>
+      </nav>
     </div>
   </div>
 </header>
 
 <main class="w-full" data-aos="fade-up" data-aos-delay="200">
   <div class="max-w-7xl mx-auto px-0 py-0">
-    {% if active_tab == 'departments' %}
-      {% include 'dashboard/departments_list.html' %}
+    {% if active_tab == 'profiles' %}
+        {% include 'dashboard/components/manage_users/user_profiles_section.html' %}
+    {% elif active_tab == 'departments' %}
+        {% include 'dashboard/departments_list.html' %}
     {% else %}
-      {% block manage_content %}{% endblock manage_content %}
+        {% block manage_content %}{% endblock manage_content %}
     {% endif %}
   </div>
 </main>
 
-<!-- Create Group Modal -->
-<div id="createGroupModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0" onclick="closeModal('createGroupModal')">
-  <div class="w-full max-w-md rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0" onclick="event.stopPropagation()">
+<!-- Global modals -->
+<div id="createGroupModal" role="dialog" aria-modal="true" aria-labelledby="createGroupTitle"
+     class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0"
+     onclick="closeModal('createGroupModal')">
+  <div data-modal-content class="w-full max-w-md rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0"
+       onclick="event.stopPropagation()">
     <div class="flex items-start justify-between p-5 border-b">
-      <h3 class="text-lg font-semibold text-gray-900">Create Group</h3>
-      <button onclick="closeModal('createGroupModal')" class="rounded-full p-1 text-gray-500 hover:bg-gray-100 transition-colors">
+      <h3 id="createGroupTitle" class="text-lg font-semibold text-gray-900">Create Group</h3>
+      <button type="button" onclick="closeModal('createGroupModal')" class="rounded-full p-1 text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Close">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
       </button>
     </div>
@@ -95,19 +97,16 @@
       <div>
         <label class="block text-sm font-medium text-gray-700">Group Name</label>
         <input type="text" id="createGroupName" name="name" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="e.g. Floor Supervisors" required />
-        <p class="mt-1 text-xs text-gray-500">Enter a descriptive name for your group</p>
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700">Description</label>
         <textarea id="createGroupDescription" name="description" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Optional description"></textarea>
-        <p class="mt-1 text-xs text-gray-500">Provide a brief description of the group's purpose</p>
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700">Department (optional)</label>
         <select id="createGroupDepartment" name="department" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500">
           <option value="">None</option>
         </select>
-        <p class="mt-1 text-xs text-gray-500">Associate this group with a department (optional)</p>
       </div>
       <div id="createGroupError" class="text-sm text-red-600 hidden"></div>
     </form>
@@ -118,42 +117,43 @@
   </div>
 </div>
 
-<!-- Create User Modal -->
-<div id="inviteUserModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0" onclick="closeModal('inviteUserModal')">
-  <div class="w-full max-w-md rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0" onclick="event.stopPropagation()">
+<div id="inviteUserModal" role="dialog" aria-modal="true" aria-labelledby="inviteUserTitle"
+     class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0"
+     onclick="closeModal('inviteUserModal')">
+  <div data-modal-content class="w-full max-w-md rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0"
+       onclick="event.stopPropagation()">
     <div class="flex items-start justify-between p-5 border-b">
-      <h3 class="text-lg font-semibold text-gray-900">Create User</h3>
-      <button onclick="closeModal('inviteUserModal')" class="rounded-full p-1 text-gray-500 hover:bg-gray-100 transition-colors">
+      <h3 id="inviteUserTitle" class="text-lg font-semibold text-gray-900">Create User</h3>
+      <button type="button" onclick="closeModal('inviteUserModal')" class="rounded-full p-1 text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Close">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
       </button>
     </div>
-    <form id="inviteUserForm" class="p-6 space-y-4 overflow-y-auto max-h-[70vh]" enctype="multipart/form-data">
+    <form id="inviteUserForm" class="p-6 space-y-4 overflow-y-auto max-h-[70vh]" enctype="multipart/form-data" autocomplete="on">
       {% csrf_token %}
       <div>
         <label class="block text-sm font-medium text-gray-700">Full Name</label>
-        <input type="text" id="inviteUserName" name="full_name" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="e.g. John Doe" required />
+        <input type="text" id="inviteUserName" name="full_name" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="e.g. John Doe" required autocomplete="name" />
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700">Email</label>
-        <input type="email" id="inviteUserEmail" name="email" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="e.g. john@example.com" required />
+        <input type="email" id="inviteUserEmail" name="email" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="e.g. john@example.com" required autocomplete="email" />
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700">Username</label>
-        <input type="text" id="inviteUserUsername" name="username" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="e.g. johndoe" required />
+        <input type="text" id="inviteUserUsername" name="username" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="e.g. johndoe" required autocomplete="username" />
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700">Password</label>
-        <input type="password" id="inviteUserPassword" name="password" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Enter password" />
+        <input type="password" id="inviteUserPassword" name="password" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Enter password" autocomplete="new-password" />
         <p class="mt-1 text-xs text-gray-500">Leave blank to auto-generate a password</p>
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700">Phone Number</label>
-        <input type="text" id="inviteUserPhone" name="phone" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="e.g. +1234567890" />
+        <input type="text" id="inviteUserPhone" name="phone" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="e.g. +1234567890" autocomplete="tel" />
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700">Profile Picture</label>
         <input type="file" id="inviteUserProfilePicture" name="profile_picture" accept="image/*" class="mt-1 w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100" />
-        <p class="mt-1 text-xs text-gray-500">Upload a JPG, JPEG, PNG, or GIF image (max 5MB)</p>
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700">Department</label>
@@ -176,26 +176,527 @@
   </div>
 </div>
 
-<!-- Toast Notification -->
-<div id="toastNotification" class="fixed top-5 right-5 z-50 flex items-center rounded-lg px-4 py-3 text-white shadow-lg transform transition-all duration-300 translate-x-full opacity-0">
+<div id="addDepartmentModal" role="dialog" aria-modal="true" aria-labelledby="addDepartmentTitle"
+     class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0"
+     onclick="closeModal('addDepartmentModal')">
+    <div data-modal-content class="w-full max-w-lg rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0"
+         onclick="event.stopPropagation()">
+        <div class="flex items-start justify-between p-5 border-b">
+            <h3 id="addDepartmentTitle" class="text-lg font-semibold text-gray-900">Add Department</h3>
+            <button type="button" onclick="closeModal('addDepartmentModal')" class="rounded-full p-1 text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Close">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <form id="addDepartmentForm" onsubmit="submitAddDepartment(event)" class="p-6 space-y-4 overflow-y-auto max-h-[70vh]">
+            {% csrf_token %}
+            <div>
+                <label for="departmentName" class="block text-sm font-medium text-gray-700">Department Name</label>
+                <input type="text" id="departmentName" name="name" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="e.g., Housekeeping" required />
+            </div>
+            <div>
+                <label for="departmentDescription" class="block text-sm font-medium text-gray-700">Description</label>
+                <textarea id="departmentDescription" name="description" rows="3" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Describe the department's responsibilities"></textarea>
+            </div>
+            <div>
+                <label for="departmentHead" class="block text-sm font-medium text-gray-700">Department Head (Optional)</label>
+                <select id="departmentHead" name="head" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                    <option value="">Select a user</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Assign Staff</label>
+                <div id="assignStaffList" class="mt-1 h-40 overflow-y-auto rounded-md border border-gray-300 bg-white p-2 space-y-1"></div>
+            </div>
+            <div>
+                <label for="departmentEmail" class="block text-sm font-medium text-gray-700">Department Email (Optional)</label>
+                <input type="email" id="departmentEmail" name="email" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="e.g., housekeeping@hotel.com" autocomplete="email" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Status</label>
+                <div class="mt-2 flex items-center gap-3">
+                    <label for="departmentStatusToggle" class="relative inline-flex cursor-pointer items-center">
+                        <input type="checkbox" id="departmentStatusToggle" name="is_active" class="peer sr-only" checked>
+                        <div class="peer h-6 w-11 rounded-full bg-gray-200 after:absolute after:start-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-sky-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-sky-300"></div>
+                    </label>
+                    <span class="text-sm text-gray-700">Active</span>
+                </div>
+            </div>
+            <div id="addDepartmentError" class="hidden text-sm text-red-600"></div>
+        </form>
+        <div class="flex items-center justify-end gap-3 p-5 border-t bg-gray-50 rounded-b-lg">
+            <button type="button" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50" onclick="closeModal('addDepartmentModal')">Cancel</button>
+            <button id="addDepartmentSubmit" type="submit" form="addDepartmentForm" class="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700">Add Department</button>
+        </div>
+    </div>
+</div>
+
+<div id="toastNotification" class="fixed top-5 right-5 z-[100] flex items-center rounded-lg px-4 py-3 text-white shadow-lg transform transition-all duration-300 translate-x-full opacity-0">
   <span id="toastMessage"></span>
 </div>
 
+<!-- User Profiles modals MUST be inside a block to render -->
+{% if active_tab == 'profiles' %}
+<!-- Edit Permissions Modal -->
+<div id="editPermissionsModal" role="dialog" aria-modal="true" aria-labelledby="editPermissionsTitle"
+     class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0" onclick="closeModal('editPermissionsModal')">
+  <div data-modal-content class="w-full max-w-4xl rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[90vh]" onclick="event.stopPropagation()">
+    <div class="flex items-start justify-between p-5 border-b flex-shrink-0">
+      <h3 id="editPermissionsTitle" class="modal-title text-lg font-semibold text-gray-900">Edit Permissions</h3>
+      <button type="button" onclick="closeModal('editPermissionsModal')" class="rounded-full p-1 text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Close">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+    </div>
+    <form id="editPermissionsForm" class="p-6 space-y-6 overflow-y-auto">
+      <input type="hidden" id="editGroupId" name="group_id">
+      <div class="mb-4">
+        <h4 class="text-md font-medium text-gray-900" id="editGroupName"></h4>
+        <p class="text-sm text-gray-600">Select the permissions for this group</p>
+      </div>
+
+      <!-- Tables omitted for brevity: identical to your original with .permission-toggle checkboxes -->
+      <!-- Core, Admin, Staff permissions tables -->
+      <div class="space-y-6">
+        <div>
+          <h5 class="text-sm font-medium text-gray-900 mb-2">Core Permissions</h5>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permission</th>
+                  <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">View own profile</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-center">
+                    <div class="flex items-center justify-center">
+                      <label class="inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="perm_view_profile" class="sr-only peer permission-toggle" data-permission="view_profile">
+                        <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
+                      </label>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Update own profile</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-center">
+                    <div class="flex items-center justify-center">
+                      <label class="inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="perm_update_profile" class="sr-only peer permission-toggle" data-permission="update_profile">
+                        <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
+                      </label>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">View assigned requests</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-center">
+                    <div class="flex items-center justify-center">
+                      <label class="inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="perm_view_requests" class="sr-only peer permission-toggle" data-permission="view_requests">
+                        <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
+                      </label>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Update request status</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-center">
+                    <div class="flex items-center justify-center">
+                      <label class="inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="perm_update_requests" class="sr-only peer permission-toggle" data-permission="update_requests">
+                        <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
+                      </label>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div>
+          <h5 class="text-sm font-medium text-gray-900 mb-2">Admin Permissions</h5>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permission</th>
+                  <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Manage users</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-center">
+                    <div class="flex items-center justify-center">
+                      <label class="inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="perm_manage_users" class="sr-only peer permission-toggle" data-permission="manage_users">
+                        <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
+                      </label>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Manage groups</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-center">
+                    <div class="flex items-center justify-center">
+                      <label class="inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="perm_manage_groups" class="sr-only peer permission-toggle" data-permission="manage_groups">
+                        <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
+                      </label>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">System configuration</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-center">
+                    <div class="flex items-center justify-center">
+                      <label class="inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="perm_system_config" class="sr-only peer permission-toggle" data-permission="system_config">
+                        <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
+                      </label>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">View all reports</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-center">
+                    <div class="flex items-center justify-center">
+                      <label class="inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="perm_view_reports" class="sr-only peer permission-toggle" data-permission="view_reports">
+                        <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
+                      </label>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Manage departments</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-center">
+                    <div class="flex items-center justify-center">
+                      <label class="inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="perm_manage_departments" class="sr-only peer permission-toggle" data-permission="manage_departments">
+                        <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
+                      </label>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Full system access</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-center">
+                    <div class="flex items-center justify-center">
+                      <label class="inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="perm_full_access" class="sr-only peer permission-toggle" data-permission="full_access">
+                        <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
+                      </label>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div>
+          <h5 class="text-sm font-medium text-gray-900 mb-2">Staff Permissions</h5>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permission</th>
+                  <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">View team reports</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-center">
+                    <div class="flex items-center justify-center">
+                      <label class="inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="perm_view_team_reports" class="sr-only peer permission-toggle" data-permission="view_team_reports">
+                        <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
+                      </label>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Manage team members</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-center">
+                    <div class="flex items-center justify-center">
+                      <label class="inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="perm_manage_team" class="sr-only peer permission-toggle" data-permission="manage_team">
+                        <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
+                      </label>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Assign requests</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-center">
+                    <div class="flex items-center justify-center">
+                      <label class="inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="perm_assign_requests" class="sr-only peer permission-toggle" data-permission="assign_requests">
+                        <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
+                      </label>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">View department data</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-center">
+                    <div class="flex items-center justify-center">
+                      <label class="inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="perm_view_dept_data" class="sr-only peer permission-toggle" data-permission="view_dept_data">
+                        <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
+                      </label>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </form>
+    <div class="flex items-center justify-end gap-3 p-5 border-t bg-gray-50 rounded-b-lg flex-shrink-0">
+      <button type="button" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50" onclick="closeModal('editPermissionsModal')">Cancel</button>
+      <button id="editPermissionsSubmitBtn" type="submit" form="editPermissionsForm" class="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700">Save Permissions</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bulk Edit Permissions Modal -->
+<div id="bulkEditPermissionsModal" role="dialog" aria-modal="true" aria-labelledby="bulkEditPermissionsTitle"
+     class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0" onclick="closeModal('bulkEditPermissionsModal')">
+  <div data-modal-content class="w-full max-w-4xl rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[90vh]" onclick="event.stopPropagation()">
+    <div class="flex items-start justify-between p-5 border-b flex-shrink-0">
+      <h3 id="bulkEditPermissionsTitle" class="modal-title text-lg font-semibold text-gray-900">Bulk Edit Permissions</h3>
+      <button type="button" onclick="closeModal('bulkEditPermissionsModal')" class="rounded-full p-1 text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Close">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+    </div>
+    <form id="bulkEditPermissionsForm" class="p-6 space-y-6 overflow-y-auto">
+      <div class="mb-4">
+        <p class="text-sm text-gray-600">Select permissions to apply to all selected groups</p>
+      </div>
+
+      <div>
+        <h5 class="text-sm font-medium text-gray-900 mb-2">Select Groups</h5>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {% for group in groups %}
+          <div class="flex items-center">
+            <input type="checkbox" id="bulk_group_{{ group.id }}" name="groups" value="{{ group.id }}" class="h-4 w-4 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
+            <label for="bulk_group_{{ group.id }}" class="ml-2 block text-sm text-gray-900">{{ group.name }}</label>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Same permission tables as single-edit, using .permission-toggle checkboxes -->
+      <div class="space-y-6">
+        <!-- Core, Admin, Staff tables identical to above (omitted here for brevity) -->
+        <div>
+          <h5 class="text-sm font-medium text-gray-900 mb-2">Core Permissions</h5>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permission</th>
+                  <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-6 py-4 text-sm font-medium text-gray-900">View own profile</td>
+                  <td class="px-6 py-4 text-center">
+                    <label class="inline-flex items-center cursor-pointer">
+                      <input type="checkbox" name="perm_view_profile" class="sr-only peer permission-toggle" data-permission="view_profile">
+                      <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
+                    </label>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-6 py-4 text-sm font-medium text-gray-900">Update own profile</td>
+                  <td class="px-6 py-4 text-center">
+                    <label class="inline-flex items-center cursor-pointer">
+                      <input type="checkbox" name="perm_update_profile" class="sr-only peer permission-toggle" data-permission="update_profile">
+                      <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
+                    </label>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-6 py-4 text-sm font-medium text-gray-900">View assigned requests</td>
+                  <td class="px-6 py-4 text-center">
+                    <label class="inline-flex items-center cursor-pointer">
+                      <input type="checkbox" name="perm_view_requests" class="sr-only peer permission-toggle" data-permission="view_requests">
+                      <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
+                    </label>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-6 py-4 text-sm font-medium text-gray-900">Update request status</td>
+                  <td class="px-6 py-4 text-center">
+                    <label class="inline-flex items-center cursor-pointer">
+                      <input type="checkbox" name="perm_update_requests" class="sr-only peer permission-toggle" data-permission="update_requests">
+                      <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
+                    </label>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div>
+          <h5 class="text-sm font-medium text-gray-900 mb-2">Admin Permissions</h5>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permission</th>
+                  <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-6 py-4 text-sm font-medium text-gray-900">Manage users</td>
+                  <td class="px-6 py-4 text-center">
+                    <label class="inline-flex items-center cursor-pointer">
+                      <input type="checkbox" name="perm_manage_users" class="sr-only peer permission-toggle" data-permission="manage_users">
+                      <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
+                    </label>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-6 py-4 text-sm font-medium text-gray-900">Manage groups</td>
+                  <td class="px-6 py-4 text-center">
+                    <label class="inline-flex items-center cursor-pointer">
+                      <input type="checkbox" name="perm_manage_groups" class="sr-only peer permission-toggle" data-permission="manage_groups">
+                      <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
+                    </label>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-6 py-4 text-sm font-medium text-gray-900">System configuration</td>
+                  <td class="px-6 py-4 text-center">
+                    <label class="inline-flex items-center cursor-pointer">
+                      <input type="checkbox" name="perm_system_config" class="sr-only peer permission-toggle" data-permission="system_config">
+                      <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
+                    </label>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-6 py-4 text-sm font-medium text-gray-900">View all reports</td>
+                  <td class="px-6 py-4 text-center">
+                    <label class="inline-flex items-center cursor-pointer">
+                      <input type="checkbox" name="perm_view_reports" class="sr-only peer permission-toggle" data-permission="view_reports">
+                      <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
+                    </label>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-6 py-4 text-sm font-medium text-gray-900">Manage departments</td>
+                  <td class="px-6 py-4 text-center">
+                    <label class="inline-flex items-center cursor-pointer">
+                      <input type="checkbox" name="perm_manage_departments" class="sr-only peer permission-toggle" data-permission="manage_departments">
+                      <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
+                    </label>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-6 py-4 text-sm font-medium text-gray-900">Full system access</td>
+                  <td class="px-6 py-4 text-center">
+                    <label class="inline-flex items-center cursor-pointer">
+                      <input type="checkbox" name="perm_full_access" class="sr-only peer permission-toggle" data-permission="full_access">
+                      <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
+                    </label>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div>
+          <h5 class="text-sm font-medium text-gray-900 mb-2">Staff Permissions</h5>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permission</th>
+                  <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-6 py-4 text-sm font-medium text-gray-900">View team reports</td>
+                  <td class="px-6 py-4 text-center">
+                    <label class="inline-flex items-center cursor-pointer">
+                      <input type="checkbox" name="perm_view_team_reports" class="sr-only peer permission-toggle" data-permission="view_team_reports">
+                      <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
+                    </label>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-6 py-4 text-sm font-medium text-gray-900">Manage team members</td>
+                  <td class="px-6 py-4 text-center">
+                    <label class="inline-flex items-center cursor-pointer">
+                      <input type="checkbox" name="perm_manage_team" class="sr-only peer permission-toggle" data-permission="manage_team">
+                      <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
+                    </label>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-6 py-4 text-sm font-medium text-gray-900">Assign requests</td>
+                  <td class="px-6 py-4 text-center">
+                    <label class="inline-flex items-center cursor-pointer">
+                      <input type="checkbox" name="perm_assign_requests" class="sr-only peer permission-toggle" data-permission="assign_requests">
+                      <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
+                    </label>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-6 py-4 text-sm font-medium text-gray-900">View department data</td>
+                  <td class="px-6 py-4 text-center">
+                    <label class="inline-flex items-center cursor-pointer">
+                      <input type="checkbox" name="perm_view_dept_data" class="sr-only peer permission-toggle" data-permission="view_dept_data">
+                      <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
+                    </label>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </form>
+    <div class="flex items-center justify-end gap-3 p-5 border-t bg-gray-50 rounded-b-lg flex-shrink-0">
+      <button type="button" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50" onclick="closeModal('bulkEditPermissionsModal')">Cancel</button>
+      <button id="bulkEditPermissionsSubmitBtn" type="submit" form="bulkEditPermissionsForm" class="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700">Apply to Selected Groups</button>
+    </div>
+  </div>
+</div>
+{% endif %}
 {% endblock content %}
 
 {% block extra_js %}
-<!-- Add AOS JS library -->
 <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 <script>
+  // Heads up: if your base template still loads cdn.tailwindcss.com, replace it with your compiled Tailwind CSS in production.
+
   // Expose active tab for client logic
   window.manageUsersActiveTab = "{{ active_tab|default:'all'|escapejs }}";
 
+  // Toast timeout holder
+  let __toastTimeout;
+
   document.addEventListener('DOMContentLoaded', function() {
     // Initialize AOS animations
-    AOS.init({
-      once: true,
-      disable: 'phone'
-    });
+    if (window.AOS) {
+      AOS.init({ once: true, disable: 'phone' });
+    }
 
     const tab = String(window.manageUsersActiveTab || 'all').trim().toLowerCase();
 
@@ -210,25 +711,25 @@
         label.textContent = 'Create User';
       }
     }
-    
-    // Add event listeners
+
+    // Attach button and form handlers
     document.getElementById('primaryActionBtn')?.addEventListener('click', () => openPrimaryAction());
     document.getElementById('createGroupForm')?.addEventListener('submit', (e) => submitCreateGroup(e));
     document.getElementById('inviteUserForm')?.addEventListener('submit', (e) => submitInviteUser(e));
+    document.getElementById('editPermissionsForm')?.addEventListener('submit', (e) => handleEditPermissionsSubmit(e));
+    document.getElementById('bulkEditPermissionsForm')?.addEventListener('submit', (e) => handleBulkEditPermissionsSubmit(e));
   });
 
-  // --- MODAL & TOAST LOGIC (FIXED FOR PROPER CENTERING) ---
+  // --- GLOBAL MODAL & TOAST LOGIC ---
 
   function showModal(id) {
     const modal = document.getElementById(id);
     if (!modal) return;
-    const modalContent = modal.querySelector('div[onclick="event.stopPropagation()"]');
-    
-    // Remove hidden class and add flex to ensure proper centering
+    const modalContent = modal.querySelector('[data-modal-content]');
+
     modal.classList.remove('hidden');
     modal.classList.add('flex');
-    
-    // Use a tiny timeout to allow the browser to render the modal before starting the transition
+
     requestAnimationFrame(() => {
       modal.classList.remove('opacity-0');
       if (modalContent) {
@@ -241,47 +742,38 @@
   function closeModal(id) {
     const modal = document.getElementById(id);
     if (!modal) return;
-    const modalContent = modal.querySelector('div[onclick="event.stopPropagation()"]');
+    const modalContent = modal.querySelector('[data-modal-content]');
 
     modal.classList.add('opacity-0');
     if (modalContent) {
       modalContent.classList.remove('scale-100', 'opacity-100');
       modalContent.classList.add('scale-95', 'opacity-0');
     }
-    
-    // Wait for the animation to finish before hiding the element
+
     setTimeout(() => {
       modal.classList.add('hidden');
       modal.classList.remove('flex');
-    }, 300); // Must match the duration in the class list (duration-300)
+    }, 300); // Must match the transition duration
   }
-  
+
   function showToast(message, type = 'success') {
     const toast = document.getElementById('toastNotification');
     const toastMessage = document.getElementById('toastMessage');
     if (!toast || !toastMessage) return;
 
-    toastMessage.textContent = message;
-    
-    // Reset classes
-    toast.classList.remove('bg-green-500', 'bg-red-500');
-    if (type === 'error') {
-      toast.classList.add('bg-red-500');
-    } else {
-      toast.classList.add('bg-green-500');
-    }
-    
-    // Animate in
-    toast.classList.remove('translate-x-full', 'opacity-0');
+    if (__toastTimeout) clearTimeout(__toastTimeout);
 
-    // Automatically hide after 3 seconds
-    setTimeout(() => {
+    toastMessage.textContent = message;
+    toast.classList.remove('bg-green-500', 'bg-red-500', 'translate-x-full', 'opacity-0');
+    toast.classList.add(type === 'error' ? 'bg-red-500' : 'bg-green-500');
+
+    __toastTimeout = setTimeout(() => {
       toast.classList.add('translate-x-full', 'opacity-0');
     }, 3000);
   }
 
-  // --- APPLICATION LOGIC ---
-  
+  // --- GLOBAL APPLICATION LOGIC ---
+
   function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -296,77 +788,49 @@
     }
     return cookieValue;
   }
-  
+
   function openPrimaryAction() {
     const tab = String(window.manageUsersActiveTab || 'all').trim().toLowerCase();
     if (tab === 'groups') {
-      const deptSelect = document.getElementById('createGroupDepartment');
-      if (deptSelect) {
-        fetch('{% url "dashboard:api_manage_users_filters" %}', { headers: { 'Accept': 'application/json' }})
-          .then(r => r.ok ? r.json() : Promise.reject(r))
-          .then(data => {
-            deptSelect.innerHTML = '<option value="">None</option>';
-            if (Array.isArray(data.departments)) {
-              data.departments.forEach(d => {
-                const opt = document.createElement('option');
-                opt.value = d;
-                opt.textContent = d;
-                deptSelect.appendChild(opt);
-              });
-            }
-          })
-          .catch(err => console.error('Error populating group departments:', err));
-      }
       showModal('createGroupModal');
       return;
     }
     if (tab === 'departments') {
+      // This function is defined in `departments_list.html` and will be available in scope
       if (typeof openAddDepartmentModal === 'function') {
         openAddDepartmentModal();
-        return;
+      } else {
+        console.error('openAddDepartmentModal function not found.');
       }
+      return;
     }
     openInviteUserModal();
   }
 
   function openInviteUserModal() {
-    // Reset form and error states
     const form = document.getElementById('inviteUserForm');
     if (form) form.reset();
-    
-    const deptSelect = document.getElementById('inviteUserDepartment');
-    const roleSelect = document.getElementById('inviteUserRole');
+
     const errorEl = document.getElementById('inviteUserError');
-    
-    if (deptSelect) deptSelect.innerHTML = '<option value="">Select Department</option>';
-    if (roleSelect) roleSelect.innerHTML = '<option value="">Select Role</option>';
     if (errorEl) errorEl.classList.add('hidden');
 
     fetch('{% url "dashboard:api_manage_users_filters" %}', { headers: { 'Accept': 'application/json' }})
       .then(response => response.ok ? response.json() : Promise.reject(response))
       .then(data => {
-        // Populate departments
+        const deptSelect = document.getElementById('inviteUserDepartment');
+        const roleSelect = document.getElementById('inviteUserRole');
+
         if (deptSelect) {
           deptSelect.innerHTML = '<option value="">Select Department</option>';
-          if (Array.isArray(data.departments)) {
-            data.departments.forEach(dept => {
-              const option = document.createElement('option');
-              option.value = dept;
-              option.textContent = dept;
-              deptSelect.appendChild(option);
-            });
-          }
+          data.departments?.forEach(dept => {
+            deptSelect.add(new Option(dept, dept));
+          });
         }
-        
-        // Populate roles
         if (roleSelect) {
           roleSelect.innerHTML = '<option value="">Select Role</option>';
-          const roles = Array.isArray(data.roles) ? data.roles : ['Admins', 'Staff', 'Users'];
+          const roles = data.roles || ['Admins', 'Staff', 'Users'];
           roles.forEach(role => {
-            const option = document.createElement('option');
-            option.value = role;
-            option.textContent = role;
-            roleSelect.appendChild(option);
+            roleSelect.add(new Option(role, role));
           });
         }
       })
@@ -377,12 +841,11 @@
   function submitCreateGroup(e) {
     e.preventDefault();
     const btn = document.getElementById('createGroupSubmit');
-    const form = document.getElementById('createGroupForm');
+    const form = e.target;
     const errorEl = document.getElementById('createGroupError');
     const formData = new FormData(form);
 
-    const name = formData.get('name').trim();
-    if (!name) {
+    if (!formData.get('name')?.trim()) {
       errorEl.textContent = 'Group name is required.';
       errorEl.classList.remove('hidden');
       return;
@@ -391,21 +854,11 @@
     btn.disabled = true;
     btn.textContent = 'Creating...';
     errorEl.classList.add('hidden');
-    
-    // Create URL-encoded form data for this specific request
-    const body = new URLSearchParams();
-    for (const pair of formData.entries()) {
-        body.append(pair[0], pair[1]);
-    }
 
     fetch('{% url "dashboard:group_create" %}', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
-        'Accept': 'application/json'
-      },
-      body: body
+      headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Accept': 'application/json' },
+      body: formData
     })
     .then(async response => {
       const payload = await response.json().catch(() => ({}));
@@ -413,9 +866,8 @@
         const msg = payload.errors ? Object.values(payload.errors).flat().join(', ') : payload.detail || 'Failed to create group.';
         throw new Error(msg);
       }
-      return payload;
     })
-    .then(data => {
+    .then(() => {
       closeModal('createGroupModal');
       showToast('Group created successfully!', 'success');
       setTimeout(() => { window.location.reload(); }, 700);
@@ -433,31 +885,21 @@
   function submitInviteUser(e) {
     e.preventDefault();
     const btn = document.getElementById('inviteUserSubmit');
-    const form = document.getElementById('inviteUserForm');
+    const form = e.target;
     const errorEl = document.getElementById('inviteUserError');
     const formData = new FormData(form);
 
-    // Manual validation for key fields
     if (!formData.get('username') || !formData.get('email') || !formData.get('full_name')) {
         errorEl.textContent = 'Please fill in all required fields (Full Name, Email, Username).';
         errorEl.classList.remove('hidden');
         return;
     }
-    
-    // File validation
+
     const profilePicture = formData.get('profile_picture');
-    if (profilePicture && profilePicture.size > 0) {
-        if (profilePicture.size > 5 * 1024 * 1024) { // 5MB
-            errorEl.textContent = 'Image file is too large. Maximum size is 5MB.';
-            errorEl.classList.remove('hidden');
-            return;
-        }
-        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
-        if (!validTypes.includes(profilePicture.type)) {
-            errorEl.textContent = 'Please upload a valid image file (JPG, PNG, GIF).';
-            errorEl.classList.remove('hidden');
-            return;
-        }
+    if (profilePicture && profilePicture.size > 5 * 1024 * 1024) { // 5MB
+        errorEl.textContent = 'Image file is too large. Maximum size is 5MB.';
+        errorEl.classList.remove('hidden');
+        return;
     }
 
     btn.disabled = true;
@@ -467,7 +909,7 @@
     fetch('{% url "dashboard:user_create" %}', {
       method: 'POST',
       headers: {
-        'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+        'X-CSRFToken': getCookie('csrftoken'),
         'Accept': 'application/json'
       },
       body: formData
@@ -478,9 +920,8 @@
         const msg = payload.errors ? Object.values(payload.errors).flat().join(', ') : payload.detail || 'Failed to create user.';
         throw new Error(msg);
       }
-      return payload;
     })
-    .then(data => {
+    .then(() => {
       closeModal('inviteUserModal');
       showToast('User created successfully!', 'success');
       setTimeout(() => { window.location = '{% url "dashboard:manage_users_all" %}'; }, 700);
@@ -494,6 +935,148 @@
       btn.textContent = 'Create User';
     });
   }
+
+  // Modal-opening functions for user profiles section
+  function openEditPermissionsModal(groupId, groupName) {
+    const idEl = document.getElementById('editGroupId');
+    const nameEl = document.getElementById('editGroupName');
+    if (!idEl || !nameEl) {
+      console.error('Edit Permissions modal elements not found in DOM. Ensure modals render inside the content block.');
+      return;
+    }
+    idEl.value = groupId;
+    nameEl.textContent = groupName;
+    loadGroupPermissions(groupId);
+    showModal('editPermissionsModal');
+  }
+  window.openEditPermissionsModal = openEditPermissionsModal;
+
+  function openBulkEditPermissionsModal() {
+    showModal('bulkEditPermissionsModal');
+  }
+  window.openBulkEditPermissionsModal = openBulkEditPermissionsModal;
+
+  // Load group permissions into the modal
+  function loadGroupPermissions(groupId) {
+    const form = document.getElementById('editPermissionsForm');
+    if (!form) return;
+
+    const switches = form.querySelectorAll('.permission-toggle');
+    switches.forEach(s => { s.checked = false; s.disabled = true; });
+
+    fetch(`/dashboard/api/groups/${groupId}/permissions/`)
+      .then(response => response.json())
+      .then(data => {
+        switches.forEach(s => {
+          s.disabled = false;
+          s.checked = !!(data.permissions && data.permissions.includes(s.dataset.permission));
+        });
+      })
+      .catch(error => {
+        console.error('Error loading group permissions:', error);
+        switches.forEach(s => { s.disabled = false; });
+        alert('Failed to load permissions. Please try again.');
+      });
+  }
+
+  // Handle edit permissions form submission
+  function handleEditPermissionsSubmit(event) {
+    event.preventDefault();
+    const idEl = document.getElementById('editGroupId');
+    const saveButton = document.getElementById('editPermissionsSubmitBtn');
+    if (!idEl || !saveButton) {
+      console.error('Edit permissions elements missing');
+      return;
+    }
+    const groupId = idEl.value;
+    const originalText = saveButton.textContent;
+
+    saveButton.disabled = true;
+    saveButton.textContent = 'Saving...';
+
+    const permissions = Array.from(document.querySelectorAll('#editPermissionsForm .permission-toggle:checked'))
+                             .map(el => el.dataset.permission);
+
+    fetch(`/dashboard/api/groups/${groupId}/permissions/update/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify({ permissions })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        closeModal('editPermissionsModal');
+        showToast('Permissions updated successfully!', 'success');
+        setTimeout(() => location.reload(), 700);
+      } else {
+        alert('Failed to update permissions: ' + (data.error || 'Unknown error'));
+      }
+    })
+    .catch(error => {
+      console.error('Error updating permissions:', error);
+      alert('Failed to update permissions. Please try again.');
+    })
+    .finally(() => {
+      saveButton.disabled = false;
+      saveButton.textContent = originalText;
+    });
+  }
+  window.handleEditPermissionsSubmit = handleEditPermissionsSubmit;
+
+  // Handle bulk edit permissions form submission
+  function handleBulkEditPermissionsSubmit(event) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    const groupIds = formData.getAll('groups');
+    const saveButton = document.getElementById('bulkEditPermissionsSubmitBtn');
+    if (!saveButton) {
+      console.error('bulkEditPermissionsSubmitBtn not found');
+      return;
+    }
+    const originalText = saveButton.textContent;
+
+    if (groupIds.length === 0) {
+      alert('Please select at least one group');
+      return;
+    }
+
+    saveButton.disabled = true;
+    saveButton.textContent = 'Applying...';
+
+    const permissions = Array.from(document.querySelectorAll('#bulkEditPermissionsForm .permission-toggle:checked'))
+                             .map(el => el.dataset.permission);
+
+    fetch('/dashboard/api/groups/bulk-permissions/update/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify({ group_ids: groupIds, permissions })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        closeModal('bulkEditPermissionsModal');
+        showToast('Bulk permissions updated successfully!', 'success');
+        setTimeout(() => location.reload(), 700);
+      } else {
+        alert('Failed to update permissions: ' + (data.error || 'Unknown error'));
+      }
+    })
+    .catch(error => {
+      console.error('Error updating permissions:', error);
+      alert('Failed to update permissions. Please try again.');
+    })
+    .finally(() => {
+      saveButton.disabled = false;
+      saveButton.textContent = originalText;
+    });
+  }
+  window.handleBulkEditPermissionsSubmit = handleBulkEditPermissionsSubmit;
 
 </script>
 {% endblock extra_js %}

@@ -99,5 +99,40 @@ class VoucherSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = ["voucher_code", "quantity", "created_at", "scan_count", "redeemed", "redeemed_at", "valid_dates", "scan_history"]
 
+# serializers.py
+from rest_framework import serializers
+from .models import GymMember, GymVisit
+import base64
+
+class GymMemberSerializer(serializers.ModelSerializer):
+    qr_code_base64 = serializers.SerializerMethodField()
+
+    class Meta:
+        model = GymMember
+        fields = "__all__"
+
+    def validate(self, data):
+        """Prevent member creation when password ≠ confirm_password"""
+        if data.get("password") != data.get("confirm_password"):
+            raise serializers.ValidationError("❌ Password and Confirm Password do not match.")
+        return data
+
+    def get_qr_code_base64(self, obj):
+        """Return Base64 QR image string"""
+        try:
+            if obj.qr_code_image:
+                with obj.qr_code_image.open('rb') as image_file:
+                    encoded = base64.b64encode(image_file.read()).decode('utf-8')
+                    return f"data:image/png;base64,{encoded}"
+        except Exception:
+            return None
+        return None
 
 
+class GymVisitSerializer(serializers.ModelSerializer):
+    member_name = serializers.CharField(source="member.full_name", read_only=True)
+    member_code = serializers.CharField(source="member.customer_code", read_only=True)
+
+    class Meta:
+        model = GymVisit
+        fields = "__all__"

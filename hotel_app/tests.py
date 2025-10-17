@@ -105,7 +105,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from datetime import date, datetime, timedelta
 from unittest.mock import patch
-from hotel_app.models import Voucher, Guest, VoucherScan
+from hotel_app.models import Voucher, Guest
 
 User = get_user_model()
 

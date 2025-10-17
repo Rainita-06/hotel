@@ -1,0 +1,258 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+{% block content %}
+
+<div class="w-full bg-gray-50">
+    <!-- Header Section -->
+    <div class="w-full max-w-7xl mx-auto px-6 py-4 bg-white border-b border-gray-200">
+        <div class="flex justify-between items-start">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Member GYM – Report</h1>
+                <p class="text-sm text-gray-600 mt-1">Register new gym members and manage membership details.</p>
+            </div>
+            <div class="w-56 h-10"></div>
+        </div>
+    </div>
+
+    <!-- Main Content Container -->
+    <div class="w-full max-w-7xl mx-auto px-6 py-8">
+        {% include 'partials/gym_tab.html' %}
+        <!-- Report Title Section -->
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold text-gray-900 mb-2">Report</h2>
+            <p class="text-base text-gray-600">Track member visits, usage times, and activity history.</p>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="w-full bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+            <form method="get" class="flex flex-wrap items-center justify-between gap-4">
+                <div class="flex flex-wrap items-center gap-4">
+                    <!-- From Date -->
+                    <div class="flex items-center gap-2">
+                        <label class="text-sm font-medium text-gray-900 whitespace-nowrap">From Date:</label>
+                        <input type="date" 
+                               name="from_date" 
+                               value="{{ from_date }}" 
+                               class="px-4 py-3 w-44 border border-gray-300 rounded-lg text-base text-gray-900 focus:outline-none focus:border-blue-500">
+                    </div>
+
+                    <!-- To Date -->
+                    <div class="flex items-center gap-2">
+                        <label class="text-sm font-medium text-gray-900 whitespace-nowrap">To Date:</label>
+                        <input type="date" 
+                               name="to_date" 
+                               value="{{ to_date }}" 
+                               class="px-4 py-3 w-44 border border-gray-300 rounded-lg text-base text-gray-900 focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+
+                <!-- Export Button -->
+                <button type="submit" 
+                        name="export" 
+                        value="1" 
+                        class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-base font-medium rounded-lg flex items-center gap-2 transition-colors">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                       <img src="{% static 'icon/export.svg' %}" 
+                    </svg>
+                    Export
+                </button>
+            </form>
+        </div>
+
+        <!-- Table Section -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            
+            <!-- Table Header with Search -->
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="text-lg font-semibold text-gray-900">Data Visitor</h3>
+                <div class="w-64 relative">
+                    <input type="text" 
+                           id="searchInput"
+                           placeholder="Search..." 
+                           class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg text-base text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500">
+                    <svg class="w-4 h-4 absolute left-3 top-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Table Content -->
+            <div class="overflow-x-auto">
+                <table class="w-full" id="dataTable">
+                    <!-- Table Head -->
+                    <thead class="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                            <th class="px-6 py-4 text-left">
+                                <div class="flex items-center gap-1">
+                                    <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">ID</span>
+                                    <svg class="w-2 h-3 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M7 10l5 5 5-5z"/>
+                                    </svg>
+                                </div>
+                            </th>
+                            <th class="px-6 py-4 text-left">
+                                <div class="flex items-center gap-1">
+                                    <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Customer ID</span>
+                                    <svg class="w-2 h-3 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M7 10l5 5 5-5z"/>
+                                    </svg>
+                                </div>
+                            </th>
+                            <th class="px-6 py-4 text-left">
+                                <div class="flex items-center gap-1">
+                                    <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Name</span>
+                                    <svg class="w-2 h-3 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M7 10l5 5 5-5z"/>
+                                    </svg>
+                                </div>
+                            </th>
+                            <th class="px-6 py-4 text-left">
+                                <div class="flex items-center gap-1">
+                                    <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Date & Time</span>
+                                    <svg class="w-2 h-3 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M7 10l5 5 5-5z"/>
+                                    </svg>
+                                </div>
+                            </th>
+                            <th class="px-6 py-4 text-left">
+                                <div class="flex items-center gap-1">
+                                    <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Admin</span>
+                                    <svg class="w-2 h-3 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M7 10l5 5 5-5z"/>
+                                    </svg>
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+
+                    <!-- Table Body -->
+                    <tbody class="divide-y divide-gray-200">
+                        {% for v in visits %}
+                        <tr class="hover:bg-gray-50 transition-colors searchable-row">
+                            <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ forloop.counter }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-900">
+                                {% if v.member %}
+                                    {{ v.member.customer_code }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-900">
+                                {% if v.member %}
+                                    {{ v.member.full_name }}
+                                {% else %}
+                                    {{ v.visitor.full_name }}
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-900">
+                                {{ v.visit_at|date:"Y-m-d h:i A" }}
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-900">{{ v.checked_by_user.username }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="px-6 py-8 text-center">
+                                <p class="text-gray-500 text-sm">No visits found</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Table Footer with Pagination -->
+            <div class="px-6 py-4 border-t border-gray-200 flex justify-between items-center bg-white">
+                <div class="text-sm text-gray-700">
+                    Showing 
+                    <span class="font-medium">
+                        {% if page_obj.number %}
+                            {{ page_obj.start_index }}
+                        {% else %}
+                            0
+                        {% endif %}
+                    </span> 
+                    to 
+                    <span class="font-medium">
+                        {% if page_obj.number %}
+                            {{ page_obj.end_index }}
+                        {% else %}
+                            0
+                        {% endif %}
+                    </span> 
+                    of 
+                    <span class="font-medium">{{ total_count }}</span> 
+                    results
+                </div>
+
+                <!-- Pagination -->
+                <div class="flex items-center gap-2">
+                    <!-- Previous Button -->
+                    {% if page_obj.has_previous %}
+                        <a href="?page=1{% if from_date %}&from_date={{ from_date }}{% endif %}{% if to_date %}&to_date={{ to_date }}{% endif %}" 
+                           class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-normal text-gray-900 hover:bg-gray-50 transition-colors">
+                            Previous
+                        </a>
+                    {% else %}
+                        <button disabled class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-normal text-gray-400 cursor-not-allowed bg-gray-50">
+                            Previous
+                        </button>
+                    {% endif %}
+
+                    <!-- Page Numbers -->
+                    {% if page_obj.paginator.num_pages > 1 %}
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if num == page_obj.number %}
+                                <button class="w-8 h-8 bg-blue-600 rounded-lg text-sm font-normal text-white">
+                                    {{ num }}
+                                </button>
+                            {% elif num >= page_obj.number|add:'-2' and num <= page_obj.number|add:'2' %}
+                                <a href="?page={{ num }}{% if from_date %}&from_date={{ from_date }}{% endif %}{% if to_date %}&to_date={{ to_date }}{% endif %}" 
+                                   class="w-8 h-8 border border-gray-300 rounded-lg text-sm font-normal text-gray-900 hover:bg-gray-50 transition-colors flex items-center justify-center">
+                                    {{ num }}
+                                </a>
+                            {% elif num == page_obj.paginator.page_range|first or num == page_obj.paginator.page_range|last %}
+                                <a href="?page={{ num }}{% if from_date %}&from_date={{ from_date }}{% endif %}{% if to_date %}&to_date={{ to_date }}{% endif %}" 
+                                   class="w-8 h-8 border border-gray-300 rounded-lg text-sm font-normal text-gray-900 hover:bg-gray-50 transition-colors flex items-center justify-center">
+                                    {{ num }}
+                                </a>
+                            {% elif num == page_obj.number|add:'-3' or num == page_obj.number|add:'3' %}
+                                <span class="px-2 text-gray-500">...</span>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+
+                    <!-- Next Button -->
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}{% if from_date %}&from_date={{ from_date }}{% endif %}{% if to_date %}&to_date={{ to_date }}{% endif %}" 
+                           class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-normal text-gray-900 hover:bg-gray-50 transition-colors">
+                            Next
+                        </a>
+                    {% else %}
+                        <button disabled class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-normal text-gray-400 cursor-not-allowed bg-gray-50">
+                            Next
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search Script -->
+<script>
+document.getElementById('searchInput').addEventListener('keyup', function() {
+    const filter = this.value.toUpperCase();
+    const rows = document.querySelectorAll('.searchable-row');
+
+    rows.forEach(row => {
+        const text = row.textContent || row.innerText;
+        if (text.toUpperCase().indexOf(filter) > -1) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+});
+</script>
+
+{% endblock %}

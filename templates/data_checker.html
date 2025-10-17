@@ -1,0 +1,107 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block content %}
+
+<div class="w-[1200px] mx-auto py-8">
+    <!-- Header -->
+    <div class="bg-white mb-6">
+        <h1 class="text-2xl font-semibold text-neutral-800">Gym Member — Data Checker</h1>
+        <p class="text-gray-500 text-sm mt-1">Scan member QR or check manually</p>
+    </div>
+{% include 'partials/gym_tab.html' %}
+    <div class="flex gap-8">
+        <!-- Left Column: QR Scan -->
+        <div class="flex-1">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h2 class="text-lg font-medium text-neutral-800 mb-4">Scan Gym Member QR</h2>
+                <div id="gym-reader" class="mx-auto" style="width: 350px;"></div>
+
+                <div id="gym-scan-result" class="mt-4 p-3 rounded-lg text-center hidden"></div>
+            </div>
+        </div>
+
+         <!-- Right Column: Manual Check -->
+        <div class="w-[400px]">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h2 class="text-lg font-medium text-neutral-800 mb-4">Manual Member Data Checker</h2>
+
+                <form  method="post" class="space-y-4">
+                    {% csrf_token %}
+                    <div>
+                        <label for="member_id" class="block text-sm font-medium text-gray-700 mb-2">
+                            Member ID
+                        </label>
+                        <input type="text" id="member_id" name="member_id"
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring focus:ring-blue-200 focus:outline-none"
+                            placeholder="Enter Member ID" required>
+                    </div>
+                    <button type="submit"
+                        class="w-full bg-blue-600 text-white font-medium py-2 rounded-lg hover:bg-blue-700 transition">
+                        Check Data
+                    </button>
+                </form>
+
+                {% if result %}
+                <div id="resultBox"
+                    class="mt-5 p-4 rounded-lg text-center text-base font-medium transition-all duration-300
+                        {% if result.color_class == 'success' %} bg-green-100 text-green-700 border border-green-300
+                        {% elif result.color_class == 'warning' %} bg-yellow-100 text-yellow-700 border border-yellow-300
+                        {% elif result.color_class == 'danger' %} bg-red-100 text-red-700 border border-red-300
+                        {% endif %}">
+                    <h5 class="font-semibold text-lg">{{ result.member.full_name }}</h5>
+                    <p>Status: <span class="font-semibold">{{ result.status }}</span></p>
+                    <p>Expiry Date: {{ result.member.expiry_date|date:"Y-m-d" }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- QR Scanner library -->
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<script>
+// ✅ GYM QR SCANNER LOGIC
+function onGymScanSuccess(decodedText) {
+    console.log("✅ Gym Member QR detected:", decodedText);
+    fetch(`/api/members/validate/?code=${encodeURIComponent(decodedText)}`)
+        .then(response => response.json())
+        .then(data => {
+            const box = document.getElementById("gym-scan-result");
+            box.classList.remove("hidden");
+            box.innerHTML = data.message || "No message";
+
+            box.className = "mt-4 p-3 rounded-lg text-center text-base font-medium transition-all duration-300";
+
+            if (data.success) {
+                box.classList.add("bg-green-100", "text-green-700", "border", "border-green-300");
+            } else {
+                box.classList.add("bg-red-100", "text-red-700", "border", "border-red-300");
+            }
+
+            setTimeout(() => {
+                box.classList.add("hidden");
+                box.innerHTML = "";
+                box.className = "mt-4 p-3 rounded-lg text-center hidden";
+            }, 8000);
+        })
+        .catch(err => console.error("Error validating member:", err));
+}
+
+// Initialize QR scanner
+const gymScanner = new Html5QrcodeScanner("gym-reader", {
+    fps: 10,
+    qrbox: { width: 250, height: 250 }
+});
+gymScanner.render(onGymScanSuccess);
+
+
+    setTimeout(function() {
+        let box = document.getElementById("resultBox");
+        if (box) {
+            box.style.display = "none";
+        }
+    }, 2000); 
+</script>
+
+{% endblock %}

@@ -2,10 +2,12 @@ import json
 import datetime
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib import messages
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.http import JsonResponse
 from django.contrib.auth.models import User, Group
 from django.db.models import Count, Avg, Q
 from django.db.models.functions import TruncHour
-from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.utils import timezone
 from django.http import JsonResponse
@@ -16,6 +18,8 @@ from django.conf import settings
 from django.utils.text import slugify
 from django.views.decorators.csrf import csrf_protect
 from django.contrib.auth import get_user_model
+import os
+
 import os
 
 # Import all models from hotel_app
@@ -1474,6 +1478,9 @@ from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 
 from hotel_app.models import User
+
+from .models import GymMember
+
 # Constants
 ADMINS_GROUP = 'Admins'
 STAFF_GROUP = 'Staff'
@@ -1713,7 +1720,61 @@ def tickets(request):
 
 
 @login_required
-@require_permission([ADMINS_GROUP, STAFF_GROUP])
+def gym(request):
+    """Render the Gym Management page."""
+    # Handle form submission
+    if request.method == 'POST':
+        form = GymMemberForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Gym member created successfully!')
+            return redirect('dashboard:gym')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+            # Print form errors for debugging
+            print("Form errors:", form.errors)
+    else:
+        form = GymMemberForm()
+    
+    # Get gym members from database with pagination
+    gym_members_list = GymMember.objects.all().order_by('-id')
+    
+    # Pagination
+    page = request.GET.get('page', 1)
+    paginator = Paginator(gym_members_list, 10)  # Show 10 members per page
+    
+    try:
+        gym_members = paginator.page(page)
+    except PageNotAnInteger:
+        gym_members = paginator.page(1)
+    except EmptyPage:
+        gym_members = paginator.page(paginator.num_pages)
+    
+    # Convert to the format expected by the template
+    gym_members_data = []
+    for member in gym_members:
+        gym_members_data.append({
+            'id': member.id,
+            'name': member.full_name,
+            'city': member.city or '',
+            'phone': member.phone or '',
+            'email': member.email or '',
+            'start_date': member.start_date or '',
+            'end_date': member.end_date or '',
+            'qr_code': 'https://placehold.co/30x32'  # Placeholder QR code
+        })
+    
+    context = {
+        'gym_members': gym_members_data,
+        'total_members': gym_members_list.count(),
+        'page_size': 10,
+        'current_page': gym_members.number,
+        'paginator': gym_members,
+        'form': form
+    }
+    return render(request, 'dashboard/gym.html', context)
+
+
 def ticket_detail(request, ticket_id):
     """Render the Ticket Detail page."""
     from hotel_app.models import ServiceRequest, User
@@ -1825,7 +1886,109 @@ def ticket_detail(request, ticket_id):
 
 
 @login_required
+def my_tickets(request):
+    """Render the My Tickets page with dynamic status cards."""
+    from django.db.models import Q, Count
+    from .models import ServiceRequest
+    
+    # Get the current user's tickets
+    user_tickets = ServiceRequest.objects.filter(
+        Q(assignee_user=request.user) | Q(requester_user=request.user)
+    ).order_by('-created_at')
+    
+    # Calculate status counts for the status cards
+    status_counts = user_tickets.aggregate(
+        pending=Count('id', filter=Q(status='pending')),
+        accepted=Count('id', filter=Q(status='accepted')),
+        in_progress=Count('id', filter=Q(status='in_progress')),
+        completed=Count('id', filter=Q(status='completed')),
+        closed=Count('id', filter=Q(status='closed')),
+        escalated=Count('id', filter=Q(status='escalated')),
+        rejected=Count('id', filter=Q(status='rejected'))
+    )
+    
+    # Calculate overdue count
+    from django.utils import timezone
+    overdue_count = user_tickets.filter(
+        due_at__lt=timezone.now(),
+        status__in=['pending', 'accepted', 'in_progress']
+    ).count()
+    
+    # Handle filtering
+    priority_filter = request.GET.get('priority', '')
+    status_filter = request.GET.get('status', '')
+    search_query = request.GET.get('search', '')
+    
+    # Convert display status values to database status values
+    status_mapping = {
+        'Pending': 'pending',
+        'Accepted': 'accepted',
+        'In Progress': 'in_progress',
+        'Completed': 'completed',
+        'Closed': 'closed',
+        'Escalated': 'escalated',
+        'Rejected': 'rejected'
+    }
+    
+    if priority_filter:
+        user_tickets = user_tickets.filter(priority=priority_filter.lower())
+    
+    if status_filter:
+        # Convert display status to database status
+        db_status = status_mapping.get(status_filter, status_filter.lower())
+        user_tickets = user_tickets.filter(status=db_status)
+    
+    if search_query:
+        user_tickets = user_tickets.filter(
+            Q(notes__icontains=search_query) |
+            Q(request_type__name__icontains=search_query) |
+            Q(location__name__icontains=search_query)
+        )
+    
+    # Pagination
+    from django.core.paginator import Paginator
+    paginator = Paginator(user_tickets, 10)  # Show 10 tickets per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'tickets': page_obj,
+        'page_obj': page_obj,
+        'status_counts': status_counts,
+        'overdue_count': overdue_count,
+        'priority_filter': priority_filter,
+        'status_filter': status_filter,
+        'search_query': search_query,
+    }
+    
+    return render(request, 'dashboard/my_tickets.html', context)
+
+
+@login_required
 @require_permission([ADMINS_GROUP, STAFF_GROUP])
+def gym_report(request):
+    """Render the Gym Report page."""
+    from hotel_app.models import GymVisit
+    
+    # Fetch gym visits for the current month
+    from django.utils import timezone
+    current_month = timezone.now().month
+    current_year = timezone.now().year
+    gym_visits = GymVisit.objects.filter(
+        visit_date__month=current_month,
+        visit_date__year=current_year
+    ).order_by('-visit_date')
+    
+    context = {
+        'gym_visits': gym_visits,
+        'total_visits': 24,  # Total number of gym visits
+        'page_size': 10,     # Number of visits per page
+        'current_page': 1    # Current page number
+    }
+    return render(request, 'dashboard/gym_report.html', context)
+
+
+@login_required
 def my_tickets(request):
     """Render the My Tickets page - shows tickets assigned to the current user's department."""
     from hotel_app.models import ServiceRequest, RequestType, Department, User
@@ -4977,6 +5140,188 @@ def voucher_analytics(request):
 
 
 @login_required
+def analytics_dashboard(request):
+    from django.db.models import Avg, Count
+    from datetime import datetime, timedelta
+    import json
+    
+    # Date range for analytics (last 30 days)
+    today = datetime.now().date()
+    thirty_days_ago = today - timedelta(days=30)
+    
+    # Ticket volume trends (last 30 days, grouped by day)
+    ticket_trends = []
+    ticket_dates = []
+    
+    for i in range(30):
+        date = thirty_days_ago + timedelta(days=i)
+        count = ServiceRequest.objects.filter(created_at__date=date).count()
+        ticket_trends.append(count)
+        ticket_dates.append(date.strftime('%b %d'))
+    
+    # Feedback volume trends (last 30 days, grouped by day)
+    feedback_trends = []
+    feedback_dates = []
+    
+    for i in range(30):
+        date = thirty_days_ago + timedelta(days=i)
+        count = Review.objects.filter(created_at__date=date).count()
+        feedback_trends.append(count)
+        feedback_dates.append(date.strftime('%b %d'))
+    
+    # Guest satisfaction score over time (last 4 weeks)
+    satisfaction_scores = []
+    satisfaction_weeks = []
+    
+    for i in range(4):
+        week_start = today - timedelta(days=today.weekday()) - timedelta(weeks=3-i)
+        week_end = week_start + timedelta(days=7)
+        reviews = Review.objects.filter(created_at__date__gte=week_start, created_at__date__lt=week_end)
+        avg_rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0
+        satisfaction_weeks.append(f'Week {i+1}')
+        satisfaction_scores.append(round(avg_rating, 1))
+    
+    # Department performance data
+    departments = Department.objects.all()
+    dept_performance = []
+    
+    for dept in departments:
+        dept_requests = ServiceRequest.objects.filter(department=dept)
+        avg_resolution_time = 0
+        avg_satisfaction = 0
+        
+        if dept_requests.exists():
+            # Calculate average resolution time
+            resolved_requests = dept_requests.filter(status='completed')
+            if resolved_requests.exists():
+                total_resolution_time = timedelta()
+                for req in resolved_requests:
+                    if req.completed_at and req.created_at:
+                        total_resolution_time += (req.completed_at - req.created_at)
+                avg_resolution_time = total_resolution_time.total_seconds() / 3600 / resolved_requests.count()  # in hours
+            
+            # Calculate average satisfaction
+            # Since there's no direct relationship between ServiceRequest and Review,
+            # we'll use all reviews for now. In a real implementation, you would need
+            # to establish a proper relationship between requests and reviews.
+            dept_reviews = Review.objects.all()
+            avg_satisfaction = dept_reviews.aggregate(Avg('rating'))['rating__avg'] or 0
+        
+        dept_performance.append({
+            'name': dept.name,
+            'resolution_time': round(avg_resolution_time, 1),
+            'satisfaction': round(avg_satisfaction, 1)
+        })
+    
+    # Room type feedback distribution
+    room_types = ['Standard', 'Deluxe', 'Suite', 'Executive']
+    room_feedback = []
+    
+    for room_type in room_types:
+        # This is sample data - in a real implementation, you would join with actual room data
+        reviews = Review.objects.filter(created_at__date__gte=thirty_days_ago)
+        avg_rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0
+        room_feedback.append({
+            'type': room_type,
+            'satisfaction': round(avg_rating, 1)
+        })
+    
+    # Busiest hours heatmap data (sample data for demonstration)
+    busiest_hours_data = []
+    days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    hours = list(range(24))
+    
+    for day in days:
+        for hour in hours:
+            # Generate sample data - in a real implementation, you would query actual data
+            value = (hour * 2 + days.index(day)) % 20  # Sample calculation
+            busiest_hours_data.append({
+                'day': day,
+                'hour': hour,
+                'value': value
+            })
+    
+    # Overall statistics
+    total_tickets = ServiceRequest.objects.count()
+    total_reviews = Review.objects.count()
+    avg_rating = Review.objects.aggregate(Avg('rating'))['rating__avg'] or 0
+    completed_tickets = ServiceRequest.objects.filter(status='completed').count()
+    completion_rate = (completed_tickets / total_tickets * 100) if total_tickets > 0 else 0
+    
+    # Top performing departments
+    top_departments = sorted(dept_performance, key=lambda x: x['satisfaction'], reverse=True)[:3]
+    
+    # Recent activity
+    recent_tickets = ServiceRequest.objects.select_related('request_type', 'department').order_by('-created_at')[:5]
+    recent_reviews = Review.objects.select_related('guest').order_by('-created_at')[:5]
+    
+    # Scheduled reports data
+    scheduled_reports = [
+        {
+            'name': 'Weekly Performance Summary',
+            'schedule': 'Every Monday at 9:00 AM',
+            'next_run': 'Dec 18, 2023',
+            'status': 'Active'
+        },
+        {
+            'name': 'Guest Satisfaction Report',
+            'schedule': 'Monthly • 1st of each month',
+            'next_run': 'Jan 1, 2024',
+            'status': 'Active'
+        },
+        {
+            'name': 'SLA Breach Alert',
+            'schedule': 'Real-time • When SLA is breached',
+            'next_run': '',
+            'status': 'Paused'
+        }
+    ]
+    
+    # Quick templates data
+    quick_templates = [
+        {
+            'name': 'Daily Operations',
+            'description': 'Tickets, feedback, SLA status'
+        },
+        {
+            'name': 'Guest Experience',
+            'description': 'Satisfaction trends, reviews'
+        },
+        {
+            'name': 'Staff Performance',
+            'description': 'Resolution times, workload'
+        },
+        {
+            'name': 'Executive Summary',
+            'description': 'High-level KPIs, trends'
+        }
+    ]
+    
+    context = {
+        'ticket_trends': json.dumps(ticket_trends),
+        'ticket_dates': json.dumps(ticket_dates),
+        'feedback_trends': json.dumps(feedback_trends),
+        'feedback_dates': json.dumps(feedback_dates),
+        'satisfaction_scores': json.dumps(satisfaction_scores),
+        'satisfaction_weeks': json.dumps(satisfaction_weeks),
+        'dept_performance': json.dumps(dept_performance),
+        'room_feedback': json.dumps(room_feedback),
+        'busiest_hours_data': json.dumps(busiest_hours_data),
+        'total_tickets': total_tickets,
+        'total_reviews': total_reviews,
+        'avg_rating': round(avg_rating, 1),
+        'completion_rate': round(completion_rate, 1),
+        'top_departments': top_departments,
+        'recent_tickets': recent_tickets,
+        'recent_reviews': recent_reviews,
+        'scheduled_reports': scheduled_reports,
+        'quick_templates': quick_templates
+    }
+    
+    return render(request, 'dashboard/analytics_dashboard.html', context)
+
+
+@login_required
 @require_permission([ADMINS_GROUP, STAFF_GROUP])
 def create_ticket_api(request):
     """API endpoint to create a new ticket."""
@@ -5847,10 +6192,163 @@ def integrations(request):
 
 @login_required
 def performance_dashboard(request):
-    """Render the Performance Dashboard page."""
+    """Render the Performance Dashboard page with dynamic data."""
+    from django.db.models import Count, Avg, Q
+    from .models import ServiceRequest, Department, User, UserProfile
+    import datetime
+    from django.utils import timezone
+    
+    # Calculate date ranges
+    today = timezone.now().date()
+    week_ago = today - datetime.timedelta(days=7)
+    
+    # Overall Completion Rate
+    total_requests = ServiceRequest.objects.count()
+    completed_requests = ServiceRequest.objects.filter(status='completed').count()
+    completion_rate = round((completed_requests / total_requests * 100), 1) if total_requests > 0 else 0
+    
+    # SLA Breaches
+    sla_breaches = ServiceRequest.objects.filter(
+        Q(response_sla_breached=True) | Q(resolution_sla_breached=True)
+    ).count()
+    
+    # Average Response Time (in minutes)
+    avg_response_time = 0
+    responded_requests = ServiceRequest.objects.filter(
+        started_at__isnull=False
+    ).exclude(accepted_at__isnull=True)
+    
+    if responded_requests.exists():
+        total_response_time = datetime.timedelta()
+        for req in responded_requests:
+            total_response_time += (req.started_at - req.accepted_at)
+        avg_response_time = round(total_response_time.total_seconds() / 60 / responded_requests.count())
+    
+    # Active Staff
+    active_staff = User.objects.filter(is_active=True).count()
+    
+    # Completion Rates by Department
+    departments = Department.objects.all()
+    department_completion_data = []
+    department_labels = []
+    
+    for dept in departments:
+        dept_requests = ServiceRequest.objects.filter(department=dept)
+        total_dept_requests = dept_requests.count()
+        completed_dept_requests = dept_requests.filter(status='completed').count()
+        dept_completion_rate = round((completed_dept_requests / total_dept_requests * 100), 1) if total_dept_requests > 0 else 0
+        
+        department_labels.append(dept.name)
+        department_completion_data.append(dept_completion_rate)
+    
+    # SLA Breach Trends (last 7 days)
+    sla_breach_trends = []
+    sla_breach_labels = []
+    
+    for i in range(7):
+        date = week_ago + datetime.timedelta(days=i)
+        breaches = ServiceRequest.objects.filter(
+            Q(response_sla_breached=True) | Q(resolution_sla_breached=True),
+            created_at__date=date
+        ).count()
+        
+        sla_breach_labels.append(date.strftime('%a'))
+        sla_breach_trends.append(breaches)
+    
+    # Top Performers (users with highest completion rates)
+    top_performers = []
+    users_with_requests = User.objects.filter(
+        requests_assigned__isnull=False
+    ).annotate(
+        total_requests=Count('requests_assigned'),
+        completed_requests=Count('requests_assigned', filter=Q(requests_assigned__status='completed'))
+    ).filter(total_requests__gt=0)
+    
+    for user in users_with_requests:
+        completion_rate_user = round((user.completed_requests / user.total_requests * 100), 1)
+        top_performers.append({
+            'user': user,
+            'completion_rate': completion_rate_user,
+            'tickets_completed': user.completed_requests,
+            'department': getattr(user.userprofile, 'department', None)
+        })
+    
+    # Sort by completion rate and take top 5
+    top_performers = sorted(top_performers, key=lambda x: x['completion_rate'], reverse=True)[:5]
+    
+    # Department Rankings
+    department_rankings = []
+    for dept in departments:
+        dept_requests = ServiceRequest.objects.filter(department=dept)
+        total_dept_requests = dept_requests.count()
+        completed_dept_requests = dept_requests.filter(status='completed').count()
+        dept_completion_rate = round((completed_dept_requests / total_dept_requests * 100), 1) if total_dept_requests > 0 else 0
+        
+        # Count staff in department
+        staff_count = UserProfile.objects.filter(department=dept).count()
+        
+        department_rankings.append({
+            'department': dept,
+            'completion_rate': dept_completion_rate,
+            'tickets_handled': total_dept_requests,
+            'staff_count': staff_count
+        })
+    
+    # Sort by completion rate
+    department_rankings = sorted(department_rankings, key=lambda x: x['completion_rate'], reverse=True)
+    
+    # Staff Performance Details
+    staff_performance = []
+    for user in users_with_requests:
+        completion_rate_user = round((user.completed_requests / user.total_requests * 100), 1) if user.total_requests > 0 else 0
+        
+        # Calculate breaches for this user
+        user_breaches = ServiceRequest.objects.filter(
+            Q(response_sla_breached=True) | Q(resolution_sla_breached=True),
+            assignee_user=user
+        ).count()
+        
+        # Determine status based on performance
+        if completion_rate_user >= 95:
+            status = 'Excellent'
+            status_class = 'bg-green-100 text-green-700'
+        elif completion_rate_user >= 85:
+            status = 'Good'
+            status_class = 'bg-sky-100 text-sky-700'
+        else:
+            status = 'Needs Improvement'
+            status_class = 'bg-yellow-100 text-yellow-800'
+        
+        staff_performance.append({
+            'user': user,
+            'department': getattr(user.userprofile, 'department', None),
+            'tickets_completed': user.completed_requests,
+            'completion_rate': completion_rate_user,
+            'avg_response': avg_response_time,  # Simplified for now
+            'breaches': user_breaches,
+            'status': status,
+            'status_class': status_class
+        })
+    
     context = {
-        # Add any context data needed for the performance dashboard
+        # Stats cards
+        'completion_rate': completion_rate,
+        'sla_breaches': sla_breaches,
+        'avg_response_time': avg_response_time,
+        'active_staff': active_staff,
+        
+        # Charts
+        'department_labels': department_labels,
+        'department_completion_data': department_completion_data,
+        'sla_breach_labels': sla_breach_labels,
+        'sla_breach_trends': sla_breach_trends,
+        
+        # Tables
+        'top_performers': top_performers,
+        'department_rankings': department_rankings,
+        'staff_performance': staff_performance,
     }
+    
     return render(request, 'dashboard/performance_dashboard.html', context)
 
 

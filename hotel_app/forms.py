@@ -259,3 +259,34 @@ class ReviewForm(forms.ModelForm):
     class Meta:
         model = Review
         fields = ['guest', 'rating', 'comment']
+
+
+# class GymMemberForm(forms.ModelForm):
+#     class Meta:
+#         model = GymMember
+#         fields = ['full_name', 'email', 'address', 'city', 'phone', 'start_date', 'end_date']
+#         widgets = {
+#             'start_date': forms.DateInput(attrs={'type': 'date'}),
+#             'end_date': forms.DateInput(attrs={'type': 'date'}),
+#         }
+    
+#     def clean(self):
+#         cleaned_data = super().clean()
+#         start_date = cleaned_data.get('start_date')
+#         end_date = cleaned_data.get('end_date')
+        
+#         if start_date and end_date and end_date < start_date:
+#             raise forms.ValidationError('End date must be after start date.')
+        
+#         return cleaned_data
+    
+#     def save(self, commit=True):
+#         instance = super().save(commit=False)
+#         # Combine first and last names into full_name
+#         first_name = self.cleaned_data.get('first_name', '')
+#         last_name = self.cleaned_data.get('last_name', '')
+#         instance.full_name = f"{first_name} {last_name}".strip()
+        
+#         if commit:
+#             instance.save()
+#         return instance

@@ -204,3 +204,92 @@
   </div>
 </div>
 {% endfor %} {% endblock %}
+
+{% block extra_js %}
+<script>
+  // Custom modal functionality since Bootstrap JS is not included
+  (function() {
+    // Check if modal functionality has already been initialized
+    if (window.departmentModalsInitialized) {
+      return;
+    }
+    
+    // Mark that modal functionality has been initialized
+    window.departmentModalsInitialized = true;
+    
+    // Function to close a modal
+    function closeModal(modal) {
+      if (modal) {
+        modal.style.display = 'none';
+        // Remove the modal backdrop if it exists
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (backdrop) {
+          backdrop.remove();
+        }
+      }
+    }
+    
+    // Function to open a modal
+    function openModal(modal) {
+      if (modal) {
+        // Show the modal
+        modal.style.display = 'block';
+        
+        // Create and add modal backdrop
+        const backdrop = document.createElement('div');
+        backdrop.className = 'modal-backdrop fade show';
+        backdrop.style.position = 'fixed';
+        backdrop.style.top = '0';
+        backdrop.style.left = '0';
+        backdrop.style.width = '100%';
+        backdrop.style.height = '100%';
+        backdrop.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+        backdrop.style.zIndex = '1040';
+        document.body.appendChild(backdrop);
+      }
+    }
+    
+    // Wait for DOM to be fully loaded
+    document.addEventListener('DOMContentLoaded', function() {
+      // Get all elements with data-bs-dismiss="modal"
+      const closeButtons = document.querySelectorAll('[data-bs-dismiss="modal"]');
+      
+      // Add click event to close buttons
+      closeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+          // Find the closest modal parent and hide it
+          const modal = this.closest('.modal');
+          closeModal(modal);
+        });
+      });
+      
+      // Get all elements with data-bs-toggle="modal"
+      const modalTriggers = document.querySelectorAll('[data-bs-toggle="modal"]');
+      
+      // Add click event to modal triggers
+      modalTriggers.forEach(trigger => {
+        trigger.addEventListener('click', function() {
+          const targetModalId = this.getAttribute('data-bs-target');
+          const targetModal = document.querySelector(targetModalId);
+          openModal(targetModal);
+        });
+      });
+      
+      // Close modal when clicking on backdrop
+      document.addEventListener('click', function(event) {
+        if (event.target.classList.contains('modal')) {
+          closeModal(event.target);
+        }
+      });
+      
+      // Close modal with Escape key
+      document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+          const openModal = document.querySelector('.modal[style*="block"]');
+          closeModal(openModal);
+        }
+      });
+    });
+  })();
+</script>
+{% endblock %}

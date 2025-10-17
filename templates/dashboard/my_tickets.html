@@ -33,7 +33,7 @@
     <div class="w-full h-16 bg-white border-b border-gray-200 flex items-center px-4 sm:px-6">
         <div class="w-full flex justify-between items-center">
             <div class="flex items-center gap-4">
-                <h1 class="text-gray-900 text-2xl font-bold">My Tasks</h1>
+                <h1 class="text-gray-900 text-2xl font-bold">My Tickets</h1>
                 <div class="hidden sm:flex items-center gap-2">
                     <span class="px-3 py-1 bg-blue-100 text-sky-600 text-xs font-medium rounded-full">
                         {{ page_obj.paginator.count|default:0 }} Active
@@ -83,12 +83,51 @@
                     {% if priority_filter %}<input type="hidden" name="priority" value="{{ priority_filter }}">{% endif %}
                     {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
                 </form>
-                <!-- Removed View Kanban button as requested -->
-            </div>
+                </div>
         </div>
     </div>
 
     <div class="p-4 sm:p-6">
+        {# Note: You must pass 'status_counts' dictionary from your view with keys like 'pending', 'accepted', etc. #}
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white rounded-xl border border-gray-200 p-4 flex justify-between items-center animate-slide-in-up" style="animation-delay: 0ms;">
+                <div>
+                    <div class="text-2xl font-bold text-gray-900">{{ status_counts.pending|default:0 }}</div>
+                    <div class="text-sm text-gray-600">Pending</div>
+                </div>
+                <div class="w-10 h-10 bg-yellow-100 rounded-lg flex justify-center items-center">
+                    <svg class="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl border border-gray-200 p-4 flex justify-between items-center animate-slide-in-up" style="animation-delay: 100ms;">
+                <div>
+                    <div class="text-2xl font-bold text-gray-900">{{ status_counts.accepted|default:0 }}</div>
+                    <div class="text-sm text-gray-600">Accepted</div>
+                </div>
+                <div class="w-10 h-10 bg-sky-100 rounded-lg flex justify-center items-center">
+                    <svg class="w-5 h-5 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl border border-gray-200 p-4 flex justify-between items-center animate-slide-in-up" style="animation-delay: 200ms;">
+                <div>
+                    <div class="text-2xl font-bold text-gray-900">{{ status_counts.in_progress|default:0 }}</div>
+                    <div class="text-sm text-gray-600">In Progress</div>
+                </div>
+                <div class="w-10 h-10 bg-sky-100 rounded-lg flex justify-center items-center">
+                     <svg class="w-5 h-5 text-sky-600 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5M4 20h5v-5M20 4h-5v5"></path></svg>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl border border-gray-200 p-4 flex justify-between items-center animate-slide-in-up" style="animation-delay: 300ms;">
+                <div>
+                    <div class="text-2xl font-bold text-gray-900">{{ status_counts.completed|default:0 }}</div>
+                    <div class="text-sm text-gray-600">Completed</div>
+                </div>
+                <div class="w-10 h-10 bg-green-100 rounded-lg flex justify-center items-center">
+                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+            </div>
+        </div>
+
         <div class="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200">
             <div class="grid" style="grid-template-columns: 3fr 1.5fr 1.5fr 1fr 1.5fr 1.5fr;">
                 <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 text-left text-sm font-semibold text-gray-700">Task</div>

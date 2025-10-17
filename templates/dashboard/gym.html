@@ -53,9 +53,11 @@
                     <tr>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">ID</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Name</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">City</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Phone</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Email</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Phone</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">City</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Start Date</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">End Date</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">QR Code</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
                     </tr>
@@ -65,22 +67,24 @@
                     <tr>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{{ member.id }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ member.name }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ member.city }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ member.phone }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ member.email }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ member.phone }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ member.city }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ member.start_date|date:"M d, Y" }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ member.end_date|date:"M d, Y" }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <img class="w-8 h-8 rounded border border-gray-200" src="{{ member.qr_code.url }}" alt="QR Code">
+                            <img class="w-8 h-8 rounded border border-gray-200" src="{{ member.qr_code }}" alt="QR Code">
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div class="flex items-center gap-4">
                                 <a href="#" title="View Details">
-                                    <img src="{% static 'images/gym/eye.svg' %}" alt="View" class="w-5 h-5 text-gray-500 hover:text-blue-600">
+                                    <img src="{% static 'images/gym/eye.svg' %}" alt="View" class="w-6 h-6 text-gray-500 hover:text-blue-600">
                                 </a>
                                 <a href="#" title="Edit Member">
-                                    <img src="{% static 'images/gym/edit.svg' %}" alt="Edit" class="w-5 h-5 text-gray-500 hover:text-green-600">
+                                    <img src="{% static 'images/gym/edit.svg' %}" alt="Edit" class="w-6 h-6 text-gray-500 hover:text-green-600">
                                 </a>
                                 <button title="Delete Member">
-                                    <img src="{% static 'images/gym/delete.svg' %}" alt="Delete" class="w-5 h-5 text-gray-500 hover:text-red-600">
+                                    <img src="{% static 'images/gym/delete.svg' %}" alt="Delete" class="w-6 h-6 text-gray-500 hover:text-red-600">
                                 </button>
                             </div>
                         </td>
@@ -91,119 +95,135 @@
         </div>
         
         <div class="w-full flex flex-wrap justify-between items-center pt-6 mt-6 border-t border-gray-200 gap-4">
-            <div class="text-gray-600 text-sm">Showing 1-{{ gym_members|length }} of {{ total_members }} results</div>
+            <div class="text-gray-600 text-sm">Showing {{ gym_members|length }} of {{ total_members }} results</div>
             <div class="flex items-center gap-2">
-                <button class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50" disabled>Previous</button>
-                <button class="w-8 h-8 text-sm font-medium rounded-lg bg-blue-600 text-white">1</button>
-                <button class="w-8 h-8 text-sm rounded-lg border border-gray-300 hover:bg-gray-100">2</button>
-                <button class="w-8 h-8 text-sm rounded-lg border border-gray-300 hover:bg-gray-100">3</button>
-                <button class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 hover:bg-gray-100">Next</button>
+                {% if paginator.has_previous %}
+                    <a href="?page=1" class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 hover:bg-gray-100">First</a>
+                    <a href="?page={{ paginator.previous_page_number }}" class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 hover:bg-gray-100">Previous</a>
+                {% else %}
+                    <button class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50" disabled>First</button>
+                    <button class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50" disabled>Previous</button>
+                {% endif %}
+                
+                {% for num in paginator.page_range %}
+                    {% if paginator.number == num %}
+                        <button class="w-8 h-8 text-sm font-medium rounded-lg bg-blue-600 text-white">{{ num }}</button>
+                    {% elif num > paginator.number|add:'-3' and num < paginator.number|add:'3' %}
+                        <a href="?page={{ num }}" class="w-8 h-8 text-sm rounded-lg border border-gray-300 hover:bg-gray-100">{{ num }}</a>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if paginator.has_next %}
+                    <a href="?page={{ paginator.next_page_number }}" class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 hover:bg-gray-100">Next</a>
+                    <a href="?page={{ paginator.num_pages }}" class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 hover:bg-gray-100">Last</a>
+                {% else %}
+                    <button class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50" disabled>Next</button>
+                    <button class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50" disabled>Last</button>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
 
-<div id="addMemberForm" class="hidden fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center p-4 z-50">
-    <div class="relative bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-        <div class="p-6 border-b border-gray-200 flex justify-between items-center">
-             <div>
-                <h2 class="text-2xl font-bold text-gray-900">Add New Member</h2>
-                <p class="text-sm text-gray-600">Register new gym members and manage membership details.</p>
-            </div>
-            <button id="closeAddForm" class="text-gray-400 hover:text-gray-600">&times;</button>
-        </div>
-
-        <form class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-2">Full Name</label>
-                    <input type="text" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter full name">
-                </div>
-                <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-2">National ID (NIK)</label>
-                    <input type="text" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter national ID">
-                </div>
-                <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-2">Mobile Number</label>
-                    <input type="tel" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter mobile number">
-                </div>
-                <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-2">Email</label>
-                    <input type="email" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter email address">
-                </div>
-                <div class="md:col-span-2">
-                    <label class="block text-gray-700 text-sm font-medium mb-2">Address</label>
-                    <textarea class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter address" rows="3"></textarea>
-                </div>
-                <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-2">City</label>
-                    <select class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option>Select city</option>
-                        <option>New York</option>
-                        <option>Los Angeles</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-2">Date of Birth</label>
-                    <input type="date" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-2">Gender</label>
-                    <select class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option>Select gender</option>
-                        <option>Male</option>
-                        <option>Female</option>
-                    </select>
-                </div>
-                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-2">Occupation</label>
-                    <input type="text" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter occupation">
-                </div>
-            </div>
-             <div class="pt-6 border-t border-gray-200 mt-6 flex justify-end gap-4">
-                <button type="button" id="cancelAddForm" class="px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Cancel</button>
-                <button type="submit" class="px-4 py-2.5 bg-blue-600 text-white rounded-lg flex items-center justify-center hover:bg-blue-700">
-                    <img src="{% static 'images/gym/plus.svg' %}" alt="Add" class="w-5 h-5 mr-2">
-                    Save Member
-                </button>
-            </div>
-        </form>
+<!-- Gym Member Creation Modal -->
+<div id="gymMemberModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0" onclick="closeModal('gymMemberModal')">
+  <div class="w-full max-w-md rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0" onclick="event.stopPropagation()">
+    <div class="flex items-start justify-between p-5 border-b">
+      <h3 class="text-lg font-semibold text-gray-900">Create Gym Member</h3>
+      <button onclick="closeModal('gymMemberModal')" class="rounded-full p-1 text-gray-500 hover:bg-gray-100 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
     </div>
+    <form id="gymMemberForm" method="post" class="p-6 space-y-4 overflow-y-auto max-h-[70vh]">
+      {% csrf_token %}
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Full Name</label>
+        <input type="text" name="full_name" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="e.g. John Doe" required />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Email</label>
+        <input type="email" name="email" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="e.g. john@example.com" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Address</label>
+        <textarea name="address" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="e.g. 123 Main St"></textarea>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">City</label>
+        <input type="text" name="city" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="e.g. New York" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Phone Number</label>
+        <input type="text" name="phone" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="e.g. +1234567890" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Start Date</label>
+        <input type="date" name="start_date" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">End Date</label>
+        <input type="date" name="end_date" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+      </div>
+      <div id="gymMemberError" class="text-sm text-red-600 hidden"></div>
+    </form>
+    <div class="flex items-center justify-end gap-3 p-5 border-t bg-gray-50 rounded-b-lg">
+      <button type="button" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50" onclick="closeModal('gymMemberModal')">Cancel</button>
+      <button id="gymMemberSubmit" type="submit" form="gymMemberForm" class="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700">Create Member</button>
+    </div>
+  </div>
 </div>
 
 <script>
+// Function to open modal
+function openModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+      modal.classList.remove('opacity-0');
+      modal.classList.add('flex');
+      const dialog = modal.querySelector('div');
+      if (dialog) {
+        dialog.classList.remove('scale-95');
+        dialog.classList.add('scale-100');
+        dialog.classList.remove('opacity-0');
+      }
+    }, 10);
+  }
+}
+
+// Function to close modal
+function closeModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.classList.add('opacity-0');
+    const dialog = modal.querySelector('div');
+    if (dialog) {
+      dialog.classList.add('scale-95');
+      dialog.classList.remove('scale-100');
+      dialog.classList.add('opacity-0');
+    }
+    setTimeout(() => {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }, 300);
+  }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const addNewBtn = document.getElementById('addNewBtn');
-    const addMemberForm = document.getElementById('addMemberForm');
-    const closeAddForm = document.getElementById('closeAddForm');
-    const cancelAddForm = document.getElementById('cancelAddForm');
-
-    // Function to show the modal
-    const showModal = () => {
-        addMemberForm.classList.remove('hidden');
-    };
-
-    // Function to hide the modal
-    const hideModal = () => {
-        addMemberForm.classList.add('hidden');
-    };
-
+    
     // Event listeners
-    addNewBtn.addEventListener('click', showModal);
-    closeAddForm.addEventListener('click', hideModal);
-    cancelAddForm.addEventListener('click', hideModal);
-
-    // Hide modal when clicking outside of it
-    window.addEventListener('click', function(event) {
-        if (event.target === addMemberForm) {
-            hideModal();
-        }
-    });
+    if (addNewBtn) {
+        addNewBtn.addEventListener('click', function() {
+            openModal('gymMemberModal');
+        });
+    }
 
     // Hide modal when escape key is pressed
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape') {
-            hideModal();
+            closeModal('gymMemberModal');
         }
     });
 });
