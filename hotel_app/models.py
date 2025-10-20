@@ -428,6 +428,7 @@ class ServiceRequest(models.Model):
 
     def __str__(self):
         return f'Request #{self.pk}'
+    
 
     def compute_due_at(self):
         """Compute due_at from created_at and sla_hours."""
