@@ -2,104 +2,211 @@
 {% block content %}
 {% load static %}
 
-<div class="max-w-5xl mx-auto mt-8 bg-white rounded-xl shadow p-6 border border-gray-200">
-    <h2 class="text-2xl font-bold text-gray-900 mb-6">
-        {% if location %}Edit{% else %}Add{% endif %} Location
-    </h2>
+{% comment %} 
+    The original container styling used max-w-5xl. We adapt the inner elements 
+    to match the detailed design's required widths and border treatments.
+{% endcomment %}
 
-    <form method="post" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="max-w-5xl mx-auto mt-8 bg-white rounded-xl shadow border border-gray-200">
+
+    <!-- Header Block (Matching Detailed Design) -->
+    <div class="w-full p-6 bg-black/0 border-b border-gray-200 flex justify-between items-center">
+        <div class="text-gray-900 text-2xl font-bold">
+            {% if location %}Edit{% else %}Add{% endif %} Location
+        </div>
+        <!-- Optional: Close button placeholder (if needed) -->
+    </div>
+
+    <form method="post">
         {% csrf_token %}
 
-        <!-- Name -->
-        <div>
-            <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
-            <input type="text" id="name" name="name"
-                   value="{% if location %}{{ location.name }}{% endif %}"
-                   class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">
+        <div class="p-6">
+            <div class="grid grid-cols-1 gap-8">
+                
+                {% comment %} --- Primary Details --- {% endcomment %}
+                
+                <!-- Location Name -->
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Location Name</label>
+                    <input type="text" id="name" name="name" required
+                           value="{% if location %}{{ location.name }}{% endif %}"
+                           class="w-full h-12 px-3 bg-white rounded-lg outline outline-1 outline-offset-[-1px] outline-gray-300 focus:outline-sky-500 focus:ring-sky-500 text-base">
+                </div>
+
+                <!-- Family (Select Dropdown) -->
+                <div>
+                    <label for="family" class="block text-sm font-medium text-gray-700 mb-1">Family</label>
+                    <div class="relative">
+                        <select id="family" name="family" required
+                                class="w-full h-12 px-3 bg-white rounded-lg outline outline-1 outline-offset-[-1px] outline-gray-300 appearance-none focus:outline-sky-500 focus:ring-sky-500 text-base">
+                            <option value="">--Select Family--</option>
+                            {% for f in families %}
+                                <option value="{{ f.family_id }}" {% if location and location.family_id == f.family_id %}selected{% endif %}>{{ f.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <!-- Custom dropdown indicator to match design -->
+                        <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                            <svg class="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Type (Select Dropdown) -->
+                <div>
+                    <label for="type" class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                    <div class="relative">
+                        <select id="type" name="type" required
+                                class="w-full h-12 px-3 bg-white rounded-lg outline outline-1 outline-offset-[-1px] outline-gray-300 appearance-none focus:outline-sky-500 focus:ring-sky-500 text-base">
+                            <option value="">--Select Type--</option>
+                            {% for t in types %}
+                                <option value="{{ t.type_id }}" {% if location and location.type_id == t.type_id %}selected{% endif %}>{{ t.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                            <svg class="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Floor (Select Dropdown) -->
+                <div>
+                    <label for="floor" class="block text-sm font-medium text-gray-700 mb-1">Floor</label>
+                    <div class="relative">
+                        <select id="floor" name="floor" required
+                                class="w-full h-12 px-3 bg-white rounded-lg outline outline-1 outline-offset-[-1px] outline-gray-300 appearance-none focus:outline-sky-500 focus:ring-sky-500 text-base">
+                            <option value="">--Select Floor--</option>
+                            {% for f in floors %}
+                                <option value="{{ f.floor_id }}" {% if location and location.floor_id == f.floor_id %}selected{% endif %}>{{ f.floor_name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                            <svg class="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Building (Select Dropdown) -->
+                <div>
+                    <label for="building" class="block text-sm font-medium text-gray-700 mb-1">Building</label>
+                    <div class="relative">
+                        <select id="building" name="building" required
+                                class="w-full h-12 px-3 bg-white rounded-lg outline outline-1 outline-offset-[-1px] outline-gray-300 appearance-none focus:outline-sky-500 focus:ring-sky-500 text-base">
+                            <option value="">--Select Building--</option>
+                            {% for b in buildings %}
+                                <option value="{{ b.building_id }}" {% if location and location.building_id == b.building_id %}selected{% endif %}>{{ b.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                            <svg class="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </div>
+                </div>
+
+                {% comment %} --- Status Section (Radio Buttons) --- {% endcomment %}
+                {% with current_status=location.status|default:'Active' %}
+                <div class="mt-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                    <div class="flex items-start gap-3">
+
+                        <!-- Active Status -->
+                        <label class="cursor-pointer">
+                            <input type="radio" name="status" value="Active" class="sr-only peer" 
+                                   {% if current_status == 'Active' %}checked{% endif %}>
+                            <div class="w-20 py-2.5 px-3 rounded-full text-center text-sm font-medium 
+                                        peer-checked:bg-green-100 peer-checked:text-green-800 peer-checked:outline peer-checked:outline-2 peer-checked:outline-green-200
+                                        bg-gray-100 text-gray-600 outline outline-2 outline-gray-100 hover:bg-gray-200 transition">
+                                Active
+                            </div>
+                        </label>
+
+                        <!-- Maintenance Status -->
+                        <label class="cursor-pointer">
+                            <input type="radio" name="status" value="Maintenance" class="sr-only peer" 
+                                   {% if current_status == 'Maintenance' %}checked{% endif %}>
+                            <div class="w-32 py-2.5 px-3 rounded-full text-center text-sm font-medium 
+                                        peer-checked:bg-yellow-100 peer-checked:text-yellow-800 peer-checked:outline peer-checked:outline-2 peer-checked:outline-yellow-200
+                                        bg-gray-100 text-gray-600 outline outline-2 outline-gray-100 hover:bg-gray-200 transition">
+                                Maintenance
+                            </div>
+                        </label>
+
+                        <!-- Inactive Status -->
+                        <label class="cursor-pointer">
+                            <input type="radio" name="status" value="Inactive" class="sr-only peer" 
+                                   {% if current_status == 'Inactive' %}checked{% endif %}>
+                            <div class="w-24 py-2.5 px-3 rounded-full text-center text-sm font-medium 
+                                        peer-checked:bg-red-100 peer-checked:text-red-800 peer-checked:outline peer-checked:outline-2 peer-checked:outline-red-200
+                                        bg-gray-100 text-gray-600 outline outline-2 outline-gray-100 hover:bg-gray-200 transition">
+                                Inactive
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                {% endwith %}
+
+                {% comment %} --- Description --- {% endcomment %}
+                <div class="mt-4">
+                    <label for="description" class="block text-sm font-medium text-gray-700 mb-1">
+                        Description 
+                        <span class="text-gray-400 font-medium">(Optional)</span>
+                    </label>
+                    <textarea id="description" name="description" rows="3"
+                           class="w-full h-24 p-3 bg-white rounded-lg outline outline-1 outline-offset-[-1px] outline-gray-300 focus:outline-sky-500 focus:ring-sky-500 text-base resize-none">{% if location and location.description %}{{ location.description }}{% endif %}</textarea>
+                </div>
+
+                {% comment %} --- Tags (Visual Placeholder/Simple Input) --- {% endcomment %}
+                <div class="mt-4">
+                    <label for="tags" class="block text-sm font-medium text-gray-700 mb-1">
+                        Tags 
+                        <span class="text-gray-400 font-medium">(Optional)</span>
+                    </label>
+
+                    {% comment %} 
+                        If tags are implemented as a simple comma-separated field:
+                        <input type="text" id="tags" name="tags" value="{% if location %}{{ location.tags }}{% endif %}" class="w-full ..."> 
+                    {% endcomment %}
+                    
+                    <!-- Visual representation of tags area -->
+                    <div class="flex flex-wrap items-start gap-2">
+                        
+                        <!-- Example Tag 1 -->
+                        <div class="px-3 py-1 bg-blue-100 rounded-full flex items-center gap-2">
+                            <span class="text-blue-800 text-sm font-medium">VIP Suite</span>
+                            <button type="button" class="text-blue-600 hover:text-blue-800">
+                                <svg class="w-2 h-2.5" fill="currentColor" viewBox="0 0 8 10"><path d="M7.485 1.516a.75.75 0 00-1.06 0L4 2.941 1.575.516a.75.75 0 10-1.06 1.06L2.94 4 .515 6.425a.75.75 0 101.06 1.06L4 5.06l2.425 2.425a.75.75 0 001.06-1.06L5.06 4l2.425-2.425a.75.75 0 000-1.06z"/></svg>
+                            </button>
+                        </div>
+                        
+                        <!-- Example Tag 2 -->
+                        <div class="px-3 py-1 bg-blue-100 rounded-full flex items-center gap-2">
+                            <span class="text-blue-800 text-sm font-medium">Pool View</span>
+                            <button type="button" class="text-blue-600 hover:text-blue-800">
+                                <svg class="w-2 h-2.5" fill="currentColor" viewBox="0 0 8 10"><path d="M7.485 1.516a.75.75 0 00-1.06 0L4 2.941 1.575.516a.75.75 0 10-1.06 1.06L2.94 4 .515 6.425a.75.75 0 101.06 1.06L4 5.06l2.425 2.425a.75.75 0 001.06-1.06L5.06 4l2.425-2.425a.75.75 0 000-1.06z"/></svg>
+                            </button>
+                        </div>
+
+                        <!-- Add Tag Button Placeholder -->
+                        <div class="px-3 py-1 self-stretch rounded-full outline outline-2 outline-offset-[-2px] outline-gray-300 flex items-center justify-center cursor-pointer hover:bg-gray-50">
+                            <span class="text-gray-500 text-sm font-medium">+ Add Tag</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
         </div>
 
-        <!-- Room No -->
-        <div>
-            <label for="room_no" class="block text-sm font-medium text-gray-700">Room No</label>
-            <input type="text" id="room_no" name="room_no"
-                   value="{% if location %}{{ location.room_no }}{% endif %}"
-                   class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">
-        </div>
-
-        <!-- Pavilion -->
-        <div>
-            <label for="pavilion" class="block text-sm font-medium text-gray-700">Pavilion</label>
-            <input type="text" id="pavilion" name="pavilion"
-                   value="{% if location %}{{ location.pavilion }}{% endif %}"
-                   class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">
-        </div>
-
-        <!-- Capacity -->
-        <div>
-            <label for="capacity" class="block text-sm font-medium text-gray-700">Capacity</label>
-            <input type="number" id="capacity" name="capacity"
-                   value="{% if location %}{{ location.capacity }}{% endif %}"
-                   class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">
-        </div>
-
-        <!-- Family -->
-        <div>
-            <label for="family" class="block text-sm font-medium text-gray-700">Family</label>
-            <select id="family" name="family"
-                    class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">
-                <option value="">--Select--</option>
-                {% for f in families %}
-                    <option value="{{ f.family_id }}" {% if location and location.family_id == f.family_id %}selected{% endif %}>{{ f.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <!-- Type -->
-        <div>
-            <label for="type" class="block text-sm font-medium text-gray-700">Type</label>
-            <select id="type" name="type"
-                    class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">
-                <option value="">--Select--</option>
-                {% for t in types %}
-                    <option value="{{ t.type_id }}" {% if location and location.type_id == t.type_id %}selected{% endif %}>{{ t.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <!-- Floor -->
-        <div>
-            <label for="floor" class="block text-sm font-medium text-gray-700">Floor</label>
-            <select id="floor" name="floor"
-                    class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">
-                <option value="">--Select--</option>
-                {% for f in floors %}
-                    <option value="{{ f.floor_id }}" {% if location and location.floor_id == f.floor_id %}selected{% endif %}>{{ f.floor_number }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <!-- Building -->
-        <div>
-            <label for="building" class="block text-sm font-medium text-gray-700">Building</label>
-            <select id="building" name="building"
-                    class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">
-                <option value="">--Select--</option>
-                {% for b in buildings %}
-                    <option value="{{ b.building_id }}" {% if location and location.building_id == b.building_id %}selected{% endif %}>{{ b.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <!-- Buttons -->
-        <div class="col-span-2 flex items-center gap-4 mt-4">
-            <button type="submit"
-                    class="px-6 py-2 bg-sky-600 text-white rounded-lg shadow hover:bg-sky-700">
-                {% if location %}Update{% else %}Save{% endif %}
-            </button>
+        <!-- Footer/Buttons Block (Matching Detailed Design) -->
+        <div class="w-full p-6 bg-gray-50 rounded-bl-xl rounded-br-xl border-t border-gray-200 flex justify-start items-center gap-3">
+            
             <a href="{% url 'locations_list' %}"
-               class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300">
+               class="h-12 px-6 py-3 bg-white text-gray-700 rounded-lg outline outline-1 outline-offset-[-1px] outline-gray-300 hover:bg-gray-100 text-base font-medium flex items-center justify-center">
                 Cancel
             </a>
+            
+            <button type="submit"
+                    class="h-12 px-6 py-3 bg-sky-600 text-white rounded-lg shadow hover:bg-sky-700 text-base font-medium flex items-center justify-center">
+                {% if location %}Save Changes{% else %}Save Location{% endif %}
+            </button>
         </div>
     </form>
 </div>

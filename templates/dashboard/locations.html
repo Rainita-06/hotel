@@ -3,352 +3,228 @@
 
 {% block content %}
 <div class="w-full flex flex-col items-center py-8 space-y-6">
-<div class="w-[1184px] h-20 relative bg-white border-b border-gray-200">
-    <div class="w-full h-12 left-[24px] top-[16px]  bg-black/0 border-gray-200 inline-flex justify-between items-center">
-        <div class="w-96 h-12 relative bg-black/0 border-gray-200">
-            <div class="w-96 h-8 left-0 top-0 absolute bg-black/0 border-gray-200">
-                <div class="w-28 h-8 left-0 top-[1px] absolute justify-start text-gray-900 text-2xl font-bold font-['Inter']">Locations</div>
-            </div>
-            <div class="w-96 h-5 left-0 top-[32px] absolute bg-black/0 border-gray-200">
-                <div class="w-96 h-5 left-0 top-[1px] absolute justify-start text-gray-600 text-sm font-normal font-['Inter']">Manage property locations, buildings, floors, and areas</div>
-            </div>
-        </div>
-        <div class="w-80 h-10 bg-black/0 border-gray-200 flex justify-start items-center gap-4">
-            <div class="w-64 h-10 relative bg-black/0 border-gray-200">
-                <form method="GET" class="w-64 h-10 left-0 top-0 absolute bg-white rounded-lg outline outline-1 outline-offset-[-1px] outline-gray-200">
-                   <input type="text"
-         name="search"
-         value="{{ search_query|default:'' }}"
-         placeholder="Search locations..."
-         class="w-full h-full bg-transparent border-none text-gray-700 text-base font-normal font-['Inter'] px-10 focus:outline-none">
-                </form>
-                <div class="w-4 h-6 left-[12px] top-[9px] absolute bg-black/0 border-gray-200">
-                    <div class="w-4 h-4 left-0 top-[4px] absolute inline-flex justify-center items-center">
-                        <img src="{% static 'icon/search.svg'%}"class="w-4 h-4 relative bg-black/0 border-gray-200 overflow-hidden"/>
-                            <!-- <div class="w-4 h-4 left-0 top-0 absolute bg-gray-400"></div> -->
-                        <!-- </div> -->
-                    </div>
-                </div>
-            </div>
-            <div class="w-7 h-10 relative bg-black/0 rounded-lg border-gray-200">
-                <div class="w-3.5 h-5 left-[8px] top-[10px] absolute bg-black/0 border-gray-200">
-                    <div class="w-3.5 h-4 left-0 top-[2px] absolute inline-flex justify-center items-center">
-                        <div class="w-3.5 h-4 relative bg-black/0 border-gray-200 overflow-hidden">
-                            <!-- <div class="w-3.5 h-4 left-0 top-0 absolute bg-gray-600"></div> -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="w-7 h-10 relative bg-black/0 rounded-lg border-gray-200">
-                <div class="w-3.5 h-5 left-[8px] top-[10px] absolute bg-black/0 border-gray-200">
-                    <div class="w-3.5 h-4 left-0 top-[2px] absolute inline-flex justify-center items-center">
-                        <div class="w-3.5 h-4 relative bg-black/0 border-gray-200 overflow-hidden">
-                            <!-- <div class="w-3.5 h-4 left-0 top-0 absolute bg-gray-600"></div> -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-{% include "partials/location_tab.html" %}
-
-<div class="w-[1184px] h-[783px] relative bg-black/0 border-gray-200">
-<div class="w-[1136px] h-20 left-[24px] top-[24px] absolute bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200">
-<div class="w-[1102px] h-10 left-[17px] top-[17px] absolute bg-black/0 border-gray-200 inline-flex justify-between items-center">
-<div class="w-[473.27px] h-10 bg-black/0 border-gray-200 flex justify-start items-center gap-4">
-<div class="w-40 h-10 px-4 py-2 bg-sky-600 rounded-lg border-gray-200 flex justify-start items-center">
-<div class="pr-2 bg-black/0 inline-flex flex-col justify-start items-start overflow-hidden">
-<div class="w-3.5 h-6 relative bg-black/0 border-gray-200">
-<div class="w-3.5 h-4 left-0 top-[4px] absolute inline-flex justify-center items-center">
-<img src="{% static 'icon/plus.svg'%}" class="w-3.5 h-4 relative bg-black/0 border-gray-200 overflow-hidden">
-<!-- <div class="w-3 h-3 left-[0.50px] top-[1.50px] absolute bg-white"></div> -->
-<!-- </div> -->
-</div>
-</div>
-</div>
-<a href="{% url 'location_add' %}" 
-   class="w-28 h-6 text-center justify-start text-white text-base font-normal font-['Inter']">
-    Add Location
-</a>
-
-</div>
-<div class="w-44 h-10 px-4 py-2 bg-green-500 rounded-lg border-gray-200 flex justify-start items-center gap-4">
-<div class="w-4 h-6 relative bg-black/0 border-gray-200">
-<div class="w-4 h-4 left-0 top-[4px] absolute inline-flex justify-center items-center">
-<img src="{% static 'icon/import.svg'%}" class="w-4 h-4 relative bg-black/0 border-gray-200 overflow-hidden">
-<!-- <div class="w-4 h-4 left-0 top-0 absolute bg-white"></div> -->
-<!-- </div> -->
-</div>
-</div>
-<form method="POST" action="{% url 'bulk_import_locations' %}" enctype="multipart/form-data" class="inline-block">
-    {% csrf_token %}
-    <label class="cursor-pointer">
-        <div class="w-32 h-6 text-center justify-start text-white text-base font-normal font-['Inter']">
-            Bulk Import CSV
-        </div>
-        <input type="file" name="csv_file" class="hidden" onchange="this.form.submit()">
-    </label>
-</form>
-
-</div>
-<div class="w-28 h-10 px-4 py-2 bg-white rounded-lg outline outline-1 outline-offset-[-1px] outline-gray-200 flex justify-start items-center gap-4">
-<div class="w-4 h-6 relative bg-black/0 border-gray-200">
-<div class="w-4 h-4 left-0 top-[4px] absolute inline-flex justify-center items-center">
-<img src="{% static 'icon/export.svg'%}"class="w-4 h-4 relative bg-black/0 border-gray-200 overflow-hidden">
-<!-- <div class="w-4 h-4 left-0 top-0 absolute bg-gray-600"></div> -->
-<!-- </div> -->
-</div>
-</div>
-<a href="{% url 'export_locations_csv' %}" 
-   class="w-14 h-6 text-center justify-start text-gray-600 text-base font-normal font-['Inter']">
-    Export
-</a>
-
-
-</div>
-</div>
-<div class="w-64 h-10 bg-black/0 border-gray-200 flex justify-start items-center gap-3">
-<div class="w-44 h-9 bg-black/0 border-gray-200 flex justify-start items-center gap-2">
-<div class="w-10 h-5 relative bg-black/0 border-gray-200">
-<div class="w-9 h-5 left-0 top-[1px] absolute justify-start text-gray-600 text-sm font-normal font-['Inter']">Show:</div>
-</div>
-<!-- <div class="w-32 h-9 relative bg-white rounded-lg outline outline-1 outline-offset-[-1px] outline-gray-200"> -->
- <form method="GET">
-      <select name="building" onchange="this.form.submit()"
-              class="w-32 h-9 left-[24px] relative bg-white rounded-lg outline outline-1 outline-offset-[-1px] outline-gray-200 text-black text-sm font-normal font-['Inter'] px-2">
-        <option value="">All Locations</option>
-        {% for building in buildings %}
-        <option value="{{ building.id }}" {% if building.id|stringformat:"s" == selected_building %}selected{% endif %}>
-          {{ building.name }}
-        </option>
-        {% endfor %}
-      </select>
-    </form>
-<div class="w-5 h-5 left-[103px] top-[8px] relative overflow-hidden">
-<!-- <div class="w-2.5 h-1.5 left-[5.25px] top-[7.33px] relative bg-black"></div> -->
-<!-- </div> -->
-</div>
-</div>
-<div class="w-8 h-10 relative bg-black/0 rounded-lg border-gray-200">
-<div class="w-4 h-5 left-[8px] top-[10px] absolute bg-black/0 border-gray-200">
-<div class="w-4 h-4 left-0 top-[2px] absolute inline-flex justify-center items-center">
-<div class="w-4 h-4 relative bg-black/0 border-gray-200 overflow-hidden">
-<!-- <div class="w-4 h-3.5 left-0 top-[1px] absolute bg-gray-600"></div> -->
-</div>
-</div>
-</div>
-</div>
-<div class="w-8 h-10 relative bg-black/0 rounded-lg border-gray-200">
-<div class="w-4 h-5 left-[8px] top-[10px] absolute bg-black/0 border-gray-200">
-<div class="w-4 h-4 left-0 top-[2px] absolute inline-flex justify-center items-center">
-<div class="w-4 h-4 relative bg-black/0 border-gray-200 overflow-hidden">
-<!-- <div class="w-4 h-3.5 left-0 top-[1px] absolute bg-gray-600"></div> -->
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="w-[1136px] h-[635px] left-[24px] top-[124px] absolute bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200 overflow-hidden">
-<div class="w-[1134px] h-[570px] left-[1px] top-[1px] absolute bg-black/0 border-gray-200 overflow-hidden">
-<div class="w-[1134px] h-[570px] left-0 top-0 absolute bg-black/0 border-gray-200">
-<div class="w-[1134px] h-20 left-0 top-0 absolute bg-neutral-50 border-b border-gray-200">
-<div class="w-[1134px] h-20 left-0 top-0 absolute bg-black/0 border-gray-200">
-<div class="w-56 h-20 left-0 top-0 absolute bg-black/0 border-gray-200">
-<div class="w-44 h-5 left-[24px] top-[26px] absolute bg-black/0 border-gray-200 inline-flex justify-start items-center">
-<div class="pr-3 bg-black/0 inline-flex flex-col justify-start items-start overflow-hidden">
-<div class="w-3 h-3 relative bg-white rounded-[1px] border-[0.50px] border-black"></div>
-</div>
-<div class="w-14 h-5 justify-start text-gray-900 text-sm font-semibold font-['Inter']">Building</div>
-</div>
-</div>
-<div class="w-32 h-20 left-[227.27px] top-0 absolute bg-black/0 border-gray-200">
-<div class="w-10 h-5 left-[24px] top-[27px] absolute justify-start text-gray-900 text-sm font-semibold font-['Inter']">Floor</div>
-</div>
-<div class="w-36 h-20 left-[358.06px] top-0 absolute bg-black/0 border-gray-200">
-<div class="w-20 h-5 left-[24px] top-[27px] absolute justify-start text-gray-900 text-sm font-semibold font-['Inter']">Room/Area</div>
-</div>
-<div class="w-32 h-20 left-[510.06px] top-0 absolute bg-black/0 border-gray-200">
-<div class="w-10 h-5 left-[24px] top-[27px] absolute justify-start text-gray-900 text-sm font-semibold font-['Inter']">Type</div>
-</div>
-<div class="w-36 h-20 left-[641.55px] top-0 absolute bg-black/0 border-gray-200">
-<div class="w-12 h-5 left-[24px] top-[27px] absolute justify-start text-gray-900 text-sm font-semibold font-['Inter']">Status</div>
-</div>
-<div class="w-32 h-20 left-[779.80px] top-0 absolute bg-black/0 border-gray-200">
-<div class="w-10 h-5 left-[24px] top-[17px] absolute justify-start text-gray-900 text-sm font-semibold font-['Inter']">Open</div>
-<div class="w-14 h-5 left-[24px] top-[37px] absolute justify-start text-gray-900 text-sm font-semibold font-['Inter']">Tickets</div>
-</div>
-<div class="w-28 h-20 left-[913.11px] top-0 absolute bg-black/0 border-gray-200">
-<div class="w-20 h-5 left-[24px] top-[27px] absolute justify-start text-gray-900 text-sm font-semibold font-['Inter']">Checklists</div>
-</div>
-<div class="w-24 h-20 left-[1031.95px] top-0 absolute bg-black/0 border-gray-200">
-<div class="w-14 h-5 left-[24px] top-[27px] absolute justify-start text-gray-900 text-sm font-semibold font-['Inter']">Actions</div>
-</div>
-</div>
-</div>
-<div class="w-[1134px] h-[497.50px] left-0 top-[72.50px] relative bg-black/0 border-gray-200">
-    {% for loc in locations %}
-<div class="w-[1134px] h-20 left-0 top-0 relative bg-black/0 border-gray-200">
-<div class="w-56 h-20 left-0 top-0 absolute bg-black/0 border-gray-200">
-<div class="w-44 h-10 left-[24px] top-[16.50px] absolute bg-black/0 border-gray-200 inline-flex justify-start items-center">
-<div class="pr-3 bg-black/0 inline-flex flex-col justify-start items-start overflow-hidden">
-<div class="w-3 h-3 relative bg-white rounded-[1px] border-[0.50px] border-black"></div>
-</div>
-<div class="w-32 h-10 bg-black/0 border-gray-200 flex justify-start items-center">
-<div class="pr-3 bg-black/0 inline-flex flex-col justify-start items-start overflow-hidden">
-<div class="w-7 h-10 relative bg-sky-600/10 rounded-lg border-gray-200">
-<div class="w-3 h-5 left-[8px] top-[10px] absolute bg-black/0 border-gray-200">
-<div class="w-3 h-4 left-0 top-[2px] absolute inline-flex justify-center items-center">
-<div class="w-3 h-4 relative bg-black/0 border-gray-200 overflow-hidden">
-<div class="w-3 h-4 left-0 top-0 absolute bg-sky-600"></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="w-24 h-9 relative bg-black/0 border-gray-200">
-<div class="w-24 h-5 left-0 top-0 absolute bg-black/0 border-gray-200">
-<div class="w-auto h-5 left-0 top-[1px] relative justify-start text-gray-900 text-sm font-medium font-['Inter']">{{ loc.name }}</div>
-</div>
-<div class="w-24 h-4 left-0 top-[20px] absolute bg-black/0 border-gray-200">
-<div class="w-24 h-4 left-0 top-0 relative justify-start text-gray-600 text-xs font-normal font-['Inter']"> {% if loc.building %}
-                            {{ loc.building.name }}
-                        {% else %}
-                            -
-                        {% endif %}</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="w-32 h-20 left-[227.27px] top-0 absolute bg-black/0 border-gray-200">
-<div class="w-14 h-5 left-[24px] top-[17.50px] relative justify-start text-gray-900 text-sm font-normal font-['Inter']">{% if loc.floor %}
-                            {{ loc.floor.floor_number }}
-                        {% else %}
-                            -
-                        {% endif %}</div>
-<!-- <div class="w-10 h-5 left-[24px] top-[37.50px] absolute justify-start text-gray-900 text-sm font-normal font-['Inter']">Floor</div> -->
-</div>
-<div class="w-36 h-20 left-[358.06px] top-0 absolute bg-black/0 border-gray-200">
-<div class="w-12 h-5 left-[24px] top-[27.50px] absolute justify-start text-gray-900 text-sm font-normal font-['Inter']">{{ loc.room_no }}</div>
-</div>
-<div class="w-32 h-20 left-[510.06px] top-0 absolute bg-black/0 border-gray-200">
-<div class="w-20 h-6 left-[24px] top-[26.50px] absolute bg-teal-500/10 rounded-full border-gray-200">
-<div class="w-16 h-4 left-[8px] top-[4px]relative justify-start text-teal-500 text-xs font-medium font-['Inter']"> {% if loc.type %}
-                            {{ loc.type.name }}
-                        {% else %}
-                            -
-                        {% endif %}</div>
-</div>
-</div>
-<div class="w-36 h-20 left-[641.55px] top-0 absolute bg-black/0 border-gray-200">
-    {% if loc.status == 'active' %}
-<div class="w-14 h-6 left-[24px] top-[26.50px] absolute bg-green-500/10 rounded-full border-gray-200">
-<div class="w-10 h-4 left-[8px] top-[4px]relative justify-start text-green-500 text-xs font-medium font-['Inter']">Active</div>
-</div>{% else %}
-<div class="w-14 h-6 left-[24px] top-[26.50px] absolute bg-yellow-500/10 rounded-full border-gray-200">
-<div class="w-10 h-4 left-[8px] top-[4px] relative justify-start text-yellow-500 text-xs font-medium font-['Inter']">Maintenance</div>
-{% endif %}
-</div>
-<div class="w-32 h-20 left-[779.80px] top-0 absolute bg-black/0 border-gray-200">
-<div class="w-2 h-5 left-[24px] top-[27.50px] absolute bg-black/0 border-gray-200">
-<div class="w-2.5 h-5 left-0 top-[1px] relative text-center justify-start text-sky-600 text-sm font-medium font-['Inter']">3</div>
-</div>
-</div>
-<div class="w-28 h-20 left-[913.11px] top-0 absolute bg-black/0 border-gray-200">
-<div class="w-14 h-5 left-[24px] top-[27.50px] absolute bg-black/0 border-gray-200">
-<div class="w-14 h-5 left-0 top-[1px] relative justify-start text-sky-600 text-sm font-medium font-['Inter']">2 Active</div>
-</div>
-</div>
-<div class="w-24 h-20 left-[1031.95px] top-0 absolute bg-black/0 border-gray-200">
-<div class="w-14 h-8 left-[24px] top-[20.50px] absolute bg-black/0 border-gray-200 inline-flex justify-start items-center gap-2">
-<div class="w-6 h-8 relative bg-black/0 rounded border-gray-200">
-<div class="w-4 h-5 left-[4px] top-[6px] absolute bg-black/0 border-gray-200">
-<div class="w-4 h-4 left-0 top-[2px] absolute inline-flex justify-center items-center">
-  <a href="{% url 'location_edit' loc.location_id %}">
-            <img src="{% static 'icon/edit.svg' %}" class="w-4 h-4 relative bg-black/0 border-gray-200 overflow-hidden">
-          </a>
-</div>
-</div>
-</div>
-<div class="w-5 h-8 relative bg-black/0 rounded border-gray-200">
-<div class="w-3.5 h-5 left-[4px] top-[6px] absolute bg-black/0 border-gray-200">
-<div class="w-3.5 h-4 left-0 top-[2px] absolute inline-flex justify-center items-center">
-  <a href="{% url 'location_delete' loc.location_id %}" onclick="return confirm('Are you sure?')">
-            <img src="{% static 'icon/delete.svg' %}" class="w-3.5 h-4 relative bg-black/0 border-gray-200 overflow-hidden">
-          </a>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class=" relative bg-black/0 border-t border-gray-200">
-            <div class="w-16 h-28 left-0 top-0 absolute bg-black/0 border-gray-200">
-              <!-- <div class="w-3 h-3 left-[24px] top-[49.50px] absolute bg-white rounded-[1px] border-[0.50px] border-black"></div> -->
-            </div>
-          
-           
-          </div>{% endfor %}
-        </div>
-      </div>
-    </div>
     
+    <!-- Header Section (W-1184px) -->
+    <div class="w-[1184px] h-20 bg-white border-b border-gray-200 flex items-center px-6">
+        <div class="flex-grow">
+            <h1 class="text-gray-900 text-2xl font-bold">Locations</h1>
+            <p class="text-gray-600 text-sm font-normal mt-1">Manage property locations, buildings, floors, and areas</p>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="relative w-64 h-10">
+                <form method="GET" class="w-full h-full">
+                    <input type="text"
+                           name="search"
+                           value="{{ search_query|default:'' }}"
+                           placeholder="Search locations..."
+                           class="w-full h-full pl-10 pr-4 bg-white rounded-lg border border-gray-200 text-gray-700 text-base focus:outline-none focus:ring-1 focus:ring-sky-500">
+                </form>
+                <img src="{% static 'icon/search.svg'%}" class="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" alt="Search">
+            </div>
+            <!-- Placeholder Icons -->
+            <div class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 cursor-pointer"></div>
+            <div class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 cursor-pointer"></div>
+        </div>
+    </div>
 
-<!-- Pagination Footer -->
-<div class="w-[1134px] h-16 left-[1px] bottom-0 absolute bg-white border-t border-gray-200">
-    <div class="w-[1086px] h-9 left-[24px] top-[17px] absolute flex justify-between items-center">
+    {% include "partials/location_tab.html" %}
 
-        <!-- Showing results -->
-        <div class="text-neutral-500 text-sm font-normal font-['Inter']">
-            Showing {{ locations.start_index }} to {{ locations.end_index }} of {{ locations.paginator.count }} results
+    <!-- Main Content Container (W-1136px) -->
+    <div class="w-[1136px] mx-auto space-y-6">
+
+        <!-- Action Bar -->
+        <div class="h-20 bg-white rounded-xl shadow-sm border border-gray-200 flex items-center justify-between px-4">
+            <!-- Left: Action Buttons -->
+            <div class="flex items-center gap-4">
+                
+                <!-- Add Location -->
+                <a href="{% url 'location_add' %}" 
+                   class="h-10 px-4 py-2 bg-sky-600 rounded-lg text-white text-base font-normal flex items-center gap-2 hover:bg-sky-700 transition">
+                    <img src="{% static 'icon/plus.svg'%}" class="w-3.5 h-4" alt="Add">
+                    Add Location
+                </a>
+
+                <!-- Bulk Import CSV -->
+                <form method="POST" action="{% url 'bulk_import_locations' %}" enctype="multipart/form-data" class="inline-block">
+                    {% csrf_token %}
+                    <label class="h-10 px-4 py-2 bg-green-500 rounded-lg text-white text-base font-normal flex items-center gap-2 cursor-pointer hover:bg-green-600 transition">
+                        <img src="{% static 'icon/import.svg'%}" class="w-4 h-4" alt="Import">
+                        Bulk Import CSV
+                        <input type="file" name="csv_file" class="hidden" onchange="this.form.submit()">
+                    </label>
+                </form>
+
+                <!-- Export -->
+                <a href="{% url 'export_locations_csv' %}" 
+                   class="h-10 px-4 py-2 bg-white rounded-lg border border-gray-200 text-gray-600 text-base font-normal flex items-center gap-2 hover:bg-gray-50 transition">
+                    <img src="{% static 'icon/export.svg'%}" class="w-4 h-4" alt="Export">
+                    Export
+                </a>
+            </div>
+
+            <!-- Right: Filter and View -->
+            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-gray-600 text-sm font-normal">Show:</span>
+                    
+                    <!-- Building Filter Dropdown -->
+                    <form method="GET" class="h-9">
+                        <select name="building" onchange="this.form.submit()"
+                                class="w-32 h-full bg-white rounded-lg border border-gray-200 text-black text-sm font-normal px-2 appearance-none focus:ring-sky-500 focus:border-sky-500">
+                            <option value="">All Locations</option>
+                            {% for building in buildings %}
+                            <option value="{{ building.id }}" {% if building.id|stringformat:"s" == selected_building %}selected{% endif %}>
+                                {{ building.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                </div>
+                
+                <!-- View Icons (Simplified placeholders) -->
+                <div class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 cursor-pointer"></div>
+                <div class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 cursor-pointer"></div>
+            </div>
         </div>
 
-        <!-- Pagination buttons -->
-        <div class="flex justify-start items-center gap-2">
-
-            <!-- Previous -->
-            {% if locations.has_previous %}
-            <a href="?{% if request.GET.urlencode %}{{ request.GET.urlencode|safe }}&{% endif %}page={{ locations.previous_page_number }}"
-               class="px-4 h-9 flex items-center justify-center bg-white rounded-lg outline outline-1 outline-gray-200 text-gray-600 text-sm font-normal font-['Inter']">
-               Previous
-            </a>
-            {% else %}
-            <div class="px-4 h-9 flex items-center justify-center bg-gray-200 rounded-lg text-gray-400 text-sm font-normal">
-               Previous
+        <!-- NEW TABLE STRUCTURE -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            
+            <!-- Table Header -->
+            <div class="w-full h-12 bg-neutral-50 border-b border-gray-200 flex items-center text-gray-600 text-xs font-medium tracking-wide uppercase">
+                
+                <div class="w-44 px-4">LOCATION NAME</div>
+                <div class="w-48 px-4">FAMILY</div>
+                <div class="w-36 px-4">TYPE</div>
+                <div class="w-28 px-4">FLOOR</div>
+                <div class="w-40 px-4">BUILDING</div>
+                <div class="w-28 px-4">STATUS</div>
+                <div class="flex-grow px-4">ACTIONS</div>
             </div>
-            {% endif %}
-
-            <!-- Page numbers (range near current page) -->
-            {% for num in locations.paginator.page_range %}
-                {% if num > locations.number|add:'-3' and num < locations.number|add:'3' %}
-                    {% if num == locations.number %}
-                        <div class="w-9 h-9 flex items-center justify-center bg-sky-600 text-white rounded-lg text-sm font-normal font-['Inter']">{{ num }}</div>
-                    {% else %}
-                        <a href="?{% if request.GET.urlencode %}{{ request.GET.urlencode|safe }}&{% endif %}page={{ num }}"
-                           class="w-9 h-9 flex items-center justify-center bg-white rounded-lg outline outline-1 outline-gray-200 text-gray-600 text-sm font-normal font-['Inter']">
-                           {{ num }}
-                        </a>
+            
+            <!-- Table Body -->
+            {% for loc in locations %}
+            <div class="w-full h-16 bg-white border-b border-gray-200 flex items-center hover:bg-gray-50 transition">
+                
+                <!-- 1. LOCATION NAME (w-44) -->
+                <div class="w-44 px-4 text-sm font-bold text-gray-900">
+                    {{ loc.name }} 
+                    {% if loc.room_no %}
+                        <span class="text-gray-500 font-normal">({{ loc.room_no }})</span>
                     {% endif %}
-                {% endif %}
-            {% endfor %}
+                </div>
+                
+                <!-- 2. FAMILY (w-48) -->
+                <div class="w-48 px-4 flex items-center">
+                    {% if loc.family %}
+                    <div class="w-fit px-3 py-1 bg-sky-600/10 rounded-full text-sky-600 text-xs font-medium">
+                        {{ loc.family.name }}
+                    </div>
+                    {% else %}
+                    <span class="text-gray-500 text-sm">-</span>
+                    {% endif %}
+                </div>
+                
+                <!-- 3. TYPE (w-36) -->
+                <div class="w-36 px-4 text-sm text-gray-600 font-normal">
+                    {% if loc.type %}{{ loc.type.name }}{% else %}-{% endif %}
+                </div>
+                
+                <!-- 4. FLOOR (w-28) -->
+                <div class="w-28 px-4 text-sm text-gray-600 font-normal">
+                    {% if loc.floor %}{{ loc.floor.floor_number }}{% else %}-{% endif %}
+                </div>
+                
+                <!-- 5. BUILDING (w-40) -->
+                <div class="w-40 px-4 text-sm text-gray-600 font-normal">
+                    {% if loc.building %}{{ loc.building.name }}{% else %}-{% endif %}
+                </div>
+                
+                <!-- 6. STATUS (w-28) -->
+                <div class="w-28 px-4 flex items-center">
+                    {% if loc.status == 'Active' %}
+                        <div class="w-fit px-2 py-1 bg-green-500/10 rounded-full text-green-500 text-xs font-medium">Active</div>
+                    {% elif loc.status == 'Maintenance' %}
+                        <div class="w-fit px-2 py-1 bg-yellow-500/10 rounded-full text-yellow-500 text-xs font-medium">Maintenance</div>
+                    {% else %}
+                        <div class="w-fit px-2 py-1 bg-gray-500/10 rounded-full text-gray-500 text-xs font-medium">Inactive</div>
+                    {% endif %}
+                </div>
 
-            <!-- Next -->
-            {% if locations.has_next %}
-            <a href="?{% if request.GET.urlencode %}{{ request.GET.urlencode|safe }}&{% endif %}page={{ locations.next_page_number }}"
-               class="px-4 h-9 flex items-center justify-center bg-white rounded-lg outline outline-1 outline-gray-200 text-gray-600 text-sm font-normal font-['Inter']">
-               Next
-            </a>
-            {% else %}
-            <div class="px-4 h-9 flex items-center justify-center bg-gray-200 rounded-lg text-gray-400 text-sm font-normal">
-               Next
+                <!-- 7. ACTIONS (flex-grow) -->
+                <div class="flex-grow px-4 flex items-center gap-2">
+                    <!-- Edit -->
+                    <a href="{% url 'location_edit' loc.location_id %}" 
+                       class="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100">
+                        <img src="{% static 'icon/edit.svg' %}" class="w-4 h-4" alt="Edit">
+                    </a>
+                    <!-- Delete -->
+                    <a href="{% url 'location_delete' loc.location_id %}" 
+                       onclick="return confirm('Are you sure you want to delete {{ loc.name }}?')" 
+                       class="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100">
+                        <img src="{% static 'icon/delete.svg' %}" class="w-4 h-4" alt="Delete">
+                    </a>
+                </div>
+            </div>
+            {% empty %}
+            <div class="p-8 text-center text-gray-500">No locations found matching your criteria.</div>
+            {% endfor %}
+            
+            <!-- Pagination Footer -->
+            {% if locations.paginator.count > 0 %}
+            <div class="h-16 bg-white border-t border-gray-200 flex items-center justify-between px-6">
+                <!-- Showing results -->
+                <div class="text-neutral-500 text-sm font-normal">
+                    Showing {{ locations.start_index }} to {{ locations.end_index }} of {{ locations.paginator.count }} results
+                </div>
+
+                <!-- Pagination buttons -->
+                <div class="flex items-center gap-2">
+
+                    <!-- Previous -->
+                    {% if locations.has_previous %}
+                    <a href="?{% if request.GET.urlencode %}{{ request.GET.urlencode|safe }}&{% endif %}page={{ locations.previous_page_number }}"
+                       class="px-4 h-9 flex items-center justify-center bg-white rounded-lg border border-gray-200 text-gray-600 text-sm font-normal hover:bg-gray-50">
+                       Previous
+                    </a>
+                    {% else %}
+                    <div class="px-4 h-9 flex items-center justify-center bg-gray-100 rounded-lg text-gray-400 text-sm font-normal cursor-not-allowed">
+                       Previous
+                    </div>
+                    {% endif %}
+
+                    <!-- Page numbers -->
+                    {% for num in locations.paginator.page_range %}
+                        {% if num > locations.number|add:'-3' and num < locations.number|add:'3' %}
+                            {% if num == locations.number %}
+                                <div class="w-9 h-9 flex items-center justify-center bg-sky-600 text-white rounded-lg text-sm font-normal">{{ num }}</div>
+                            {% else %}
+                                <a href="?{% if request.GET.urlencode %}{{ request.GET.urlencode|safe }}&{% endif %}page={{ num }}"
+                                   class="w-9 h-9 flex items-center justify-center bg-white rounded-lg border border-gray-200 text-gray-600 text-sm font-normal hover:bg-gray-50">
+                                   {{ num }}
+                                </a>
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+
+                    <!-- Next -->
+                    {% if locations.has_next %}
+                    <a href="?{% if request.GET.urlencode %}{{ request.GET.urlencode|safe }}&{% endif %}page={{ locations.next_page_number }}"
+                       class="px-4 h-9 flex items-center justify-center bg-white rounded-lg border border-gray-200 text-gray-600 text-sm font-normal hover:bg-gray-50">
+                       Next
+                    </a>
+                    {% else %}
+                    <div class="px-4 h-9 flex items-center justify-center bg-gray-100 rounded-lg text-gray-400 text-sm font-normal cursor-not-allowed">
+                       Next
+                    </div>
+                    {% endif %}
+                </div>
             </div>
             {% endif %}
 
         </div>
+        <!-- END NEW TABLE STRUCTURE -->
+
     </div>
 </div>
 {% endblock %}

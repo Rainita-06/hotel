@@ -931,6 +931,8 @@ def location_form(request, location_id=None):
     types = LocationType.objects.all()
     floors = Floor.objects.all()
     buildings = Building.objects.all()
+    status = request.POST.get('status', 'active')  # Default to 'active' (match model storage)
+    description = request.POST.get('description', '')
 
     if request.method == 'POST':
         name = request.POST.get('name')
@@ -948,6 +950,8 @@ def location_form(request, location_id=None):
             location.type_id = loc_type
             location.floor_id = floor
             location.building_id = building
+            location.status = status
+            location.description = description
             location.room_no = room_no
             location.pavilion = pavilion
             location.capacity = capacity
@@ -960,6 +964,8 @@ def location_form(request, location_id=None):
                 floor_id=floor,
                 building_id=building,
                 room_no=room_no,
+                status=status,
+                    description=description,
                 pavilion=pavilion,
                 capacity=capacity
             )
