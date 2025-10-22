@@ -1,18 +1,26 @@
-from celery import shared_task
+"""
+Synchronous task implementations (replaces Celery tasks)
+"""
+
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
+from django.contrib.auth.models import Group
+from django.apps import apps
+from django.core.exceptions import ObjectDoesNotExist
 
-from .models import ServiceRequest, ServiceRequestStep, WorkflowStep
 
-
-@shared_task
 def process_service_request(request_id):
     """
-    Process a new service request through its workflow
+    Process a new service request through its workflow (synchronous version)
     """
     try:
+        # Get models dynamically to avoid import issues
+        ServiceRequest = apps.get_model('hotel_app', 'ServiceRequest')
+        ServiceRequestStep = apps.get_model('hotel_app', 'ServiceRequestStep')
+        WorkflowStep = apps.get_model('hotel_app', 'WorkflowStep')
+        
         service_request = ServiceRequest.objects.get(id=request_id)
         workflow = service_request.request_type.workflow
 
@@ -29,31 +37,32 @@ def process_service_request(request_id):
 
                 # Notify users if role_hint is defined
                 if first_step.role_hint:
-                    notify_step_assignment.delay(service_request.id, first_step.id)
+                    notify_step_assignment(service_request.id, first_step.id)
 
-    except ServiceRequest.DoesNotExist:
+    except ObjectDoesNotExist:
         # Log or handle gracefully
         return
 
 
-@shared_task
 def notify_step_assignment(request_id, step_id):
     """
-    Notify assigned users about a new workflow step
+    Notify assigned users about a new workflow step (synchronous version)
     """
     try:
+        # Get models dynamically to avoid import issues
+        ServiceRequest = apps.get_model('hotel_app', 'ServiceRequest')
+        WorkflowStep = apps.get_model('hotel_app', 'WorkflowStep')
+        
         service_request = ServiceRequest.objects.get(id=request_id)
         step = WorkflowStep.objects.get(id=step_id)
 
         recipients = []
 
         if step.role_hint == "admin":
-            from django.contrib.auth.models import Group
-
             try:
                 admin_group = Group.objects.get(name="Admins")
                 recipients = admin_group.user_set.all()
-            except Group.DoesNotExist:
+            except ObjectDoesNotExist:
                 recipients = []
         else:
             # Default to assignee
@@ -71,15 +80,17 @@ def notify_step_assignment(request_id, step_id):
                     fail_silently=False,
                 )
 
-    except (ServiceRequest.DoesNotExist, WorkflowStep.DoesNotExist):
+    except ObjectDoesNotExist:
         return
 
 
-@shared_task
 def check_pending_requests():
     """
-    Periodic task to check for stale pending requests
+    Periodic task to check for stale pending requests (synchronous version)
     """
+    # Get models dynamically to avoid import issues
+    ServiceRequestStep = apps.get_model('hotel_app', 'ServiceRequestStep')
+    
     stale_threshold = timezone.now() - timedelta(hours=24)
 
     stale_steps = ServiceRequestStep.objects.filter(
@@ -88,15 +99,18 @@ def check_pending_requests():
     )
 
     for step in stale_steps:
-        notify_stale_request.delay(step.id)
+        notify_stale_request(step.id)
 
 
-@shared_task
 def notify_stale_request(step_id):
     """
-    Notify users about a stale service request step
+    Notify users about a stale service request step (synchronous version)
     """
     try:
+        # Get models dynamically to avoid import issues
+        ServiceRequestStep = apps.get_model('hotel_app', 'ServiceRequestStep')
+        ServiceRequest = apps.get_model('hotel_app', 'ServiceRequest')
+        
         step = ServiceRequestStep.objects.get(id=step_id)
         service_request = step.request
 
@@ -105,16 +119,16 @@ def notify_stale_request(step_id):
         if service_request.assignee_user and service_request.assignee_user.email:
             recipients.append(service_request.assignee_user.email)
         else:
-            from django.contrib.auth.models import Group
-
             try:
+                # Get Group model dynamically
+                Group = apps.get_model('auth', 'Group')
                 admin_group = Group.objects.get(name="Admins")
                 recipients += [
                     user.email
                     for user in admin_group.user_set.all()
                     if user.email
                 ]
-            except Group.DoesNotExist:
+            except ObjectDoesNotExist:
                 pass
 
         if recipients:
@@ -126,18 +140,19 @@ def notify_stale_request(step_id):
                 fail_silently=False,
             )
 
-    except ServiceRequestStep.DoesNotExist:
+    except ObjectDoesNotExist:
         return
 
 
-@shared_task
 def check_sla_breaches():
     """
-    Periodic task to check for SLA breaches in service requests
+    Periodic task to check for SLA breaches in service requests (synchronous version)
     """
-    from .models import ServiceRequest
     from django.contrib.auth import get_user_model
     from .utils import create_notification, create_bulk_notifications
+    
+    # Get models dynamically to avoid import issues
+    ServiceRequest = apps.get_model('hotel_app', 'ServiceRequest')
     
     User = get_user_model()
     

@@ -137,16 +137,7 @@
             </div>
         </div>
 
-        <nav class="mb-6">
-            <div class="border-b border-gray-200">
-                <div class="flex space-x-8">
-                    <a href="#" class="py-2 px-1 border-b-2 border-sky-600 text-sm font-medium text-sky-600">Trends Over Time</a>
-                    <a href="#" class="py-2 px-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">Busiest Hours</a>
-                    <a href="#" class="py-2 px-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">Property Comparison</a>
-                    <a href="#" class="py-2 px-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">Reports</a>
-                </div>
-            </div>
-        </nav>
+        <!-- Removed the navigation pane here -->
         
         <div class="space-y-6">
 
@@ -468,7 +459,7 @@
         }
     });
 
-    // Department Performance Chart
+    // Department Performance Chart (Bar Chart)
     const deptCtx = document.getElementById('departmentPerformanceChart').getContext('2d');
     const deptLabels = deptPerformanceData.map(item => item.name);
     const resolutionTimes = deptPerformanceData.map(item => item.resolution_time);
@@ -486,7 +477,6 @@
                     borderColor: '#0284c7',
                     borderWidth: 1,
                     borderRadius: 4,
-                    yAxisID: 'y'
                 },
                 {
                     label: 'Satisfaction Score',
@@ -495,10 +485,6 @@
                     borderColor: '#22c55e',
                     borderWidth: 1,
                     borderRadius: 4,
-                    yAxisID: 'y1',
-                    type: 'line', // You can make one a line on a combo chart
-                    tension: 0.2,
-                    fill: false,
                 }
             ]
         },
@@ -507,14 +493,13 @@
             maintainAspectRatio: false,
             plugins: { legend: { display: true, position: 'top' } },
             scales: {
-                y: { beginAtZero: true, position: 'left', title: { display: true, text: 'Resolution Time (hours)' } },
-                y1: { beginAtZero: true, position: 'right', title: { display: true, text: 'Satisfaction Score' }, grid: { drawOnChartArea: false }, max: 5 },
+                y: { beginAtZero: true },
                 x: { grid: { display: false } }
             }
         }
     });
 
-    // Room Type Feedback Distribution Chart
+    // Room Type Feedback Distribution Chart (Bar Chart)
     const roomCtx = document.getElementById('roomFeedbackChart').getContext('2d');
     const roomLabels = roomFeedbackData.map(item => item.type);
     const roomSatisfaction = roomFeedbackData.map(item => item.satisfaction);
@@ -526,8 +511,18 @@
             datasets: [{
                 label: 'Satisfaction Score',
                 data: roomSatisfaction,
-                backgroundColor: ['#fde68a', '#fcd34d', '#fbbf24', '#f59e0b', '#d97706'],
-                borderColor: '#b45309',
+                backgroundColor: [
+                    'rgba(251, 191, 36, 0.7)',
+                    'rgba(245, 158, 11, 0.7)',
+                    'rgba(217, 119, 6, 0.7)',
+                    'rgba(180, 83, 9, 0.7)'
+                ],
+                borderColor: [
+                    'rgb(251, 191, 36)',
+                    'rgb(245, 158, 11)',
+                    'rgb(217, 119, 6)',
+                    'rgb(180, 83, 9)'
+                ],
                 borderWidth: 1,
                 borderRadius: 4
             }]

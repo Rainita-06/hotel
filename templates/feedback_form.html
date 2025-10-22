@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Share Your Feedback - GuestConnect</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .feedback-card {
+            width: 922px;
+            height: 1440px;
+            background-color: #f9fafb;
+        }
+        .step-container {
+            transition: transform 0.3s ease-in-out;
+        }
+        .rating-option {
+            transition: all 0.2s ease;
+        }
+        .rating-option:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .rating-option.selected {
+            border-color: #0284c7;
+            background-color: #f0f9ff;
+        }
+        .emoji-rating {
+            font-size: 2rem;
+        }
+        @media (max-width: 768px) {
+            .feedback-card {
+                width: 100%;
+                height: auto;
+            }
+            .main-container {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="flex justify-center items-start py-8 main-container">
+        <div class="feedback-card border border-gray-200 rounded-lg shadow-sm relative bg-gray-50 border-gray-200">
+            <div class="w-[922px] h-20 left-0 top-0 absolute bg-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] border-b border-gray-100">
+                <div class="w-[902px] h-20 left-0 top-0 absolute bg-black/0 border-gray-200">
+                    <div class="w-[808px] h-12 left-[24px] top-[16px] absolute bg-black/0 border-gray-200 inline-flex justify-between items-center">
+                        <div class="w-64 h-12 bg-black/0 border-gray-200 flex justify-start items-center gap-4">
+                            <div class="w-56 h-12 relative bg-black/0 border-gray-200">
+                                <div class="w-56 h-7 left-0 top-0 absolute bg-black/0 border-gray-200">
+                                    <div class="w-52 h-7 left-0 top-[2px] absolute justify-start text-gray-900 text-xl font-semibold font-['Inter']">Share Your Feedback</div>
+                                </div>
+                                <div class="w-56 h-5 left-0 top-[28px] absolute bg-black/0 border-gray-200">
+                                    <div class="w-56 h-5 left-0 top-[1px] absolute justify-start text-gray-500 text-sm font-normal font-['Inter']">Help us improve your experience</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="w-36 h-8 bg-black/0 border-gray-200 flex justify-start items-center gap-2">
+                            <div class="w-8 h-8 bg-sky-600 rounded-full border-gray-200 flex justify-center items-center">
+                                <div class="w-3.5 h-5 relative bg-black/0 border-gray-200">
+                                    <div class="w-3.5 h-3.5 left-0 top-[2.75px] absolute inline-flex justify-center items-center">
+                                        <div class="w-3.5 h-3.5 relative bg-black/0 border-gray-200 overflow-hidden">
+                                            <div class="w-3.5 h-3.5 left-0 top-0 absolute bg-white"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="w-24 h-5 relative bg-black/0 border-gray-200">
+                                <div class="w-24 h-5 left-0 top-[1px] absolute justify-start text-gray-700 text-sm font-medium font-['Inter']">GuestConnect</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="w-14 h-14 left-[826px] top-[14px] absolute bg-black/0 border-gray-200 inline-flex justify-center items-center">
+                        <div class="w-1 h-6 relative bg-black/0 border-gray-200">
+                            <div class="w-1 h-4 left-0 top-[4px] absolute inline-flex justify-center items-center">
+                                <div class="w-1 h-4 relative bg-black/0 border-gray-200 overflow-hidden">
+                                    <div class="w-1 h-3.5 left-[0.25px] top-[1.25px] absolute bg-gray-700"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Content -->
+            <div class="w-[710px] h-[910px] left-[136px] top-[81px] absolute bg-black/0 border-gray-200">
+                <!-- Step 1: Guest Information -->
+                <div id="step1" class="step-container w-[846px] h-[688px] left-[-82px] top-[32px] absolute bg-black/0 border-gray-200 inline-flex justify-start items-start gap-8">
+                    <div class="flex-1 self-stretch relative bg-black/0 border-gray-200">
+                        <div class="w-full bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-100 p-6 mb-6">
+                            <h2 class="text-lg font-semibold text-gray-900 mb-4">Guest Information</h2>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                                    <input type="text" id="guest_name" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500" placeholder="Enter your full name">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Room Number</label>
+                                    <input type="text" id="room_number" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500" placeholder="Enter your room number">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Email (Optional)</label>
+                                    <input type="email" id="email" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500" placeholder="Enter your email">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Phone (Optional)</label>
+                                    <input type="tel" id="phone" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500" placeholder="Enter your phone number">
+                                </div>
+                            </div>
+                            <div class="mt-6">
+                                <button onclick="nextStep()" class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500">
+                                    Continue to Feedback
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Feedback Questions -->
+                <div id="step2" class="step-container hidden w-[846px] h-[688px] left-[-82px] top-[32px] absolute bg-black/0 border-gray-200 inline-flex justify-start items-start gap-8">
+                    <div class="flex-1 self-stretch relative bg-black/0 border-gray-200">
+                        <div class="w-[816px] h-[688px] left-0 top-0 absolute bg-black/0 border-gray-200">
+                            <!-- Guest Information Display -->
+                            <div class="w-full bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-100 p-4 mb-4">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-gray-900">Guest Information</h3>
+                                        <p class="text-sm text-gray-600">Name: <span id="display_guest_name"></span></p>
+                                        <p class="text-sm text-gray-600">Room: <span id="display_room_number"></span></p>
+                                    </div>
+                                    <button onclick="prevStep()" class="text-sm text-sky-600 hover:text-sky-800">Edit</button>
+                                </div>
+                            </div>
+                            <div class="w-[816px] h-64 left-0 top-[80px] absolute bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-100">
+                                <div class="w-[766px] h-7 left-[25px] top-[25px] absolute bg-black/0 border-gray-200">
+                                    <div class="w-96 h-7 left-0 top-[3px] absolute justify-start text-gray-900 text-lg font-semibold font-['Inter']">How would you rate your overall experience?</div>
+                                </div>
+                                <div class="w-[766px] h-20 left-[25px] top-[69px] absolute bg-black/0 border-gray-200 inline-flex justify-center items-start gap-4">
+                                    <div class="w-12 h-20 p-3 left-[129px] top-0 absolute bg-black/0 rounded-lg border border-gray-200 inline-flex flex-col justify-start items-center cursor-pointer" onclick="selectRating('overall', 1)">
+                                        <div class="w-2.5 h-9 relative bg-black/0 border-gray-200">
+                                            <div class="w-7 h-9 left-[-9.57px] top-0 absolute text-center justify-start text-black text-3xl font-normal font-['Inter']">😞</div>
+                                        </div>
+                                        <div class="pt-2 bg-black/0 flex flex-col justify-start items-start overflow-hidden">
+                                            <div class="w-7 h-4 relative bg-black/0 border-gray-200">
+                                                <div class="w-7 h-4 left-0 top-0 absolute text-center justify-start text-gray-500 text-xs font-normal font-['Inter']">Poor</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="w-11 h-20 p-3 left-[238px] top-0 absolute bg-black/0 rounded-lg border border-gray-200 inline-flex flex-col justify-start items-center cursor-pointer" onclick="selectRating('overall', 2)">
+                                        <div class="w-2.5 h-9 relative bg-black/0 border-gray-200">
+                                            <div class="w-7 h-9 left-[-9.30px] top-0 absolute text-center justify-start text-black text-3xl font-normal font-['Inter']">😕</div>
+                                        </div>
+                                        <div class="pt-2 bg-black/0 flex flex-col justify-start items-start overflow-hidden">
+                                            <div class="w-5 h-4 relative bg-black/0 border-gray-200">
+                                                <div class="w-5 h-4 left-0 top-0 absolute text-center justify-start text-gray-500 text-xs font-normal font-['Inter']">Fair</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="w-14 h-20 p-3 left-[339px] top-0 absolute bg-black/0 rounded-lg border border-gray-200 inline-flex flex-col justify-start items-center cursor-pointer" onclick="selectRating('overall', 3)">
+                                        <div class="w-2.5 h-9 relative bg-black/0 border-gray-200">
+                                            <div class="w-7 h-9 left-[-9.13px] top-0 absolute text-center justify-start text-black text-3xl font-normal font-['Inter']">😐</div>
+                                        </div>
+                                        <div class="pt-2 bg-black/0 flex flex-col justify-start items-start overflow-hidden">
+                                            <div class="w-8 h-4 relative bg-black/0 border-gray-200">
+                                                <div class="w-8 h-4 left-0 top-0 absolute text-center justify-start text-gray-500 text-xs font-normal font-['Inter']">Good</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="w-14 h-20 p-3 left-[444px] top-0 absolute bg-black/0 rounded-lg border border-gray-200 inline-flex flex-col justify-start items-center cursor-pointer" onclick="selectRating('overall', 4)">
+                                        <div class="w-2.5 h-9 relative bg-black/0 border-gray-200">
+                                            <div class="w-7 h-9 left-[-10.02px] top-0 absolute text-center justify-start text-black text-3xl font-normal font-['Inter']">🙂</div>
+                                        </div>
+                                        <div class="pt-2 bg-black/0 flex flex-col justify-start items-start overflow-hidden">
+                                            <div class="w-8 h-4 relative bg-black/0 border-gray-200">
+                                                <div class="w-8 h-4 left-0 top-0 absolute text-center justify-start text-gray-500 text-xs font-normal font-['Inter']">Great</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="w-20 h-20 p-3 left-[540px] top-0 absolute bg-black/0 rounded-lg border border-gray-200 inline-flex flex-col justify-start items-center cursor-pointer" onclick="selectRating('overall', 5)">
+                                        <div class="w-2.5 h-9 relative bg-black/0 border-gray-200">
+                                            <div class="w-7 h-9 left-[-9.13px] top-0 absolute text-center justify-start text-black text-3xl font-normal font-['Inter']">😄</div>
+                                        </div>
+                                        <div class="pt-2 bg-black/0 flex flex-col justify-start items-start overflow-hidden">
+                                            <div class="w-12 h-4 relative bg-black/0 border-gray-200">
+                                                <div class="w-12 h-4 left-0 top-0 absolute text-center justify-start text-gray-500 text-xs font-normal font-['Inter']">Excellent</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="w-80 h-12 left-[237px] top-[183px] absolute bg-black/0 border-gray-200 inline-flex justify-center items-start gap-2">
+                                    <div class="w-24 h-24 left-[-107px] top-[-42px] absolute bg-black/0 border-gray-200 flex justify-center items-center">
+                                        <div class="w-8 h-9 relative bg-black/0 border-gray-200">
+                                            <div class="w-8 h-7 left-0 top-[2.75px] absolute inline-flex justify-center items-center">
+                                                <div class="w-8 h-7 relative bg-black/0 border-gray-200 overflow-hidden">
+                                                    <div class="w-8 h-7 left-[1.41px] top-0 absolute bg-gray-200"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="w-24 h-24 left-[-1px] top-[-42px] absolute bg-black/0 border-gray-200 flex justify-center items-center">
+                                        <div class="w-8 h-9 relative bg-black/0 border-gray-200">
+                                            <div class="w-8 h-7 left-0 top-[2.75px] absolute inline-flex justify-center items-center">
+                                                <div class="w-8 h-7 relative bg-black/0 border-gray-200 overflow-hidden">
+                                                    <div class="w-8 h-7 left-[1.41px] top-0 absolute bg-gray-200"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="w-24 h-24 left-[105px] top-[-42px] absolute bg-black/0 border-gray-200 flex justify-center items-center">
+                                        <div class="w-8 h-9 relative bg-black/0 border-gray-200">
+                                            <div class="w-8 h-7 left-0 top-[2.75px] absolute inline-flex justify-center items-center">
+                                                <div class="w-8 h-7 relative bg-black/0 border-gray-200 overflow-hidden">
+                                                    <div class="w-8 h-7 left-[1.41px] top-0 absolute bg-gray-200"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="w-24 h-24 left-[211px] top-[-42px] absolute bg-black/0 border-gray-200 flex justify-center items-center">
+                                        <div class="w-8 h-9 relative bg-black/0 border-gray-200">
+                                            <div class="w-8 h-7 left-0 top-[2.75px] absolute inline-flex justify-center items-center">
+                                                <div class="w-8 h-7 relative bg-black/0 border-gray-200 overflow-hidden">
+                                                    <div class="w-8 h-7 left-[1.41px] top-0 absolute bg-gray-200"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="w-24 h-24 left-[317px] top-[-42px] absolute bg-black/0 border-gray-200 flex justify-center items-center">
+                                        <div class="w-8 h-9 relative bg-black/0 border-gray-200">
+                                            <div class="w-8 h-7 left-0 top-[2.75px] absolute inline-flex justify-center items-center">
+                                                <div class="w-8 h-7 relative bg-black/0 border-gray-200 overflow-hidden">
+                                                    <div class="w-8 h-7 left-[1.41px] top-0 absolute bg-gray-200"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="overall_rating" value="0">
+                            </div>
+
+                            <div class="w-[816px] h-36 left-0 top-[379px] absolute bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-100">
+                                <div class="w-[766px] h-7 left-[25px] top-[25px] absolute bg-black/0 border-gray-200">
+                                    <div class="w-60 h-7 left-0 top-[3px] absolute justify-start text-gray-900 text-lg font-semibold font-['Inter']">How clean was your room?</div>
+                                </div>
+                                <div class="w-[766px] h-12 left-[25px] top-[69px] absolute bg-black/0 border-gray-200 inline-flex justify-start items-start gap-3">
+                                    <div class="flex-1 self-stretch relative bg-black/0 rounded-lg outline outline-2 outline-offset-[-2px] outline-gray-200 cursor-pointer" onclick="selectRating('cleanliness', 1)">
+                                        <div class="w-10 h-6 left-[105.98px] top-[16px] absolute text-center justify-start text-gray-600 text-base font-normal font-['Inter']">Poor</div>
+                                    </div>
+                                    <div class="flex-1 self-stretch relative bg-black/0 rounded-lg outline outline-2 outline-offset-[-2px] outline-gray-200 cursor-pointer" onclick="selectRating('cleanliness', 3)">
+                                        <div class="w-11 h-6 left-[103.20px] top-[16px] absolute text-center justify-start text-gray-600 text-base font-normal font-['Inter']">Good</div>
+                                    </div>
+                                    <div class="flex-1 self-stretch relative bg-black/0 rounded-lg outline outline-2 outline-offset-[-2px] outline-gray-200 cursor-pointer" onclick="selectRating('cleanliness', 5)">
+                                        <div class="w-20 h-6 left-[89.55px] top-[16px] absolute text-center justify-start text-gray-600 text-base font-normal font-['Inter']">Excellent</div>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="cleanliness_rating" value="0">
+                            </div>
+
+                            <div class="w-[816px] h-36 left-0 top-[553px] absolute bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-100">
+                                <div class="w-[766px] h-7 left-[25px] top-[25px] absolute bg-black/0 border-gray-200">
+                                    <div class="w-60 h-7 left-0 top-[3px] absolute justify-start text-gray-900 text-lg font-semibold font-['Inter']">How was the staff service?</div>
+                                </div>
+                                <div class="w-[766px] h-12 left-[25px] top-[69px] absolute bg-black/0 border-gray-200 inline-flex justify-start items-start gap-3">
+                                    <div class="flex-1 self-stretch relative bg-black/0 rounded-lg outline outline-2 outline-offset-[-2px] outline-gray-200 cursor-pointer" onclick="selectRating('staff', 1)">
+                                        <div class="w-10 h-6 left-[105.98px] top-[16px] absolute text-center justify-start text-gray-600 text-base font-normal font-['Inter']">Poor</div>
+                                    </div>
+                                    <div class="flex-1 self-stretch relative bg-black/0 rounded-lg outline outline-2 outline-offset-[-2px] outline-gray-200 cursor-pointer" onclick="selectRating('staff', 3)">
+                                        <div class="w-11 h-6 left-[103.20px] top-[16px] absolute text-center justify-start text-gray-600 text-base font-normal font-['Inter']">Good</div>
+                                    </div>
+                                    <div class="flex-1 self-stretch relative bg-black/0 rounded-lg outline outline-2 outline-offset-[-2px] outline-gray-200 cursor-pointer" onclick="selectRating('staff', 5)">
+                                        <div class="w-20 h-6 left-[89.55px] top-[16px] absolute text-center justify-start text-gray-600 text-base font-normal font-['Inter']">Excellent</div>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="staff_rating" value="0">
+                            </div>
+
+                            <div class="w-[816px] h-36 left-0 top-[727px] absolute bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-100">
+                                <div class="w-[766px] h-7 left-[25px] top-[25px] absolute bg-black/0 border-gray-200">
+                                    <div class="w-80 h-7 left-0 top-[3px] absolute justify-start text-gray-900 text-lg font-semibold font-['Inter']">Would you recommend us to others?</div>
+                                </div>
+                                <div class="w-[766px] h-12 left-[25px] top-[69px] absolute bg-black/0 border-gray-200 inline-flex justify-start items-start gap-3">
+                                    <div class="flex-1 self-stretch relative bg-black/0 rounded-lg outline outline-2 outline-offset-[-2px] outline-gray-200 cursor-pointer" onclick="selectRecommend('yes')">
+                                        <div class="w-4 h-5 left-[162.80px] top-[16px] absolute bg-black/0 border-gray-200">
+                                            <div class="w-4 h-4 left-0 top-[2px] absolute inline-flex justify-center items-center">
+                                                <div class="w-4 h-4 relative bg-black/0 border-gray-200 overflow-hidden">
+                                                    <div class="w-4 h-3.5 left-0 top-[1px] absolute bg-gray-600"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="w-8 h-6 left-[186.80px] top-[16px] absolute text-center justify-start text-gray-600 text-base font-normal font-['Inter']">Yes</div>
+                                    </div>
+                                    <div class="flex-1 self-stretch relative bg-black/0 rounded-lg outline outline-2 outline-offset-[-2px] outline-gray-200 cursor-pointer" onclick="selectRecommend('no')">
+                                        <div class="w-4 h-5 left-[165.67px] top-[16px] absolute bg-black/0 border-gray-200">
+                                            <div class="w-4 h-4 left-0 top-[2px] absolute inline-flex justify-center items-center">
+                                                <div class="w-4 h-4 relative bg-black/0 border-gray-200 overflow-hidden">
+                                                    <div class="w-4 h-3.5 left-0 top-[1px] absolute bg-gray-600"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="w-7 h-6 left-[189.67px] top-[16px] absolute text-center justify-start text-gray-600 text-base font-normal font-['Inter']">No</div>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="recommend" value="">
+                            </div>
+                        </div>
+                    </div>
+
+            <div class="w-[816px] h-80 left-[54px] top-[1021px] absolute bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-100">
+                <div class="w-[766px] h-7 left-[25px] top-[25px] absolute bg-black/0 border-gray-200">
+                    <div class="w-96 h-7 left-0 top-[3px] absolute justify-start text-gray-900 text-base font-medium font-['Inter']">Tell us more about your experience (optional)</div>
+                </div>
+                <div class="w-[766px] h-48 left-[25px] top-[70px] absolute bg-white rounded-xl outline outline-1 outline-offset-[-1px] outline-gray-200 overflow-hidden">
+                    <div class="w-80 h-24 left-[16px] top-[16px] absolute justify-start text-gray-400 text-sm font-normal font-['Inter'] leading-tight">Write your comments here...</div>
+                    <textarea id="comments" class="w-full h-48 p-4 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-0" placeholder=""></textarea>
+                </div>
+            </div>
+
+                    <!-- Navigation Buttons -->
+                    <div class="flex justify-between absolute bottom-[-60px] left-0 right-0">
+                        <button onclick="prevStep()" class="py-2 px-6 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500">
+                            Back
+                        </button>
+                        <button onclick="submitFeedback()" class="py-2 px-6 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500">
+                            Submit Feedback
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="w-[922px] h-12 left-0 top-[1372px] absolute bg-black/0 border-gray-200 inline-flex justify-center items-start">
+                <div class="w-48 self-stretch relative bg-sky-600 rounded-lg shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] border-gray-200">
+                    <div class="w-36 h-6 left-[32px] top-[14px] absolute text-center justify-start text-white text-base font-medium font-['Inter']" onclick="submitFeedback()">Submit Feedback</div>
+                </div>
+            </div>
+            <!-- Success Message -->
+            <div id="successMessage" class="hidden absolute top-[100px] left-0 right-0">
+                <div class="w-full bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-100 p-8 text-center">
+                    <div class="text-green-500 text-5xl mb-4">✓</div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Thank You!</h2>
+                    <p class="text-gray-600 mb-6">Your feedback has been submitted successfully.</p>
+                    <button onclick="resetForm()" class="py-2 px-6 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500">
+                        Submit Another Feedback
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        let currentStep = 1;
+
+        function nextStep() {
+            // Validate guest information
+            const guestName = document.getElementById('guest_name').value.trim();
+            const roomNumber = document.getElementById('room_number').value.trim();
+            
+            if (!guestName || !roomNumber) {
+                alert('Please enter both your name and room number.');
+                return;
+            }
+            
+            // Display guest information in step 2
+            document.getElementById('display_guest_name').textContent = guestName;
+            document.getElementById('display_room_number').textContent = roomNumber;
+            
+            document.getElementById('step1').classList.add('hidden');
+            document.getElementById('step2').classList.remove('hidden');
+            currentStep = 2;
+        }
+
+        function prevStep() {
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('step1').classList.remove('hidden');
+            currentStep = 1;
+        }
+
+        function selectRating(category, rating) {
+            // For the overall experience rating (emoji-based)
+            if (category === 'overall') {
+                // Remove selected class from all emoji options
+                const emojiOptions = document.querySelectorAll('.w-12.h-20.p-3, .w-11.h-20.p-3, .w-14.h-20.p-3');
+                emojiOptions.forEach(option => {
+                    option.classList.remove('bg-blue-50', 'border-blue-500');
+                });
+                
+                // Add selected class to clicked option
+                event.currentTarget.classList.add('bg-blue-50', 'border-blue-500');
+                
+                // Set the hidden input value
+                document.getElementById('overall_rating').value = rating;
+                return;
+            }
+            
+            // For the other ratings (cleanliness, staff service)
+            // Remove selected class from all options in this category
+            const options = document.querySelectorAll(`.flex-1.self-stretch.relative[onclick*="${category}"]`);
+            options.forEach(option => {
+                option.classList.remove('bg-blue-50', 'outline-blue-500');
+                option.classList.add('outline-gray-200');
+            });
+            
+            // Add selected class to clicked option
+            event.currentTarget.classList.remove('outline-gray-200');
+            event.currentTarget.classList.add('bg-blue-50', 'outline-blue-500');
+            
+            // Set the hidden input value
+            document.getElementById(`${category}_rating`).value = rating;
+        }
+
+        function selectRecommend(value) {
+            // Remove selected class from all options
+            const options = document.querySelectorAll('.flex-1.self-stretch.relative[onclick*="selectRecommend"]');
+            options.forEach(option => {
+                option.classList.remove('bg-blue-50', 'outline-blue-500');
+                option.classList.add('outline-gray-200');
+            });
+            
+            // Add selected class to clicked option
+            event.currentTarget.classList.remove('outline-gray-200');
+            event.currentTarget.classList.add('bg-blue-50', 'outline-blue-500');
+            
+            // Set the hidden input value
+            document.getElementById('recommend').value = value;
+        }
+
+        function submitFeedback() {
+            // Get all form data
+            const formData = {
+                guest_name: document.getElementById('guest_name').value,
+                room_number: document.getElementById('room_number').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                overall_rating: document.getElementById('overall_rating').value,
+                cleanliness_rating: document.getElementById('cleanliness_rating').value,
+                staff_rating: document.getElementById('staff_rating').value,
+                recommend: document.getElementById('recommend').value,
+                comments: document.getElementById('comments').value
+            };
+            
+            // Validate required ratings
+            if (formData.overall_rating == 0) {
+                alert('Please rate your overall experience.');
+                return;
+            }
+            
+            // Submit feedback via AJAX
+            fetch('/feedback/submit/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    document.getElementById('step2').classList.add('hidden');
+                    document.getElementById('successMessage').classList.remove('hidden');
+                } else {
+                    alert(data.message || 'There was an error submitting your feedback. Please try again.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('There was an error submitting your feedback. Please try again.');
+            });
+        }
+
+        function resetForm() {
+            // Reset all form fields
+            document.getElementById('guest_name').value = '';
+            document.getElementById('room_number').value = '';
+            document.getElementById('email').value = '';
+            document.getElementById('phone').value = '';
+            document.getElementById('overall_rating').value = '0';
+            document.getElementById('cleanliness_rating').value = '0';
+            document.getElementById('staff_rating').value = '0';
+            document.getElementById('recommend').value = '';
+            document.getElementById('comments').value = '';
+            
+            // Remove selected classes
+            const selectedOptions = document.querySelectorAll('.bg-blue-50');
+            selectedOptions.forEach(option => {
+                option.classList.remove('bg-blue-50');
+            });
+            
+            // Reset outline colors
+            const outlinedOptions = document.querySelectorAll('.outline-blue-500');
+            outlinedOptions.forEach(option => {
+                option.classList.remove('outline-blue-500');
+                option.classList.add('outline-gray-200');
+            });
+            
+            // Show step 1 and hide success message
+            document.getElementById('successMessage').classList.add('hidden');
+            document.getElementById('step1').classList.remove('hidden');
+            currentStep = 1;
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-{% load static%}
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,15 +12,16 @@
         /* Set Inter as the default font for the dashboard */
         :root { --font-inter: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; }
         .font-inter { font-family: var(--font-inter); }
-        html{
+        html {
             scroll-behavior: smooth;
         }
+        
         /* Sidebar transition styles */
         .sidebar-transition {
             transition: transform 0.3s ease-in-out;
         }
         
-        /* Overlay for mobile and now desktop when sidebar is open */
+        /* Overlay for mobile only */
         .sidebar-overlay {
             display: none;
             position: fixed;
@@ -32,7 +33,7 @@
             z-index: 998;
         }
 
-        /* Sidebar is positioned fixed and off-screen by default */
+        /* Sidebar is positioned fixed and off-screen by default on mobile */
         .sidebar {
             transform: translateX(-100%);
             position: fixed;
@@ -42,6 +43,24 @@
             z-index: 999;
             width: 100%;
             max-width: 256px; /* w-64 */
+        }
+        
+        /* On desktop, sidebar is always visible */
+        @media (min-width: 768px) {
+            .sidebar {
+                transform: translateX(0) !important;
+                position: sticky;
+                top: 0;
+                height: 100vh;
+                z-index: 999;
+                width: 256px; /* Fixed width on desktop */
+            }
+            .sidebar.open {
+                transform: translateX(0) !important;
+            }
+            .sidebar-overlay {
+                display: none !important;
+            }
         }
         
         .sidebar.open {
@@ -67,6 +86,34 @@
             background-color: #f9fafb;
         }
 
+        /* -------------------------
+           New: Desktop collapse behavior
+           ------------------------- */
+        /* Add transitions for width/transform */
+        .sidebar {
+            transition: transform 0.3s ease-in-out, width 0.3s ease-in-out;
+        }
+        /* When collapsed on desktop, set width to 0 so the main content expands.
+           This only applies for screens >= 768px to avoid interfering with mobile overlay behavior. */
+        @media (min-width: 768px) {
+            .sidebar.sidebar-collapsed {
+                width: 0 !important;
+                min-width: 0 !important;
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+                overflow: hidden;
+                transform: none !important;
+            }
+
+            /* Attempt to hide common label classes inside the sidebar when collapsed.
+               If your sidebar uses other classes for labels/text, add them here. */
+            .sidebar.sidebar-collapsed .logo-text,
+            .sidebar.sidebar-collapsed .menu-text,
+            .sidebar.sidebar-collapsed .sidebar-footer {
+                display: none !important;
+            }
+        }
+
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     {% block extra_css %}{% endblock %}
@@ -81,36 +128,47 @@
 
         <div class="flex-1 flex flex-col w-full">
             <header class="relative p-4 bg-white border-b border-gray-200 z-50">
-                <div class="flex items-center justify-between">
-                    <button id="hamburgerButton" class="text-gray-500 focus:outline-none p-2 rounded hover:bg-gray-100 flex items-center gap-2" onclick="toggleSidebar()">
-                        <img src="{% static 'images/sidebar/hamburger.svg' %}" alt="Menu" class="w-6 h-6">
-                        <span class="text-gray-700 font-medium">Menu</span>
-                    </button>
-                    
-                    <div class="relative" id="notificationContainer">
-                        <button id="notificationButton" class="p-2 rounded-full hover:bg-gray-100 relative">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                            </svg>
-                            <span id="notificationBadge" class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full hidden">0</span>
-                        </button>
-                        
-                        <div id="notificationDropdown" class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50 hidden">
-                            <div class="p-4 border-b border-gray-200">
-                                <h3 class="font-semibold text-gray-800">Notifications</h3>
-                            </div>
-                            <div id="notificationList" class="max-h-96 overflow-y-auto">
-                                <div class="p-4 text-center text-gray-500" id="noNotificationsMessage">
-                                    No new notifications
-                                </div>
-                            </div>
-                            <div class="p-2 border-t border-gray-200 text-center">
-                                <a href="#" class="text-sm text-blue-500 hover:text-blue-700">View All</a>
-                            </div>
-                        </div>
+    <div class="flex items-center justify-between">
+        <!-- Hamburger button (left) - mobile -->
+        <button id="hamburgerButton" class="text-gray-500 focus:outline-none p-2 rounded hover:bg-gray-100 flex items-center gap-2 md:hidden" onclick="toggleSidebar()">
+            <img src="{% static 'images/sidebar/hamburger.svg' %}" alt="Menu" class="w-6 h-6">
+            <span class="text-gray-700 font-medium">Menu</span>
+        </button>
+
+        <!-- Desktop hide/unhide sidebar button (hidden on mobile) -->
+        <button id="sidebarToggleButton" class="hidden md:inline-flex items-center gap-2 text-gray-600 focus:outline-none p-2 rounded hover:bg-gray-100" aria-pressed="false" title="Hide Sidebar" type="button">
+            <!-- Default icon: "chevron-left" (will be updated via JS if persisted state exists) -->
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+            <span class="hidden md:inline ml-2">Hide Sidebar</span>
+        </button>
+
+        <!-- Push notification container to the right -->
+        <div class="ml-auto relative" id="notificationContainer">
+            <button id="notificationButton" class="p-2 rounded-full hover:bg-gray-100 relative">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                <span id="notificationBadge" class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full hidden">0</span>
+            </button>
+
+            <!-- Dropdown -->
+            <div id="notificationDropdown" class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50 hidden">
+                <div class="p-4 border-b border-gray-200">
+                    <h3 class="font-semibold text-gray-800">Notifications</h3>
+                </div>
+                <div id="notificationList" class="max-h-96 overflow-y-auto">
+                    <div class="p-4 text-center text-gray-500" id="noNotificationsMessage">
+                        No new notifications
                     </div>
                 </div>
-            </header>
+                <div class="p-2 border-t border-gray-200 text-center">
+                    <a href="#" class="text-sm text-blue-500 hover:text-blue-700">View All</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
             
             <main class="flex-1 overflow-x-hidden overflow-y-auto">
                 {% block content %}
@@ -146,22 +204,43 @@
         });
     });
     
-    // ----- Sidebar Functionality -----
+    // ----- Sidebar Functionality (mobile open/close) -----
     function toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('sidebarOverlay');
-        if (sidebar && overlay) {
-            sidebar.classList.toggle('open');
-            overlay.classList.toggle('open');
+        
+        // Only toggle on mobile devices
+        if (window.innerWidth < 768) {
+            if (sidebar && overlay) {
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('open');
+            }
         }
     }
     
-    // Close sidebar when clicking outside
+    // Close sidebar when clicking outside (mobile only)
     document.addEventListener('click', function(event) {
         const sidebar = document.getElementById('sidebar');
         const hamburgerButton = document.getElementById('hamburgerButton');
-        if (sidebar && sidebar.classList.contains('open') && !sidebar.contains(event.target) && !hamburgerButton.contains(event.target)) {
+        
+        // Only close on mobile when sidebar is open
+        if (window.innerWidth < 768 && 
+            sidebar && 
+            sidebar.classList.contains('open') && 
+            !sidebar.contains(event.target) && 
+            !hamburgerButton.contains(event.target)) {
             toggleSidebar();
+        }
+    });
+
+    // Handle window resize to close sidebar on mobile when window is enlarged
+    window.addEventListener('resize', function() {
+        if (window.innerWidth >= 768) {
+            // Close sidebar and overlay on desktop
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (sidebar) sidebar.classList.remove('open');
+            if (overlay) overlay.classList.remove('open');
         }
     });
 
@@ -185,7 +264,9 @@
         
         // Close dropdown when clicking outside
         document.addEventListener('click', function(event) {
-            if (notificationDropdown && !notificationDropdown.classList.contains('hidden') && !notificationButton.contains(event.target) && !notificationDropdown.contains(event.target)) {
+            if (notificationDropdown && !notificationDropdown.classList.contains('hidden') && 
+                !notificationButton.contains(event.target) && 
+                !notificationDropdown.contains(event.target)) {
                 notificationDropdown.classList.add('hidden');
                 notificationDropdown.classList.remove('show');
             }
@@ -328,6 +409,56 @@
     
     // Make showToast globally available
     window.showToast = showToast;
+    </script>
+
+    <!-- New script: Desktop hide/unhide sidebar with persistence -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggleBtn = document.getElementById('sidebarToggleButton');
+        const SIDEBAR_KEY = 'guestconnect_sidebar_collapsed';
+
+        // Update the header button text/icon based on current state
+        function updateSidebarToggleButton(isCollapsed) {
+            if (!sidebarToggleBtn) return;
+            const hideIcon = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>';
+            const showIcon = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>';
+            if (isCollapsed) {
+                sidebarToggleBtn.innerHTML = showIcon + '<span class="hidden md:inline ml-2">Show Sidebar</span>';
+                sidebarToggleBtn.setAttribute('aria-pressed', 'true');
+                sidebarToggleBtn.title = 'Show Sidebar';
+            } else {
+                sidebarToggleBtn.innerHTML = hideIcon + '<span class="hidden md:inline ml-2">Hide Sidebar</span>';
+                sidebarToggleBtn.setAttribute('aria-pressed', 'false');
+                sidebarToggleBtn.title = 'Hide Sidebar';
+            }
+        }
+
+        function setSidebarCollapsed(collapsed, save = true) {
+            if (!sidebar) return;
+            if (collapsed) {
+                sidebar.classList.add('sidebar-collapsed');
+            } else {
+                sidebar.classList.remove('sidebar-collapsed');
+            }
+            updateSidebarToggleButton(collapsed);
+            if (save) localStorage.setItem(SIDEBAR_KEY, collapsed ? '1' : '0');
+        }
+
+        // Bind click on header toggle button (desktop)
+        if (sidebarToggleBtn) {
+            sidebarToggleBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const newState = !sidebar?.classList.contains('sidebar-collapsed');
+                setSidebarCollapsed(newState);
+            });
+        }
+
+        // Initialize from localStorage (applies on desktop; mobile overlay unaffected)
+        const collapsed = localStorage.getItem(SIDEBAR_KEY) === '1';
+        setSidebarCollapsed(collapsed, false);
+        updateSidebarToggleButton(collapsed);
+    });
     </script>
     
     {% block extra_js %}{% endblock %}

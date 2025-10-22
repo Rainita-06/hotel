@@ -151,9 +151,10 @@ class LocationAdmin(admin.ModelAdmin):
 
 @admin.register(models.UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'full_name', 'department', 'title', 'phone')
+    list_display = ('user', 'full_name', 'department', 'title', 'phone', 'role')
     search_fields = ('full_name', 'user__username', 'phone')
-    list_filter = ('department', 'title')
+    list_filter = ('department', 'title', 'role')
+    fields = ('user', 'full_name', 'department', 'title', 'phone', 'role', 'enabled', 'avatar_url', 'timezone')
 
 
 # Register proxies and models if not already registered

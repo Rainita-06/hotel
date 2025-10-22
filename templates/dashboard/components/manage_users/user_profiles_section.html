@@ -32,7 +32,7 @@
             <button class="p-2 rounded-lg hover:bg-gray-100" title="Copy role" onclick="copyRole({{ group.id }})">
               <img src="{% static 'images/manage_users/profiles/copy.svg' %}" alt="Copy" class="h-5 w-5">
             </button>
-            <button class="p-2 rounded-lg hover:bg-gray-100" title="Edit role" onclick="openEditPermissionsModal({{ group.id }}, '{{ group.name|escapejs }}')">
+            <button class="p-2 rounded-lg hover:bg-gray-100" title="Edit role" onclick="window.openEditPermissionsModal({{ group.id }}, '{{ group.name|escapejs }}')">
   <img src="{% static 'images/manage_users/profiles/edit.svg' %}" alt="Edit" class="h-5 w-5">
 </button>
             {% endif %}
@@ -72,7 +72,7 @@
             <img src="{% static 'images/manage_users/profiles/export.svg' %}" alt="Export" class="h-5 w-5">
             <span>Export</span>
           </button>
-          <button class="inline-flex items-center gap-2 rounded-lg bg-sky-600 px-3 py-2 text-sm font-medium text-white hover:bg-sky-700" onclick="openBulkEditPermissionsModal()">
+          <button class="inline-flex items-center gap-2 rounded-lg bg-sky-600 px-3 py-2 text-sm font-medium text-white hover:bg-sky-700" onclick="window.openBulkEditPermissionsModal()">
             <img src="{% static 'images/manage_users/profiles/bulk_edit.svg' %}" alt="Bulk edit" class="h-5 w-5">
             <span>Bulk Edit</span>
           </button>
@@ -171,6 +171,38 @@
                 </td>
                 {% endfor %}
               </tr>
+              
+              <!-- SLA Configuration -->
+              <tr>
+                <td class="px-4 py-3 text-sm text-gray-900 font-medium">SLA Configuration</td>
+                {% for group in groups %}
+                <td class="px-4 py-3 text-center">
+                  <span class="inline-flex h-5 w-5 items-center justify-center rounded-full {% if group.name == 'Admins' %}bg-green-500{% else %}bg-gray-300{% endif %}">
+                    {% if group.name == 'Admins' %}
+                    <img src="{% static 'images/manage_users/profiles/tick.svg' %}" alt="Full access" class="h-3 w-3">
+                    {% else %}
+                    <img src="{% static 'images/manage_users/profiles/cross.svg' %}" alt="No access" class="h-3 w-3">
+                    {% endif %}
+                  </span>
+                </td>
+                {% endfor %}
+              </tr>
+              
+              <!-- Gym Management -->
+              <tr>
+                <td class="px-4 py-3 text-sm text-gray-900 font-medium">Gym Management</td>
+                {% for group in groups %}
+                <td class="px-4 py-3 text-center">
+                  <span class="inline-flex h-5 w-5 items-center justify-center rounded-full {% if group.name == 'Admins' or group.name == 'Staff' %}bg-green-500{% else %}bg-gray-300{% endif %}">
+                    {% if group.name == 'Admins' or group.name == 'Staff' %}
+                    <img src="{% static 'images/manage_users/profiles/tick.svg' %}" alt="Full access" class="h-3 w-3">
+                    {% else %}
+                    <img src="{% static 'images/manage_users/profiles/cross.svg' %}" alt="No access" class="h-3 w-3">
+                    {% endif %}
+                  </span>
+                </td>
+                {% endfor %}
+              </tr>
             </tbody>
           </table>
         </div>
@@ -236,7 +268,7 @@ document.addEventListener('DOMContentLoaded', function() {
           const li = document.createElement('li');
           li.className = 'flex items-center justify-center text-sm text-sky-600 mt-2';
           // Use escapejs on group name to avoid breaking the onclick string if it contains quotes
-          li.innerHTML = `<button class="text-sky-600 hover:underline" onclick="openEditPermissionsModal({{ group.id }}, '{{ group.name|escapejs }}')">View all permissions</button>`;
+          li.innerHTML = `<button class="text-sky-600 hover:underline" onclick="window.openEditPermissionsModal({{ group.id }}, '{{ group.name|escapejs }}')">View all permissions</button>`;
           permissionsList.appendChild(li);
         }
       } else {

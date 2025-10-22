@@ -75,6 +75,12 @@ class UserGroup(models.Model):
 
 
 class UserProfile(models.Model):
+    USER_ROLES = [
+        ('admin', 'Admin'),
+        ('staff', 'Front Desk/Staff'),
+        ('user', 'User'),
+    ]
+    
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, primary_key=True)
     full_name = models.CharField(max_length=160)
     phone = models.CharField(max_length=15, blank=True, null=True)
@@ -84,11 +90,21 @@ class UserProfile(models.Model):
     enabled = models.BooleanField(default=True)
     timezone = models.CharField(max_length=100, blank=True, null=True)
     preferences = models.JSONField(blank=True, null=True)
+    role = models.CharField(max_length=20, choices=USER_ROLES, default='user')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return str(self.full_name or getattr(self.user, "username", "Unknown User"))
+    
+    def is_admin(self):
+        return self.role == 'admin'
+    
+    def is_staff_member(self):
+        return self.role == 'staff'
+    
+    def is_regular_user(self):
+        return self.role == 'user'
 
 
 class UserGroupMembership(models.Model):
@@ -292,7 +308,7 @@ class Location(models.Model):
     description = models.CharField(max_length=255, blank=True, null=True)
     location_id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=50,blank=False, null=False)       # updated (was 160)
-    family = models.ForeignKey(LocationFamily, on_delete=models.CASCADE,blank=False, null=False)
+    family = models.ForeignKey(LocationFamily, on_delete=models.CASCADE,blank=True, null=True)
     # updated (was FK)
     type = models.ForeignKey(LocationType, on_delete=models.CASCADE, null=True, blank=True)
       # updated (was FK)
@@ -376,6 +392,7 @@ class WorkflowTransition(models.Model):
 # ---- Requests ----
 
 class RequestType(models.Model):
+    request_type_id = models.BigAutoField(primary_key=True) 
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True, null=True)
     workflow = models.ForeignKey(Workflow, on_delete=models.SET_NULL, null=True, blank=True)
@@ -386,6 +403,8 @@ class RequestType(models.Model):
 
     def __str__(self):
         return str(self.name)
+    class Meta:
+        db_table='request_type'
 
 
 class ServiceRequest(models.Model):
@@ -393,6 +412,7 @@ class ServiceRequest(models.Model):
         ('low', 'Low'),
         ('normal', 'Normal'),
         ('high', 'High'),
+        ('critical', 'Critical'),  # Added critical priority
     ]
     STATUS_CHOICES = [
         ('pending', 'Pending'),
@@ -404,6 +424,7 @@ class ServiceRequest(models.Model):
         ('escalated', 'Escalated'),
         ('rejected', 'Rejected'),
     ]
+    
     request_type = models.ForeignKey(RequestType, on_delete=models.SET_NULL, null=True, blank=True)
     location = models.ForeignKey(Location, on_delete=models.SET_NULL, null=True, blank=True)
     requester_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='requests_made')
@@ -418,9 +439,9 @@ class ServiceRequest(models.Model):
     completed_at = models.DateTimeField(blank=True, null=True)
     closed_at = models.DateTimeField(blank=True, null=True)
     due_at = models.DateTimeField(blank=True, null=True)
-    sla_hours = models.PositiveIntegerField(default=24, help_text='SLA time in hours to resolve')
+    sla_hours = models.FloatField(default=24, help_text='SLA time in hours to resolve')
     sla_breached = models.BooleanField(default=False)
-    response_sla_hours = models.PositiveIntegerField(default=1, help_text='SLA time in hours to respond')
+    response_sla_hours = models.FloatField(default=1, help_text='SLA time in hours to respond')
     response_sla_breached = models.BooleanField(default=False)
     resolution_sla_breached = models.BooleanField(default=False)
     notes = models.TextField(blank=True, null=True)
@@ -428,6 +449,8 @@ class ServiceRequest(models.Model):
 
     def __str__(self):
         return f'Request #{self.pk}'
+    class Meta:
+        db_table='service_request'
     
 
     def compute_due_at(self):
@@ -437,6 +460,10 @@ class ServiceRequest(models.Model):
         return None
 
     def save(self, *args, **kwargs):
+        # Set SLA times based on priority and configuration if this is a new ticket
+        if not self.pk:  # Only for new tickets
+            self.set_sla_times()
+            
         # Ensure due_at is set when creating or when sla_hours changes
         if not self.due_at:
             self.due_at = self.compute_due_at()
@@ -446,6 +473,51 @@ class ServiceRequest(models.Model):
             self.sla_breached = self.completed_at > self.due_at
 
         super().save(*args, **kwargs)
+
+    def set_sla_times(self):
+        """Set SLA times based on priority and configuration."""
+        try:
+            # First, try to get department/request-specific SLA configuration
+            if self.department and self.request_type:
+                from .models import DepartmentRequestSLA
+                config = DepartmentRequestSLA.objects.get(
+                    department=self.department,
+                    request_type=self.request_type,
+                    priority=self.priority
+                )
+                # Convert minutes to hours for the existing fields
+                self.response_sla_hours = config.response_time_minutes / 60.0
+                self.sla_hours = config.resolution_time_minutes / 60.0
+                return
+        except DepartmentRequestSLA.DoesNotExist:
+            # If no department/request-specific config, continue to general config
+            pass
+        
+        try:
+            from .models import SLAConfiguration
+            config = SLAConfiguration.objects.get(priority=self.priority)
+            
+            # Convert minutes to hours for the existing fields
+            self.response_sla_hours = config.response_time_minutes / 60.0
+            self.sla_hours = config.resolution_time_minutes / 60.0
+        except SLAConfiguration.DoesNotExist:
+            # Use default values if no configuration found
+            if self.priority == 'critical':
+                self.response_sla_hours = 5 / 60.0  # 5 minutes
+                self.sla_hours = 5 / 60.0  # 5 minutes
+            elif self.priority == 'high':
+                self.response_sla_hours = 10 / 60.0  # 10 minutes
+                self.sla_hours = 10 / 60.0  # 10 minutes
+            elif self.priority == 'normal':
+                self.response_sla_hours = 15 / 60.0  # 15 minutes
+                self.sla_hours = 15 / 60.0  # 15 minutes
+            elif self.priority == 'low':
+                self.response_sla_hours = 20 / 60.0  # 20 minutes
+                self.sla_hours = 20 / 60.0  # 20 minutes
+            else:
+                # Default values
+                self.response_sla_hours = 1  # 1 hour
+                self.sla_hours = 24  # 24 hours
 
     def assign_to_user(self, user):
         """Assign the ticket to a user and automatically accept it."""
@@ -682,6 +754,8 @@ class ServiceRequestStep(models.Model):
 
     def __str__(self):
         return f'{self.request} - {self.step}'
+    class Meta:
+        db_table='service_request_step'
 
 
 class ServiceRequestChecklist(models.Model):
@@ -695,6 +769,8 @@ class ServiceRequestChecklist(models.Model):
 
     def __str__(self):
         return f'{self.request} - {self.item}'
+    class Meta:
+        db_table='service_request_checklist'
 
 
 # ---- Guests ----
@@ -1105,7 +1181,61 @@ class Booking(models.Model):
         return f"Booking {self.booking_reference} - {self.guest.full_name}"
 
 
+class SLAConfiguration(models.Model):
+    """Model to store configurable SLA times for different priority levels"""
+    priority = models.CharField(max_length=20, unique=True, choices=[
+        ('critical', 'Critical'),
+        ('high', 'High'),
+        ('normal', 'Normal'),
+        ('low', 'Low'),
+    ])
+    response_time_minutes = models.PositiveIntegerField(
+        help_text="Response time in minutes"
+    )
+    resolution_time_minutes = models.PositiveIntegerField(
+        help_text="Resolution time in minutes"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return f"SLA Config - {self.get_priority_display()}"
+
+    class Meta:
+        verbose_name = "SLA Configuration"
+        verbose_name_plural = "SLA Configurations"
+    class Meta:
+        db_table='slaconfiguration'
+
+
+class DepartmentRequestSLA(models.Model):
+    """Model to store configurable SLA times for specific department and request type combinations"""
+    department = models.ForeignKey('Department', on_delete=models.CASCADE, related_name='sla_configurations')
+    request_type = models.ForeignKey('RequestType', on_delete=models.CASCADE, related_name='sla_configurations')
+    priority = models.CharField(max_length=20, choices=[
+        ('critical', 'Critical'),
+        ('high', 'High'),
+        ('normal', 'Normal'),
+        ('low', 'Low'),
+    ])
+    response_time_minutes = models.PositiveIntegerField(
+        help_text="Response time in minutes"
+    )
+    resolution_time_minutes = models.PositiveIntegerField(
+        help_text="Resolution time in minutes"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('department', 'request_type', 'priority')
+        verbose_name = "Department Request SLA"
+        verbose_name_plural = "Department Request SLAs"
+
+    def __str__(self):
+        return f"{self.department.name} - {self.request_type.name} ({self.get_priority_display()})"
+    class Meta:
+        db_table='department_request_sla'
 
 
 # # Legacy models for backward compatibility (will be deprecated)

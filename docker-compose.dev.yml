@@ -1,0 +1,109 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: hotel_db_dev
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-temp}
+      MYSQL_USER: ${DB_USER:-hotel_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-hotel_password}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+    volumes:
+      - db_data_dev:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: hotel_redis_dev
+    restart: always
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  web:
+    build: .
+    container_name: hotel_web_dev
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-django-insecure-hx$$rau=sf86q@*-bu01+yzla%!b_*8g*pfddb3_mezm_h5ff(u}
+      - DJANGO_DEBUG=${DJANGO_DEBUG:-True}
+      - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,0.0.0.0}
+      - DB_NAME=${DB_NAME:-temp}
+      - DB_USER=${DB_USER:-hotel_user}
+      - DB_PASSWORD=${DB_PASSWORD:-hotel_password}
+      - DB_HOST=db
+      - DB_PORT=3306
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - TIME_ZONE=${TIME_ZONE:-Asia/Kolkata}
+    volumes:
+      - .:/app
+      - static_volume_dev:/app/staticfiles
+      - media_volume_dev:/app/media
+    ports:
+      - "8000:8000"
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput --verbosity=0 &&
+             python manage.py runserver 0.0.0.0:8000"
+
+  celery:
+    build: .
+    container_name: hotel_celery_dev
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - DB_HOST=db
+      - DB_NAME=${DB_NAME:-temp}
+      - DB_USER=${DB_USER:-hotel_user}
+      - DB_PASSWORD=${DB_PASSWORD:-hotel_password}
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - .:/app
+    command: celery -A config worker -l info
+
+  celery-beat:
+    build: .
+    container_name: hotel_celery_beat_dev
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - DB_HOST=db
+      - DB_NAME=${DB_NAME:-temp}
+      - DB_USER=${DB_USER:-hotel_user}
+      - DB_PASSWORD=${DB_PASSWORD:-hotel_password}
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - .:/app
+    command: celery -A config beat -l info
+
+volumes:
+  db_data_dev:
+  static_volume_dev:
+  media_volume_dev:

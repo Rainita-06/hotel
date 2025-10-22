@@ -678,6 +678,174 @@
     </div>
   </div>
 </div>
+
+<script>
+  // Modal-opening functions for user profiles section
+  function openEditPermissionsModal(groupId, groupName) {
+    const idEl = document.getElementById('editGroupId');
+    const nameEl = document.getElementById('editGroupName');
+    if (!idEl || !nameEl) {
+      console.error('Edit Permissions modal elements not found in DOM. Ensure modals render inside the content block.');
+      return;
+    }
+    idEl.value = groupId;
+    nameEl.textContent = groupName;
+    loadGroupPermissions(groupId);
+    showModal('editPermissionsModal');
+  }
+  window.openEditPermissionsModal = openEditPermissionsModal;
+
+  function openBulkEditPermissionsModal() {
+    showModal('bulkEditPermissionsModal');
+  }
+  window.openBulkEditPermissionsModal = openBulkEditPermissionsModal;
+
+  // Load group permissions into the modal
+  function loadGroupPermissions(groupId) {
+    const form = document.getElementById('editPermissionsForm');
+    if (!form) return;
+
+    const switches = form.querySelectorAll('.permission-toggle');
+    switches.forEach(s => { s.checked = false; s.disabled = true; });
+
+    fetch(`/dashboard/api/groups/${groupId}/permissions/`)
+      .then(response => response.json())
+      .then(data => {
+        switches.forEach(s => {
+          s.disabled = false;
+          s.checked = !!(data.permissions && data.permissions.includes(s.dataset.permission));
+        });
+      })
+      .catch(error => {
+        console.error('Error loading group permissions:', error);
+        switches.forEach(s => { s.disabled = false; });
+        alert('Failed to load permissions. Please try again.');
+      });
+  }
+
+  // Handle edit permissions form submission
+  function handleEditPermissionsSubmit(event) {
+    event.preventDefault();
+    const idEl = document.getElementById('editGroupId');
+    const saveButton = document.getElementById('editPermissionsSubmitBtn');
+    if (!idEl || !saveButton) {
+      console.error('Edit permissions elements missing');
+      return;
+    }
+
+    const groupId = idEl.value;
+    if (!groupId) {
+      alert('Group ID is missing');
+      return;
+    }
+
+    saveButton.disabled = true;
+    saveButton.textContent = 'Saving...';
+
+    // Collect selected permissions
+    const form = document.getElementById('editPermissionsForm');
+    const checkboxes = form.querySelectorAll('.permission-toggle:checked');
+    const permissions = Array.from(checkboxes).map(cb => cb.dataset.permission);
+
+    fetch(`/dashboard/api/groups/${groupId}/permissions/update/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify({ permissions: permissions })
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      if (data.success) {
+        closeModal('editPermissionsModal');
+        showToast('Permissions updated successfully!', 'success');
+        // Reload the page to reflect changes
+        setTimeout(() => { window.location.reload(); }, 1000);
+      } else {
+        throw new Error(data.error || 'Failed to update permissions');
+      }
+    })
+    .catch(error => {
+      console.error('Error updating permissions:', error);
+      alert('Error updating permissions: ' + error.message);
+    })
+    .finally(() => {
+      saveButton.disabled = false;
+      saveButton.textContent = 'Save Permissions';
+    });
+  }
+  window.handleEditPermissionsSubmit = handleEditPermissionsSubmit;
+
+  // Handle bulk edit permissions form submission
+  function handleBulkEditPermissionsSubmit(event) {
+    event.preventDefault();
+    const saveButton = document.getElementById('bulkEditPermissionsSubmitBtn');
+    if (!saveButton) {
+      console.error('Bulk edit permissions elements missing');
+      return;
+    }
+
+    // Get selected groups
+    const groupCheckboxes = document.querySelectorAll('input[name="groups"]:checked');
+    const groupIds = Array.from(groupCheckboxes).map(cb => parseInt(cb.value));
+
+    if (groupIds.length === 0) {
+      alert('Please select at least one group');
+      return;
+    }
+
+    saveButton.disabled = true;
+    saveButton.textContent = 'Applying...';
+
+    // Collect selected permissions
+    const form = document.getElementById('bulkEditPermissionsForm');
+    const checkboxes = form.querySelectorAll('.permission-toggle:checked');
+    const permissions = Array.from(checkboxes).map(cb => cb.dataset.permission);
+
+    fetch(`/dashboard/api/groups/bulk-permissions/update/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify({ 
+        group_ids: groupIds,
+        permissions: permissions
+      })
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      if (data.success) {
+        closeModal('bulkEditPermissionsModal');
+        showToast(data.message || 'Permissions updated successfully!', 'success');
+        // Reload the page to reflect changes
+        setTimeout(() => { window.location.reload(); }, 1000);
+      } else {
+        throw new Error(data.error || 'Failed to update permissions');
+      }
+    })
+    .catch(error => {
+      console.error('Error updating permissions:', error);
+      alert('Error updating permissions: ' + error.message);
+    })
+    .finally(() => {
+      saveButton.disabled = false;
+      saveButton.textContent = 'Apply to Selected Groups';
+    });
+  }
+  window.handleBulkEditPermissionsSubmit = handleBulkEditPermissionsSubmit;
+</script>
 {% endif %}
 {% endblock content %}
 
@@ -738,6 +906,7 @@
       }
     });
   }
+  window.showModal = showModal;
 
   function closeModal(id) {
     const modal = document.getElementById(id);
@@ -755,6 +924,7 @@
       modal.classList.remove('flex');
     }, 300); // Must match the transition duration
   }
+  window.closeModal = closeModal;
 
   function showToast(message, type = 'success') {
     const toast = document.getElementById('toastNotification');
@@ -827,10 +997,21 @@
           });
         }
         if (roleSelect) {
+          // Clear existing options
           roleSelect.innerHTML = '<option value="">Select Role</option>';
-          const roles = data.roles || ['Admins', 'Staff', 'Users'];
+          
+          // Add our predefined roles
+          const roles = [
+            { value: 'admin', text: 'Admin' },
+            { value: 'staff', text: 'Staff' },
+            { value: 'user', text: 'User' }
+          ];
+          
           roles.forEach(role => {
-            roleSelect.add(new Option(role, role));
+            const option = document.createElement('option');
+            option.value = role.value;
+            option.text = role.text;
+            roleSelect.add(option);
           });
         }
       })
@@ -936,147 +1117,6 @@
     });
   }
 
-  // Modal-opening functions for user profiles section
-  function openEditPermissionsModal(groupId, groupName) {
-    const idEl = document.getElementById('editGroupId');
-    const nameEl = document.getElementById('editGroupName');
-    if (!idEl || !nameEl) {
-      console.error('Edit Permissions modal elements not found in DOM. Ensure modals render inside the content block.');
-      return;
-    }
-    idEl.value = groupId;
-    nameEl.textContent = groupName;
-    loadGroupPermissions(groupId);
-    showModal('editPermissionsModal');
-  }
-  window.openEditPermissionsModal = openEditPermissionsModal;
-
-  function openBulkEditPermissionsModal() {
-    showModal('bulkEditPermissionsModal');
-  }
-  window.openBulkEditPermissionsModal = openBulkEditPermissionsModal;
-
-  // Load group permissions into the modal
-  function loadGroupPermissions(groupId) {
-    const form = document.getElementById('editPermissionsForm');
-    if (!form) return;
-
-    const switches = form.querySelectorAll('.permission-toggle');
-    switches.forEach(s => { s.checked = false; s.disabled = true; });
-
-    fetch(`/dashboard/api/groups/${groupId}/permissions/`)
-      .then(response => response.json())
-      .then(data => {
-        switches.forEach(s => {
-          s.disabled = false;
-          s.checked = !!(data.permissions && data.permissions.includes(s.dataset.permission));
-        });
-      })
-      .catch(error => {
-        console.error('Error loading group permissions:', error);
-        switches.forEach(s => { s.disabled = false; });
-        alert('Failed to load permissions. Please try again.');
-      });
-  }
-
-  // Handle edit permissions form submission
-  function handleEditPermissionsSubmit(event) {
-    event.preventDefault();
-    const idEl = document.getElementById('editGroupId');
-    const saveButton = document.getElementById('editPermissionsSubmitBtn');
-    if (!idEl || !saveButton) {
-      console.error('Edit permissions elements missing');
-      return;
-    }
-    const groupId = idEl.value;
-    const originalText = saveButton.textContent;
-
-    saveButton.disabled = true;
-    saveButton.textContent = 'Saving...';
-
-    const permissions = Array.from(document.querySelectorAll('#editPermissionsForm .permission-toggle:checked'))
-                             .map(el => el.dataset.permission);
-
-    fetch(`/dashboard/api/groups/${groupId}/permissions/update/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken')
-      },
-      body: JSON.stringify({ permissions })
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        closeModal('editPermissionsModal');
-        showToast('Permissions updated successfully!', 'success');
-        setTimeout(() => location.reload(), 700);
-      } else {
-        alert('Failed to update permissions: ' + (data.error || 'Unknown error'));
-      }
-    })
-    .catch(error => {
-      console.error('Error updating permissions:', error);
-      alert('Failed to update permissions. Please try again.');
-    })
-    .finally(() => {
-      saveButton.disabled = false;
-      saveButton.textContent = originalText;
-    });
-  }
-  window.handleEditPermissionsSubmit = handleEditPermissionsSubmit;
-
-  // Handle bulk edit permissions form submission
-  function handleBulkEditPermissionsSubmit(event) {
-    event.preventDefault();
-    const formData = new FormData(event.target);
-    const groupIds = formData.getAll('groups');
-    const saveButton = document.getElementById('bulkEditPermissionsSubmitBtn');
-    if (!saveButton) {
-      console.error('bulkEditPermissionsSubmitBtn not found');
-      return;
-    }
-    const originalText = saveButton.textContent;
-
-    if (groupIds.length === 0) {
-      alert('Please select at least one group');
-      return;
-    }
-
-    saveButton.disabled = true;
-    saveButton.textContent = 'Applying...';
-
-    const permissions = Array.from(document.querySelectorAll('#bulkEditPermissionsForm .permission-toggle:checked'))
-                             .map(el => el.dataset.permission);
-
-    fetch('/dashboard/api/groups/bulk-permissions/update/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken')
-      },
-      body: JSON.stringify({ group_ids: groupIds, permissions })
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        closeModal('bulkEditPermissionsModal');
-        showToast('Bulk permissions updated successfully!', 'success');
-        setTimeout(() => location.reload(), 700);
-      } else {
-        alert('Failed to update permissions: ' + (data.error || 'Unknown error'));
-      }
-    })
-    .catch(error => {
-      console.error('Error updating permissions:', error);
-      alert('Failed to update permissions. Please try again.');
-    })
-    .finally(() => {
-      saveButton.disabled = false;
-      saveButton.textContent = originalText;
-    });
-  }
-  window.handleBulkEditPermissionsSubmit = handleBulkEditPermissionsSubmit;
-
 </script>
+
 {% endblock extra_js %}

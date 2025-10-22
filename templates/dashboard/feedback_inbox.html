@@ -4,263 +4,287 @@
 {% block title %}Feedback Inbox{% endblock %}
 
 {% block content %}
-<div class="w-[1184px] mx-auto min-h-[982px] relative bg-transparent">
-  <div class="w-full h-20 bg-white border-b border-gray-200">
-    <div class="w-[1136px] h-12 mx-auto flex items-center justify-between mt-4">
-      <div class="w-80">
-        <div class="text-gray-900 text-2xl font-bold">Feedback Inbox</div>
-        <div class="text-gray-600 text-sm">Unified view of all guest feedback across channels</div>
-      </div>
-      <div class="w-96 h-10 flex items-center gap-4">
-        <div class="relative w-80 h-10">
-          <input
-            type="text"
-            placeholder="Search feedback, keywords..."
-            class="w-80 h-10 pl-10 pr-3 rounded-lg border border-gray-300 text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-600 focus:border-transparent"
-          />
-          <img src="{% static 'images/feedback/search.svg' %}" alt="Help" class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-        </div>
-        <button type="button" class="w-10 h-10 rounded-lg flex items-center justify-center   hover:bg-gray-50" title="Notifications">
-          <img src="{% static 'images/feedback/notification.svg' %}" alt="Notifications" class="w-5 h-5 object-contain" />
-          <span class="sr-only">Notifications</span>
-        </button>
-        <button type="button" class="w-10 h-10 rounded-lg flex items-center justify-center   hover:bg-gray-50" title="Help">
-          <img src="{% static 'images/feedback/help.svg' %}" alt="Help" class="w-5 h-5 object-contain" />
-          <span class="sr-only">Help</span>
-        </button>
-      </div>
-    </div>
-  </div>
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+<style>
+    /* Custom styles for selected rating options for better visual feedback */
+    .rating-option.selected {
+        border-color: #0284c7; /* sky-600 */
+        background-color: #f0f9ff; /* sky-50 */
+        color: #0c4a6e; /* sky-900 */
+        font-weight: 600;
+    }
+    .rating-option.selected-emoji {
+        transform: scale(1.1);
+        box-shadow: 0 0 0 2px #0284c7;
+    }
+</style>
 
-  <div class="w-full h-28 bg-white border-b border-gray-200">
-    <div class="w-[1136px] mx-auto h-20 mt-4 flex items-center justify-between">
-      <div class="flex items-center gap-4">
-        <div class="flex items-center gap-2">
-          <div class="text-gray-700 text-sm font-medium leading-none">
-            <div>Date</div>
-            <div>Range:</div>
-          </div>
-          <div class="w-36 h-9 relative">
-            <select class="w-full h-full bg-white rounded-lg border border-gray-300 text-sm pl-3 pr-8 appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-sky-600 focus:border-transparent">
-              <option>Last 7 days</option>
-              <option>Last 30 days</option>
-              <option>This Month</option>
-              <option>All Time</option>
-            </select>
-            <span class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
-              <svg class="w-4 h-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-              </svg>
-            </span>
-          </div>
-        </div>
-        <div class="flex items-center gap-2">
-          <div class="text-gray-700 text-sm font-medium">Property:</div>
-          <div class="w-40 h-9 relative">
-            <select class="w-full h-full bg-white rounded-lg border border-gray-300 text-sm pl-3 pr-8 appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-sky-600 focus:border-transparent">
-              <option>All Properties</option>
-              <option>Grand Hyatt</option>
-              <option>Park Plaza</option>
-              <option>Sunset Resort</option>
-            </select>
-            <span class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
-              <svg class="w-4 h-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-              </svg>
-            </span>
-          </div>
-        </div>
-        <div class="flex items-center gap-2">
-          <div class="text-gray-700 text-sm font-medium">Sentiment:</div>
-          <div class="w-36 h-9 relative">
-            <select class="w-full h-full bg-white rounded-lg border border-gray-300 text-sm pl-3 pr-8 appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-sky-600 focus:border-transparent">
-              <option>All Sentiments</option>
-              <option>Positive</option>
-              <option>Negative</option>
-              <option>Neutral</option>
-            </select>
-            <span class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
-              <svg class="w-4 h-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-              </svg>
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-3">
-        <button class="w-24 h-20 bg-white rounded-lg border border-gray-300 flex flex-col items-center justify-center hover:bg-gray-50">
-          <img src="{% static 'images/feedback/filter.svg' %}" alt="Filters" class="w-4 h-4 mb-1" />
-          <span class="text-gray-700 text-sm font-medium">Filters</span>
-        </button>
-        <button class="w-24 h-20 bg-white rounded-lg border border-gray-300 flex flex-col items-center justify-center hover:bg-gray-50">
-          <img src="{% static 'images/feedback/export.svg' %}" alt="Export" class="w-4 h-4 mb-1" />
-          <span class="text-gray-700 text-sm font-medium">Export</span>
-        </button>
-        <button class="w-24 h-20 bg-sky-600 rounded-lg flex flex-col items-center justify-center hover:bg-sky-700">
-          <img src="{% static 'images/feedback/plus.svg' %}" alt="Create" class="w-4 h-4 mb-1 invert" />
-          <span class="text-white text-sm font-medium leading-tight">Create</span>
-          <span class="text-white text-sm font-medium -mt-1">Ticket</span>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <div class="w-full bg-transparent">
-    <div class="w-[1136px] mx-auto mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-      <div class="w-64 h-20 bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] border border-gray-200 px-4 flex items-center justify-between">
-        <div>
-          <div class="text-gray-600 text-sm font-medium">Total Feedback</div>
-          <div class="text-gray-900 text-2xl font-bold">{{ stats.total_feedback }}</div>
-        </div>
-        <div class="w-10 h-10 bg-teal-500/10 rounded-lg flex items-center justify-center">
-          <img src="{% static 'images/feedback/total_feedback.svg' %}" alt="Total Feedback" class="w-5 h-5 object-contain" />
-        </div>
-      </div>
-
-      <div class="w-64 h-20 bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] border border-gray-200 px-4 flex items-center justify-between">
-        <div>
-          <div class="text-gray-600 text-sm font-medium">Avg Rating</div>
-          <div class="text-gray-900 text-2xl font-bold">{{ stats.avg_rating }}</div>
-        </div>
-        <div class="w-10 h-10 bg-yellow-400/10 rounded-lg flex items-center justify-center">
-          <img src="{% static 'images/feedback/average_rating.svg' %}" alt="Average Rating" class="w-5 h-5 object-contain" />
-        </div>
-      </div>
-
-      <div class="w-64 h-20 bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] border border-gray-200 px-4 flex items-center justify-between">
-        <div>
-          <div class="text-gray-600 text-sm font-medium">Needs Attention</div>
-          <div class="text-gray-900 text-2xl font-bold">{{ stats.needs_attention }}</div>
-        </div>
-        <div class="w-10 h-10 bg-red-500/10 rounded-lg flex items-center justify-center">
-          <img src="{% static 'images/feedback/needs_attention.svg' %}" alt="Needs Attention" class="w-5 h-5 object-contain" />
-        </div>
-      </div>
-
-      <div class="w-64 h-20 bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] border border-gray-200 px-4 flex items-center justify-between">
-        <div>
-          <div class="text-gray-600 text-sm font-medium">Response Rate</div>
-          <div class="text-gray-900 text-2xl font-bold">{{ stats.response_rate }}%</div>
-        </div>
-        <div class="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center">
-          <img src="{% static 'images/feedback/response_rate.svg' %}" alt="Response Rate" class="w-5 h-5 object-contain" />
-        </div>
-      </div>
-    </div>
-
-    <div class="w-[1136px] mx-auto mt-6 bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] border border-gray-200 overflow-hidden">
-      <div class="w-full border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <div class="text-gray-900 text-lg font-semibold">Guest Feedback</div>
-        <div class="flex items-center gap-3">
-          <label class="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" class="w-3.5 h-3.5 border-gray-400 rounded-sm">
-            <span class="text-gray-600 text-sm">Select All</span>
-          </label>
-          <button class="px-3 py-1.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg opacity-50 cursor-not-allowed inline-flex items-center gap-2">
-            <img src="{% static 'images/feedback/export.svg' %}" alt="Export" class="w-4 h-4" />
-            Export
-          </button>
-        </div>
-      </div>
-
-      <div class="overflow-x-auto">
-        <table class="min-w-full">
-          <thead class="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th class="w-12 px-6 py-3 text-left">
-                <input type="checkbox" class="w-3.5 h-3.5 border-gray-400 rounded-sm">
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Date</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Guest</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Rating</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Feedback</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Keywords</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Sentiment</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Action</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-200 bg-white">
-            {% for feedback in feedback_data %}
-            <tr class="align-top">
-              <td class="px-6 py-4">
-                <input type="checkbox" class="w-3.5 h-3.5 border-gray-400 rounded-sm">
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {{ feedback.date }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="flex items-center">
-                  <img class="w-8 h-8 rounded-full mr-3 border border-gray-200" src="https://placehold.co/32x32" alt="">
-                  <div>
-                    <div class="text-sm font-medium text-gray-900">{{ feedback.guest }}</div>
-                    <div class="text-sm text-gray-500">{{ feedback.room }}</div>
-                  </div>
-                </div>
-              </td>
-              <td class="px-6 py-4">
-                <div class="flex items-center">
-                  <div class="flex">
-                    {% for i in "12345" %}
-                    <svg class="w-4 h-4 text-yellow-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+<div class="p-6 bg-gray-50 min-h-screen">
+    <div class="w-full max-w-[1136px] mx-auto mb-6">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div data-aos="fade-down" data-aos-duration="700" data-aos-once="true">
+                <h1 class="text-gray-900 text-2xl font-bold">Feedback Inbox</h1>
+                <p class="text-gray-600 text-sm">Unified view of all guest feedback across channels</p>
+            </div>
+            <div data-aos="fade-left" data-aos-duration="600" data-aos-delay="100" data-aos-once="true">
+                <button id="addFeedbackBtn" class="flex items-center justify-center gap-2 px-4 py-2 bg-sky-600 rounded-md text-white hover:bg-sky-700 shadow-sm transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
                     </svg>
-                    {% endfor %}
-                  </div>
-                  <span class="ml-2 text-sm text-gray-900">{{ feedback.rating }}</span>
-                </div>
-              </td>
-              <td class="px-6 py-4 text-sm text-gray-900">
-                {{ feedback.feedback|truncatewords:16 }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="flex flex-wrap gap-1">
-                  {% for keyword in feedback.keywords %}
-                    <span class="px-2 py-1 text-xs font-medium rounded-full
-                      {% if feedback.sentiment == 'Positive' %} bg-green-500/10 text-green-500
-                      {% elif feedback.sentiment == 'Negative' %} bg-red-500/10 text-red-500
-                      {% else %} bg-yellow-400/10 text-yellow-400 {% endif %}">
-                      {{ keyword }}
-                    </span>
-                  {% endfor %}
-                </div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span class="px-2 py-1 text-xs font-medium rounded-full
-                  {% if feedback.sentiment == 'Positive' %} bg-green-500/10 text-green-500
-                  {% elif feedback.sentiment == 'Negative' %} bg-red-500/10 text-red-500
-                  {% else %} bg-yellow-400/10 text-yellow-400 {% endif %}">
-                  {{ feedback.sentiment }}
-                </span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <a href="{% url 'dashboard:feedback_detail' feedback.id %}" class="inline-flex items-center p-2 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sky-600" title="View/Edit Feedback" aria-label="View/Edit Feedback">
-                  <img src="{% static 'images/feedback/eye.svg' %}" alt="View/Edit" class="w-5 h-5 object-contain" />
-                </a>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-
-      <div class="border-t border-gray-200 px-6 py-4 flex items-center justify-between">
-        <div class="text-sm text-gray-700">
-          Showing 1 to {{ feedback_data|length }} of {{ stats.total_feedback }} results
+                    <span class="text-sm font-medium">Add Feedback</span>
+                </button>
+            </div>
         </div>
-        <div class="flex items-center gap-2">
-          <button class="w-20 h-9 bg-white rounded-lg border border-gray-300 opacity-50 text-gray-500 text-sm font-medium cursor-not-allowed">
-            Previous
-          </button>
-          <button class="w-8 h-9 bg-sky-600 rounded-lg border border-sky-600 text-white text-sm font-medium">1</button>
-          <button class="w-9 h-9 bg-white rounded-lg border border-gray-300 text-gray-700 text-sm font-medium">2</button>
-          <button class="w-9 h-9 bg-white rounded-lg border border-gray-300 text-gray-700 text-sm font-medium">3</button>
-          <span class="text-sm text-gray-500">...</span>
-          <button class="w-11 h-9 bg-white rounded-lg border border-gray-300 text-gray-700 text-sm font-medium">25</button>
-          <button class="w-14 h-9 bg-white rounded-lg border border-gray-300 text-gray-700 text-sm font-medium">Next</button>
-        </div>
-      </div>
     </div>
-  </div>
+
+    <div class="w-full max-w-[1136px] mx-auto">
+        <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="w-full bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center justify-between"
+                 data-aos="fade-up" data-aos-duration="600" data-aos-once="true">
+                <div>
+                    <div class="text-gray-600 text-sm font-medium">Total Feedback</div>
+                    <div class="text-gray-900 text-2xl font-bold">{{ stats.total_feedback }}</div>
+                </div>
+                <div class="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+                    <img src="{% static 'images/feedback/total_feedback.svg' %}" alt="Total Feedback" class="w-5 h-5 object-contain" />
+                </div>
+            </div>
+
+            <div class="w-full bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center justify-between"
+                 data-aos="fade-up" data-aos-duration="600" data-aos-delay="100" data-aos-once="true">
+                <div>
+                    <div class="text-gray-600 text-sm font-medium">Avg Rating</div>
+                    <div class="text-gray-900 text-2xl font-bold">{{ stats.avg_rating }}</div>
+                </div>
+                <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                    <img src="{% static 'images/feedback/average_rating.svg' %}" alt="Average Rating" class="w-5 h-5 object-contain" />
+                </div>
+            </div>
+
+            <div class="w-full bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center justify-between"
+                 data-aos="fade-up" data-aos-duration="600" data-aos-delay="200" data-aos-once="true">
+                <div>
+                    <div class="text-gray-600 text-sm font-medium">Needs Attention</div>
+                    <div class="text-gray-900 text-2xl font-bold">{{ stats.needs_attention }}</div>
+                </div>
+                <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                    <img src="{% static 'images/feedback/needs_attention.svg' %}" alt="Needs Attention" class="w-5 h-5 object-contain" />
+                </div>
+            </div>
+
+            <div class="w-full bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center justify-between"
+                 data-aos="fade-up" data-aos-duration="600" data-aos-delay="300" data-aos-once="true">
+                <div>
+                    <div class="text-gray-600 text-sm font-medium">Response Rate</div>
+                    <div class="text-gray-900 text-2xl font-bold">{{ stats.response_rate }}%</div>
+                </div>
+                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                    <img src="{% static 'images/feedback/response_rate.svg' %}" alt="Response Rate" class="w-5 h-5 object-contain" />
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+             data-aos="fade-up" data-aos-duration="700" data-aos-once="true">
+            <div class="px-6 py-4 border-b border-gray-200 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="relative w-full md:w-80">
+                    <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    <input type="text" class="w-full h-10 pl-10 pr-4 bg-white rounded-md border border-gray-300 text-sm focus:ring-sky-500 focus:border-sky-500" placeholder="Search feedback, keywords...">
+                </div>
+                <button class="w-full md:w-auto h-10 bg-white rounded-md border border-gray-300 flex items-center justify-center px-4 hover:bg-gray-50 transition-colors">
+                    <img src="{% static 'images/feedback/export.svg' %}" alt="Export" class="w-4 h-4" />
+                    <span class="ml-2 text-gray-700 text-sm font-medium">Export</span>
+                </button>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead class="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                            <th class="w-12 px-6 py-3 text-left"><input type="checkbox" class="w-4 h-4 border-gray-300 rounded text-sky-600 focus:ring-sky-500"></th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Guest</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Feedback</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Keywords</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sentiment</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 bg-white">
+                        {% for feedback in feedback_data %}
+                        <tr class="align-top hover:bg-gray-50 transition-colors" data-aos="fade-up" data-aos-duration="500" data-aos-once="true">
+                            <td class="px-6 py-4"><input type="checkbox" class="w-4 h-4 border-gray-300 rounded text-sky-600 focus:ring-sky-500"></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ feedback.date }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <img class="w-8 h-8 rounded-full" src="https://placehold.co/32x32/E2E8F0/334155?text={{ feedback.guest|first }}" alt="{{ feedback.guest }}">
+                                    <div class="ml-3">
+                                        <div class="text-sm font-medium text-gray-900">{{ feedback.guest }}</div>
+                                        <div class="text-sm text-gray-500">{{ feedback.room }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="flex">
+                                        {% for i in "12345" %}{% if forloop.counter <= feedback.rating %}<svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>{% else %}<svg class="w-4 h-4 text-gray-300" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>{% endif %}{% endfor %}
+                                    </div>
+                                    <span class="ml-2 text-sm text-gray-900">{{ feedback.rating }}</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-900 max-w-sm truncate">{{ feedback.feedback }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap"><div class="flex flex-wrap gap-1">{% for keyword in feedback.keywords %}<span class="px-2 py-1 text-xs font-medium rounded-full {% if feedback.sentiment == 'Positive' %}bg-green-100 text-green-800{% elif feedback.sentiment == 'Negative' %}bg-red-100 text-red-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">{{ keyword }}</span>{% endfor %}</div></td>
+                            <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 py-1 text-xs font-medium rounded-full {% if feedback.sentiment == 'Positive' %}bg-green-100 text-green-800{% elif feedback.sentiment == 'Negative' %}bg-red-100 text-red-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">{{ feedback.sentiment }}</span></td>
+                            <td class="px-6 py-4 whitespace-nowrap"><a href="{% url 'dashboard:feedback_detail' feedback.id %}" class="inline-flex items-center p-2 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-600" title="View/Edit Feedback"><img src="{% static 'images/feedback/eye.svg' %}" alt="View/Edit" class="w-5 h-5 object-contain" /></a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="border-t border-gray-200 px-6 py-4 flex items-center justify-between">
+                <div class="text-sm text-gray-700">Showing 1 to {{ feedback_data|length }} of {{ stats.total_feedback }} results</div>
+                <div class="flex items-center gap-2">
+                    <button class="w-20 h-9 bg-white rounded-md border border-gray-300 opacity-50 text-gray-500 text-sm font-medium cursor-not-allowed">Previous</button>
+                    <button class="w-8 h-9 bg-sky-600 rounded-md border border-sky-600 text-white text-sm font-medium">1</button>
+                    <button class="w-9 h-9 bg-white rounded-md border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50">2</button>
+                    <button class="w-20 h-9 bg-white rounded-md border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50">Next</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<div id="feedbackModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0" onclick="window.FeedbackModal && window.FeedbackModal.close('feedbackModal')">
+    <div class="w-full max-w-3xl bg-gray-50 rounded-lg shadow-xl flex flex-col transform transition-all duration-300 scale-95 opacity-0" onclick="event.stopPropagation()">
+        
+        <div class="flex items-start justify-between p-6 border-b border-gray-200 bg-white rounded-t-lg">
+            <div>
+                <h2 class="text-xl font-semibold text-gray-900">Share Your Feedback</h2>
+                <p class="text-sm text-gray-500">Help us improve your experience</p>
+            </div>
+            <button type="button" class="p-1 text-gray-400 hover:text-gray-700 rounded-full" onclick="window.FeedbackModal.close('feedbackModal')" aria-label="Close modal">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        
+        <form id="feedbackForm" method="post" class="overflow-y-auto max-h-[75vh]">
+            {% csrf_token %}
+            <div class="p-6 space-y-6">
+                {% if messages %}{% for message in messages %}<div class="{% if message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-green-100 text-green-800{% endif %} p-4 rounded-md text-sm">{{ message }}</div>{% endfor %}{% endif %}
+
+                <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Guest Information</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="guest_name" class="block text-sm font-medium text-gray-700 mb-1">Guest Name</label>
+                            <input type="text" name="guest_name" id="guest_name" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500" placeholder="Enter guest name" required>
+                        </div>
+                        <div>
+                            <label for="room_number" class="block text-sm font-medium text-gray-700 mb-1">Room Number</label>
+                            <input type="text" name="room_number" id="room_number" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500" placeholder="Enter room number" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">How would you rate your overall experience?</h3>
+                    <div class="flex flex-wrap justify-center gap-4 sm:gap-6 md:gap-8">
+                        <div class="rating-option rating-option-emoji text-center cursor-pointer p-2 rounded-lg transition-all duration-200" data-rating-group="overall" data-rating-value="1" title="Poor"><span class="text-4xl">😞</span><p class="text-xs text-gray-500 mt-1">Poor</p></div>
+                        <div class="rating-option rating-option-emoji text-center cursor-pointer p-2 rounded-lg transition-all duration-200" data-rating-group="overall" data-rating-value="2" title="Fair"><span class="text-4xl">😕</span><p class="text-xs text-gray-500 mt-1">Fair</p></div>
+                        <div class="rating-option rating-option-emoji text-center cursor-pointer p-2 rounded-lg transition-all duration-200" data-rating-group="overall" data-rating-value="3" title="Good"><span class="text-4xl">😐</span><p class="text-xs text-gray-500 mt-1">Good</p></div>
+                        <div class="rating-option rating-option-emoji text-center cursor-pointer p-2 rounded-lg transition-all duration-200" data-rating-group="overall" data-rating-value="4" title="Great"><span class="text-4xl">🙂</span><p class="text-xs text-gray-500 mt-1">Great</p></div>
+                        <div class="rating-option rating-option-emoji text-center cursor-pointer p-2 rounded-lg transition-all duration-200" data-rating-group="overall" data-rating-value="5" title="Excellent"><span class="text-4xl">😄</span><p class="text-xs text-gray-500 mt-1">Excellent</p></div>
+                    </div>
+                    <input type="hidden" name="overall_rating" id="overall_rating" required>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm"><h3 class="text-lg font-semibold text-gray-900 mb-4">How clean was your room?</h3><div class="grid grid-cols-3 gap-3"><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="cleanliness" data-rating-value="1">Poor</button><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="cleanliness" data-rating-value="3">Good</button><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="cleanliness" data-rating-value="5">Excellent</button></div><input type="hidden" name="cleanliness_rating" id="cleanliness_rating"></div>
+                    <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm"><h3 class="text-lg font-semibold text-gray-900 mb-4">How was the staff service?</h3><div class="grid grid-cols-3 gap-3"><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="staff" data-rating-value="1">Poor</button><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="staff" data-rating-value="3">Good</button><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="staff" data-rating-value="5">Excellent</button></div><input type="hidden" name="staff_rating" id="staff_rating"></div>
+                </div>
+
+                <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm"><h3 class="text-lg font-semibold text-gray-900 mb-4">Would you recommend us to others?</h3><div class="grid grid-cols-2 gap-3"><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="recommend" data-rating-value="yes">Yes</button><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="recommend" data-rating-value="no">No</button></div><input type="hidden" name="recommend" id="recommend"></div>
+                
+                <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+                    <label for="comment" class="text-lg font-semibold text-gray-900 mb-4 block">Tell us more about your experience <span class="text-gray-500 font-normal">(optional)</span></label>
+                    <textarea name="comment" id="comment" rows="5" class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500" placeholder="Write your comments here..."></textarea>
+                </div>
+            </div>
+            
+            <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-white rounded-b-lg">
+                <button type="button" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50" onclick="window.FeedbackModal.close('feedbackModal')">Cancel</button>
+                <button id="feedbackSubmit" type="submit" class="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 shadow-sm">Submit Feedback</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    AOS.init({ once: true, duration: 600, easing: 'ease-out' });
+
+    // --- MODAL LOGIC ---
+    window.FeedbackModal = (function(){
+        const open = (id) => {
+            const modal = document.getElementById(id);
+            if (!modal) return;
+            const dialog = modal.querySelector('div[onclick="event.stopPropagation()"]');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            requestAnimationFrame(() => {
+                modal.classList.remove('opacity-0');
+                if (dialog) {
+                    dialog.classList.remove('scale-95', 'opacity-0');
+                    dialog.classList.add('scale-100', 'opacity-100');
+                }
+            });
+        };
+        const close = (id) => {
+            const modal = document.getElementById(id);
+            if (!modal) return;
+            const dialog = modal.querySelector('div[onclick="event.stopPropagation()"]');
+            modal.classList.add('opacity-0');
+            if (dialog) {
+                dialog.classList.remove('scale-100', 'opacity-100');
+                dialog.classList.add('scale-95', 'opacity-0');
+            }
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 300);
+        };
+        return { open, close };
+    })();
+
+    document.getElementById('addFeedbackBtn')?.addEventListener('click', () => window.FeedbackModal.open('feedbackModal'));
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') window.FeedbackModal.close('feedbackModal');
+    });
+
+    // --- RATING SELECTION LOGIC ---
+    document.querySelectorAll('.rating-option').forEach(option => {
+        option.addEventListener('click', function() {
+            const group = this.dataset.ratingGroup;
+            const value = this.dataset.ratingValue;
+            
+            document.getElementById(group === 'recommend' ? group : `${group}_rating`).value = value;
+            
+            document.querySelectorAll(`.rating-option[data-rating-group="${group}"]`).forEach(sibling => {
+                sibling.classList.remove('selected', 'selected-emoji');
+            });
+            this.classList.add('selected');
+            if (this.classList.contains('rating-option-emoji')) {
+                this.classList.add('selected-emoji');
+            }
+        });
+    });
+
+    // --- FORM RE-OPEN ON ERROR ---
+    {% if form.errors %}
+        setTimeout(() => window.FeedbackModal.open('feedbackModal'), 50);
+    {% endif %}
+});
+</script>
 {% endblock %}

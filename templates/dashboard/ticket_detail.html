@@ -21,7 +21,13 @@
             </div>
         </div>
         <div class="flex items-center gap-2 sm:gap-4">
+            <div class="flex items-center gap-2 bg-gray-100 rounded-full px-3 py-1">
+                <div class="w-2 h-2 rounded-full {% if ticket.sla_breached %}bg-red-500{% elif ticket.get_sla_status == 'On Track' %}bg-green-500{% else %}bg-yellow-500{% endif %}"></div>
+                <span class="text-xs font-medium {% if ticket.sla_breached %}text-red-500{% elif ticket.get_sla_status == 'On Track' %}text-green-500{% else %}text-yellow-500{% endif %}">
+                    {{ ticket.get_time_left }}
+                </span>
             </div>
+        </div>
     </header>
 
     <div class="w-full p-3 flex justify-between items-center bg-yellow-400/10 border-b border-yellow-400 lg:hidden">
@@ -75,7 +81,7 @@
                 <h3 class="text-base font-semibold text-gray-900 mb-4">Attachments</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <a href="#" class="border border-gray-200 rounded-lg p-3 flex items-center gap-3 hover:bg-gray-50">
-                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0"><svg class="w-6 h-6 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></div>
+                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0"><svg class="w-6 h-6 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></div>
                         <div>
                             <p class="text-sm lg:text-base font-medium text-gray-900 truncate">thermostat_display.jpg</p>
                             <p class="text-xs lg:text-sm text-gray-500">245 KB</p>
@@ -94,11 +100,30 @@
             <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 lg:p-6">
                 <h3 class="text-base font-semibold text-gray-900 mb-4">Activity Log</h3>
                 <ul class="space-y-4">
-                    <li class="flex items-start gap-3"><div class="w-2.5 h-2.5 bg-fuchsia-700 rounded-full mt-1.5 flex-shrink-0"></div><p class="text-sm"><span class="font-medium">Internal comment added</span> by Lisa Park - <span class="text-gray-500">30 minutes ago</span></p></li>
-                    <li class="flex items-start gap-3"><div class="w-2.5 h-2.5 bg-teal-500 rounded-full mt-1.5 flex-shrink-0"></div><p class="text-sm"><span class="font-medium">Internal comment added</span> by Mike Chen - <span class="text-gray-500">1 hour ago</span></p></li>
-                    <li class="flex items-start gap-3"><div class="w-2.5 h-2.5 bg-yellow-400 rounded-full mt-1.5 flex-shrink-0"></div><p class="text-sm"><span class="font-medium">Priority set to High</span> by John Smith - <span class="text-gray-500">1 hour ago</span></p></li>
-                    <li class="flex items-start gap-3"><div class="w-2.5 h-2.5 bg-sky-600 rounded-full mt-1.5 flex-shrink-0"></div><p class="text-sm"><span class="font-medium">Assigned to John Smith</span> by System - <span class="text-gray-500">2 hours ago</span></p></li>
-                    <li class="flex items-start gap-3"><div class="w-2.5 h-2.5 bg-red-500 rounded-full mt-1.5 flex-shrink-0"></div><p class="text-sm"><span class="font-medium">Ticket created</span> by {{ requester_name }} - <span class="text-gray-500">2 hours ago</span></p></li>
+                    {% for activity in activity_log %}
+                    <li class="flex items-start gap-3">
+                        <div class="w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0
+                            {% if 'comment' in activity.description %}
+                                bg-fuchsia-700
+                            {% elif 'Priority' in activity.description %}
+                                bg-yellow-400
+                            {% elif 'Status' in activity.description %}
+                                bg-sky-600
+                            {% elif 'assigned' in activity.description %}
+                                bg-teal-500
+                            {% else %}
+                                bg-red-500
+                            {% endif %}
+                        "></div>
+                        <p class="text-sm">
+                            <span class="font-medium">{{ activity.description }}</span> 
+                            by {{ activity.actor }} - 
+                            <span class="text-gray-500">{{ activity.time_ago }}</span>
+                        </p>
+                    </li>
+                    {% empty %}
+                    <li class="text-gray-500 text-sm">No activity found for this ticket.</li>
+                    {% endfor %}
                 </ul>
             </section>
         </div>
@@ -108,7 +133,8 @@
                 <h3 class="text-base font-semibold text-gray-900 mb-4">Workflow Actions</h3>
                 <div class="space-y-3">
                     {% if ticket.status == 'pending' %}
-                        {% elif ticket.status == 'accepted' and ticket.assignee_user == user %}
+                        {# No primary action for pending, handled by other roles #}
+                    {% elif ticket.status == 'accepted' and ticket.assignee_user == user %}
                         <button id="startBtn" class="w-full py-2 text-sm font-medium text-white bg-yellow-500 rounded-lg hover:bg-yellow-600" data-ticket-id="{{ ticket.id }}">Start Work</button>
                     {% elif ticket.status == 'in_progress' and ticket.assignee_user == user %}
                         <button id="completeBtn" class="w-full py-2 text-sm font-medium text-white bg-purple-500 rounded-lg hover:bg-purple-600" data-ticket-id="{{ ticket.id }}">Mark as Completed</button>
@@ -127,31 +153,53 @@
             
             <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <h3 class="text-base font-semibold text-gray-900 mb-4">SLA Status</h3>
-                <div class="space-y-4">
-                    <div class="flex justify-between items-center">
-                        <span class="text-sm text-gray-600">Response SLA</span>
-                        <span class="text-sm font-medium {% if ticket.response_sla_breached %}text-red-500{% else %}text-green-500{% endif %}">
-                            {% if ticket.response_sla_breached %}Breached{% else %}On Track{% endif %}
-                        </span>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <span class="text-sm text-gray-600">Resolution SLA</span>
-                        <span class="text-sm font-medium {% if ticket.resolution_sla_breached %}text-red-500{% else %}text-green-500{% endif %}">
-                            {% if ticket.resolution_sla_breached %}Breached{% else %}On Track{% endif %}
-                        </span>
-                    </div>
-                    <div class="pt-2">
-                        <div class="flex justify-between text-xs text-gray-500 mb-1">
-                            <span>Time Elapsed</span>
-                            <span>{{ ticket.get_time_left }}</span>
+                <div class="flex flex-col items-center gap-4">
+                    
+                    <div class="relative w-40 h-40 rounded-full flex items-center justify-center" 
+                         style="background: conic-gradient(
+                             {% if ticket.sla_breached %}#ef4444{% elif ticket.get_sla_status == 'On Track' %}#22c55e{% else %}#f59e0b{% endif %} {{ sla_progress_percent }}%, 
+                             #e5e7eb 0
+                         );">
+                        <div class="absolute w-32 h-32 bg-white rounded-full flex items-center justify-center">
+                            <span class="text-3xl font-bold {% if ticket.sla_breached %}text-red-500{% elif ticket.get_sla_status == 'On Track' %}text-green-500{% else %}text-yellow-500{% endif %}">
+                                {{ sla_progress_percent }}%
+                            </span>
                         </div>
-                        <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                            <div class="h-full {% if ticket.sla_breached %}bg-red-500{% elif ticket.get_sla_status == 'On Track' %}bg-green-500{% else %}bg-yellow-500{% endif %}" style="width: {% if ticket.sla_breached %}100%{% else %}70%{% endif %}"></div>
+                    </div>
+
+                    <div class="text-center">
+                        <p class="font-semibold {% if ticket.sla_breached %}text-red-500{% else %}text-gray-900{% endif %}">
+                            {% if ticket.sla_breached %}OVERDUE{% else %}IN PROGRESS{% endif %}
+                        </p>
+                        <p class="text-sm text-gray-500">
+                            {% if ticket.sla_breached %}{{ ticket.get_time_left }} past due{% else %}{{ ticket.get_time_left }} remaining{% endif %}
+                        </p>
+                    </div>
+
+                    <hr class="w-full border-gray-200 my-2">
+
+                    <div class="w-full space-y-3 text-sm">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Response Time:</span>
+                            <span class="font-medium px-2 py-0.5 rounded-full text-xs {% if ticket.response_sla_breached %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+                                {% if ticket.response_sla_breached %}MISSED{% else %}ON TRACK{% endif %}
+                            </span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Resolution Time:</span>
+                            <span class="font-medium {% if ticket.resolution_sla_breached %}text-red-500{% elif ticket.get_sla_status == 'On Track' %}text-green-500{% else %}text-yellow-500{% endif %}">
+                                {{ ticket.get_time_left }}
+                            </span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Priority Level:</span>
+                            <span class="font-medium {% if ticket.priority == 'critical' or ticket.priority == 'high' %}text-red-500{% elif ticket.priority == 'normal' %}text-yellow-500{% else %}text-gray-500{% endif %}">
+                                {{ ticket.get_priority_display }}
+                            </span>
                         </div>
                     </div>
                 </div>
             </section>
-
             <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <h3 class="text-base font-semibold text-gray-900 mb-4">Ticket & Room Details</h3>
                 <div class="space-y-3 text-sm">

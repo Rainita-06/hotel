@@ -41,6 +41,8 @@
       </a>
     </div>
 
+    <!-- Management Section - Visible based on user permissions -->
+    {% if perms.dashboard.view_dashboard %}
     <div>
       <div
         class="px-3 py-1 text-gray-400 text-xs font-semibold tracking-tight"
@@ -48,6 +50,7 @@
         Management
       </div>
       <div class="space-y-1">
+        {% if perms.users.view_user %}
         <a
           href="{% url 'dashboard:manage_users' %}"
           class="flex items-center gap-3 px-3 py-2 rounded-lg {% if '/dashboard/manage-users' in request.path %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
@@ -59,6 +62,9 @@
           />
           <span class="font-medium">Users</span>
         </a>
+        {% endif %}
+        
+        {% if perms.locations.view_location %}
         <a
           href="{% url 'dashboard:locations' %}"
           class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:locations' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}">
@@ -79,6 +85,9 @@
           />
           <span class="font-medium">Breakfast Voucher </span>
         </a>
+        {% endif %}
+        
+        {% if perms.tickets.view_servicerequest %}
         <a
           href="{% url 'dashboard:tickets' %}"
           class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:tickets' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
@@ -90,17 +99,9 @@
           />
           <span class="font-medium">Tickets</span>
         </a>
-        <a
-          href="{% url 'dashboard:my_tickets' %}"
-          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:my_tickets' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
-        >
-          <img
-            src="{% if request.resolver_match.view_name == 'dashboard:my_tickets' %}{% static 'images/sidebar/configure_requests_highlighted.svg' %}{% else %}{% static 'images/sidebar/configure_request.svg' %}{% endif %}"
-            alt="My Tickets Icon"
-            class="w-5 h-5"
-          />
-          <span class="font-medium">My Tickets</span>
-        </a>
+        {% endif %}
+        
+        {% if perms.requests.view_requesttype %}
         <a
           href="{% url 'dashboard:configure_requests' %}"
           class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:configure_requests' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
@@ -112,16 +113,22 @@
           />
           <span class="font-medium">Configure Requests</span>
         </a>
+        {% endif %}
+        
+        {% if perms.sla.view_slaconfiguration %}
         <a
-          href="{% url 'dashboard:sla_escalations' %}"
-          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:sla_escalations' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}">
+          href="{% url 'dashboard:sla_configuration' %}"
+          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:sla_configuration' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}">
           <img
-            src="{% if request.resolver_match.view_name == 'dashboard:sla_escalations' %}{% static 'images/sidebar/sla_highlighted.svg' %}{% else %}{% static 'images/sidebar/sla.svg' %}{% endif %}"
-            alt="SLA & Escalations Icon"
+            src="{% if request.resolver_match.view_name == 'dashboard:sla_configuration' %}{% static 'images/sidebar/sla_highlighted.svg' %}{% else %}{% static 'images/sidebar/sla.svg' %}{% endif %}"
+            alt="SLA Configuration Icon"
             class="w-5 h-5"
           />
-          <span class="font-medium">SLA & Escalations</span>
+          <span class="font-medium">SLA Configuration</span>
         </a>
+        {% endif %}
+        
+        {% if perms.messaging.view_messaging %}
         <a
           href="{% url 'dashboard:messaging_setup' %}"
           class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:messaging_setup' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
@@ -133,6 +140,9 @@
           />
           <span class="font-medium">Messaging Setup</span>
         </a>
+        {% endif %}
+        
+        {% if perms.gym.view_gymmember %}
         <a
           href="{% url 'member_list' %}"
           class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'member_list' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
@@ -144,6 +154,9 @@
           />
           <span class="font-medium">Gym</span>
         </a>
+        {% endif %}
+        
+        {% if perms.integrations.view_integration %}
         <a
           href="{% url 'dashboard:integrations' %}"
           class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:integrations' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
@@ -160,9 +173,13 @@
             </div>
           </div>
         </a>
+        {% endif %}
       </div>
     </div>
+    {% endif %}
 
+    <!-- Analytics Section - Visible based on user permissions -->
+    {% if perms.analytics.view_analytics %}
     <div>
       <div
         class="px-3 py-1 text-gray-400 text-xs font-semibold tracking-tight"
@@ -181,6 +198,7 @@
           />
           <span class="font-medium">Analytics</span>
         </a>
+        {% if perms.performance.view_performance %}
         <a
           href="{% url 'dashboard:performance' %}"
           class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:performance' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
@@ -192,6 +210,8 @@
           />
           <span class="font-medium">Performance</span>
         </a>
+        {% endif %}
+        {% if perms.feedback.view_review %}
         <a
           href="{% url 'dashboard:feedback_inbox' %}"
           class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:feedback_inbox' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
@@ -203,9 +223,32 @@
           />
           <span class="font-medium">Feedback</span>
         </a>
+        {% endif %}
       </div>
     </div>
+    {% endif %}
 
+    <!-- My Tickets Section - Visible to all users -->
+    <div>
+      <div
+        class="px-3 py-1 text-gray-400 text-xs font-semibold tracking-tight"
+      >
+        My Tickets
+      </div>
+      <div class="space-y-1">
+        <a
+          href="{% url 'dashboard:my_tickets' %}"
+          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:my_tickets' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
+        >
+          <img
+            src="{% if request.resolver_match.view_name == 'dashboard:my_ticks' %}{% static 'images/sidebar/configure_requests_highlighted.svg' %}{% else %}{% static 'images/sidebar/configure_request.svg' %}{% endif %}"
+            alt="My Tickets Icon"
+            class="w-5 h-5"
+          />
+          <span class="font-medium">My Tickets</span>
+        </a>
+      </div>
+    </div>
 
   </nav>
 

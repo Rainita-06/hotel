@@ -1,0 +1,17 @@
+.git
+.gitignore
+README.md
+.env
+.env.production
+.DS_Store
+*.pyc
+__pycache__
+db.sqlite3
+*.log
+local_settings.py
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*~

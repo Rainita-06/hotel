@@ -1,0 +1,745 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+
+<style>
+    /* Keyframes for smooth content fading */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .animate-fadeIn {
+        animation: fadeIn 0.4s ease-out forwards;
+    }
+    
+    /* Custom styles for priority badges for better visual distinction */
+    .priority-badge {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 9999px;
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 1.5;
+    }
+    
+    .priority-critical { background-color: #FEE2E2; color: #B91C1C; }
+    .priority-high { background-color: #FEF3C7; color: #D97706; }
+    .priority-normal { background-color: #DBEAFE; color: #1D4ED8; }
+    .priority-low { background-color: #D1FAE5; color: #047857; }
+    
+    /* Hide tab content by default */
+    .tab-content.hidden { display: none; }
+    
+    /* Enhanced pagination styles */
+    .pagination a, .pagination span {
+        padding: 8px 14px;
+        margin: 0 3px;
+        border-radius: 6px;
+        text-decoration: none;
+        color: #4B5563;
+        transition: background-color 0.2s ease, color 0.2s ease;
+    }
+    
+    .pagination a:hover { background-color: #E0F2FE; }
+    .pagination .current { background-color: #0284C7; color: white; font-weight: 600; }
+    .pagination .disabled { color: #D1D5DB; cursor: not-allowed; }
+    
+    /* Prevent content "jump" on page load before AOS initializes */
+    body {
+        opacity: 0;
+        transition: opacity 0.5s ease-in-out;
+    }
+    body.aos-animate {
+        opacity: 1;
+    }
+    
+    /* Import button styling */
+    .import-btn {
+        position: relative;
+        overflow: hidden;
+        display: inline-block;
+    }
+    
+    .import-btn input[type=file] {
+        position: absolute;
+        left: 0;
+        top: 0;
+        opacity: 0;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-[1184px] mx-auto">
+    <div class="mb-6" data-aos="fade-down">
+        <h1 class="text-2xl font-bold text-gray-900">SLA Configuration</h1>
+        <p class="text-gray-600 mt-1">Configure default SLA times for different priority levels and departments.</p>
+    </div>
+
+    <div id="tabs" class="flex border-b border-gray-200 mb-6" role="tablist" data-aos="fade-down" data-aos-delay="100">
+        <a href="#generalSlaSection" class="tab-link py-3 px-4 text-sm font-medium border-b-2 hover:text-gray-900 hover:border-gray-300" role="tab" aria-controls="generalSlaSection">General SLA</a>
+        <a href="#departmentSlaSection" class="tab-link py-3 px-4 text-sm font-medium border-b-2 hover:text-gray-900 hover:border-gray-300" role="tab" aria-controls="departmentSlaSection">Department SLA</a>
+        <a href="#departmentTaskListsSection" class="tab-link py-3 px-4 text-sm font-medium border-b-2 hover:text-gray-900 hover:border-gray-300" role="tab" aria-controls="departmentTaskListsSection">Department Task Lists</a>
+        <a href="#escalationRulesSection" class="tab-link py-3 px-4 text-sm font-medium border-b-2 hover:text-gray-900 hover:border-gray-300" role="tab" aria-controls="escalationRulesSection">Escalation Rules</a>
+        <a href="#holidayCalendarSection" class="tab-link py-3 px-4 text-sm font-medium border-b-2 hover:text-gray-900 hover:border-gray-300" role="tab" aria-controls="holidayCalendarSection">Holiday Calendar</a>
+    </div>
+
+    <div id="toastContainer" class="fixed top-5 right-5 z-50 space-y-3"></div>
+
+    <div id="generalSlaSection" class="tab-content hidden bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6" role="tabpanel">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-sky-100 rounded-lg flex justify-center items-center flex-shrink-0">
+                    <svg class="w-4 h-4 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <h2 class="text-gray-900 text-lg font-semibold">General & Department SLA Settings</h2>
+            </div>
+            <button id="saveAllConfigsBtn" class="flex items-center justify-center gap-2 h-9 px-4 w-full sm:w-auto bg-sky-600 text-white rounded-md hover:bg-sky-700 transition-colors text-sm font-medium">
+                <span>Save All Changes</span>
+            </button>
+        </div>
+
+        <h3 class="text-md font-semibold text-gray-700 mb-3">General Defaults</h3>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead>
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Response Time</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Resolution Time</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Example</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for config in sla_configs %}
+                    <tr class="sla-config-row" data-priority="{{ config.priority }}">
+                        <td class="px-4 py-3 whitespace-nowrap"><span class="priority-badge priority-{{ config.priority }}">{{ config.get_priority_display }}</span></td>
+                        <td class="px-4 py-3 whitespace-nowrap"><input type="number" min="1" class="w-24 h-9 px-3 bg-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 response-time-input" value="{{ config.response_time_minutes }}" data-original-value="{{ config.response_time_minutes }}"></td>
+                        <td class="px-4 py-3 whitespace-nowrap"><input type="number" min="1" class="w-24 h-9 px-3 bg-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 resolution-time-input" value="{{ config.resolution_time_minutes }}" data-original-value="{{ config.resolution_time_minutes }}"></td>
+                        <td class="px-4 py-3 whitespace-nowrap text-gray-500 example-text">Respond: {{ config.response_time_minutes }}m, Resolve: {{ config.resolution_time_minutes }}m</td>
+                        <td class="px-4 py-3 whitespace-nowrap"><span class="status-indicator px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Active</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-4 flex justify-end">
+            <button id="resetDefaultsBtn" class="text-sm text-gray-600 hover:text-gray-900 underline">Reset to Default Values</button>
+        </div>
+    </div>
+
+    <div id="departmentSlaSection" class="tab-content hidden bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6" role="tabpanel">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-purple-100 rounded-lg flex justify-center items-center flex-shrink-0">
+                    <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                </div>
+                <h2 class="text-gray-900 text-lg font-semibold">Department Specific SLA Overrides</h2>
+            </div>
+            <div class="flex gap-2">
+                <button id="clearDepartmentSlaBtn" class="flex items-center gap-2 h-9 px-4 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm font-medium">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    <span>Clear Table</span>
+                </button>
+                <div class="import-btn">
+                    <button class="flex items-center gap-2 h-9 px-4 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm font-medium">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path></svg>
+                        <span>Import Excel</span>
+                    </button>
+                    <input type="file" id="importExcel" accept=".xlsx, .xls" />
+                </div>
+                <button id="addDepartmentSlaBtn" class="flex items-center gap-2 h-9 px-4 bg-sky-600 text-white rounded-md hover:bg-sky-700 transition-colors text-sm font-medium">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                    <span>Add Override</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-gray-50 rounded-lg p-4 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                    <input type="text" id="searchInput" value="{{ search_query }}" placeholder="Search departments..." class="w-full h-9 px-3 bg-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                    <select id="departmentFilter" class="w-full h-9 px-3 bg-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                        <option value="">All Departments</option>
+                        {% for dept in departments %}<option value="{{ dept.name }}" {% if department_filter == dept.name %}selected{% endif %}>{{ dept.name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button id="applyFiltersBtn" class="w-full h-9 bg-sky-600 text-white rounded-md hover:bg-sky-700 transition-colors">Apply Filters</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead>
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Request Type</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Response Time</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Resolution Time</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Example</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="departmentSlaConfigContainer" class="bg-white divide-y divide-gray-200">
+                    {% for config in department_sla_configs %}
+                    <tr class="department-sla-row" data-department-id="{{ config.department.id }}" data-request-type-id="{{ config.request_type.id }}">
+                        <td class="px-4 py-3 whitespace-nowrap text-gray-800 font-medium">{{ config.department.name }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-gray-800">{{ config.request_type.name }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap"><input type="number" min="1" class="w-24 h-9 px-3 bg-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 department-response-time-input" value="{{ config.response_time_minutes }}" data-original-value="{{ config.response_time_minutes }}"></td>
+                        <td class="px-4 py-3 whitespace-nowrap"><input type="number" min="1" class="w-24 h-9 px-3 bg-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 department-resolution-time-input" value="{{ config.resolution_time_minutes }}" data-original-value="{{ config.resolution_time_minutes }}"></td>
+                        <td class="px-4 py-3 whitespace-nowrap text-gray-500 department-example-text">Respond: {{ config.response_time_minutes }}m, Resolve: {{ config.resolution_time_minutes }}m</td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <button class="text-red-600 hover:text-red-800 delete-department-sla-btn">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-4 py-8 text-center text-gray-500">No department-specific overrides found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if paginator.num_pages > 1 %}
+        <div class="mt-6 flex justify-center">
+            <div class="pagination">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if department_filter %}&department={{ department_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}">&laquo; First</a>
+                    <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if department_filter %}&department={{ department_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}">Previous</a>
+                {% else %}
+                    <span class="disabled">&laquo; First</span>
+                    <span class="disabled">Previous</span>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <span class="current">{{ num }}</span>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if department_filter %}&department={{ department_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}">{{ num }}</a>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if department_filter %}&department={{ department_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}">Next</a>
+                    <a href="?page={{ paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if department_filter %}&department={{ department_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}">Last &raquo;</a>
+                {% else %}
+                    <span class="disabled">Next</span>
+                    <span class="disabled">Last &raquo;</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <div id="addDepartmentSlaForm" class="mt-6 bg-gray-50 rounded-lg p-4 hidden transition-all duration-300">
+            <h3 class="text-gray-900 font-medium mb-4">Add New Department SLA Override</h3>
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                    <select id="newDepartmentSelect" class="w-full h-9 px-3 bg-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                        <option value="">Select Department</option>
+                        {% for department in departments %}<option value="{{ department.id }}">{{ department.name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Request Type</label>
+                    <input type="text" id="newRequestTypeInput" class="w-full h-9 px-3 bg-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Enter request type">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Response (Min)</label>
+                    <input type="number" min="1" id="newResponseTimeInput" class="w-full h-9 px-3 bg-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="e.g., 10">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Resolution (Min)</label>
+                    <input type="number" min="1" id="newResolutionTimeInput" class="w-full h-9 px-3 bg-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="e.g., 30">
+                </div>
+                <div class="flex items-end">
+                    <button id="saveNewDepartmentSlaBtn" class="w-full h-9 bg-sky-600 text-white rounded-md hover:bg-sky-700 transition-colors">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-12">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6" data-aos="fade-up">
+            <div class="flex justify-between items-center"><div class="text-gray-900 text-base font-semibold">SLA Compliance Rate</div><div class="px-2 py-1 bg-green-100 rounded-full text-green-800 text-xs font-medium">94%</div></div><div class="mt-5"><div class="flex justify-between items-center"><div class="text-gray-600 text-sm">Tickets meeting SLA</div><div class="text-green-600 text-lg font-bold">94%</div></div><div class="w-full h-2 mt-3 bg-gray-200 rounded-full overflow-hidden"><div class="w-[94%] h-2 bg-green-500"></div></div></div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6" data-aos="fade-up" data-aos-delay="100">
+            <div class="flex justify-between items-center"><div class="text-gray-900 text-base font-semibold">Average Response Time</div><div class="px-2 py-1 bg-teal-100 rounded-full text-teal-800 text-xs font-medium">18 min</div></div><div class="mt-4 text-center"><div class="flex justify-center items-baseline"><div class="text-teal-500 text-3xl font-bold">18</div><div class="ml-1.5 text-gray-600 text-base">minutes</div></div><div class="mt-2 flex justify-center items-center text-gray-600 text-xs"><svg class="w-3 h-3 text-green-500 mr-1" fill="currentColor" viewBox="0 0 8 8"><path d="M4 0L8 4H0L4 0Z" transform="translate(0 2)"/></svg>3 min faster than yesterday</div></div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6" data-aos="fade-up" data-aos-delay="200">
+            <div class="flex justify-between items-center"><div class="text-gray-900 text-base font-semibold">Active Breaches</div><div class="px-2 py-1 bg-red-100 rounded-full text-red-800 text-xs font-medium">3 Active</div></div><div class="mt-4 space-y-3"><div class="flex justify-between items-center"><div class="text-gray-600 text-sm">Critical</div><div class="text-red-500 text-lg font-bold">1</div></div><div class="flex justify-between items-center"><div class="text-gray-600 text-sm">Warning</div><div class="text-yellow-500 text-lg font-bold">2</div></div></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // --- INITIALIZATION ---
+    function initializeApp() {
+        AOS.init({ duration: 600, once: true });
+        document.body.classList.add('aos-animate');
+
+        initTabs();
+        initGeneralSlaHandlers();
+        initDepartmentSlaHandlers();
+        initFiltersAndPagination();
+        initDynamicContentLoaders();
+        initImportFunctionality();
+    }
+
+    // --- TAB MANAGEMENT ---
+    function initTabs() {
+        const tabsContainer = document.getElementById('tabs');
+        const tabLinks = tabsContainer.querySelectorAll('.tab-link');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        const setActiveTab = (targetId, updateUrl = true) => {
+            if (!document.getElementById(targetId)) return;
+
+            tabLinks.forEach(link => {
+                const isActive = link.getAttribute('href') === `#${targetId}`;
+                link.classList.toggle('active', isActive);
+                link.classList.toggle('text-sky-600', isActive);
+                link.classList.toggle('border-sky-600', isActive);
+                link.classList.toggle('text-gray-600', !isActive);
+                link.classList.toggle('border-transparent', !isActive);
+                link.setAttribute('aria-selected', isActive.toString());
+            });
+
+            tabContents.forEach(content => {
+                const isTarget = content.id === targetId;
+                content.classList.toggle('hidden', !isTarget);
+                if (isTarget) content.classList.add('animate-fadeIn');
+            });
+
+            if (updateUrl) {
+                const url = new URL(window.location);
+                url.searchParams.set('tab', targetId);
+                history.pushState({}, '', url);
+            }
+        };
+
+        tabsContainer.addEventListener('click', e => {
+            e.preventDefault();
+            const clickedTab = e.target.closest('.tab-link');
+            if (!clickedTab) return;
+            setActiveTab(clickedTab.getAttribute('href').substring(1));
+        });
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const initialTabId = urlParams.get('tab') || 'generalSlaSection';
+        setActiveTab(initialTabId, false);
+    }
+    
+    // --- GENERAL & DEPARTMENT SLA EVENT HANDLERS ---
+    function initGeneralSlaHandlers() {
+        const generalSlaSection = document.getElementById('generalSlaSection');
+        if (!generalSlaSection) return;
+
+        generalSlaSection.addEventListener('input', e => {
+            if (!e.target.matches('.response-time-input, .resolution-time-input')) return;
+            updateRowAppearance(e.target.closest('.sla-config-row'));
+        });
+
+        document.getElementById('resetDefaultsBtn')?.addEventListener('click', () => {
+             if (!confirm('Are you sure you want to reset general SLA configurations to default values?')) return;
+             const defaults = { critical: [5, 15], high: [10, 30], normal: [15, 60], low: [20, 120] };
+             document.querySelectorAll('.sla-config-row').forEach(row => {
+                const [resp, resol] = defaults[row.dataset.priority];
+                row.querySelector('.response-time-input').value = resp;
+                row.querySelector('.resolution-time-input').value = resol;
+                updateRowAppearance(row);
+             });
+             showToast('Defaults restored. Click "Save All Changes" to apply.', 'info');
+        });
+
+        document.getElementById('saveAllConfigsBtn')?.addEventListener('click', saveAllConfigurations);
+    }
+    
+    function initDepartmentSlaHandlers() {
+        const section = document.getElementById('departmentSlaSection');
+        if (!section) return;
+
+        section.addEventListener('input', e => {
+            if (e.target.matches('.department-response-time-input, .department-resolution-time-input')) {
+                updateRowAppearance(e.target.closest('.department-sla-row'), true);
+            }
+        });
+
+        document.getElementById('addDepartmentSlaBtn')?.addEventListener('click', () => {
+            const form = document.getElementById('addDepartmentSlaForm');
+            form.classList.toggle('hidden');
+            if (!form.classList.contains('hidden')) form.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        });
+
+        document.getElementById('cancelNewDepartmentSlaBtn')?.addEventListener('click', () => {
+            const form = document.getElementById('addDepartmentSlaForm');
+            form.classList.add('hidden');
+            form.querySelector('#newDepartmentSelect').value = '';
+            form.querySelector('#newRequestTypeInput').value = '';
+            form.querySelector('#newResponseTimeInput').value = '';
+            form.querySelector('#newResolutionTimeInput').value = '';
+        });
+
+        document.getElementById('saveNewDepartmentSlaBtn')?.addEventListener('click', addNewDepartmentSlaRow);
+        
+        document.getElementById('departmentSlaConfigContainer')?.addEventListener('click', e => {
+            if (!e.target.closest('.delete-department-sla-btn')) return;
+            const row = e.target.closest('.department-sla-row');
+            if (confirm('Are you sure you want to remove this SLA override?')) {
+                // Get department and request type info from the row
+                const departmentId = row.dataset.departmentId;
+                const requestTypeText = row.querySelector('td:nth-child(2)').textContent;
+                
+                // Send request to backend to delete the configurations
+                fetch('{% url "dashboard:api_sla_configuration_update" %}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                    body: JSON.stringify({ 
+                        delete_department_config: {
+                            department_id: parseInt(departmentId),
+                            request_type: requestTypeText
+                        }
+                    })
+                }).then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        row.remove();
+                        showToast('Override removed successfully!', 'success');
+                    } else {
+                        showToast('Error removing override: ' + data.error, 'error');
+                    }
+                })
+                .catch(error => {
+                    showToast('Error removing override: ' + error.message, 'error');
+                });
+            }
+        });
+        
+        document.getElementById('clearDepartmentSlaBtn')?.addEventListener('click', () => {
+            if (confirm('Are you sure you want to clear all department SLA configurations? This action cannot be undone.')) {
+                const container = document.getElementById('departmentSlaConfigContainer');
+                container.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">No department-specific overrides found.</td></tr>';
+                
+                // Send request to backend to actually delete all configurations
+                fetch('{% url "dashboard:api_sla_configuration_update" %}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                    body: JSON.stringify({ clear_all: true })
+                }).then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('All department SLA configurations cleared successfully!', 'success');
+                    } else {
+                        showToast('Error clearing configurations: ' + data.error, 'error');
+                    }
+                })
+                .catch(error => {
+                    showToast('Error clearing configurations: ' + error.message, 'error');
+                });
+            }
+        });
+    }
+
+    // --- IMPORT FUNCTIONALITY ---
+    function initImportFunctionality() {
+        const importInput = document.getElementById('importExcel');
+        if (!importInput) return;
+        
+        importInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    // Process the imported data
+                    processImportedData(jsonData);
+                } catch (error) {
+                    showToast('Error importing Excel file: ' + error.message, 'error');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        });
+    }
+    
+    function processImportedData(data) {
+        // Process each row of data (skip header if exists)
+        let startIndex = 0;
+        // Check if first row is header
+        if (data.length > 0 && (data[0][0] === "Department" || data[0][0] === "department")) {
+            startIndex = 1;
+        }
+        
+        // Prepare data for sending to backend
+        const importData = [];
+        for (let i = startIndex; i < data.length; i++) {
+            const row = data[i];
+            if (row.length < 2) continue; // Skip incomplete rows
+            
+            const department = row[0];
+            const requestType = row[1];
+            
+            importData.push({
+                department: department,
+                request_type: requestType,
+                response_time: 30, // Default to 30 minutes
+                resolution_time: 120 // Default to 2 hours
+            });
+        }
+        
+        // Send data to backend for storage
+        fetch('{% url "dashboard:api_sla_configuration_update" %}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+            body: JSON.stringify({ import_data: importData })
+        }).then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(`Imported ${importData.length} SLA configurations from Excel. Reloading page...`, 'success');
+                // Reload the page to show the new data with proper pagination
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                showToast('Error importing configurations: ' + data.error, 'error');
+            }
+        })
+        .catch(error => {
+            showToast('Error importing configurations: ' + error.message, 'error');
+        });
+    }
+
+    // --- FILTERS & PAGINATION ---
+    function initFiltersAndPagination() {
+        document.getElementById('applyFiltersBtn')?.addEventListener('click', () => {
+            const url = new URL(window.location.pathname, window.location.origin);
+            url.searchParams.set('tab', 'departmentSlaSection'); // Keep user on this tab
+            
+            const search = document.getElementById('searchInput').value;
+            const department = document.getElementById('departmentFilter').value;
+
+            if (search) url.searchParams.set('search', search);
+            if (department) url.searchParams.set('department', department);
+            
+            window.location.href = url.toString();
+        });
+
+        // Ensure pagination links also preserve the active tab
+        document.querySelectorAll('.pagination a').forEach(link => {
+            const linkUrl = new URL(link.href);
+            linkUrl.searchParams.set('tab', 'departmentSlaSection');
+            link.href = linkUrl.toString();
+        });
+    }
+    
+    // --- DYNAMIC CONTENT & MISC HANDLERS ---
+    function initDynamicContentLoaders() {
+        // Placeholder for future dynamic content loading, e.g., for Task Lists
+    }
+
+    // --- CORE LOGIC & API ---
+    function addNewDepartmentSlaRow() {
+        const form = document.getElementById('addDepartmentSlaForm');
+        const departmentSelect = form.querySelector('#newDepartmentSelect');
+        const requestTypeInput = form.querySelector('#newRequestTypeInput');
+        const responseInput = form.querySelector('#newResponseTimeInput');
+        const resolutionInput = form.querySelector('#newResolutionTimeInput');
+
+        if (!departmentSelect.value || !requestTypeInput.value || !responseInput.value || !resolutionInput.value) {
+            return showToast('Please fill in all fields to add an override.', 'error');
+        }
+        if (parseInt(responseInput.value) < 1 || parseInt(resolutionInput.value) < 1) {
+            return showToast('SLA times must be greater than 0.', 'error');
+        }
+
+        // Send data to backend to create the SLA configurations
+        const requestData = {
+            department_id: parseInt(departmentSelect.value),
+            request_type: requestTypeInput.value,
+            response_time_minutes: parseInt(responseInput.value),
+            resolution_time_minutes: parseInt(resolutionInput.value)
+        };
+
+        fetch('{% url "dashboard:api_sla_configuration_update" %}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+            body: JSON.stringify({ add_department_config: requestData })
+        }).then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Add the row to the table
+                const container = document.getElementById('departmentSlaConfigContainer');
+                const newRow = document.createElement('tr');
+                newRow.className = 'department-sla-row';
+                newRow.dataset.departmentId = departmentSelect.value;
+                newRow.dataset.requestTypeId = 'new'; // Mark as new since it's a text input
+                newRow.innerHTML = `
+                    <td class="px-4 py-3 whitespace-nowrap text-gray-800 font-medium">${departmentSelect.options[departmentSelect.selectedIndex].text}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-gray-800">${requestTypeInput.value}</td>
+                    <td class="px-4 py-3"><input type="number" min="1" class="w-24 h-9 px-3 bg-white rounded-md border border-gray-300 department-response-time-input" value="${responseInput.value}" data-original-value="${responseInput.value}"></td>
+                    <td class="px-4 py-3"><input type="number" min="1" class="w-24 h-9 px-3 bg-white rounded-md border border-gray-300 department-resolution-time-input" value="${resolutionInput.value}" data-original-value="${resolutionInput.value}"></td>
+                    <td class="px-4 py-3 text-gray-500 department-example-text">Respond: ${responseInput.value}m, Resolve: ${resolutionInput.value}m</td>
+                    <td class="px-4 py-3"><button class="text-red-600 hover:text-red-800 delete-department-sla-btn">...</button></td>
+                `;
+                container.appendChild(newRow);
+                updateRowAppearance(newRow, true); // Mark as modified
+                
+                // Hide and clear form safely
+                const cancelButton = document.getElementById('cancelNewDepartmentSlaBtn');
+                if (cancelButton) {
+                    cancelButton.click(); // Hide and clear form
+                } else {
+                    // Fallback: manually hide the form
+                    form.classList.add('hidden');
+                    departmentSelect.value = '';
+                    requestTypeInput.value = '';
+                    responseInput.value = '';
+                    resolutionInput.value = '';
+                }
+                
+                showToast('Override added successfully!', 'success');
+            } else {
+                showToast('Error adding override: ' + data.error, 'error');
+            }
+        })
+        .catch(error => {
+            showToast('Error adding override: ' + error.message, 'error');
+        });
+    }
+
+    async function saveAllConfigurations() {
+        const saveButton = document.getElementById('saveAllConfigsBtn');
+        const originalHtml = saveButton.innerHTML;
+        saveButton.disabled = true;
+        saveButton.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg><span>Saving...</span>`;
+
+        const generalConfigs = Array.from(document.querySelectorAll('.sla-config-row')).map(row => ({
+            priority: row.dataset.priority,
+            response_time_minutes: parseInt(row.querySelector('.response-time-input').value),
+            resolution_time_minutes: parseInt(row.querySelector('.resolution-time-input').value)
+        }));
+
+        const departmentConfigs = Array.from(document.querySelectorAll('.department-sla-row')).map(row => ({
+            department_id: parseInt(row.dataset.departmentId),
+            request_type: row.querySelector('td:nth-child(2)').textContent, // Get request type text
+            response_time_minutes: parseInt(row.querySelector('.department-response-time-input').value),
+            resolution_time_minutes: parseInt(row.querySelector('.department-resolution-time-input').value)
+        }));
+        
+        try {
+            const response = await fetch('{% url "dashboard:api_sla_configuration_update" %}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                body: JSON.stringify({ general_configs: generalConfigs, department_configs: departmentConfigs })
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error(data.error || 'Failed to save.');
+            
+            showToast('SLA configurations updated successfully!', 'success');
+            // Reset original values and styles on all inputs after a successful save
+            document.querySelectorAll('input[data-original-value]').forEach(input => {
+                input.dataset.originalValue = input.value;
+                updateRowAppearance(input.closest('tr'), input.classList.contains('department-response-time-input'));
+            });
+
+        } catch (error) {
+            showToast(`Error: ${error.message}`, 'error');
+        } finally {
+            saveButton.disabled = false;
+            saveButton.innerHTML = originalHtml;
+        }
+    }
+
+    // --- UI HELPERS ---
+    function updateRowAppearance(row, isDepartment = false) {
+        const respInput = row.querySelector(isDepartment ? '.department-response-time-input' : '.response-time-input');
+        const resolInput = row.querySelector(isDepartment ? '.department-resolution-time-input' : '.resolution-time-input');
+        const exampleText = row.querySelector(isDepartment ? '.department-example-text' : '.example-text');
+        const statusIndicator = row.querySelector('.status-indicator');
+
+        const hasChanged = respInput.value !== respInput.dataset.originalValue || resolInput.value !== resolInput.dataset.originalValue;
+        
+        exampleText.textContent = `Respond: ${respInput.value || '?'}m, Resolve: ${resolInput.value || '?'}m`;
+
+        [respInput, resolInput].forEach(input => {
+            input.classList.toggle('border-yellow-400', hasChanged);
+            input.classList.toggle('ring-2', hasChanged);
+            input.classList.toggle('ring-yellow-200', hasChanged);
+        });
+
+        if (statusIndicator) {
+            statusIndicator.textContent = hasChanged ? 'Modified' : 'Active';
+            statusIndicator.className = `status-indicator px-2 py-1 rounded-full text-xs font-medium ${hasChanged ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`;
+        }
+    }
+
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        const icons = {
+            success: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`,
+            error: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`,
+            info: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`
+        };
+        const colors = { success: 'bg-green-500', error: 'bg-red-500', info: 'bg-sky-500' };
+        
+        toast.className = `flex items-center gap-3 ${colors[type]} text-white px-4 py-3 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full opacity-0`;
+        toast.innerHTML = `${icons[type]}<span class="font-medium text-sm">${message}</span>`;
+        container.appendChild(toast);
+
+        requestAnimationFrame(() => toast.classList.remove('translate-x-full', 'opacity-0'));
+        setTimeout(() => {
+            toast.classList.add('opacity-0');
+            toast.addEventListener('transitionend', () => toast.remove());
+        }, 4000);
+    }
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    initializeApp();
+});
+</script>
+{% endblock %}

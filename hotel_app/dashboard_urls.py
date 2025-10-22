@@ -46,8 +46,6 @@ urlpatterns = [
     path('reviews/<int:review_id>/delete/', dashboard_views.review_delete, name='review_delete'),
     
     # New Voucher System URLs
-    path('register-guest/', views.register_guest, name='register_guest'),
-    path('scan-voucher/', views.scan_voucher_page, name='scan_voucher'),
     path('voucher-analytics/', dashboard_views.voucher_analytics, name='voucher_analytics'),
     path('guests/', dashboard_views.dashboard_guests, name='guests'),
     path('guests/<int:guest_id>/', dashboard_views.guest_detail, name='guest_detail'),
@@ -107,7 +105,8 @@ urlpatterns = [
     path('feedback/', dashboard_views.feedback_inbox, name='feedback_inbox'),
     path('feedback/<int:feedback_id>/', dashboard_views.feedback_detail, name='feedback_detail'),
     path('integrations/', dashboard_views.integrations, name='integrations'),
-    path('sla-escalations/', dashboard_views.sla_escalations, name='sla_escalations'),
+    path('sla-configuration/', dashboard_views.sla_configuration, name='sla_configuration'),
+    path('api/sla-configuration/update/', dashboard_views.api_sla_configuration_update, name='api_sla_configuration_update'),
     path('analytics/', dashboard_views.analytics_dashboard, name='analytics'),
     path('performance/', dashboard_views.performance_dashboard, name='performance'),
     path('gym/', dashboard_views.gym, name='gym'),

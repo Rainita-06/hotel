@@ -43,7 +43,23 @@
                     <img src="{% static 'icon/plus.svg'%}" class="w-3.5 h-4" alt="Add">
                     Add Location
                 </a>
+                 <!-- <form method="POST" action="{% url 'bulk_import_locations' %}" enctype="multipart/form-data" class="mb-6">
+    {% csrf_token %}
+    <label class="inline-flex items-center bg-green-500 text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-green-600 transition">
+      <img src="{% static 'icon/import.svg' %}" class="w-4 h-4 mr-2" alt="Import">
+      Bulk Import CSV
+      <input type="file" name="csv_file" class="hidden" onchange="this.form.submit()">
+    </label>
+   
 
+  {% if messages %}
+    {% for message in messages %}
+      <div class="mb-4 p-3 rounded text-white {% if message.tags == 'success' %}bg-green-500{% else %}bg-red-500{% endif %}">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %} -->
+              
                 <!-- Bulk Import CSV -->
                 <form method="POST" action="{% url 'bulk_import_locations' %}" enctype="multipart/form-data" class="inline-block">
                     {% csrf_token %}
@@ -53,6 +69,15 @@
                         <input type="file" name="csv_file" class="hidden" onchange="this.form.submit()">
                     </label>
                 </form>
+               
+    
+  {% if messages %}
+    {% for message in messages %}
+      <div class="mb-4 p-3 rounded text-white {% if message.tags == 'success' %}bg-green-500{% else %}bg-red-500{% endif %}">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
 
                 <!-- Export -->
                 <a href="{% url 'export_locations_csv' %}" 

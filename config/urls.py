@@ -1,9 +1,9 @@
 from django.contrib import admin
 from django.urls import path, include
-from hotel_app import views
 from django.contrib.auth import views as auth_views
 from django.views.generic import TemplateView
-from hotel_app.views import GymMemberViewSet, GymVisitViewSet, VoucherViewSet, BuildingViewSet, FloorViewSet, LocationTypeViewSet, logout_view, signup_view  # custom logout view
+from hotel_app import views
+from hotel_app.views import GymMemberViewSet, GymVisitViewSet, VoucherViewSet, BuildingViewSet, FloorViewSet, LocationTypeViewSet  # custom logout view
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import RedirectView
@@ -29,24 +29,22 @@ router.register(r'visits', GymVisitViewSet, basename='gymvisit')
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', RedirectView.as_view(url='/dashboard/', permanent=False), name='home'),
-
     
     path('api/', include('hotel_app.api_urls')),  # Updated API URL
     path('api/notification/', include('hotel_app.api_notification_urls')),  # Notification API URL
     
 
     # Screens
-    path('master-user/', views.MasterUserView.as_view(), name='master_user'),
-    path('master-location/', views.MasterLocationView.as_view(), name='master_location'),
-    path('hotel-dashboard/', views.HotelDashboardView.as_view(), name='hotel_dashboard'),
-    # path('breakfast-vouchers/', views.BreakfastVoucherView.as_view(), name='breakfast_vouchers'),
-    path('api/bulk-delete-users/', views.bulk_delete_users, name='bulk_delete_users'),
-    path('export-users/', views.export_users_csv, name='export_users'),
+    # path('master-user/', views.MasterUserView.as_view(), name='master_user'),
+    # path('master-location/', views.MasterLocationView.as_view(), name='master_location'),
+    # path('hotel-dashboard/', views.HotelDashboardView.as_view(), name='hotel_dashboard'),
+    # # path('breakfast-vouchers/', views.BreakfastVoucherView.as_view(), name='breakfast_vouchers'),
+    # path('api/bulk-delete-users/', views.bulk_delete_users, name='bulk_delete_users'),
+    # path('export-users/', views.export_users_csv, name='export_users'),
 
     # Auth
     path('login/', auth_views.LoginView.as_view(template_name='auth/login.html'), name='login'),
-    path('logout/', logout_view, name='logout'),
-    path("signup/", signup_view, name="signup"),
+    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     
     # Password Reset
     path('password-reset/', auth_views.PasswordResetView.as_view(template_name='auth/password_reset.html'), name='password_reset'),
@@ -56,7 +54,7 @@ urlpatterns = [
 
     # Dashboard
     path('dashboard/', include('hotel_app.dashboard_urls', namespace='dashboard')),
-    path('locations/', views.locations_list, name='locations_list'),
+    path('dashboard/locations/', views.locations_list, name='locations_list'),
     path('locations/add/', views.location_form, name='location_add'),
     
     path('location/', views.location_manage_view, name='location_manage'),
@@ -105,7 +103,7 @@ urlpatterns = [
     path("voucher/<str:voucher_code>/", views.voucher_landing, name="voucher_landing"),
     path("checkout/<int:voucher_id>/",views.mark_checkout, name="checkout"),
     path("scan/", views.scan_voucher_page, name="scan_voucher"),
-    path("scan/<str:code>/", views.scan_voucher, name="scan_voucher"),
+    path("scan/<str:code>/", views.scan_voucher_page, name="scan_voucher"),
     path("api/vouchers/validate/", views.validate_voucher, name="validate_voucher"),
     path("report/vouchers/", views.breakfast_voucher_report, name="breakfast_voucher_report"),
     path("api/members/validate/", views.validate_member_qr, name="validate_member_qr"),

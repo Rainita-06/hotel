@@ -145,7 +145,9 @@
             <div class="flex justify-between items-center">
                 <h2 class="text-gray-900 text-lg font-semibold font-['Inter']">Tickets Overview</h2>
                 <button id="openCreateTicketModal" class="h-10 w-40 bg-sky-600 rounded-lg text-white flex items-center justify-center gap-2 hover:bg-sky-700 transition-colors">
-                    <img src="{% static 'images/tickets/plus.svg' %}" alt="Create Ticket Icon"/>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+          </svg>
                     <span>Create Ticket</span>
                 </button>
             </div>
@@ -176,10 +178,18 @@
                         <option value="Closed" {% if status_filter == 'Closed' %}selected{% endif %}>Closed</option>
                     </select>
                 </form>
-                <button class="h-10 w-40 rounded-lg border border-sky-600 text-sky-600 flex items-center justify-center gap-2 hover:bg-sky-50 transition-colors">
-                    <img src="{% static 'images/tickets/export.svg' %}" alt="Export Icon"/>
-                    <span>Export</span>
-                </button>
+                <div class="flex gap-2">
+                    <button id="showSLABtn" class="h-10 px-4 rounded-lg bg-sky-600 text-white flex items-center justify-center gap-2 hover:bg-sky-700 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+                        </svg>
+                        <span>SLA</span>
+                    </button>
+                    <button class="h-10 w-40 rounded-lg border border-sky-600 text-sky-600 flex items-center justify-center gap-2 hover:bg-sky-50 transition-colors">
+                        <img src="{% static 'images/tickets/export.svg' %}" alt="Export Icon"/>
+                        <span>Export</span>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -318,6 +328,75 @@
             </div>
         </div>
     </div>
+
+    <div id="slaModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-lg w-full max-w-2xl flex flex-col max-h-[95vh] transform transition-all duration-300 ease-out opacity-0 scale-95">
+            <div class="flex justify-between items-center p-6 border-b border-gray-200">
+                <h2 class="text-xl font-semibold text-gray-900">Current SLA Timings</h2>
+                <button id="closeSLAModal" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-6 space-y-6 overflow-y-auto">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-red-50 rounded-lg p-4 border border-red-200">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                            <h3 class="font-semibold text-gray-900">Critical Tickets</h3>
+                        </div>
+                        <div class="text-sm text-gray-600">
+                            <p>Response Time: <span class="font-medium response-time-critical">5</span> minutes</p>
+                            <p>Resolution Time: <span class="font-medium resolution-time-critical">5</span> minutes</p>
+                        </div>
+                    </div>
+                    <div class="bg-orange-50 rounded-lg p-4 border border-orange-200">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="w-3 h-3 rounded-full bg-orange-500"></span>
+                            <h3 class="font-semibold text-gray-900">High Priority Tickets</h3>
+                        </div>
+                        <div class="text-sm text-gray-600">
+                            <p>Response Time: <span class="font-medium response-time-high">10</span> minutes</p>
+                            <p>Resolution Time: <span class="font-medium resolution-time-high">10</span> minutes</p>
+                        </div>
+                    </div>
+                    <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+                            <h3 class="font-semibold text-gray-900">Normal Priority Tickets</h3>
+                        </div>
+                        <div class="text-sm text-gray-600">
+                            <p>Response Time: <span class="font-medium response-time-normal">15</span> minutes</p>
+                            <p>Resolution Time: <span class="font-medium resolution-time-normal">15</span> minutes</p>
+                        </div>
+                    </div>
+                    <div class="bg-green-50 rounded-lg p-4 border border-green-200">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="w-3 h-3 rounded-full bg-green-500"></span>
+                            <h3 class="font-semibold text-gray-900">Low Priority Tickets</h3>
+                        </div>
+                        <div class="text-sm text-gray-600">
+                            <p>Response Time: <span class="font-medium response-time-low">20</span> minutes</p>
+                            <p>Resolution Time: <span class="font-medium resolution-time-low">20</span> minutes</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <h3 class="font-semibold text-gray-900 mb-2">How SLA Works</h3>
+                    <ul class="text-sm text-gray-600 list-disc pl-5 space-y-1">
+                        <li>Response time is the time allowed to acknowledge a ticket</li>
+                        <li>Resolution time is the time allowed to fully resolve a ticket</li>
+                        <li>Breaching SLA will trigger escalation procedures</li>
+                        <li>SLA times can be configured in the SLA Configuration section</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="flex justify-end items-center gap-4 p-6 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+                <a href="{% url 'dashboard:sla_configuration' %}" class="px-4 py-2 text-sm font-medium text-sky-600 bg-white border border-sky-600 rounded-lg hover:bg-sky-50">Configure SLA</a>
+                <button id="closeSLAModalBtn" class="px-4 py-2 text-sm font-medium text-white bg-sky-600 rounded-lg hover:bg-sky-700">Close</button>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock content %}
 
@@ -331,6 +410,92 @@ document.addEventListener('DOMContentLoaded', function() {
         el.classList.add('animate-slide-in-up');
     });
 
+    // --- SLA MODAL SCRIPT ---
+    const showSLABtn = document.getElementById('showSLABtn');
+    const closeSLAModal = document.getElementById('closeSLAModal');
+    const closeSLAModalBtn = document.getElementById('closeSLAModalBtn');
+    const slaModal = document.getElementById('slaModal');
+    const slaModalContent = slaModal ? slaModal.querySelector('div') : null;
+    
+    // Fetch SLA data from the server and populate the modal
+    if (showSLABtn) {
+        showSLABtn.addEventListener('click', function() {
+            // Fetch SLA configuration data
+            fetch('/dashboard/api/sla-configuration/update/')
+            .then(response => response.json())
+            .then(data => {
+                // Populate the modal with SLA data
+                if (data.configs) {
+                    data.configs.forEach(config => {
+                        const priority = config.priority;
+                        const responseTime = config.response_time_minutes;
+                        const resolutionTime = config.resolution_time_minutes;
+                        
+                        // Update the modal content
+                        const responseTimeElement = document.querySelector(`.response-time-${priority}`);
+                        const resolutionTimeElement = document.querySelector(`.resolution-time-${priority}`);
+                        
+                        if (responseTimeElement) {
+                            responseTimeElement.textContent = responseTime;
+                        }
+                        if (resolutionTimeElement) {
+                            resolutionTimeElement.textContent = resolutionTime;
+                        }
+                    });
+                }
+                
+                // Show the modal
+                if (slaModal) {
+                    slaModal.classList.remove('hidden');
+                    setTimeout(() => {
+                        slaModalContent.classList.remove('opacity-0', 'scale-95');
+                        slaModalContent.classList.add('opacity-100', 'scale-100');
+                    }, 10);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching SLA data:', error);
+                // Show the modal with default values if there's an error
+                if (slaModal) {
+                    slaModal.classList.remove('hidden');
+                    setTimeout(() => {
+                        slaModalContent.classList.remove('opacity-0', 'scale-95');
+                        slaModalContent.classList.add('opacity-100', 'scale-100');
+                    }, 10);
+                }
+            });
+        });
+    }
+    
+    if (closeSLAModal && slaModal) {
+        closeSLAModal.addEventListener('click', () => {
+            closeModal(slaModal, slaModalContent);
+        });
+    }
+    
+    if (closeSLAModalBtn && slaModal) {
+        closeSLAModalBtn.addEventListener('click', () => {
+            closeModal(slaModal, slaModalContent);
+        });
+    }
+    
+    if (slaModal) {
+        slaModal.addEventListener('click', (e) => {
+            if (e.target === slaModal) {
+                closeModal(slaModal, slaModalContent);
+            }
+        });
+    }
+    
+    // Generic close modal function
+    function closeModal(modal, modalContent) {
+        modalContent.classList.remove('opacity-100', 'scale-100');
+        modalContent.classList.add('opacity-0', 'scale-95');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
+
     // --- MODAL SCRIPT ---
     const openModalBtn = document.getElementById('openCreateTicketModal');
     const closeModalBtn = document.getElementById('closeCreateTicketModal');
@@ -339,11 +504,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalContent = document.getElementById('modalContent');
     const modalForm = modal.querySelector('form');
     const openModal = () => { modal.classList.remove('hidden'); setTimeout(() => { modalContent.classList.remove('opacity-0', 'scale-95'); modalContent.classList.add('opacity-100', 'scale-100'); }, 10); };
-    const closeModal = () => { modalContent.classList.remove('opacity-100', 'scale-100'); modalContent.classList.add('opacity-0', 'scale-95'); setTimeout(() => { modal.classList.add('hidden'); if (modalForm) modalForm.reset(); document.querySelectorAll('.category-btn').forEach(btn => { btn.classList.remove('ring-2', 'ring-offset-2', 'ring-sky-500', 'border-sky-600', 'text-sky-600'); btn.classList.add('text-gray-700', 'border-gray-300'); }); document.querySelectorAll('.priority-btn').forEach(btn => { btn.classList.remove('ring-2', 'ring-offset-2', 'ring-sky-500'); }); selectedCategory = ''; selectedPriority = ''; }, 300); };
+    const closeModalFunc = () => { modalContent.classList.remove('opacity-100', 'scale-100'); modalContent.classList.add('opacity-0', 'scale-95'); setTimeout(() => { modal.classList.add('hidden'); if (modalForm) modalForm.reset(); document.querySelectorAll('.category-btn').forEach(btn => { btn.classList.remove('ring-2', 'ring-offset-2', 'ring-sky-500', 'border-sky-600', 'text-sky-600'); btn.classList.add('text-gray-700', 'border-gray-300'); }); document.querySelectorAll('.priority-btn').forEach(btn => { btn.classList.remove('ring-2', 'ring-offset-2', 'ring-sky-500'); }); selectedCategory = ''; selectedPriority = ''; }, 300); };
     if(openModalBtn) openModalBtn.addEventListener('click', openModal);
-    if(closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
-    if(cancelBtn) cancelBtn.addEventListener('click', closeModal);
-    if(modal) modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+    if(closeModalBtn) closeModalBtn.addEventListener('click', closeModalFunc);
+    if(cancelBtn) cancelBtn.addEventListener('click', closeModalFunc);
+    if(modal) modal.addEventListener('click', (e) => { if (e.target === modal) closeModalFunc(); });
 
     // --- DEPARTMENT STATS TOGGLE (WITH ANIMATION) ---
     const expandDepartmentsBtn = document.getElementById('expandDepartmentsBtn');

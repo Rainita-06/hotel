@@ -22,15 +22,18 @@
       Building
     </a>
 
-    <a href="{% url 'dashboard:locations' %}"
-       class="w-28 self-stretch text-center text-sm font-medium font-['Inter']
-              {% if request.resolver_match.url_name == 'dashboard:locations' %}
-                text-sky-600 border-b-2 border-sky-600
-              {% else %}
-                text-gray-600 border-b-2 border-transparent
-              {% endif %}">
-      Location Manage
-    </a>
+  {% load nav_tags %}
+
+<a href="{% url 'locations_list' %}"
+   class="w-28 self-stretch text-center text-sm font-medium font-['Inter']
+          {% if request.path|startswith:'/dashboard/locations/' %}
+            text-sky-600 border-b-2 border-sky-600
+          {% else %}
+            text-gray-600 border-b-2 border-transparent
+          {% endif %}">
+   Manage Location
+</a>
+
     <a href="{% url 'floors_list' %}"
        class="w-28 self-stretch text-center text-sm font-medium font-['Inter']
               {% if request.resolver_match.url_name == 'floors_list' %}
