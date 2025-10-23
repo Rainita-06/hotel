@@ -103,6 +103,17 @@ This will start:
 - Web application
 - Nginx reverse proxy
 
+#### Local Database Deployment (Django only, connects to local database)
+
+```bash
+docker-compose -f docker-compose.local-db.yml --env-file .env.local up -d
+```
+
+This will start:
+- Web application (connected to your local database)
+
+See [LOCAL_DB_SETUP.md](LOCAL_DB_SETUP.md) for detailed instructions on configuring this setup.
+
 ### 3. Initial Setup
 
 After starting the containers, you need to create a superuser:

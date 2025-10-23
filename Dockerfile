@@ -15,7 +15,7 @@ RUN apt-get update \
         build-essential \
         default-libmysqlclient-dev \
         pkg-config \
-        mysql-client \
+        default-mysql-client \
     && rm -rf /var/lib/apt/lists/*
 
 # Create a non-root user

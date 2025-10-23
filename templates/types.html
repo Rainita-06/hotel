@@ -7,17 +7,17 @@
     <div class="w-[1136px] h-14 left-[24px] top-[16px] absolute bg-black/0 border-gray-200 inline-flex justify-between items-center">
         <div class="w-96 h-14 relative bg-black/0 border-gray-200">
             <div class="w-96 h-8 left-0 top-0 absolute bg-black/0 border-gray-200 inline-flex justify-start items-center gap-3">
-                <div class="w-3.5 h-6 relative bg-black/0 border-gray-200">
-                    <div class="w-3.5 h-5 left-0 top-[2px] absolute bg-black/0 border-gray-200">
-                        <div class="w-3.5 h-4 left-0 top-[2px] absolute inline-flex justify-center items-center">
-                            <div class="w-3.5 h-4 relative bg-black/0 border-gray-200 overflow-hidden">
+                <!-- <div class="w-3.5 h-6 relative bg-black/0 border-gray-200"> -->
+                    <!-- <div class="w-3.5 h-5 left-0 top-[2px] absolute bg-black/0 border-gray-200"> -->
+                        <!-- <div class="w-3.5 h-4 left-0 top-[2px] absolute inline-flex justify-center items-center"> -->
+                            <!-- <div class="w-3.5 h-4 relative bg-black/0 border-gray-200 overflow-hidden"> -->
                                 <!-- <div class="w-3.5 h-3 left-0 top-[2px] absolute bg-gray-400"></div> -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="w-64 h-8 relative bg-black/0 border-gray-200">
-                    <div class="w-64 h-8 left-0 top-[1px] absolute justify-start text-gray-900 text-2xl font-bold font-['Inter']truncate whitespace-nowrap overflow-hidden">Location Management</div>
+                            <!-- </div> -->
+                        <!-- </div> -->
+                    <!-- </div> -->
+                <!-- </div> -->
+                <div class="w-auto h-8 relative bg-black/0 border-gray-200">
+                    <div class="justify-start text-gray-900 text-2xl font-bold font-['Inter']truncate whitespace-nowrap overflow-hidden">Location Types</div>
                 </div>
             </div>
             <div class="w-96 h-5 left-0 top-[36px] absolute bg-black/0 border-gray-200">
@@ -65,15 +65,15 @@
 
 
 
-<div class="w-[1184px] min-h-screen relative bg-black/0 border-gray-200">
-    <div class="w-[1136px] h-[634px] left-[24px] top-[24px] absolute bg-black/0 border-gray-200">
-        <div class="w-[1136px] h-12 left-0 top-0 absolute bg-black/0 border-gray-200 inline-flex justify-between items-center">
-            <div class="w-96 h-12 relative bg-black/0 border-gray-200">
+<div class="w-[1184px] min-h-screen relative bg-black/0 border-gray-200 ">
+    <div class="w-[1136px] h-[634px] left-[24px] top-[24px] relative/0 border-gray-200">
+        <div class="w-[1136px] h-12 left-0 top-0 absolute bg-black/0 border-gray-200 inline-flex rounded-lg bg-white justify-between items-center">
+            <div class="w-96 h-12 relative bg-black/0 border-gray-200 ">
                 <div class="w-96 h-7 left-0 top-0 absolute bg-black/0 border-gray-200">
                     <div class="w-44 h-7 left-0 top-[2px] absolute justify-start text-gray-900 text-xl font-semibold font-['Inter']">Location Types</div>
                 </div>
                 <div class="w-96 h-5 left-0 top-[32px] absolute bg-black/0 border-gray-200">
-                    <div class="w-96 h-5 left-0 top-[1px] absolute justify-start text-gray-600 text-sm font-normal font-['Inter'] truncate">Group related location types together for better organization</div>
+                    <div class="w-auto h-5 left-0 top-[1px] absolute justify-start text-gray-600 text-sm font-normal font-['Inter'] truncate">Group related location types together for better organization</div>
                 </div>
             </div>
             <div class="w-32 h-9 relative bg-sky-600 rounded-lg border-gray-200">
@@ -170,7 +170,7 @@
     </div>
     {% endfor %}
 </div>
-    </div>
+    </div></div>
 <script>
 document.getElementById('searchInput').addEventListener('input', function() {
   const query = this.value.toLowerCase();
@@ -211,8 +211,7 @@ document.getElementById('addFamilyBtn').addEventListener('click', function () {
     }
   });
 });
-</script>
-<script>
+
 function toggleMenu(button) {
     const menu = button.nextElementSibling;
     // Hide all other open menus first
@@ -229,9 +228,7 @@ document.addEventListener("click", function(event) {
         document.querySelectorAll(".relative .absolute").forEach(el => el.classList.add("hidden"));
     }
 });
-</script>
 
-<script>
 document.addEventListener('DOMContentLoaded', function () {
   // Global click handler (delegation)
   document.body.addEventListener('click', function (event) {

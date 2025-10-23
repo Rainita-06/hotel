@@ -267,6 +267,7 @@ def locations_list(request):
         locations = locations.filter(name__icontains=search_query)
 
     # Pagination
+    locations = locations.order_by('-location_id')
     paginator = Paginator(locations, 6)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -368,7 +369,7 @@ def location_manage_view(request, family_id=None):
             'default_checklist': default_checklist
         }
     else:
-        families = LocationFamily.objects.prefetch_related('types').all()
+        families = LocationFamily.objects.prefetch_related('types').all().order_by('-family_id')
         context = {
             'families': families,
             'default_checklist': default_checklist
@@ -661,7 +662,7 @@ from django.contrib import messages
 from .models import LocationType
 
 def types_list(request):
-    types = LocationType.objects.all()
+    types = LocationType.objects.all().order_by('-type_id')
     if request.method == "POST":
         name = request.POST.get("name")
         if name:
@@ -693,13 +694,16 @@ def type_delete(request, type_id):
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
+from django.core.paginator import Paginator
+from django.db.models import Q
+from django.shortcuts import render
 from .models import Building, Floor
 
 def floors_list(request):
     search_query = request.GET.get("search", "")
     
     # Start with all floors
-    floors = Floor.objects.all()
+    floors = Floor.objects.all().order_by('-floor_id')
     
     if search_query:
         floors = floors.filter(
@@ -708,14 +712,20 @@ def floors_list(request):
             Q(building__name__icontains=search_query)
         )
     
+    # Pagination: 10 floors per page
+    paginator = Paginator(floors, 5)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
     buildings = Building.objects.all()  # if needed in filter dropdowns
     
     context = {
-        "floors": floors,
+        "floors": page_obj,  # use page_obj in template
         "search_query": search_query,
         "buildings": buildings,
     }
     return render(request, "floors.html", context)
+
 
 # def floor_delete(request, floor_id):
 #     f = get_object_or_404(Floor, pk=floor_id)
@@ -881,7 +891,7 @@ from django.shortcuts import render
 from .models import Building
 
 def building_cards(request):
-    buildings = Building.objects.all()
+    buildings = Building.objects.all().order_by('-building_id')
     return render(request, 'building.html', {'buildings': buildings})
 
 
@@ -1447,12 +1457,12 @@ def voucher_landing(request, voucher_code):
     })
   
 
-import pandas as pd
+# import pandas as pd
 from django.http import HttpResponse
 from django.shortcuts import render
 from .models import Voucher
 from django.utils import timezone
-import pandas as pd
+# import pandas as pd
 
 def breakfast_voucher_report(request):
     

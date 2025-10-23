@@ -154,6 +154,7 @@ This project includes comprehensive Docker configuration for development and pro
 - **Production**: `docker-compose.prod.yml` - Includes Nginx reverse proxy and Gunicorn
 - **Simple**: `docker-compose.simple.yml` - Basic setup with MySQL and Gunicorn
 - **Full**: `docker-compose.yml` - Complete setup with Celery workers and Redis
+- **Local Database**: `docker-compose.local-db.yml` - Django container only, connects to your local database (see [LOCAL_DB_SETUP.md](LOCAL_DB_SETUP.md))
 
 ### Data Migration
 

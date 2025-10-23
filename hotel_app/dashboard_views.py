@@ -4197,7 +4197,7 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 
 def locations_list(request):
-    locations = Location.objects.all()
+    locations = Location.objects.all().order_by('-location_id')
     families = LocationFamily.objects.all()
     types = LocationType.objects.all()
     floors = Floor.objects.all()
