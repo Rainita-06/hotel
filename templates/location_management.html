@@ -59,8 +59,15 @@
             <div class="text-gray-600 text-sm font-normal font-['Inter']">
               Group related location types together for better organization
             </div>
-          </div>
-
+          </div><div class="flex items-center gap-4">
+          <form method="POST" action="{% url 'bulk_import_families' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <label class="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white text-base font-medium px-3 py-2 rounded-lg cursor-pointer transition">
+            <img src="{% static 'icon/import.svg' %}" class="w-4 h-4" alt="Import">
+            <span>Import</span>
+            <input type="file" name="csv_file" class="hidden" onchange="this.form.submit()">
+        </label>
+    </form>
           <div class="w-32 h-9 bg-sky-600 rounded-lg relative">
             <img src="{% static 'icon/plus.svg' %}" class="absolute left-[19px] top-[9px] w-3 h-3.5" alt="plus icon">
             <a href="{% url 'family_add' %}" class="absolute left-[40px] top-[9px] text-white text-sm font-medium font-['Inter']">
@@ -68,7 +75,7 @@
             </a>
           </div>
         </div>
-
+        </div>
         <!-- Families Grid -->
         <div class="grid grid-cols-3 gap-6 mt-12">
           {% for family in families %}

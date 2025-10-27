@@ -7,24 +7,41 @@
         <h1 class="text-2xl font-semibold text-neutral-800">Gym Member — Data Checker</h1>
         <p class="text-gray-500 text-sm mt-1">Scan member QR or check manually</p>
     </div>
-{% include 'partials/gym_tab.html' %}
+
+    {% include 'partials/gym_tab.html' %}
+
     <div class="flex gap-8">
         <!-- Left Column: QR Scan -->
         <div class="flex-1">
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <h2 class="text-lg font-medium text-neutral-800 mb-4">Scan Gym Member QR</h2>
-                <div id="gym-reader" class="mx-auto" style="width: 350px;"></div>
 
+                <!-- ✅ Buttons -->
+                <div class="flex gap-4 mb-4">
+                    <button id="startScanBtn"
+                        class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                        Start Scan
+                    </button>
+                    <button id="stopScanBtn"
+                        class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition hidden">
+                        Stop Scan
+                    </button>
+                </div>
+
+                <!-- ✅ QR reader area -->
+                <div id="gym-reader" class="mx-auto hidden" style="width: 350px;"></div>
+
+                <!-- ✅ Scan result area -->
                 <div id="gym-scan-result" class="mt-4 p-3 rounded-lg text-center hidden"></div>
             </div>
         </div>
 
-         <!-- Right Column: Manual Check -->
+        <!-- Right Column: Manual Check -->
         <div class="w-[400px]">
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <h2 class="text-lg font-medium text-neutral-800 mb-4">Manual Member Data Checker</h2>
 
-                <form  method="post" class="space-y-4">
+                <form method="post" class="space-y-4">
                     {% csrf_token %}
                     <div>
                         <label for="member_id" class="block text-sm font-medium text-gray-700 mb-2">
@@ -70,7 +87,6 @@ function onGymScanSuccess(decodedText) {
             const box = document.getElementById("gym-scan-result");
             box.classList.remove("hidden");
             box.innerHTML = data.message || "No message";
-
             box.className = "mt-4 p-3 rounded-lg text-center text-base font-medium transition-all duration-300";
 
             if (data.success) {
@@ -88,20 +104,36 @@ function onGymScanSuccess(decodedText) {
         .catch(err => console.error("Error validating member:", err));
 }
 
-// Initialize QR scanner
-const gymScanner = new Html5QrcodeScanner("gym-reader", {
-    fps: 10,
-    qrbox: { width: 250, height: 250 }
+// ✅ Variables
+let gymScanner;
+
+// ✅ Start button logic
+document.getElementById("startScanBtn").addEventListener("click", () => {
+    const reader = document.getElementById("gym-reader");
+    reader.classList.remove("hidden");
+    document.getElementById("startScanBtn").classList.add("hidden");
+    document.getElementById("stopScanBtn").classList.remove("hidden");
+
+    gymScanner = new Html5QrcodeScanner("gym-reader", { fps: 3, qrbox: { width: 250, height: 250 } });
+    gymScanner.render(onGymScanSuccess);
 });
-gymScanner.render(onGymScanSuccess);
 
+// ✅ Stop button logic
+document.getElementById("stopScanBtn").addEventListener("click", () => {
+    if (gymScanner) {
+        gymScanner.clear().then(() => {
+            document.getElementById("gym-reader").classList.add("hidden");
+            document.getElementById("stopScanBtn").classList.add("hidden");
+            document.getElementById("startScanBtn").classList.remove("hidden");
+        }).catch(err => console.error("Error stopping scanner:", err));
+    }
+});
 
-    setTimeout(function() {
-        let box = document.getElementById("resultBox");
-        if (box) {
-            box.style.display = "none";
-        }
-    }, 2000); 
+// ✅ Auto-hide manual check result box
+setTimeout(function() {
+    let box = document.getElementById("resultBox");
+    if (box) box.style.display = "none";
+}, 2000);
 </script>
 
 {% endblock %}

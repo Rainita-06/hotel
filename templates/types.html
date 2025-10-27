@@ -75,7 +75,15 @@
                 <div class="w-96 h-5 left-0 top-[32px] absolute bg-black/0 border-gray-200">
                     <div class="w-auto h-5 left-0 top-[1px] absolute justify-start text-gray-600 text-sm font-normal font-['Inter'] truncate">Group related location types together for better organization</div>
                 </div>
-            </div>
+            </div><div class="flex items-center gap-4">
+          <form method="POST" action="{% url 'bulk_import_types' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <label class="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white text-base font-medium px-3 py-2 rounded-lg cursor-pointer transition">
+            <img src="{% static 'icon/import.svg' %}" class="w-4 h-4" alt="Import">
+            <span>Import</span>
+            <input type="file" name="csv_file" class="hidden" onchange="this.form.submit()">
+        </label>
+    </form>
             <div class="w-32 h-9 relative bg-sky-600 rounded-lg border-gray-200">
                 <div class="w-3 h-4 left-[19.72px] top-[9px] absolute bg-black/0 border-gray-200">
                     <div class="w-3 h-3.5 left-0 top-[1.75px] absolute inline-flex justify-center items-center">
@@ -87,7 +95,7 @@
                 <a href="{% url 'type_add' %}" class="w-20 h-5 left-[39.97px] top-[9px] absolute text-center justify-start text-white text-sm font-medium font-['Inter']">Add Types</a>
             </div>
         </div>
-
+        </div>
 
         <div class="w-[1136px] mt-24 grid grid-cols-3 gap-6">
  {% for t in types %}
@@ -171,7 +179,7 @@
     {% endfor %}
 </div>
     </div></div>
-<script>
+<!-- <script>
 document.getElementById('searchInput').addEventListener('input', function() {
   const query = this.value.toLowerCase();
   document.querySelectorAll('.types-card').forEach(card => {
@@ -261,6 +269,56 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Close menus on Escape key
   document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.menu').forEach(m => m.classList.add('hidden'));
+      document.querySelectorAll('.dot-btn').forEach(b => b.setAttribute('aria-expanded', 'false'));
+    }
+  });
+});
+</script>
+ -->
+<script>
+// Search functionality
+document.getElementById('searchInput').addEventListener('input', function() {
+  const query = this.value.toLowerCase();
+  document.querySelectorAll('.types-card').forEach(card => {
+    const name = card.dataset.name;
+    card.style.display = name.includes(query) ? 'block' : 'none';
+  });
+});
+
+// Dropdown menu functionality
+document.addEventListener('DOMContentLoaded', function() {
+  // Handle dropdown menu clicks
+  document.addEventListener('click', function(event) {
+    const dotBtn = event.target.closest('.dot-btn');
+    const menu = event.target.closest('.menu');
+    
+    // If clicked on a dot button
+    if (dotBtn) {
+      const wrapper = dotBtn.closest('.relative');
+      const targetMenu = wrapper.querySelector('.menu');
+      
+      // Close all other menus
+      document.querySelectorAll('.menu').forEach(m => {
+        if (m !== targetMenu) m.classList.add('hidden');
+      });
+      
+      // Toggle current menu
+      targetMenu.classList.toggle('hidden');
+      dotBtn.setAttribute('aria-expanded', !targetMenu.classList.contains('hidden'));
+      return;
+    }
+    
+    // If clicked outside any menu
+    if (!menu) {
+      document.querySelectorAll('.menu').forEach(m => m.classList.add('hidden'));
+      document.querySelectorAll('.dot-btn').forEach(b => b.setAttribute('aria-expanded', 'false'));
+    }
+  });
+
+  // Close menus on Escape key
+  document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
       document.querySelectorAll('.menu').forEach(m => m.classList.add('hidden'));
       document.querySelectorAll('.dot-btn').forEach(b => b.setAttribute('aria-expanded', 'false'));

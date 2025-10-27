@@ -249,7 +249,7 @@ class Building(models.Model):
 class Floor(models.Model):
     floor_name=models.CharField(max_length=50,blank=False,null=False)
     floor_id = models.BigAutoField(primary_key=True)
-    building = models.ForeignKey('Building', models.DO_NOTHING,blank=False, null=False,related_name='floors')
+    building = models.ForeignKey('Building', models.DO_NOTHING,blank=False, default=1,null=False,related_name='floors')
     floor_number = models.IntegerField(blank=False, null=False)
     description = models.CharField(max_length=255, blank=True)  # e.g. “Lobby & Reception”
     rooms = models.PositiveIntegerField(default=0)

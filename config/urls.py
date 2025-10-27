@@ -98,6 +98,10 @@ urlpatterns = [
     path("bulk_import_locations/",views.bulk_import_locations,name="bulk_import_locations"),
     path("export_locations_csv/",views.export_locations_csv,name="export_locations_csv"),
     
+    path("bulk_import_buildings/",views.bulk_import_buildings,name="bulk_import_buildings"),
+    path("bulk_import_floors/",views.bulk_import_floors,name="bulk_import_floors"),
+    path("bulk_import_families/",views.bulk_import_families,name="bulk_import_families"),
+      path("bulk_import_types/",views.bulk_import_types,name="bulk_import_types"),
     #Breakfast voucher
     path("checkin/", views.create_voucher_checkin, name="checkin_form"),
     path("voucher/<str:voucher_code>/", views.voucher_landing, name="voucher_landing"),
