@@ -4194,6 +4194,7 @@ from django.contrib import messages
 #         'selected_building': building_filter,
 #     }
 #     return render(request, 'locations_list.html', context)
+
 from django.core.paginator import Paginator
 
 def locations_list(request):
