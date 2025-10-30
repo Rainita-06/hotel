@@ -10,17 +10,19 @@ from django.db.models import Count, Avg, Q
 from django.db.models.functions import TruncHour
 from django.core.exceptions import PermissionDenied
 from django.utils import timezone
-from django.http import JsonResponse
-from django.http import HttpResponseBadRequest
+from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse
 from django.views.decorators.http import require_http_methods
 from django.db import connection, transaction
 from django.conf import settings
 from django.utils.text import slugify
-from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from django.contrib.auth import get_user_model
 import os
 
 import os
+
+import os
+import logging
 
 # Import all models from hotel_app
 from hotel_app.models import (
@@ -43,6 +45,9 @@ from .forms import (
 from .utils import user_in_group, create_notification
 from hotel_app.whatsapp_service import WhatsAppService
 from .rbac_services import get_accessible_sections, can_access_section
+
+# Import export/import utilities
+from .export_import_utils import create_export_file, import_all_data, validate_import_data
 
 # ---- Constants ----
 ADMINS_GROUP = 'Admins'
@@ -573,7 +578,6 @@ def dashboard2_view(request):
         request_types = list(RequestType.objects.all())
         requests_labels = [rt.name for rt in request_types]
         try:
-            from hotel_app.models import ServiceRequest
             requests_values = [ServiceRequest.objects.filter(request_type=rt).count() for rt in request_types]
         except Exception:
             requests_values = [1 for _ in requests_labels]
@@ -628,43 +632,54 @@ def dashboard2_view(request):
 
     occupancy_data = {'occupied': occupancy_today, 'rate': round(occupancy_rate, 1)}
 
-    # Map the data to dashboard2 template variables
-    context = {
-        'user_name': request.user.get_full_name() or request.user.username,
-        # Stats data
-        'active_tickets': open_complaints,
-        'avg_review_rating': round(average_review_rating, 1) if average_review_rating else 0,
-        'sla_breaches': 0,  # This would need to be calculated from actual SLA breaches
-        'vouchers_redeemed': vouchers_redeemed,
-        'guest_satisfaction': round(average_review_rating * 20) if average_review_rating else 0,  # Convert 5-star to 100%
-        'avg_response_time': '12m',  # This would need to be calculated from actual response times
-        'staff_efficiency': 87,  # This would need to be calculated from actual metrics
-        'active_gym_members': 389,  # This would need to be fetched from actual data
-        'active_guests': occupancy_today,
-        # Chart data - simplified for dashboard2
-        'tickets_data': requests_values[:7] if len(requests_values) >= 7 else requests_values + [0] * (7 - len(requests_values)),
-        'feedback_data': feedback_data['positive'][:7] if len(feedback_data['positive']) >= 7 else feedback_data['positive'] + [0] * (7 - len(feedback_data['positive'])),
-        'peak_day_tickets': max(requests_values) if requests_values else 0,
-        'peak_day_feedback': max(feedback_data['positive']) if feedback_data['positive'] else 0,
-        'weekly_growth': 18,  # This would need to be calculated from actual data
-        # Sentiment data
-        'positive_reviews': sum(feedback_data['positive']),
-        'neutral_reviews': sum(feedback_data['neutral']),
-        'negative_reviews': sum(feedback_data['negative']),
-        'positive_count': sum(feedback_data['positive']),
-        'neutral_count': sum(feedback_data['neutral']),
-        'negative_count': sum(feedback_data['negative']),
-        # Department data - using real data where possible
-        'departments': [
-            {'name': 'Housekeeping', 'tickets': requests_values[0] if len(requests_values) > 0 else 15, 'color': 'sky-600'},
-            {'name': 'Maintenance', 'tickets': requests_values[1] if len(requests_values) > 1 else 12, 'color': 'yellow-400'},
-            {'name': 'Guest Services', 'tickets': requests_values[2] if len(requests_values) > 2 else 8, 'color': 'teal-500'},
-            {'name': 'Restaurant', 'tickets': requests_values[3] if len(requests_values) > 3 else 6, 'color': 'green-500'},
-            {'name': 'Front Desk', 'tickets': requests_values[4] if len(requests_values) > 4 else 4, 'color': 'fuchsia-700'},
-            {'name': 'Concierge', 'tickets': requests_values[5] if len(requests_values) > 5 else 2, 'color': 'red-500'},
-        ],
-        # Critical tickets - would need to fetch actual critical tickets
-        'critical_tickets': [
+    # Fetch actual critical tickets (high priority service requests)
+    try:
+        critical_tickets = ServiceRequest.objects.filter(
+            priority__in=['high', 'critical']
+        ).select_related('requester_user', 'department', 'location').order_by('-created_at')[:4]
+        
+        # Process tickets for display
+        critical_tickets_data = []
+        for ticket in critical_tickets:
+            # Calculate time left based on SLA
+            time_left = "Unknown"
+            progress = 0
+            if ticket.due_at and ticket.created_at:
+                total_time = (ticket.due_at - ticket.created_at).total_seconds()
+                elapsed_time = (timezone.now() - ticket.created_at).total_seconds()
+                if total_time > 0:
+                    progress = min(100, max(0, int((elapsed_time / total_time) * 100)))
+                    remaining_seconds = total_time - elapsed_time
+                    if remaining_seconds > 0:
+                        hours = int(remaining_seconds // 3600)
+                        if hours > 0:
+                            time_left = f"{hours}h left"
+                        else:
+                            minutes = int(remaining_seconds // 60)
+                            time_left = f"{minutes}m left"
+                    else:
+                        time_left = "Overdue"
+                else:
+                    time_left = "Completed"
+                    progress = 100
+            
+            critical_tickets_data.append({
+                'id': ticket.id,
+                'title': ticket.request_type.name if ticket.request_type else 'Unknown Request',
+                'location': str(ticket.location) if ticket.location else '',
+                'department': str(ticket.department) if ticket.department else 'Unknown Department',
+                'requester_user': ticket.requester_user,
+                'reported': ticket.created_at.strftime('%Y-%m-%d %H:%M') if ticket.created_at else 'Unknown',
+                'priority': ticket.priority.upper() if ticket.priority else 'NORM',
+                'time_left': time_left,
+                'progress': progress,
+                'created_at': ticket.created_at,
+                'completed_at': ticket.completed_at,
+                'status': ticket.status,
+            })
+    except Exception as e:
+        # Fallback to dummy data if there's an error
+        critical_tickets_data = [
             {
                 'id': 2847,
                 'title': 'Room AC not working',
@@ -713,9 +728,35 @@ def dashboard2_view(request):
                 'color': 'green-500',
                 'progress': 100
             }
-        ],
-        # Guest feedback - would need to fetch actual feedback
-        'guest_feedback': [
+        ]
+
+    # Fetch actual guest feedback (recent reviews)
+    try:
+        recent_feedback = Review.objects.select_related('guest').order_by('-created_at')[:3]
+        
+        # Process feedback for display
+        feedback_data_list = []
+        for feedback in recent_feedback:
+            # Determine sentiment based on rating
+            if feedback.rating >= 4:
+                sentiment = 'POSITIVE'
+            elif feedback.rating == 3:
+                sentiment = 'NEUTRAL'
+            else:
+                sentiment = 'NEGATIVE'
+                
+            feedback_data_list.append({
+                'id': feedback.id,
+                'rating': feedback.rating,
+                'location': getattr(feedback.guest, 'room_number', '') if feedback.guest else '',
+                'created_at': feedback.created_at,
+                'comment': feedback.comment or 'No comment provided',
+                'guest': feedback.guest,
+                'sentiment': sentiment,
+            })
+    except Exception as e:
+        # Fallback to dummy data if there's an error
+        feedback_data_list = [
             {
                 'rating': 5,
                 'location': 'Room 405',
@@ -744,6 +785,46 @@ def dashboard2_view(request):
                 'color': 'red-500'
             }
         ]
+
+    # Map the data to dashboard2 template variables
+    context = {
+        'user_name': request.user.get_full_name() or request.user.username,
+        # Stats data
+        'active_tickets': open_complaints,
+        'avg_review_rating': round(average_review_rating, 1) if average_review_rating else 0,
+        'sla_breaches': 0,  # This would need to be calculated from actual SLA breaches
+        'vouchers_redeemed': vouchers_redeemed,
+        'guest_satisfaction': round(average_review_rating * 20) if average_review_rating else 0,  # Convert 5-star to 100%
+        'avg_response_time': '12m',  # This would need to be calculated from actual response times
+        'staff_efficiency': 87,  # This would need to be calculated from actual metrics
+        'active_gym_members': 389,  # This would need to be fetched from actual data
+        'active_guests': occupancy_today,
+        # Chart data - simplified for dashboard2
+        'tickets_data': requests_values[:7] if len(requests_values) >= 7 else requests_values + [0] * (7 - len(requests_values)),
+        'feedback_data': feedback_data['positive'][:7] if len(feedback_data['positive']) >= 7 else feedback_data['positive'] + [0] * (7 - len(feedback_data['positive'])),
+        'peak_day_tickets': max(requests_values) if requests_values else 0,
+        'peak_day_feedback': max(feedback_data['positive']) if feedback_data['positive'] else 0,
+        'weekly_growth': 18,  # This would need to be calculated from actual data
+        # Sentiment data
+        'positive_reviews': sum(feedback_data['positive']),
+        'neutral_reviews': sum(feedback_data['neutral']),
+        'negative_reviews': sum(feedback_data['negative']),
+        'positive_count': sum(feedback_data['positive']),
+        'neutral_count': sum(feedback_data['neutral']),
+        'negative_count': sum(feedback_data['negative']),
+        # Department data - using real data where possible
+        'departments': [
+            {'name': 'Housekeeping', 'tickets': requests_values[0] if len(requests_values) > 0 else 15, 'color': 'sky-600'},
+            {'name': 'Maintenance', 'tickets': requests_values[1] if len(requests_values) > 1 else 12, 'color': 'yellow-400'},
+            {'name': 'Guest Services', 'tickets': requests_values[2] if len(requests_values) > 2 else 8, 'color': 'teal-500'},
+            {'name': 'Restaurant', 'tickets': requests_values[3] if len(requests_values) > 3 else 6, 'color': 'green-500'},
+            {'name': 'Front Desk', 'tickets': requests_values[4] if len(requests_values) > 4 else 4, 'color': 'fuchsia-700'},
+            {'name': 'Concierge', 'tickets': requests_values[5] if len(requests_values) > 5 else 2, 'color': 'red-500'},
+        ],
+        # Critical tickets - now using actual data
+        'critical_tickets': critical_tickets_data,
+        # Guest feedback - now using actual data
+        'guest_feedback': feedback_data_list
     }
     
     return render(request, 'dashboard/dashboard.html', context)
@@ -948,6 +1029,10 @@ def manage_users_all(request):
                departments=departments)
     return render(request, 'dashboard/users.html', ctx)
 
+
+
+
+        
 
 @login_required
 def manage_users_api_users(request, user_id=None):
@@ -1574,12 +1659,158 @@ def api_reset_user_password(request, user_id):
         logger = logging.getLogger(__name__)
         logger.error(f"Error resetting password for user ID {user_id}: {str(e)}")
         return JsonResponse({'error': str(e)}, status=500)
+
+
 @login_required
+@require_permission([ADMINS_GROUP])
+def export_user_data(request):
+    """Export all user-related data (departments, users, groups, profiles)"""
+    try:
+        format = request.GET.get('format', 'json').lower()
+        response = create_export_file(format)
+        return response
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error exporting user data: {str(e)}")
+        return JsonResponse({'error': 'Failed to export data'}, status=500)
+
+
+@login_required
+@require_permission([ADMINS_GROUP])
+@csrf_exempt
+def import_user_data(request):
+    """Import user-related data from a JSON or Excel file"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST method required'}, status=405)
+    
+    try:
+        # Get the uploaded file
+        if 'file' not in request.FILES:
+            return JsonResponse({'error': 'No file uploaded'}, status=400)
+        
+        uploaded_file = request.FILES['file']
+        
+        # Check file extension and process accordingly
+        if uploaded_file.name.endswith('.json'):
+            # Handle JSON file
+            try:
+                file_content = uploaded_file.read().decode('utf-8')
+                data = json.loads(file_content)
+            except json.JSONDecodeError as e:
+                return JsonResponse({'error': f'Invalid JSON format: {str(e)}'}, status=400)
+        elif uploaded_file.name.endswith('.xlsx'):
+            # Handle Excel file
+            try:
+                from openpyxl import load_workbook
+                from io import BytesIO
+                
+                # Load the workbook from the uploaded file
+                file_content = uploaded_file.read()
+                workbook = load_workbook(BytesIO(file_content), read_only=True)
+                
+                # Convert Excel data to the expected JSON structure
+                data = {
+                    'departments': [],
+                    'user_groups': [],
+                    'users': [],
+                    'user_profiles': [],
+                    'user_group_memberships': []
+                }
+                
+                # Process departments sheet
+                if 'Departments' in workbook.sheetnames:
+                    ws = workbook['Departments']
+                    rows = list(ws.iter_rows(values_only=True))
+                    if len(rows) > 1:  # Header + data rows
+                        headers = rows[0]
+                        for row in rows[1:]:
+                            if any(cell is not None for cell in row):  # Skip empty rows
+                                dept_data = {}
+                                for i, header in enumerate(headers):
+                                    if header and i < len(row):
+                                        dept_data[header] = row[i]
+                                data['departments'].append(dept_data)
+                
+                # Process user groups sheet
+                if 'User Groups' in workbook.sheetnames:
+                    ws = workbook['User Groups']
+                    rows = list(ws.iter_rows(values_only=True))
+                    if len(rows) > 1:  # Header + data rows
+                        headers = rows[0]
+                        for row in rows[1:]:
+                            if any(cell is not None for cell in row):  # Skip empty rows
+                                group_data = {}
+                                for i, header in enumerate(headers):
+                                    if header and i < len(row):
+                                        group_data[header] = row[i]
+                                data['user_groups'].append(group_data)
+                
+                # Process users sheet
+                if 'Users' in workbook.sheetnames:
+                    ws = workbook['Users']
+                    rows = list(ws.iter_rows(values_only=True))
+                    if len(rows) > 1:  # Header + data rows
+                        headers = rows[0]
+                        for row in rows[1:]:
+                            if any(cell is not None for cell in row):  # Skip empty rows
+                                user_data = {}
+                                for i, header in enumerate(headers):
+                                    if header and i < len(row):
+                                        user_data[header] = row[i]
+                                data['users'].append(user_data)
+                
+                # Process user profiles sheet
+                if 'User Profiles' in workbook.sheetnames:
+                    ws = workbook['User Profiles']
+                    rows = list(ws.iter_rows(values_only=True))
+                    if len(rows) > 1:  # Header + data rows
+                        headers = rows[0]
+                        for row in rows[1:]:
+                            if any(cell is not None for cell in row):  # Skip empty rows
+                                profile_data = {}
+                                for i, header in enumerate(headers):
+                                    if header and i < len(row):
+                                        profile_data[header] = row[i]
+                                data['user_profiles'].append(profile_data)
+                
+                # Process user group memberships sheet
+                if 'User Group Memberships' in workbook.sheetnames:
+                    ws = workbook['User Group Memberships']
+                    rows = list(ws.iter_rows(values_only=True))
+                    if len(rows) > 1:  # Header + data rows
+                        headers = rows[0]
+                        for row in rows[1:]:
+                            if any(cell is not None for cell in row):  # Skip empty rows
+                                membership_data = {}
+                                for i, header in enumerate(headers):
+                                    if header and i < len(row):
+                                        membership_data[header] = row[i]
+                                data['user_group_memberships'].append(membership_data)
+                
+            except Exception as e:
+                return JsonResponse({'error': f'Invalid Excel format: {str(e)}'}, status=400)
+        else:
+            return JsonResponse({'error': 'Only JSON (.json) or Excel (.xlsx) files are supported'}, status=400)
+        
+        # Import the data
+        result = import_all_data(data)
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Data imported successfully',
+            'result': result
+        })
+        
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error importing user data: {str(e)}")
+        return JsonResponse({'error': f'Failed to import data: {str(e)}'}, status=500)
+        
+@login_required       
 @require_role(['admin', 'staff'])
 def tickets(request):
     """Render the Tickets Management page."""
     from hotel_app.models import ServiceRequest, RequestType, Department, User
-
     from django.db.models import Count, Q
     from datetime import timedelta
     from django.utils import timezone
@@ -1594,7 +1825,6 @@ def tickets(request):
     # Get departments with active ticket counts
     departments_data = []
     departments = Department.objects.all()
-    
     for dept in departments:
         # Count active tickets for this department
         active_tickets_count = ServiceRequest.objects.filter(
@@ -1602,22 +1832,17 @@ def tickets(request):
         ).exclude(
             status__in=['completed', 'closed']
         ).count()
-        
-        # Calculate SLA compliance (simplified calculation)
+      # Calculate SLA compliance (simplified calculation)
         total_tickets = ServiceRequest.objects.filter(
             request_type__name__icontains=dept.name
-        ).count()
-        
+        ).count()        
         completed_tickets = ServiceRequest.objects.filter(
             request_type__name__icontains=dept.name,
             status='completed'
         ).count()
-        
         sla_compliance = 0
         if total_tickets > 0:
             sla_compliance = int((completed_tickets / total_tickets) * 100)
-        
-        # Determine colors based on department
         color_mapping = {
             'Housekeeping': {'color': 'sky-600', 'icon_color': 'sky-600'},
             'Maintenance': {'color': 'yellow-400', 'icon_color': 'sky-600'},
@@ -1832,16 +2057,20 @@ def ticket_detail(request, ticket_id):
     # Calculate SLA progress percentage
     sla_progress_percent = 0
     if service_request.created_at and service_request.sla_hours > 0:
-        # Calculate time taken so far or total time if completed
-        if service_request.completed_at:
-            time_taken = service_request.completed_at - service_request.created_at
+        # For completed/closed tickets, show 100% progress
+        if service_request.status in ['completed', 'closed']:
+            sla_progress_percent = 100
         else:
-            time_taken = timezone.now() - service_request.created_at
-        
-        # Calculate SLA percentage (time taken / total allowed time)
-        total_allowed_time = service_request.sla_hours * 3600  # Convert hours to seconds
-        if total_allowed_time > 0:
-            sla_progress_percent = min(100, int((time_taken.total_seconds() / total_allowed_time) * 100))
+            # Calculate time taken so far or total time if completed
+            if service_request.completed_at:
+                time_taken = service_request.completed_at - service_request.created_at
+            else:
+                time_taken = timezone.now() - service_request.created_at
+            
+            # Calculate SLA percentage (time taken / total allowed time)
+            total_allowed_time = service_request.sla_hours * 3600  # Convert hours to seconds
+            if total_allowed_time > 0:
+                sla_progress_percent = min(100, int((time_taken.total_seconds() / total_allowed_time) * 100))
     
     # Map priority to display values
     priority_mapping = {
@@ -1906,11 +2135,12 @@ def ticket_detail(request, ticket_id):
         if service_request.location.type:
             room_type = service_request.location.type.name
     
-    # Get department info
+    # Get department info - Use the actual department from the service request
     department_name = 'Unknown Department'
-    # Since RequestType doesn't have a department field, we'll use work_family as a fallback
-    # or set it to Unknown if neither is available
-    if service_request.request_type:
+    if service_request.department:
+        department_name = service_request.department.name
+    elif service_request.request_type:
+        # Fallback to work_family or request_family if no department is assigned
         if hasattr(service_request.request_type, 'work_family') and service_request.request_type.work_family:
             department_name = service_request.request_type.work_family.name
         elif hasattr(service_request.request_type, 'request_family') and service_request.request_type.request_family:
@@ -2051,7 +2281,8 @@ def ticket_detail(request, ticket_id):
         'created_time': created_time,
         'notification_count': notification_count,
         'activity_log': activity_log,
-        'sla_progress_percent': sla_progress_percent
+        'sla_progress_percent': sla_progress_percent,
+        'resolution_notes': service_request.resolution_notes  # Pass resolution notes to template
     }
     
     return render(request, 'dashboard/ticket_detail.html', context)
@@ -2162,11 +2393,11 @@ def gym_report(request):
 
 
 @login_required
+@require_role(['admin', 'staff', 'user'])
 def my_tickets(request):
-    """Render the My Tickets page - shows tickets assigned to the current user's department."""
-    from hotel_app.models import ServiceRequest, RequestType, Department, User
-    from django.db.models import Count, Q
-    from datetime import timedelta
+    """Render the My Tickets page with dynamic status cards."""
+    from django.db.models import Q, Count
+    from .models import ServiceRequest
     from django.utils import timezone
     from django.core.paginator import Paginator
     
@@ -2175,59 +2406,67 @@ def my_tickets(request):
     if hasattr(request.user, 'userprofile') and request.user.userprofile.department:
         user_department = request.user.userprofile.department
     
-    # Get filter parameters from request
+    # Get service requests assigned to the current user (either as assignee or requester)
+    # Also include pending tickets in the user's department that are not yet assigned
+    user_tickets = ServiceRequest.objects.filter(
+        Q(assignee_user=request.user) | 
+        Q(requester_user=request.user) |
+        (Q(department=user_department) & Q(status='pending') & Q(assignee_user=None))
+    ).select_related(
+        'request_type', 'location', 'requester_user', 'assignee_user', 'department'
+    ).order_by('-created_at')
+    
+    # Calculate status counts for the status cards
+    status_counts = user_tickets.aggregate(
+        pending=Count('id', filter=Q(status='pending')),
+        accepted=Count('id', filter=Q(status='accepted')),
+        in_progress=Count('id', filter=Q(status='in_progress')),
+        completed=Count('id', filter=Q(status='completed')),
+        closed=Count('id', filter=Q(status='closed')),
+        escalated=Count('id', filter=Q(status='escalated')),
+        rejected=Count('id', filter=Q(status='rejected'))
+    )
+    
+    # Calculate overdue count
+    overdue_count = user_tickets.filter(
+        due_at__lt=timezone.now(),
+        status__in=['pending', 'accepted', 'in_progress']
+    ).count()
+    
+    # Handle filtering
     priority_filter = request.GET.get('priority', '')
     status_filter = request.GET.get('status', '')
     search_query = request.GET.get('search', '')
     
-    # Get service requests assigned to the user's department
-    tickets_queryset = ServiceRequest.objects.select_related(
-        'request_type', 'location', 'requester_user', 'assignee_user', 'department'
-    ).order_by('-id')
+    # Convert display status values to database status values
+    status_mapping = {
+        'Pending': 'pending',
+        'Accepted': 'accepted',
+        'In Progress': 'in_progress',
+        'Completed': 'completed',
+        'Closed': 'closed',
+        'Escalated': 'escalated',
+        'Rejected': 'rejected'
+    }
     
-    # Filter by department if user has one
-    if user_department:
-        tickets_queryset = tickets_queryset.filter(department=user_department)
-    
-    # Apply priority filter
     if priority_filter:
-        # Map display values to model values
-        priority_mapping = {
-            'High': 'high',
-            'Medium': 'normal',
-            'Low': 'low'
-        }
-        model_priority = priority_mapping.get(priority_filter)
-        if model_priority:
-            tickets_queryset = tickets_queryset.filter(priority=model_priority)
+        user_tickets = user_tickets.filter(priority=priority_filter.lower())
     
-    # Apply status filter
     if status_filter:
-        # Map display values to model values
-        status_mapping = {
-            'Pending': 'pending',
-            'Assigned': 'assigned',
-            'Accepted': 'accepted',
-            'In Progress': 'in_progress',
-            'Completed': 'completed',
-            'Closed': 'closed',
-            'Escalated': 'escalated',
-            'Rejected': 'rejected'
-        }
-        model_status = status_mapping.get(status_filter)
-        if model_status:
-            tickets_queryset = tickets_queryset.filter(status=model_status)
+        # Convert display status to database status
+        db_status = status_mapping.get(status_filter, status_filter.lower())
+        user_tickets = user_tickets.filter(status=db_status)
     
     if search_query:
-        tickets_queryset = tickets_queryset.filter(
+        user_tickets = user_tickets.filter(
+            Q(notes__icontains=search_query) |
             Q(request_type__name__icontains=search_query) |
-            Q(location__name__icontains=search_query) |
-            Q(notes__icontains=search_query)
+            Q(location__name__icontains=search_query)
         )
     
     # Process tickets to add color attributes and workflow permissions
     processed_tickets = []
-    for ticket in tickets_queryset:
+    for ticket in user_tickets:
         # Map priority to display values
         priority_mapping = {
             'high': {'label': 'High', 'color': 'red'},
@@ -2283,9 +2522,11 @@ def my_tickets(request):
         ticket.can_close = False
         
         # Determine what actions the user can take based on workflow
-        # For pending tickets, any user in the department can accept (which will assign to them)
-        if ticket.status == 'pending' and ticket.department == user_department:
-            ticket.can_accept = True
+        # For pending tickets, any user can accept (which will assign to them)
+        if ticket.status == 'pending' and ticket.assignee_user is None:
+            # Unassigned ticket - user can accept if it's in their department or they're the requester
+            if ticket.department == user_department or ticket.requester_user == request.user:
+                ticket.can_accept = True
         elif ticket.status == 'accepted' and ticket.assignee_user == request.user:
             # Accepted by current user - can start work
             ticket.can_start = True
@@ -2308,18 +2549,22 @@ def my_tickets(request):
     page_obj = paginator.get_page(page_number)
     
     context = {
-        'tickets': page_obj,  # Pass the page_obj to the template
-        'page_obj': page_obj,  # Pass it again as page_obj for clarity
-        'total_tickets': tickets_queryset.count(),
-        'user_department': user_department,
-        # Pass filter values back to template
+        'tickets': page_obj,
+        'page_obj': page_obj,
+        'status_counts': status_counts,
+        'overdue_count': overdue_count,
         'priority_filter': priority_filter,
         'status_filter': status_filter,
         'search_query': search_query,
-        'notification_count': 3,  # This should be dynamic in a real implementation
-        'overdue_count': 0,  # This should be dynamic in a real implementation
+        'user_department': user_department,
     }
+    
     return render(request, 'dashboard/my_tickets.html', context)
+
+
+# Removed claim_ticket_api as we're removing the claim functionality
+# Tickets are now directly assigned when accepted
+    
 
 
 # Removed claim_ticket_api as we're removing the claim functionality
@@ -2439,46 +2684,119 @@ def my_tickets(request):
 @require_permission([ADMINS_GROUP])
 def configure_requests(request):
     """Render the Predefined / Configure Requests page.
-    Uses a mostly-static template for now; dynamic values can be added to context later.
+    Uses actual department data from the database.
     """
-    # Sample data to render cards. In production replace with real queryset.
-    requests_list = [
-        {
-            'title': 'Extra Housekeeping',
-            'department': 'Housekeeping',
-            'description': 'Request additional cleaning services for your room including towel refresh, bed making, and bathroom cleaning.',
-            'fields': 4,
-            'exposed': True,
-            'icon': 'images/manage_users/house_keeping.svg',
-            'icon_bg': 'bg-green-500/10',
-            'tag_bg': 'bg-green-500/10',
-        },
-        {
-            'title': 'Room Maintenance',
-            'department': 'Maintenance',
-            'description': 'Report issues with room fixtures, appliances, or general maintenance needs requiring attention.',
-            'fields': 6,
-            'exposed': True,
-            'icon': 'images/manage_users/maintainence.svg',
-            'icon_bg': 'bg-yellow-400/10',
-            'tag_bg': 'bg-yellow-400/10',
-        },
-        {
-            'title': 'Concierge Services',
-            'department': 'Concierge',
-            'description': 'Request assistance with reservations, recommendations, transportation, and local information.',
-            'fields': 5,
-            'exposed': True,
-            'icon': 'images/manage_users/concierge.svg',
-            'icon_bg': 'bg-fuchsia-700/10',
-            'tag_bg': 'bg-fuchsia-700/10',
-        },
-    ]
-
+    # Get all departments from the database
+    departments = Department.objects.all().order_by('name')
+    
+    # Get all request types and associate them with departments
+    request_types = RequestType.objects.select_related('work_family').all()
+    
+    # Create requests list with actual department data
+    requests_list = []
+    
+    # First, add request types that have a work_family (department association)
+    for request_type in request_types:
+        department_name = 'General'
+        icon = 'images/manage_users/general.svg'
+        icon_bg = 'bg-gray-500/10'
+        tag_bg = 'bg-gray-500/10'
+        
+        if request_type.work_family:
+            department_name = request_type.work_family.name
+            # Map department names to appropriate icons
+            department_lower = department_name.lower()
+            if 'housekeeping' in department_lower:
+                icon = 'images/manage_users/house_keeping.svg'
+                icon_bg = 'bg-green-500/10'
+                tag_bg = 'bg-green-500/10'
+            elif 'maintenance' in department_lower:
+                icon = 'images/manage_users/maintainence.svg'
+                icon_bg = 'bg-yellow-400/10'
+                tag_bg = 'bg-yellow-400/10'
+            elif 'concierge' in department_lower:
+                icon = 'images/manage_users/concierge.svg'
+                icon_bg = 'bg-fuchsia-700/10'
+                tag_bg = 'bg-fuchsia-700/10'
+            elif 'food' in department_lower or 'restaurant' in department_lower:
+                icon = 'images/manage_users/food_beverage.svg'
+                icon_bg = 'bg-red-500/10'
+                tag_bg = 'bg-red-500/10'
+            elif 'front' in department_lower or 'desk' in department_lower:
+                icon = 'images/manage_users/front_office.svg'
+                icon_bg = 'bg-sky-500/10'
+                tag_bg = 'bg-sky-500/10'
+            else:
+                # Default icon for other departments
+                icon = f'images/manage_users/{department_lower.replace(" ", "_")}.svg'
+                icon_bg = 'bg-blue-500/10'
+                tag_bg = 'bg-blue-500/10'
+        
+        requests_list.append({
+            'title': request_type.name,
+            'department': department_name,
+            'description': request_type.description or f'Request type for {department_name}',
+            'fields': 4,  # This would need to be calculated based on actual fields
+            'exposed': request_type.active,
+            'icon': icon,
+            'icon_bg': icon_bg,
+            'tag_bg': tag_bg,
+        })
+    
+    # Add departments that don't have request types yet as placeholders
+    for department in departments:
+        # Check if we already have requests for this department
+        has_requests = any(req['department'] == department.name for req in requests_list)
+        
+        if not has_requests:
+            # Add a placeholder request for the department
+            department_lower = department.name.lower()
+            icon = 'images/manage_users/general.svg'
+            icon_bg = 'bg-gray-500/10'
+            tag_bg = 'bg-gray-500/10'
+            
+            # Map department names to appropriate icons
+            if 'housekeeping' in department_lower:
+                icon = 'images/manage_users/house_keeping.svg'
+                icon_bg = 'bg-green-500/10'
+                tag_bg = 'bg-green-500/10'
+            elif 'maintenance' in department_lower:
+                icon = 'images/manage_users/maintainence.svg'
+                icon_bg = 'bg-yellow-400/10'
+                tag_bg = 'bg-yellow-400/10'
+            elif 'concierge' in department_lower:
+                icon = 'images/manage_users/concierge.svg'
+                icon_bg = 'bg-fuchsia-700/10'
+                tag_bg = 'bg-fuchsia-700/10'
+            elif 'food' in department_lower or 'restaurant' in department_lower:
+                icon = 'images/manage_users/food_beverage.svg'
+                icon_bg = 'bg-red-500/10'
+                tag_bg = 'bg-red-500/10'
+            elif 'front' in department_lower or 'desk' in department_lower:
+                icon = 'images/manage_users/front_office.svg'
+                icon_bg = 'bg-sky-500/10'
+                tag_bg = 'bg-sky-500/10'
+            else:
+                # Default icon for other departments
+                icon = f'images/manage_users/{department_lower.replace(" ", "_")}.svg'
+                icon_bg = 'bg-blue-500/10'
+                tag_bg = 'bg-blue-500/10'
+            
+            requests_list.append({
+                'title': f'{department.name} Request',
+                'department': department.name,
+                'description': f'Request services from the {department.name} department',
+                'fields': 3,
+                'exposed': True,
+                'icon': icon,
+                'icon_bg': icon_bg,
+                'tag_bg': tag_bg,
+            })
+    
     counts = {
-        'all': 24,
-        'portal': 18,
-        'internal': 6,
+        'all': len(requests_list),
+        'portal': len([r for r in requests_list if r['exposed']]),
+        'internal': len([r for r in requests_list if not r['exposed']]),
     }
 
     context = {
@@ -5609,6 +5927,12 @@ def create_ticket_api(request):
                 defaults={}
             )
             
+            # Get department
+            try:
+                department = Department.objects.get(name=department_name)
+            except Department.DoesNotExist:
+                return JsonResponse({'error': 'Department not found'}, status=400)
+            
             # Map priority to model values
             priority_mapping = {
                 'High': 'high',
@@ -5618,25 +5942,19 @@ def create_ticket_api(request):
             }
             model_priority = priority_mapping.get(priority, 'normal')
             
-            # Set SLA hours based on priority
-            sla_hours = 24  # Default SLA
-            if model_priority == 'high':
-                sla_hours = 4  # 4 hours for high priority
-            elif model_priority == 'normal':
-                sla_hours = 24  # 24 hours for normal priority
-            elif model_priority == 'low':
-                sla_hours = 72  # 72 hours for low priority
-            
             # Create service request
             service_request = ServiceRequest.objects.create(
                 request_type=request_type,
                 location=location,
                 requester_user=request.user,
+                department=department,
                 priority=model_priority,
                 status='pending',
-                notes=description,
-                sla_hours=sla_hours,
+                notes=description
             )
+            
+            # Notify department staff
+            service_request.notify_department_staff()
             
             return JsonResponse({
                 'success': True,
@@ -5728,7 +6046,7 @@ def accept_ticket_api(request, ticket_id):
 
 
 @login_required
-@require_permission([ADMINS_GROUP, STAFF_GROUP])
+@require_role(['admin', 'staff', 'user'])
 def start_ticket_api(request, ticket_id):
     """API endpoint to start working on a ticket."""
     if request.method == 'POST':
@@ -5758,7 +6076,7 @@ def start_ticket_api(request, ticket_id):
 
 
 @login_required
-@require_permission([ADMINS_GROUP, STAFF_GROUP])
+@require_role(['admin', 'staff', 'user'])
 def complete_ticket_api(request, ticket_id):
     """API endpoint to mark a ticket as completed."""
     if request.method == 'POST':
@@ -5792,7 +6110,7 @@ def complete_ticket_api(request, ticket_id):
 
 
 @login_required
-@require_permission([ADMINS_GROUP, STAFF_GROUP])
+@require_role(['admin', 'staff', 'user'])
 def close_ticket_api(request, ticket_id):
     """API endpoint to close a ticket."""
     if request.method == 'POST':
@@ -5827,7 +6145,7 @@ def close_ticket_api(request, ticket_id):
 
 
 @login_required
-@require_permission([ADMINS_GROUP, STAFF_GROUP])
+@require_role(['admin', 'staff', 'user'])
 def escalate_ticket_api(request, ticket_id):
     """API endpoint to escalate a ticket."""
     if request.method == 'POST':
@@ -5853,7 +6171,7 @@ def escalate_ticket_api(request, ticket_id):
 
 
 @login_required
-@require_permission([ADMINS_GROUP, STAFF_GROUP])
+@require_role(['admin', 'staff', 'user'])
 def reject_ticket_api(request, ticket_id):
     """API endpoint to reject a ticket."""
     if request.method == 'POST':
@@ -6395,6 +6713,72 @@ def get_guest_whatsapp_message(request, guest_id):
     })
 
 
+@login_required
+@require_permission([ADMINS_GROUP, STAFF_GROUP])
+def get_ticket_suggestions_api(request):
+    """API endpoint to get ticket suggestions based on department and SLA configurations."""
+    if request.method == 'GET':
+        try:
+            from hotel_app.models import DepartmentRequestSLA, RequestType, Department
+            
+            department_name = request.GET.get('department_name')
+            search_term = request.GET.get('search_term', '').lower()
+            
+            # Get all department SLA configurations
+            if department_name:
+                try:
+                    department = Department.objects.get(name=department_name)
+                    department_configs = DepartmentRequestSLA.objects.select_related(
+                        'department', 'request_type'
+                    ).filter(department=department)
+                except Department.DoesNotExist:
+                    department_configs = DepartmentRequestSLA.objects.select_related(
+                        'department', 'request_type'
+                    ).none()
+            else:
+                department_configs = DepartmentRequestSLA.objects.select_related(
+                    'department', 'request_type'
+                ).all()
+            
+            # Extract unique request types and their descriptions
+            suggestions = []
+            seen_request_types = set()
+            
+            for config in department_configs:
+                request_type = config.request_type
+                if request_type.id not in seen_request_types:
+                    # Create suggestion text based on request type and department
+                    suggestion_text = f"{request_type.name} - {config.department.name}"
+                    if request_type.description:
+                        suggestion_text += f": {request_type.description[:100]}"
+                    
+                    # Only include suggestions that match the search term
+                    if search_term in request_type.name.lower() or search_term in suggestion_text.lower():
+                        suggestions.append({
+                            'id': request_type.id,
+                            'name': request_type.name,
+                            'description': request_type.description or '',
+                            'department': config.department.name,
+                            'suggestion_text': suggestion_text
+                        })
+                    
+                    seen_request_types.add(request_type.id)
+            
+            # Limit to 10 suggestions
+            suggestions = suggestions[:10]
+            
+            return JsonResponse({
+                'success': True,
+                'suggestions': suggestions
+            })
+            
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+
+
 # ---- Feedback View ----
 @login_required
 @user_passes_test(is_staff)
@@ -6403,6 +6787,7 @@ def feedback_inbox(request):
     from .models import Review, Guest
     from .forms import FeedbackForm
     
+
     # Handle form submission for new feedback
     if request.method == 'POST':
         # Get form data
@@ -6715,7 +7100,7 @@ def assign_ticket_api(request, ticket_id):
 
 
 @login_required
-@require_permission([ADMINS_GROUP, STAFF_GROUP])
+@require_role(['admin', 'staff', 'user'])
 def accept_ticket_api(request, ticket_id):
     """API endpoint for a user to accept a ticket."""
     if request.method == 'POST':
@@ -6734,8 +7119,9 @@ def accept_ticket_api(request, ticket_id):
             if service_request.status != 'pending':
                 return JsonResponse({'error': 'Ticket is not in pending status'}, status=400)
             
-            if service_request.department != user_department:
-                return JsonResponse({'error': 'You are not in the department for this ticket'}, status=403)
+            # Check if user can accept the ticket (either in same department or is the requester)
+            if not (service_request.department == user_department or service_request.requester_user == request.user):
+                return JsonResponse({'error': 'You do not have permission to accept this ticket'}, status=403)
             
             # Assign the ticket to the current user if not already assigned
             if not service_request.assignee_user:
@@ -7048,3 +7434,58 @@ def gym_report(request):
         'current_page': 1    # Current page number
     }
     return render(request, 'dashboard/gym_report.html', context)
+
+
+@login_required
+@require_permission([ADMINS_GROUP])
+def export_user_data(request):
+    """Export all user-related data (departments, users, groups, profiles)"""
+    try:
+        format = request.GET.get('format', 'json').lower()
+        response = create_export_file(format)
+        return response
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error exporting user data: {str(e)}")
+        return JsonResponse({'error': 'Failed to export data'}, status=500)
+
+
+@login_required
+@require_permission([ADMINS_GROUP])
+@csrf_exempt
+def import_user_data(request):
+    """Import user-related data from a JSON file"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST method required'}, status=405)
+    
+    try:
+        # Get the uploaded file
+        if 'file' not in request.FILES:
+            return JsonResponse({'error': 'No file uploaded'}, status=400)
+        
+        uploaded_file = request.FILES['file']
+        
+        # Check file extension
+        if not uploaded_file.name.endswith('.json'):
+            return JsonResponse({'error': 'Only JSON files are supported'}, status=400)
+        
+        # Read and parse the JSON data
+        try:
+            file_content = uploaded_file.read().decode('utf-8')
+            data = json.loads(file_content)
+        except json.JSONDecodeError as e:
+            return JsonResponse({'error': f'Invalid JSON format: {str(e)}'}, status=400)
+        
+        # Import the data
+        result = import_all_data(data)
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Data imported successfully',
+            'result': result
+        })
+        
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error importing user data: {str(e)}")
+        return JsonResponse({'error': f'Failed to import data: {str(e)}'}, status=500)

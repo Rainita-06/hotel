@@ -6,7 +6,7 @@
       <h3 class="text-lg font-semibold text-gray-900">Critical Tickets Monitoring</h3>
       <p class="text-sm text-gray-600">Real-time SLA tracking and priority management</p>
     </div>
-    <button class="w-36 h-9 bg-sky-600 text-white text-sm font-medium rounded-lg">View All Tickets</button>
+    <a href="{% url 'dashboard:tickets' %}" class="w-36 h-9 bg-sky-600 text-white text-sm font-medium rounded-lg flex items-center justify-center hover:bg-sky-700 transition-colors">View All Tickets</a>
   </div>
 
   <!-- Tickets List -->
@@ -14,26 +14,26 @@
     {% for ticket in critical_tickets %}
       {% with pr=ticket.priority|upper %}
       <div class="w-full h-24 p-4 rounded-lg border-l-4 flex justify-between items-center
-                  {% if pr == 'HIGH' %} bg-red-50 border-red-500
+                  {% if pr == 'HIGH' or pr == 'CRITICAL' %} bg-red-50 border-red-500
                   {% elif pr == 'MED' or pr == 'MEDIUM' %} bg-yellow-50 border-yellow-400
                   {% elif pr == 'NORM' or pr == 'NORMAL' %} bg-blue-50 border-sky-600
-                  {% elif pr == 'RESOLVED' %} bg-green-50 border-green-500
+                  {% elif pr == 'RESOLVED' or pr == 'CLOSED' or pr == 'COMPLETED' %} bg-green-50 border-green-500
                   {% else %} bg-gray-50 border-gray-300 {% endif %}">
         
         <!-- Left Side: Ticket Info -->
         <div class="flex items-center gap-4">
           <div class="flex items-center gap-2">
             <span class="w-3 h-3 rounded-full
-                         {% if pr == 'HIGH' %} bg-red-500
+                         {% if pr == 'HIGH' or pr == 'CRITICAL' %} bg-red-500
                          {% elif pr == 'MED' or pr == 'MEDIUM' %} bg-yellow-400
                          {% elif pr == 'NORM' or pr == 'NORMAL' %} bg-sky-600
-                         {% elif pr == 'RESOLVED' %} bg-green-500
+                         {% elif pr == 'RESOLVED' or pr == 'CLOSED' or pr == 'COMPLETED' %} bg-green-500
                          {% else %} bg-gray-400 {% endif %}"></span>
             <span class="px-3 py-1 text-xs font-medium text-white rounded-full
-                         {% if pr == 'HIGH' %} bg-red-500
+                         {% if pr == 'HIGH' or pr == 'CRITICAL' %} bg-red-500
                          {% elif pr == 'MED' or pr == 'MEDIUM' %} bg-yellow-400
                          {% elif pr == 'NORM' or pr == 'NORMAL' %} bg-sky-600
-                         {% elif pr == 'RESOLVED' %} bg-green-500
+                         {% elif pr == 'RESOLVED' or pr == 'CLOSED' or pr == 'COMPLETED' %} bg-green-500
                          {% else %} bg-gray-500 {% endif %}">
               {{ pr }}
             </span>
@@ -41,13 +41,13 @@
           <div>
             <p class="text-base font-medium text-gray-900">#{{ ticket.id }} - {{ ticket.title }}</p>
             <p class="text-sm text-gray-600">
-              {% if ticket.room %}Room {{ ticket.room }} • {% endif %}{{ ticket.department }} • Guest: {{ ticket.guest }}
+              {% if ticket.location %}{{ ticket.location }} • {% endif %}{{ ticket.department }} • Guest: {{ ticket.requester_user.get_full_name|default:ticket.requester_user.username }}
             </p>
             <p class="text-xs text-gray-500">
-              {% if pr == 'RESOLVED' %}
-                Resolved: {{ ticket.reported }}
+              {% if pr == 'RESOLVED' or pr == 'CLOSED' or pr == 'COMPLETED' %}
+                Resolved: {{ ticket.completed_at|timesince }} ago
               {% else %}
-                Reported: {{ ticket.reported }}
+                Reported: {{ ticket.created_at|timesince }} ago
               {% endif %}
             </p>
           </div>
@@ -55,18 +55,18 @@
 
         <!-- Right Side: Progress / Status -->
         <div>
-          {% if pr != 'RESOLVED' %}
+          {% if pr != 'RESOLVED' and pr != 'CLOSED' and pr != 'COMPLETED' %}
             <div class="w-24">
               <div class="w-full bg-gray-200 rounded-full h-2">
                 <div class="h-2 rounded-full 
-                            {% if pr == 'HIGH' %} bg-red-500
+                            {% if pr == 'HIGH' or pr == 'CRITICAL' %} bg-red-500
                             {% elif pr == 'MED' or pr == 'MEDIUM' %} bg-yellow-400
                             {% elif pr == 'NORM' or pr == 'NORMAL' %} bg-sky-600
                             {% else %} bg-gray-500 {% endif %}"
                      style="width: {{ ticket.progress }}%;"></div>
               </div>
               <p class="text-xs font-medium mt-2 text-right
-                        {% if pr == 'HIGH' %} text-red-500
+                        {% if pr == 'HIGH' or pr == 'CRITICAL' %} text-red-500
                         {% elif pr == 'MED' or pr == 'MEDIUM' %} text-yellow-400
                         {% elif pr == 'NORM' or pr == 'NORMAL' %} text-sky-600
                         {% else %} text-gray-500 {% endif %}">
@@ -79,6 +79,10 @@
         </div>
       </div>
       {% endwith %}
+    {% empty %}
+      <div class="text-center py-8">
+        <p class="text-gray-500">No critical tickets at the moment</p>
+      </div>
     {% endfor %}
   </div>
 </div>

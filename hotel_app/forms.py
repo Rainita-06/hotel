@@ -238,7 +238,7 @@ class LocationForm(forms.ModelForm):
 class RequestTypeForm(forms.ModelForm):
     class Meta:
         model = RequestType
-        fields = ['name', 'description']
+        fields = '__all__'
 
 class ChecklistForm(forms.ModelForm):
     class Meta:

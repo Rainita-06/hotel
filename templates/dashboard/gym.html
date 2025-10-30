@@ -85,7 +85,7 @@
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="w-8 h-8 rounded border border-gray-200 bg-gray-100 flex items-center justify-center">
                                 <svg class="w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm2 2V5h1v1H5zM3 13a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3zm2 2v-1h1v1H5zM13 3a1 1 0 00-1 1v3a1 1 0 001 1h3a1 1 0 001-1V4a1 1 0 00-1-1h-3zm1 2h1v1h-1V5zM13 13a1 1 0 00-1 1v3a1 1 0 001 1h3a1 1 0 001-1v-3a1 1 0 00-1-1h-3zm1 2h1v1h-1v-1z" clip-rule="evenodd" />
+                                    <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm2 2V5h1v1H5zM3 13a1 1 0 00-1 1v3a1 1 0 001 1h3a1 1 0 001-1v-3a1 1 0 00-1-1h-3zm2 2v-1h1v1H5zM13 3a1 1 0 00-1 1v3a1 1 0 001 1h3a1 1 0 001-1V4a1 1 0 00-1-1h-3zm1 2h1v1h-1V5zM13 13a1 1 0 00-1 1v3a1 1 0 001 1h3a1 1 0 001-1v-3a1 1 0 00-1-1h-3zm1 2h1v1h-1v-1z" clip-rule="evenodd" />
                                 </svg>
                             </div>
                         </td>
@@ -154,15 +154,15 @@
     </div>
 </div>
 
-<div id="gymMemberModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0" onclick="window.GymModal && window.GymModal.close('gymMemberModal')">
-  <div class="w-full max-w-md rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0" onclick="event.stopPropagation()">
-    <div class="flex items-start justify-between p-5 border-b">
-      <h3 id="modalTitle" class="text-lg font-semibold text-gray-900">Create Gym Member</h3>
-      <button onclick="window.GymModal && window.GymModal.close('gymMemberModal')" class="rounded-full p-1 text-gray-500 hover:bg-gray-100 transition-colors">
+<div id="gymMemberModal" class="fixed inset-0 z-[1000] hidden items-center justify-center p-4 backdrop-blur-sm bg-black bg-opacity-30 transition-opacity duration-300 opacity-0" onclick="window.GymModal && window.GymModal.close('gymMemberModal')">
+  <div class="w-full max-w-2xl rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[95vh]" onclick="event.stopPropagation()">
+    <div class="flex justify-between items-center p-6 border-b border-gray-200 flex-shrink-0">
+      <h2 class="text-xl font-semibold text-gray-900">Add Gym Member</h2>
+      <button type="button" onclick="window.GymModal && window.GymModal.close('gymMemberModal')" class="rounded-full p-1 text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Close">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
       </button>
     </div>
-    <form id="gymMemberForm" method="post" action="" class="p-6 space-y-4 overflow-y-auto max-h-[70vh]">
+    <form id="gymMemberForm" method="post" action="" class="p-6 space-y-6 overflow-y-auto flex-grow">
       {% csrf_token %}
 
       {# Show form errors (non-field + field-level) #}
@@ -183,37 +183,37 @@
       {% endif %}
 
       <div>
-        <label for="id_full_name" class="block text-sm font-medium text-gray-700">Full Name</label>
+        <label for="id_full_name" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
         {{ form.full_name }}
       </div>
       <div>
-        <label for="id_email" class="block text-sm font-medium text-gray-700">Email</label>
+        <label for="id_email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
         {{ form.email }}
       </div>
       <div>
-        <label for="id_address" class="block text-sm font-medium text-gray-700">Address</label>
+        <label for="id_address" class="block text-sm font-medium text-gray-700 mb-1">Address</label>
         {{ form.address }}
       </div>
       <div>
-        <label for="id_city" class="block text-sm font-medium text-gray-700">City</label>
+        <label for="id_city" class="block text-sm font-medium text-gray-700 mb-1">City</label>
         {{ form.city }}
       </div>
       <div>
-        <label for="id_phone" class="block text-sm font-medium text-gray-700">Phone Number</label>
+        <label for="id_phone" class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
         {{ form.phone }}
       </div>
       <div>
-        <label for="id_start_date" class="block text-sm font-medium text-gray-700">Start Date</label>
+        <label for="id_start_date" class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
         {{ form.start_date }}
       </div>
       <div>
-        <label for="id_end_date" class="block text-sm font-medium text-gray-700">End Date</label>
+        <label for="id_end_date" class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
         {{ form.end_date }}
       </div>
     </form>
-    <div class="flex items-center justify-end gap-3 p-5 border-t bg-gray-50 rounded-b-lg">
+    <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-lg flex-shrink-0">
       <button type="button" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50" onclick="window.GymModal && window.GymModal.close('gymMemberModal')">Cancel</button>
-      <button id="gymMemberSubmit" type="submit" form="gymMemberForm" class="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700">Create Member</button>
+      <button id="gymMemberSubmit" type="submit" class="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 shadow-sm">Create Member</button>
     </div>
   </div>
 </div>

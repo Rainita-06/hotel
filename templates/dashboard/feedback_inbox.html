@@ -156,68 +156,55 @@
     </div>
 </div>
 
-<div id="feedbackModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0" onclick="window.FeedbackModal && window.FeedbackModal.close('feedbackModal')">
-    <div class="w-full max-w-3xl bg-gray-50 rounded-lg shadow-xl flex flex-col transform transition-all duration-300 scale-95 opacity-0" onclick="event.stopPropagation()">
-        
-        <div class="flex items-start justify-between p-6 border-b border-gray-200 bg-white rounded-t-lg">
-            <div>
-                <h2 class="text-xl font-semibold text-gray-900">Share Your Feedback</h2>
-                <p class="text-sm text-gray-500">Help us improve your experience</p>
-            </div>
-            <button type="button" class="p-1 text-gray-400 hover:text-gray-700 rounded-full" onclick="window.FeedbackModal.close('feedbackModal')" aria-label="Close modal">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+<div id="feedbackModal" class="fixed inset-0 z-[1000] hidden items-center justify-center p-4 backdrop-blur-sm bg-black bg-opacity-30 transition-opacity duration-300 opacity-0" onclick="window.FeedbackModal.close('feedbackModal')">
+    <div class="w-full max-w-2xl rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[95vh]" onclick="event.stopPropagation()">
+        <div class="flex justify-between items-center p-6 border-b border-gray-200 flex-shrink-0">
+            <h2 class="text-xl font-semibold text-gray-900">Add Feedback</h2>
+            <button type="button" onclick="window.FeedbackModal.close('feedbackModal')" class="rounded-full p-1 text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Close">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
-        
-        <form id="feedbackForm" method="post" class="overflow-y-auto max-h-[75vh]">
+        <form method="post" action="{% url 'dashboard:feedback_inbox' %}" class="p-6 space-y-6 overflow-y-auto flex-grow">
             {% csrf_token %}
-            <div class="p-6 space-y-6">
-                {% if messages %}{% for message in messages %}<div class="{% if message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-green-100 text-green-800{% endif %} p-4 rounded-md text-sm">{{ message }}</div>{% endfor %}{% endif %}
-
-                <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Guest Information</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="guest_name" class="block text-sm font-medium text-gray-700 mb-1">Guest Name</label>
-                            <input type="text" name="guest_name" id="guest_name" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500" placeholder="Enter guest name" required>
-                        </div>
-                        <div>
-                            <label for="room_number" class="block text-sm font-medium text-gray-700 mb-1">Room Number</label>
-                            <input type="text" name="room_number" id="room_number" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500" placeholder="Enter room number" required>
-                        </div>
-                    </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="guest_name" class="block text-sm font-medium text-gray-700 mb-1">Guest Name</label>
+                    <input type="text" name="guest_name" id="guest_name" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500" placeholder="Enter guest name" required>
                 </div>
-
-                <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">How would you rate your overall experience?</h3>
-                    <div class="flex flex-wrap justify-center gap-4 sm:gap-6 md:gap-8">
-                        <div class="rating-option rating-option-emoji text-center cursor-pointer p-2 rounded-lg transition-all duration-200" data-rating-group="overall" data-rating-value="1" title="Poor"><span class="text-4xl">😞</span><p class="text-xs text-gray-500 mt-1">Poor</p></div>
-                        <div class="rating-option rating-option-emoji text-center cursor-pointer p-2 rounded-lg transition-all duration-200" data-rating-group="overall" data-rating-value="2" title="Fair"><span class="text-4xl">😕</span><p class="text-xs text-gray-500 mt-1">Fair</p></div>
-                        <div class="rating-option rating-option-emoji text-center cursor-pointer p-2 rounded-lg transition-all duration-200" data-rating-group="overall" data-rating-value="3" title="Good"><span class="text-4xl">😐</span><p class="text-xs text-gray-500 mt-1">Good</p></div>
-                        <div class="rating-option rating-option-emoji text-center cursor-pointer p-2 rounded-lg transition-all duration-200" data-rating-group="overall" data-rating-value="4" title="Great"><span class="text-4xl">🙂</span><p class="text-xs text-gray-500 mt-1">Great</p></div>
-                        <div class="rating-option rating-option-emoji text-center cursor-pointer p-2 rounded-lg transition-all duration-200" data-rating-group="overall" data-rating-value="5" title="Excellent"><span class="text-4xl">😄</span><p class="text-xs text-gray-500 mt-1">Excellent</p></div>
-                    </div>
-                    <input type="hidden" name="overall_rating" id="overall_rating" required>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm"><h3 class="text-lg font-semibold text-gray-900 mb-4">How clean was your room?</h3><div class="grid grid-cols-3 gap-3"><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="cleanliness" data-rating-value="1">Poor</button><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="cleanliness" data-rating-value="3">Good</button><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="cleanliness" data-rating-value="5">Excellent</button></div><input type="hidden" name="cleanliness_rating" id="cleanliness_rating"></div>
-                    <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm"><h3 class="text-lg font-semibold text-gray-900 mb-4">How was the staff service?</h3><div class="grid grid-cols-3 gap-3"><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="staff" data-rating-value="1">Poor</button><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="staff" data-rating-value="3">Good</button><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="staff" data-rating-value="5">Excellent</button></div><input type="hidden" name="staff_rating" id="staff_rating"></div>
-                </div>
-
-                <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm"><h3 class="text-lg font-semibold text-gray-900 mb-4">Would you recommend us to others?</h3><div class="grid grid-cols-2 gap-3"><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="recommend" data-rating-value="yes">Yes</button><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="recommend" data-rating-value="no">No</button></div><input type="hidden" name="recommend" id="recommend"></div>
-                
-                <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
-                    <label for="comment" class="text-lg font-semibold text-gray-900 mb-4 block">Tell us more about your experience <span class="text-gray-500 font-normal">(optional)</span></label>
-                    <textarea name="comment" id="comment" rows="5" class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500" placeholder="Write your comments here..."></textarea>
+                <div>
+                    <label for="room_number" class="block text-sm font-medium text-gray-700 mb-1">Room Number</label>
+                    <input type="text" name="room_number" id="room_number" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500" placeholder="Enter room number" required>
                 </div>
             </div>
+
+            <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">How would you rate your overall experience?</h3>
+                <div class="flex flex-wrap justify-center gap-4 sm:gap-6 md:gap-8">
+                    <div class="rating-option rating-option-emoji text-center cursor-pointer p-2 rounded-lg transition-all duration-200" data-rating-group="overall" data-rating-value="1" title="Poor"><span class="text-4xl">😞</span><p class="text-xs text-gray-500 mt-1">Poor</p></div>
+                    <div class="rating-option rating-option-emoji text-center cursor-pointer p-2 rounded-lg transition-all duration-200" data-rating-group="overall" data-rating-value="2" title="Fair"><span class="text-4xl">😕</span><p class="text-xs text-gray-500 mt-1">Fair</p></div>
+                    <div class="rating-option rating-option-emoji text-center cursor-pointer p-2 rounded-lg transition-all duration-200" data-rating-group="overall" data-rating-value="3" title="Good"><span class="text-4xl">😐</span><p class="text-xs text-gray-500 mt-1">Good</p></div>
+                    <div class="rating-option rating-option-emoji text-center cursor-pointer p-2 rounded-lg transition-all duration-200" data-rating-group="overall" data-rating-value="4" title="Great"><span class="text-4xl">🙂</span><p class="text-xs text-gray-500 mt-1">Great</p></div>
+                    <div class="rating-option rating-option-emoji text-center cursor-pointer p-2 rounded-lg transition-all duration-200" data-rating-group="overall" data-rating-value="5" title="Excellent"><span class="text-4xl">😄</span><p class="text-xs text-gray-500 mt-1">Excellent</p></div>
+                </div>
+                <input type="hidden" name="overall_rating" id="overall_rating" required>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm"><h3 class="text-lg font-semibold text-gray-900 mb-4">How clean was your room?</h3><div class="grid grid-cols-3 gap-3"><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="cleanliness" data-rating-value="1">Poor</button><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="cleanliness" data-rating-value="3">Good</button><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="cleanliness" data-rating-value="5">Excellent</button></div><input type="hidden" name="cleanliness_rating" id="cleanliness_rating"></div>
+                <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm"><h3 class="text-lg font-semibold text-gray-900 mb-4">How was the staff service?</h3><div class="grid grid-cols-3 gap-3"><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="staff" data-rating-value="1">Poor</button><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="staff" data-rating-value="3">Good</button><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="staff" data-rating-value="5">Excellent</button></div><input type="hidden" name="staff_rating" id="staff_rating"></div>
+            </div>
+
+            <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm"><h3 class="text-lg font-semibold text-gray-900 mb-4">Would you recommend us to others?</h3><div class="grid grid-cols-2 gap-3"><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="recommend" data-rating-value="yes">Yes</button><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="recommend" data-rating-value="no">No</button></div><input type="hidden" name="recommend" id="recommend"></div>
             
-            <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-white rounded-b-lg">
-                <button type="button" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50" onclick="window.FeedbackModal.close('feedbackModal')">Cancel</button>
-                <button id="feedbackSubmit" type="submit" class="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 shadow-sm">Submit Feedback</button>
+            <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+                <label for="comment" class="text-lg font-semibold text-gray-900 mb-4 block">Tell us more about your experience <span class="text-gray-500 font-normal">(optional)</span></label>
+                <textarea name="comment" id="comment" rows="5" class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500" placeholder="Write your comments here..."></textarea>
             </div>
         </form>
+        <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-lg flex-shrink-0">
+            <button type="button" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50" onclick="window.FeedbackModal.close('feedbackModal')">Cancel</button>
+            <button id="feedbackSubmit" type="submit" class="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 shadow-sm">Submit Feedback</button>
+        </div>
     </div>
 </div>
 <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>

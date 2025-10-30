@@ -25,6 +25,12 @@ router.register(r'vouchers', VoucherViewSet, basename='voucher')
 
 router.register(r'members', GymMemberViewSet, basename='gymmember')
 router.register(r'visits', GymVisitViewSet, basename='gymvisit')
+from django.contrib.auth import logout
+from django.shortcuts import redirect
+
+def logout_view(request):
+    logout(request)
+    return redirect('/login/')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -44,7 +50,7 @@ urlpatterns = [
 
     # Auth
     path('login/', auth_views.LoginView.as_view(template_name='auth/login.html'), name='login'),
-    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('logout/', logout_view, name='logout'),
     
     # Password Reset
     path('password-reset/', auth_views.PasswordResetView.as_view(template_name='auth/password_reset.html'), name='password_reset'),
@@ -121,7 +127,7 @@ urlpatterns = [
     path("scan/gym/", views.scan_gym_page, name="scan_gym_page"),
     path("gym/report/", views.gym_report, name="gym_report"),
     path("data-checker/", views.data_checker, name="data_checker"),
-    
+     path('members/<int:member_id>/', views.member_detail, name='member_detail'),
 
     path('api/', include(router.urls)),
     

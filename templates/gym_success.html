@@ -1,0 +1,169 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}New Gym Member{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 flex justify-center items-center py-8">
+  <div class="w-[1184px]">
+    <!-- Header -->
+    <div class="h-20 px-6 py-4 bg-white border-b border-gray-200 inline-flex justify-center items-center">
+      <div class="flex-1 h-12 flex justify-between items-center">
+        <div class="flex justify-start items-center gap-4">
+          <div class="inline-flex flex-col justify-center items-start">
+            <div class="inline-flex justify-start items-center">
+              <h1 class="w-[1100px] text-gray-900 text-2xl font-bold font-['Inter']">New Gym Member Registered</h1>
+            </div>
+            <div class="inline-flex justify-center items-center">
+              <p class="w-[1100px] text-gray-600 text-sm font-normal font-['Inter']">Membership created successfully with details and QR code</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% if member %}
+    <!-- Member Card -->
+    <div class="w-[1107px] bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] border-gray-200 overflow-hidden mt-6">
+      <!-- Header -->
+      <div class="w-full h-14 px-8 bg-blue-600 border-gray-200 inline-flex justify-between items-center">
+        <div class="flex justify-start items-center gap-3">
+          <div class="text-white text-lg font-bold font-['Inter']">Membership Created</div>
+        </div>
+        <div class="opacity-90">
+          <div class="text-white text-sm font-normal font-['Inter']">Customer Code: {{ member.customer_code }}</div>
+        </div>
+      </div>
+
+      <!-- Member Info Section -->
+      <div class="w-full h-auto">
+        <div class="flex justify-start items-start gap-8 p-8">
+          <!-- Details -->
+          <div class="flex-1">
+            <div class="w-[496px]">
+              <!-- Full Name -->
+              <div class="h-12 py-3 border-b border-gray-200 inline-flex justify-start items-start">
+                <div class="w-60">
+                  <div class="text-gray-900 text-base font-semibold font-['Inter']">Full Name</div>
+                </div>
+                <div class="w-60">
+                  <div class="text-gray-900 text-base font-normal font-['Inter']">{{ member.full_name }}</div>
+                </div>
+              </div>
+
+              <!-- Phone -->
+              <div class="h-12 py-3 border-b border-gray-200 inline-flex justify-start items-start">
+                <div class="w-60">
+                  <div class="text-gray-900 text-base font-semibold font-['Inter']">Phone</div>
+                </div>
+                <div class="w-60">
+                  <div class="text-gray-900 text-base font-normal font-['Inter']">{{ member.phone }}</div>
+                </div>
+              </div>
+
+              <!-- Email -->
+              <div class="h-12 py-3 border-b border-gray-200 inline-flex justify-start items-start">
+                <div class="w-60">
+                  <div class="text-gray-900 text-base font-semibold font-['Inter']">Email</div>
+                </div>
+                <div class="w-60">
+                  <div class="text-gray-900 text-base font-normal font-['Inter']">{{ member.email }}</div>
+                </div>
+              </div>
+
+              <!-- Address -->
+              <div class="h-auto py-3 border-b border-gray-200 inline-flex justify-start items-start">
+  <div class="w-60 shrink-0">
+    <div class="text-gray-900 text-base font-semibold font-['Inter']">Address</div>
+  </div>
+  <div class="w-[500px] break-words">
+    <div class="text-gray-900 text-base font-normal font-['Inter'] whitespace-pre-line">
+      {{ member.address }}, {{ member.city }}
+    </div>
+  </div>
+</div>
+
+
+              <!-- Start Date -->
+              <div class="h-12 py-3 border-b border-gray-200 inline-flex justify-start items-start">
+                <div class="w-60">
+                  <div class="text-gray-900 text-base font-semibold font-['Inter']">Start Date</div>
+                </div>
+                <div class="w-60">
+                  <div class="text-gray-900 text-base font-normal font-['Inter']">{{ member.start_date|date:"M. d, Y" }}</div>
+                </div>
+              </div>
+
+              <!-- Expiry Date -->
+              <div class="h-12 py-3 inline-flex justify-start items-start">
+                <div class="w-60">
+                  <div class="text-gray-900 text-base font-semibold font-['Inter']">Expiry Date</div>
+                </div>
+                <div class="w-60">
+                  <div class="text-gray-900 text-base font-normal font-['Inter']">{{ member.expiry_date|date:"M. d, Y" }}</div>
+                </div>
+              </div>
+
+              <!-- Membership Status -->
+              <div class="h-12 py-3 inline-flex justify-start items-start">
+                <div class="w-60">
+                  <div class="text-gray-900 text-base font-semibold font-['Inter']">Status</div>
+                </div>
+                <div class="w-60">
+                  {% if member.is_expired %}
+                    <div class="text-red-600 text-base font-semibold font-['Inter']">❌ Expired</div>
+                  {% else %}
+                    <div class="text-green-600 text-base font-semibold font-['Inter']">✅ Active</div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- QR Code -->
+          {% if qr_absolute_url %}
+          <div class="w-64">
+            <div class="w-64 h-56 bg-gray-100 rounded-lg outline outline-1 outline-offset-[-1px] outline-gray-200 p-4">
+              <img src="{{ qr_absolute_url }}" alt="QR Code" class="w-32 h-32 mx-auto mb-2">
+              <div class="text-center">
+                <div class="text-gray-500 text-sm font-medium font-['Inter']">Scan for Gym Entry</div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Buttons -->
+        <div class="w-full h-12 px-8 inline-flex justify-center items-start gap-4 mt-4">
+          <!-- WhatsApp -->
+         {% with base="Hi "|add:member.full_name %}
+  {% with message=base|add:", here is your Gym QR Code: "|add:qr_absolute_url %}
+    <a href="https://wa.me/{{ member.phone }}?text={{ message|urlencode }}"
+       target="_blank"
+       class="w-56 h-12 px-6 py-3 bg-green-500 rounded-xl flex justify-start items-center gap-2 hover:bg-green-600 transition-colors">
+      <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967...Z" />
+      </svg>
+      <div class="text-white text-base font-medium font-['Inter']">Share on WhatsApp</div>
+    </a>
+  {% endwith %}
+{% endwith %}
+
+
+          <!-- Download QR -->
+          <a href="{{ qr_absolute_url }}" 
+             download="Member_{{ member.full_name }}.png"
+             class="w-48 h-12 rounded-xl outline outline-1 outline-offset-[-1px] outline-gray-500 flex justify-center items-center hover:bg-gray-50 transition-colors">
+            <div class="text-gray-500 text-base font-medium font-['Inter']">Download QR Code</div>
+          </a>
+
+          <!-- Back to List -->
+          <a href="{% url 'member_list' %}" 
+             class="w-48 h-12 bg-blue-600 rounded-xl flex justify-center items-center hover:bg-blue-700 transition-colors">
+            <div class="text-white text-base font-medium font-['Inter']">Go to Member List</div>
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

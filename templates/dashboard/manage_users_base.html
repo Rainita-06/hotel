@@ -35,6 +35,28 @@
           </div>
         </div>
 
+        <!-- Export/Import Dropdown -->
+        <div class="relative inline-block text-left z-20" id="exportImportDropdown">
+          <button type="button" id="exportImportButton"
+                  class="inline-flex items-center gap-2 h-10 px-3 rounded-lg bg-gray-100 text-gray-700 text-base font-medium font-['Inter'] hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+            </svg>
+            Export/Import
+          </button>
+          
+          <div id="exportImportMenu" class="hidden origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+            <div class="py-1" role="none">
+              <button id="exportDataButton" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900" role="menuitem">
+                Export Data
+              </button>
+              <button id="importDataButton" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900" role="menuitem">
+                Import Data
+              </button>
+            </div>
+          </div>
+        </div>
+
         <button id="primaryActionBtn" type="button"
                 class="inline-flex items-center gap-2 h-10 px-4 rounded-lg bg-sky-600 text-white text-base font-medium font-['Inter'] hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition-colors">
           <img src="{% static 'images/sidebar/settings.svg' %}" alt="Plus" class="w-5 h-5" />
@@ -68,8 +90,8 @@
   </div>
 </header>
 
-<main class="w-full" data-aos="fade-up" data-aos-delay="200">
-  <div class="max-w-7xl mx-auto px-0 py-0">
+<main class="w-full overflow-x-hidden" data-aos="fade-up" data-aos-delay="200">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
     {% if active_tab == 'profiles' %}
         {% include 'dashboard/components/manage_users/user_profiles_section.html' %}
     {% elif active_tab == 'departments' %}
@@ -79,20 +101,19 @@
     {% endif %}
   </div>
 </main>
-
 <!-- Global modals -->
 <div id="createGroupModal" role="dialog" aria-modal="true" aria-labelledby="createGroupTitle"
-     class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0"
+     class="fixed inset-0 z-[1000] hidden items-center justify-center p-4 backdrop-blur-sm bg-black bg-opacity-30 transition-opacity duration-300 opacity-0"
      onclick="closeModal('createGroupModal')">
-  <div data-modal-content class="w-full max-w-md rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0"
+  <div data-modal-content class="w-full max-w-md rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[95vh]"
        onclick="event.stopPropagation()">
-    <div class="flex items-start justify-between p-5 border-b">
+    <div class="flex items-start justify-between p-5 border-b flex-shrink-0">
       <h3 id="createGroupTitle" class="text-lg font-semibold text-gray-900">Create Group</h3>
       <button type="button" onclick="closeModal('createGroupModal')" class="rounded-full p-1 text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Close">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
       </button>
     </div>
-    <form id="createGroupForm" class="p-6 space-y-4 overflow-y-auto max-h-[70vh]">
+    <form id="createGroupForm" class="p-6 space-y-4 overflow-y-auto flex-grow">
       {% csrf_token %}
       <div>
         <label class="block text-sm font-medium text-gray-700">Group Name</label>
@@ -110,25 +131,53 @@
       </div>
       <div id="createGroupError" class="text-sm text-red-600 hidden"></div>
     </form>
-    <div class="flex items-center justify-end gap-3 p-5 border-t bg-gray-50 rounded-b-lg">
+    <div class="flex items-center justify-end gap-3 p-5 border-t bg-gray-50 rounded-b-lg flex-shrink-0">
       <button type="button" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50" onclick="closeModal('createGroupModal')">Cancel</button>
       <button id="createGroupSubmit" type="submit" form="createGroupForm" class="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700">Create Group</button>
     </div>
   </div>
 </div>
 
-<div id="inviteUserModal" role="dialog" aria-modal="true" aria-labelledby="inviteUserTitle"
-     class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0"
-     onclick="closeModal('inviteUserModal')">
-  <div data-modal-content class="w-full max-w-md rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0"
+<!-- Import Data Modal -->
+<div id="importDataModal" role="dialog" aria-modal="true" aria-labelledby="importDataTitle"
+     class="fixed inset-0 z-[1000] hidden items-center justify-center p-4 backdrop-blur-sm bg-black bg-opacity-30 transition-opacity duration-300 opacity-0"
+     onclick="closeModal('importDataModal')">
+  <div data-modal-content class="w-full max-w-md rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[95vh]"
        onclick="event.stopPropagation()">
-    <div class="flex items-start justify-between p-5 border-b">
+    <div class="flex items-start justify-between p-5 border-b flex-shrink-0">
+      <h3 id="importDataTitle" class="text-lg font-semibold text-gray-900">Import User Data</h3>
+      <button type="button" onclick="closeModal('importDataModal')" class="rounded-full p-1 text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Close">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+    </div>
+    <form id="importDataForm" class="p-6 space-y-4 overflow-y-auto flex-grow" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Select File</label>
+        <input type="file" id="importFile" name="file" accept=".xlsx,.json" class="mt-1 w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100" required />
+        <p class="mt-1 text-xs text-gray-500">Supports Excel (.xlsx) or JSON (.json) files</p>
+      </div>
+      <div id="importDataError" class="text-sm text-red-600 hidden"></div>
+    </form>
+    <div class="flex items-center justify-end gap-3 p-5 border-t bg-gray-50 rounded-b-lg flex-shrink-0">
+      <button type="button" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50" onclick="closeModal('importDataModal')">Cancel</button>
+      <button id="importDataSubmit" type="submit" form="importDataForm" class="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700">Import Data</button>
+    </div>
+  </div>
+</div>
+
+<div id="inviteUserModal" role="dialog" aria-modal="true" aria-labelledby="inviteUserTitle"
+     class="fixed inset-0 z-[1000] hidden items-center justify-center p-4 backdrop-blur-sm bg-black bg-opacity-30 transition-opacity duration-300 opacity-0"
+     onclick="closeModal('inviteUserModal')">
+  <div data-modal-content class="w-full max-w-md rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[95vh]"
+       onclick="event.stopPropagation()">
+    <div class="flex items-start justify-between p-5 border-b flex-shrink-0">
       <h3 id="inviteUserTitle" class="text-lg font-semibold text-gray-900">Create User</h3>
       <button type="button" onclick="closeModal('inviteUserModal')" class="rounded-full p-1 text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Close">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
       </button>
     </div>
-    <form id="inviteUserForm" class="p-6 space-y-4 overflow-y-auto max-h-[70vh]" enctype="multipart/form-data" autocomplete="on">
+    <form id="inviteUserForm" class="p-6 space-y-4 overflow-y-auto flex-grow" enctype="multipart/form-data" autocomplete="on">
       {% csrf_token %}
       <div>
         <label class="block text-sm font-medium text-gray-700">Full Name</label>
@@ -169,7 +218,7 @@
       </div>
       <div id="inviteUserError" class="text-sm text-red-600 hidden"></div>
     </form>
-    <div class="flex items-center justify-end gap-3 p-5 border-t bg-gray-50 rounded-b-lg">
+    <div class="flex items-center justify-end gap-3 p-5 border-t bg-gray-50 rounded-b-lg flex-shrink-0">
       <button type="button" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50" onclick="closeModal('inviteUserModal')">Cancel</button>
       <button id="inviteUserSubmit" type="submit" form="inviteUserForm" class="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700">Create User</button>
     </div>
@@ -177,17 +226,17 @@
 </div>
 
 <div id="addDepartmentModal" role="dialog" aria-modal="true" aria-labelledby="addDepartmentTitle"
-     class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0"
+     class="fixed inset-0 z-[1000] hidden items-center justify-center p-4 backdrop-blur-sm bg-black bg-opacity-30 transition-opacity duration-300 opacity-0"
      onclick="closeModal('addDepartmentModal')">
-    <div data-modal-content class="w-full max-w-lg rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0"
+    <div data-modal-content class="w-full max-w-lg rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[95vh]"
          onclick="event.stopPropagation()">
-        <div class="flex items-start justify-between p-5 border-b">
+        <div class="flex items-start justify-between p-5 border-b flex-shrink-0">
             <h3 id="addDepartmentTitle" class="text-lg font-semibold text-gray-900">Add Department</h3>
             <button type="button" onclick="closeModal('addDepartmentModal')" class="rounded-full p-1 text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Close">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
-        <form id="addDepartmentForm" onsubmit="submitAddDepartment(event)" class="p-6 space-y-4 overflow-y-auto max-h-[70vh]">
+        <form id="addDepartmentForm" onsubmit="submitAddDepartment(event)" class="p-6 space-y-4 overflow-y-auto flex-grow">
             {% csrf_token %}
             <div>
                 <label for="departmentName" class="block text-sm font-medium text-gray-700">Department Name</label>
@@ -223,7 +272,7 @@
             </div>
             <div id="addDepartmentError" class="hidden text-sm text-red-600"></div>
         </form>
-        <div class="flex items-center justify-end gap-3 p-5 border-t bg-gray-50 rounded-b-lg">
+        <div class="flex items-center justify-end gap-3 p-5 border-t bg-gray-50 rounded-b-lg flex-shrink-0">
             <button type="button" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50" onclick="closeModal('addDepartmentModal')">Cancel</button>
             <button id="addDepartmentSubmit" type="submit" form="addDepartmentForm" class="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700">Add Department</button>
         </div>
@@ -1117,6 +1166,158 @@
     });
   }
 
+  // Export/Import functionality
+  document.addEventListener('DOMContentLoaded', function() {
+    // Export/Import dropdown
+    const exportImportButton = document.getElementById('exportImportButton');
+    const exportImportMenu = document.getElementById('exportImportMenu');
+    
+    if (exportImportButton && exportImportMenu) {
+      exportImportButton.addEventListener('click', function(e) {
+        e.stopPropagation();
+        exportImportMenu.classList.toggle('hidden');
+        
+        // Ensure the dropdown is visible and properly positioned
+        if (!exportImportMenu.classList.contains('hidden')) {
+          // Get button position
+          const buttonRect = exportImportButton.getBoundingClientRect();
+          const menuRect = exportImportMenu.getBoundingClientRect();
+          
+          // Check if menu would go off the right edge of the screen
+          if (buttonRect.right + menuRect.width > window.innerWidth) {
+            // Position menu to the left of the button
+            exportImportMenu.style.left = 'auto';
+            exportImportMenu.style.right = '0';
+          } else {
+            // Position menu to the right of the button
+            exportImportMenu.style.left = '0';
+            exportImportMenu.style.right = 'auto';
+          }
+        }
+      });
+      
+      // Close dropdown when clicking outside
+      document.addEventListener('click', function() {
+        if (exportImportMenu) {
+          exportImportMenu.classList.add('hidden');
+        }
+      });
+      
+      // Prevent menu from closing when clicking inside
+      if (exportImportMenu) {
+        exportImportMenu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      }
+    }
+    
+    // Export button - exports all data as Excel
+    const exportDataButton = document.getElementById('exportDataButton');
+    if (exportDataButton) {
+      exportDataButton.addEventListener('click', function() {
+        if (exportImportMenu) {
+          exportImportMenu.classList.add('hidden');
+        }
+        // Export all data as Excel
+        window.location.href = '{% url "dashboard:export_user_data" %}?format=xlsx';
+      });
+    }
+    
+    // Import button
+    const importDataButton = document.getElementById('importDataButton');
+    if (importDataButton) {
+      importDataButton.addEventListener('click', function() {
+        if (exportImportMenu) {
+          exportImportMenu.classList.add('hidden');
+        }
+        openImportDataModal();
+      });
+    }
+    
+    // Import form submission
+    const importDataForm = document.getElementById('importDataForm');
+    if (importDataForm) {
+      importDataForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        submitImportData(e);
+      });
+    }
+  });
+  
+  function openImportDataModal() {
+    const form = document.getElementById('importDataForm');
+    if (form) form.reset();
+    
+    const errorEl = document.getElementById('importDataError');
+    if (errorEl) errorEl.classList.add('hidden');
+    
+    showModal('importDataModal');
+  }
+  
+  function submitImportData(e) {
+    e.preventDefault();
+    const btn = document.getElementById('importDataSubmit');
+    const form = e.target;
+    const errorEl = document.getElementById('importDataError');
+    const formData = new FormData(form);
+
+    // Check if file is selected
+    const fileInput = document.getElementById('importFile');
+    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+      if (errorEl) {
+        errorEl.textContent = 'Please select a file to import.';
+        errorEl.classList.remove('hidden');
+      }
+      return;
+    }
+
+    const file = fileInput.files[0];
+    // Only allow Excel files for import
+    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.json')) {
+      if (errorEl) {
+        errorEl.textContent = 'Only Excel (.xlsx) or JSON (.json) files are supported for import.';
+        errorEl.classList.remove('hidden');
+      }
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Importing...';
+    errorEl.classList.add('hidden');
+
+    fetch('{% url "dashboard:import_user_data" %}', {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': getCookie('csrftoken'),
+        'Accept': 'application/json'
+      },
+      body: formData
+    })
+    .then(async response => {
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const msg = payload.error || 'Failed to import data.';
+        throw new Error(msg);
+      }
+      return payload;
+    })
+    .then(data => {
+      closeModal('importDataModal');
+      showToast('Data imported successfully!', 'success');
+      // Reload the page to reflect changes
+      setTimeout(() => { window.location.reload(); }, 700);
+    })
+    .catch(err => {
+      if (errorEl) {
+        errorEl.textContent = err.message;
+        errorEl.classList.remove('hidden');
+      }
+    })
+    .finally(() => {
+      btn.disabled = false;
+      btn.textContent = 'Import Data';
+    });
+  }
 </script>
 
 {% endblock extra_js %}

@@ -1,3 +1,4 @@
+import os
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.http import JsonResponse
@@ -1610,7 +1611,8 @@ def create_voucher_checkin(request):
         voucher.qr_code_image.save(file_name, ContentFile(buffer.getvalue()), save=True)
 
         voucher.save()
-
+        qr_image_path = voucher.qr_code_image.path  # local file path
+        os.startfile(qr_image_path)
         # Absolute URL for QR sharing
         qr_absolute_url = request.build_absolute_uri(voucher.qr_code_image.url)
 
@@ -2024,10 +2026,24 @@ def add_member(request):
         # Save actual PNG file to ImageField
         file_name = f"member_{member.member_id}.png"
         member.qr_code_image.save(file_name, ContentFile(buffer.getvalue()), save=True)
+        qr_image_path = member.qr_code_image.path  # local file path
+        os.startfile(qr_image_path)
+        qr_absolute_url = request.build_absolute_uri(member.qr_code_image.url)
 
+        # Landing link (optional future view)
+        landing_url = request.build_absolute_uri(reverse("member_detail", args=[member.member_id]))
+        return render(request, "gym_success.html", {
+            "member": member,
+            "qr_absolute_url": qr_absolute_url,
+            "landing_url": landing_url,
+        })
         return redirect("member_list")
 
     return render(request, "add_member.html")
+def member_detail(request, member_id):
+    member = member.objects.get(member_id=member_id)
+    return render(request, 'members/member_detail.html', {'member': member})
+
 def member_list(request):
     members = GymMember.objects.all().order_by("-created_at")
 
@@ -2196,7 +2212,18 @@ def edit_member(request, member_id):
             member.qr_expired = True
 
         member.save()
+        qr_image_path = member.qr_code_image.path  # local file path
+        os.startfile(qr_image_path)
         messages.success(request, f"{member.full_name} ✅ Member updated successfully.")
+        qr_absolute_url = request.build_absolute_uri(member.qr_code_image.url)
+
+        # Landing link (optional future view)
+        landing_url = request.build_absolute_uri(reverse("member_detail", args=[member.member_id]))
+        return render(request, "gym_success.html", {
+            "member": member,
+            "qr_absolute_url": qr_absolute_url,
+            "landing_url": landing_url,
+        })
         return redirect("member_list")
 
     return render(request, "edit_member.html", {"member": member})

@@ -1,13 +1,12 @@
-
 {% block content %}
 
 <!-- Modal overlay (centered vertically and horizontally) -->
 <div class="fixed inset-0 bg-black/20 backdrop-blur-sm flex justify-center items-center z-50">
     <!-- Form container -->
-    <div class="bg-white rounded-xl shadow-lg w-[850px] max-w-full max-h-[90vh] overflow-auto p-6 relative">
+    <div class="bg-white rounded-xl shadow-lg w-[920px] max-w-full max-h-[90vh] overflow-auto p-6 relative">
         <h2 class="text-gray-900 text-lg font-semibold mb-4 font-['Inter']">Edit Member - {{ member.full_name }}</h2>
         
-        <form method="POST" action="{% url 'edit_member' member.member_id %}">
+        <form method="POST" action="{% url 'edit_member' member.member_id %}" autocomplete="off">
             {% csrf_token %}
             
             <!-- Two-column grid -->
@@ -19,66 +18,58 @@
                         <input type="text" name="full_name" value="{{ member.full_name }}" required
                             class="w-full h-10 px-3 rounded-lg border border-gray-300 text-gray-700 text-sm">
                     </div>
+                    
                     <div>
                         <label class="block text-gray-700 text-sm font-medium font-['Inter']">City</label>
                         <input type="text" name="city" value="{{ member.city }}"
                             class="w-full h-10 px-3 rounded-lg border border-gray-300 text-gray-700 text-sm">
                     </div>
+                    
                     <div>
-                        <label class="block text-gray-700 text-sm font-medium font-['Inter']">Mobile Number</label>
-                        <input type="text" name="phone" value="{{ member.phone }}" required
-                            class="w-full h-10 px-3 rounded-lg border border-gray-300 text-gray-700 text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-gray-700 text-sm font-medium font-['Inter']">Email</label>
-                        <input type="email" name="email" value="{{ member.email }}"
-                            class="w-full h-10 px-3 rounded-lg border border-gray-300 text-gray-700 text-sm">
+                        <label class="block text-gray-700 text-sm font-medium font-['Inter']">Address</label>
+                        <textarea name="address" placeholder="Enter address" 
+                            class="w-full h-16 px-3 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm">{{ member.address }}</textarea>
                     </div>
                 </div>
 
                 <!-- Right Column -->
                 <div class="space-y-3">
                     <div>
-                        <label class="block text-gray-700 text-sm font-medium font-['Inter']">Address</label>
-                        <textarea name="address" placeholder="Enter address" 
-                            class="w-full h-16 px-3 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm">{{ member.address }}</textarea>
-                    </div>
-                    <div>
-                        <label class="block text-gray-700 text-sm font-medium font-['Inter']">New Password (leave blank to keep current)</label>
-                        <input type="password" name="password" placeholder="Enter new password"
+                        <label class="block text-gray-700 text-sm font-medium font-['Inter']">Mobile Number</label>
+                        <input type="text" name="phone" value="{{ member.phone }}" required
                             class="w-full h-10 px-3 rounded-lg border border-gray-300 text-gray-700 text-sm">
                     </div>
+                    
                     <div>
-                        <label class="block text-gray-700 text-sm font-medium font-['Inter']">Confirm Password</label>
-                        <input type="password" name="confirm_password" placeholder="Confirm new password"
+                        <label class="block text-gray-700 text-sm font-medium font-['Inter']">Email</label>
+                        <input type="email" name="email" value="{{ member.email }}"
                             class="w-full h-10 px-3 rounded-lg border border-gray-300 text-gray-700 text-sm">
                     </div>
-                </div>
-            </div>
+                    
+                    <div class="flex items-center mt-2">
+                        <input type="checkbox" name="is_active" id="id_is_active" 
+                            class="h-4 w-4 text-blue-600 rounded border-gray-300" 
+                            {% if member.is_active %}checked{% endif %}>
+                        <label for="id_is_active" class="ml-2 block text-gray-700 text-sm font-medium font-['Inter']">
+                            Active
+                        </label>
+                    </div>
 
-            <!-- Checkboxes section (full width) -->
-            <div class="mt-4 space-y-3">
-                <div class="flex items-center">
-                    <input type="checkbox" name="is_active" id="id_is_active" 
-                        class="h-4 w-4 text-blue-600 rounded border-gray-300" 
-                        {% if member.is_active %}checked{% endif %}>
-                    <label for="id_is_active" class="ml-2 block text-gray-700 text-sm font-medium font-['Inter']">Active</label>
+                    <div class="flex items-center">
+                        <input type="checkbox" name="renew_membership" id="id_renew_membership"
+                            class="h-4 w-4 text-blue-600 rounded border-gray-300"
+                            {% if not member.is_expired %}disabled{% endif %}>
+                        <label for="id_renew_membership" class="ml-2 block text-gray-700 text-sm font-medium font-['Inter']">
+                            Renew membership for 3 months
+                        </label>
+                    </div>
+
+                    {% if not member.is_expired %}
+                        <small class="text-red-500 text-sm block mt-1">
+                            ⚠️ Membership not expired yet, renewal disabled.
+                        </small>
+                    {% endif %}
                 </div>
-                
-                <div class="flex items-center">
-                    <input type="checkbox" name="renew_membership" id="id_renew_membership"
-                        class="h-4 w-4 text-blue-600 rounded border-gray-300"
-                        {% if not member.is_expired %}disabled{% endif %}>
-                    <label for="id_renew_membership" class="ml-2 block text-gray-700 text-sm font-medium font-['Inter']">
-                        Renew membership for 3 months
-                    </label>
-                </div>
-                
-                {% if not member.is_expired %}
-                    <small class="text-red-500 text-sm block mt-1">
-                        ⚠️ Membership not expired yet, renewal disabled.
-                    </small>
-                {% endif %}
             </div>
 
             {% if error %}
@@ -90,9 +81,9 @@
                     Save
                 </button>
                 <a href="{% url 'member_list' %}"
-               class="ml-2 px-4 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400">
-                Cancel
-            </a>
+                   class="ml-2 px-4 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400">
+                    Cancel
+                </a>
             </div>
         </form>
     </div>

@@ -22,6 +22,8 @@
 
     /* This class will be added by JS to trigger the animation */
     .animate-slide-in-up {
+        /* Set initial state to invisible before animation */
+        opacity: 0;
         animation: slideInUp 0.6s ease-out forwards;
     }
 
@@ -43,12 +45,12 @@
             </div>
             
             <div class="flex items-center gap-4">
-                <form id="searchForm" method="get" class="relative">
+                <form autocomplete="off" id="searchForm" method="get" class="relative">
                     <img src="{% static 'images/tickets/search.svg' %}" alt="Search Icon" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" />
-                    <input type="text" name="search" placeholder="Search by ID, Subject, Room..." value="{{ search_query|default:'' }}" class="w-80 h-10 pl-10 pr-4 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500" />
-                    {% if department_filter %}<input type="hidden" name="department" value="{{ department_filter }}">{% endif %}
-                    {% if priority_filter %}<input type="hidden" name="priority" value="{{ priority_filter }}">{% endif %}
-                    {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
+                    <input autocomplete="off" type="text" name="search" placeholder="Search by ID, Subject, Room..." value="{{ search_query|default:'' }}" class="w-80 h-10 pl-10 pr-4 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                    {% if department_filter %}<input autocomplete="off" type="hidden" name="department" value="{{ department_filter }}">{% endif %}
+                    {% if priority_filter %}<input autocomplete="off" type="hidden" name="priority" value="{{ priority_filter }}">{% endif %}
+                    {% if status_filter %}<input autocomplete="off" type="hidden" name="status" value="{{ status_filter }}">{% endif %}
                 </form>
                 <button class="p-2 rounded-lg hover:bg-gray-100">
                     <img src="{% static 'images/tickets/notification.svg' %}" alt="Notifications" class="w-6 h-6" />
@@ -67,11 +69,11 @@
                 <h2 class="text-gray-900 text-lg font-semibold font-['Inter']">Department Statistics</h2>
                 <button id="expandDepartmentsBtn" class="text-sky-600 text-sm font-medium flex items-center gap-1 hover:text-sky-800 transition-colors">
                     <span>View All</span>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    <svg class="w-4 h-4 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                 </button>
             </div>
             
-            <div id="sliderWrapper" class="relative">
+            <div id="sliderWrapper" class="relative transition-all duration-500 ease-in-out">
                 <div class="overflow-hidden">
                     <div id="departmentSlider" class="flex transition-transform duration-500 ease-in-out">
                         {% for dept in departments %}
@@ -113,7 +115,7 @@
             </div>
         </div>
 
-        <div id="expandedDepartments" class="hidden">
+        <div id="expandedDepartments" class="hidden transition-all duration-500 ease-in-out">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {% for dept in departments %}
                 <div class="dept-card-expanded bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -152,8 +154,8 @@
                 </button>
             </div>
             <div class="mt-6 flex flex-wrap justify-between items-center gap-4">
-                <form id="filterForm" method="get" class="flex flex-wrap items-center gap-4">
-                    <input type="hidden" name="search" value="{{ search_query|default:'' }}">
+                <form autocomplete="off" id="filterForm" method="get" class="flex flex-wrap items-center gap-4">
+                    <input autocomplete="off" type="hidden" name="search" value="{{ search_query|default:'' }}">
                     
                     <select name="department" onchange="this.form.submit()" class="w-40 h-9 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer">
                         <option value="">All Departments</option>
@@ -179,12 +181,7 @@
                     </select>
                 </form>
                 <div class="flex gap-2">
-                    <button id="showSLABtn" class="h-10 px-4 rounded-lg bg-sky-600 text-white flex items-center justify-center gap-2 hover:bg-sky-700 transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
-                        </svg>
-                        <span>SLA</span>
-                    </button>
+                    <!-- SLA Button Removed -->
                     <button class="h-10 w-40 rounded-lg border border-sky-600 text-sky-600 flex items-center justify-center gap-2 hover:bg-sky-50 transition-colors">
                         <img src="{% static 'images/tickets/export.svg' %}" alt="Export Icon"/>
                         <span>Export</span>
@@ -198,7 +195,7 @@
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th scope="col" class="p-4 text-left"><input type="checkbox" class="h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500"></th>
+                            <th scope="col" class="p-4 text-left"><input autocomplete="off" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500"></th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Ticket ID</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Priority</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Subject</th>
@@ -211,7 +208,7 @@
                     <tbody class="bg-white divide-y divide-gray-200">
                         {% for ticket in tickets %}
                         <tr>
-                            <td class="p-4"><input type="checkbox" class="h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500"></td>
+                            <td class="p-4"><input autocomplete="off" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500"></td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{{ ticket.id }}</td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-{{ ticket.priority_color }}-100 text-{{ ticket.priority_color }}-700">{{ ticket.get_priority_display }}</span>
@@ -284,32 +281,41 @@
         </div>
     </div>
     
-    <div id="createTicketModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-        <div id="modalContent" class="bg-white rounded-xl shadow-lg w-full max-w-2xl flex flex-col max-h-[95vh] transform transition-all duration-300 ease-out opacity-0 scale-95">
-            <div class="flex justify-between items-center p-6 border-b border-gray-200">
+    <div id="createTicketModal" class="hidden fixed inset-0 z-[1000] items-center justify-center p-4 backdrop-blur-sm bg-black bg-opacity-30 transition-opacity duration-300 opacity-0" onclick="closeCreateTicketModal()">
+        <div id="modalContent" class="w-full max-w-2xl rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[95vh]" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center p-6 border-b border-gray-200 flex-shrink-0">
                 <h2 class="text-xl font-semibold text-gray-900">Create New Ticket</h2>
-                <button id="closeCreateTicketModal" class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <button id="closeCreateTicketModal" class="rounded-full p-1 text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Close">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-            <form class="p-6 space-y-6 overflow-y-auto" onsubmit="return false;">
+            <form autocomplete="off" class="p-6 space-y-6 overflow-y-auto flex-grow" onsubmit="return false;">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label for="guestName" class="block text-sm font-medium text-gray-700 mb-1">Guest Name</label>
-                        <div class="relative"><div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><img src="{% static 'images/tickets/guest.svg' %}" alt="Guest Icon" class="h-5 w-5 text-gray-400" /></div><input type="text" id="guestName" placeholder="Enter guest name" class="w-full h-11 pl-10 pr-4 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500"></div>
+                        <div class="relative"><div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><img src="{% static 'images/tickets/guest.svg' %}" alt="Guest Icon" class="h-5 w-5 text-gray-400" /></div><input autocomplete="off" type="text" id="guestName" placeholder="Enter guest name" class="w-full h-11 pl-10 pr-4 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500"></div>
                     </div>
                     <div>
                         <label for="roomNumber" class="block text-sm font-medium text-gray-700 mb-1">Room Number</label>
-                        <div class="relative"><div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><img src="{% static 'images/tickets/room.svg' %}" alt="Room Icon" class="h-5 w-5 text-gray-400" /></div><input type="text" id="roomNumber" placeholder="Enter room number" class="w-full h-11 pl-10 pr-4 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500"></div>
+                        <div class="relative"><div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><img src="{% static 'images/tickets/room.svg' %}" alt="Room Icon" class="h-5 w-5 text-gray-400" /></div><input autocomplete="off" type="text" id="roomNumber" placeholder="Enter room number" class="w-full h-11 pl-10 pr-4 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500"></div>
                     </div>
                 </div>
                 <div>
                     <label for="department" class="block text-sm font-medium text-gray-700 mb-1">Department</label>
                     <div class="relative"><div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><img src="{% static 'images/tickets/department.svg' %}" alt="Department Icon" class="h-5 w-5 text-gray-400" /></div><select id="department" class="w-full h-11 pl-10 pr-4 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 appearance-none"><option value="">Select department</option>{% for dept in departments %}<option value="{{ dept.name }}">{{ dept.name }}</option>{% endfor %}</select><div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"><svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></div></div>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Ticket Category</label>
-                    <div class="flex flex-wrap gap-3"><button type="button" class="category-btn px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-full border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500">Cleaning</button><button type="button" class="category-btn px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-full border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500">Maintenance</button><button type="button" class="category-btn px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-full border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500">Service Issue</button><button type="button" class="category-btn px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-full border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500">Amenity Request</button><button type="button" class="category-btn px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-full border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500">Complaint</button></div>
+                <div class="relative">
+                    <label for="requestType" class="block text-sm font-medium text-gray-700 mb-1">Request Type</label>
+                    <div class="relative">
+                        <input autocomplete="off" type="text" id="requestType" placeholder="Search and select request type..." class="w-full h-11 pl-10 pr-4 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <img src="{% static 'images/tickets/category.svg' %}" alt="Category Icon" class="h-5 w-5 text-gray-400" />
+                        </div>
+                        <!-- Suggestions dropdown -->
+                        <div id="requestTypeSuggestions" class="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md hidden max-h-60 overflow-auto">
+                            <!-- Suggestions will be populated here dynamically -->
+                        </div>
+                    </div>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Priority Level</label>
@@ -319,84 +325,18 @@
                     <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Description</label><textarea id="description" rows="4" placeholder="Describe the issue or request..." class="w-full p-3 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none"></textarea>
                 </div>
                 <div>
-                    <label for="attachments" class="block text-sm font-medium text-gray-700 mb-1">Attachments (Optional)</label><div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md"><div class="space-y-1 text-center"><img src="{% static 'images/tickets/file.svg' %}" class="mx-auto h-12 w-12 text-gray-400" alt="File upload icon"><div class="flex text-sm text-gray-600"><label for="file-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-sky-600 hover:text-sky-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-sky-500"><span>Upload photos or voice note</span><input id="file-upload" name="file-upload" type="file" class="sr-only"></label></div><p class="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p></div></div>
+                    <label for="attachments" class="block text-sm font-medium text-gray-700 mb-1">Attachments (Optional)</label><div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md"><div class="space-y-1 text-center"><img src="{% static 'images/tickets/file.svg' %}" class="mx-auto h-12 w-12 text-gray-400" alt="File upload icon"><div class="flex text-sm text-gray-600"><label for="file-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-sky-600 hover:text-sky-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-sky-500"><span>Upload photos or voice note</span><input autocomplete="off" id="file-upload" name="file-upload" type="file" class="sr-only"></label></div><p class="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p></div></div>
                 </div>
             </form>
-            <div class="flex justify-end items-center gap-4 p-6 border-t border-gray-200 bg-gray-50 rounded-b-xl">
-                <button id="cancelCreateTicket" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
-                <button id="submitCreateTicket" class="px-4 py-2 text-sm font-medium text-white bg-sky-600 rounded-lg hover:bg-sky-700">Create Ticket</button>
+            <div class="flex justify-end items-center gap-4 p-6 border-t border-gray-200 bg-gray-50 rounded-b-lg flex-shrink-0">
+                <button id="cancelCreateTicket" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50">Cancel</button>
+                <button id="submitCreateTicket" class="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700">Create Ticket</button>
             </div>
         </div>
     </div>
 
-    <div id="slaModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-xl shadow-lg w-full max-w-2xl flex flex-col max-h-[95vh] transform transition-all duration-300 ease-out opacity-0 scale-95">
-            <div class="flex justify-between items-center p-6 border-b border-gray-200">
-                <h2 class="text-xl font-semibold text-gray-900">Current SLA Timings</h2>
-                <button id="closeSLAModal" class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-            <div class="p-6 space-y-6 overflow-y-auto">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="bg-red-50 rounded-lg p-4 border border-red-200">
-                        <div class="flex items-center gap-2 mb-2">
-                            <span class="w-3 h-3 rounded-full bg-red-500"></span>
-                            <h3 class="font-semibold text-gray-900">Critical Tickets</h3>
-                        </div>
-                        <div class="text-sm text-gray-600">
-                            <p>Response Time: <span class="font-medium response-time-critical">5</span> minutes</p>
-                            <p>Resolution Time: <span class="font-medium resolution-time-critical">5</span> minutes</p>
-                        </div>
-                    </div>
-                    <div class="bg-orange-50 rounded-lg p-4 border border-orange-200">
-                        <div class="flex items-center gap-2 mb-2">
-                            <span class="w-3 h-3 rounded-full bg-orange-500"></span>
-                            <h3 class="font-semibold text-gray-900">High Priority Tickets</h3>
-                        </div>
-                        <div class="text-sm text-gray-600">
-                            <p>Response Time: <span class="font-medium response-time-high">10</span> minutes</p>
-                            <p>Resolution Time: <span class="font-medium resolution-time-high">10</span> minutes</p>
-                        </div>
-                    </div>
-                    <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                        <div class="flex items-center gap-2 mb-2">
-                            <span class="w-3 h-3 rounded-full bg-blue-500"></span>
-                            <h3 class="font-semibold text-gray-900">Normal Priority Tickets</h3>
-                        </div>
-                        <div class="text-sm text-gray-600">
-                            <p>Response Time: <span class="font-medium response-time-normal">15</span> minutes</p>
-                            <p>Resolution Time: <span class="font-medium resolution-time-normal">15</span> minutes</p>
-                        </div>
-                    </div>
-                    <div class="bg-green-50 rounded-lg p-4 border border-green-200">
-                        <div class="flex items-center gap-2 mb-2">
-                            <span class="w-3 h-3 rounded-full bg-green-500"></span>
-                            <h3 class="font-semibold text-gray-900">Low Priority Tickets</h3>
-                        </div>
-                        <div class="text-sm text-gray-600">
-                            <p>Response Time: <span class="font-medium response-time-low">20</span> minutes</p>
-                            <p>Resolution Time: <span class="font-medium resolution-time-low">20</span> minutes</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-gray-50 rounded-lg p-4">
-                    <h3 class="font-semibold text-gray-900 mb-2">How SLA Works</h3>
-                    <ul class="text-sm text-gray-600 list-disc pl-5 space-y-1">
-                        <li>Response time is the time allowed to acknowledge a ticket</li>
-                        <li>Resolution time is the time allowed to fully resolve a ticket</li>
-                        <li>Breaching SLA will trigger escalation procedures</li>
-                        <li>SLA times can be configured in the SLA Configuration section</li>
-                    </ul>
-                </div>
-            </div>
-            <div class="flex justify-end items-center gap-4 p-6 border-t border-gray-200 bg-gray-50 rounded-b-xl">
-                <a href="{% url 'dashboard:sla_configuration' %}" class="px-4 py-2 text-sm font-medium text-sky-600 bg-white border border-sky-600 rounded-lg hover:bg-sky-50">Configure SLA</a>
-                <button id="closeSLAModalBtn" class="px-4 py-2 text-sm font-medium text-white bg-sky-600 rounded-lg hover:bg-sky-700">Close</button>
-            </div>
-        </div>
-    </div>
+    <!-- SLA Modal Removed -->
+    
 </div>
 {% endblock content %}
 
@@ -410,90 +350,173 @@ document.addEventListener('DOMContentLoaded', function() {
         el.classList.add('animate-slide-in-up');
     });
 
-    // --- SLA MODAL SCRIPT ---
-    const showSLABtn = document.getElementById('showSLABtn');
-    const closeSLAModal = document.getElementById('closeSLAModal');
-    const closeSLAModalBtn = document.getElementById('closeSLAModalBtn');
-    const slaModal = document.getElementById('slaModal');
-    const slaModalContent = slaModal ? slaModal.querySelector('div') : null;
-    
-    // Fetch SLA data from the server and populate the modal
-    if (showSLABtn) {
-        showSLABtn.addEventListener('click', function() {
-            // Fetch SLA configuration data
-            fetch('/dashboard/api/sla-configuration/update/')
-            .then(response => response.json())
-            .then(data => {
-                // Populate the modal with SLA data
-                if (data.configs) {
-                    data.configs.forEach(config => {
-                        const priority = config.priority;
-                        const responseTime = config.response_time_minutes;
-                        const resolutionTime = config.resolution_time_minutes;
-                        
-                        // Update the modal content
-                        const responseTimeElement = document.querySelector(`.response-time-${priority}`);
-                        const resolutionTimeElement = document.querySelector(`.resolution-time-${priority}`);
-                        
-                        if (responseTimeElement) {
-                            responseTimeElement.textContent = responseTime;
-                        }
-                        if (resolutionTimeElement) {
-                            resolutionTimeElement.textContent = resolutionTime;
-                        }
-                    });
-                }
+    // --- EXPAND/COLLAPSE DEPARTMENTS ---
+    const expandBtn = document.getElementById('expandDepartmentsBtn');
+    const sliderWrapper = document.getElementById('sliderWrapper');
+    const expandedWrapper = document.getElementById('expandedDepartments');
+
+    if (expandBtn && sliderWrapper && expandedWrapper) {
+        const expandedCards = expandedWrapper.querySelectorAll('.dept-card-expanded');
+        
+        const iconUp = `<svg class="w-4 h-4 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>`;
+        const iconDown = `<svg class="w-4 h-4 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>`;
+
+        expandBtn.addEventListener('click', () => {
+            const isExpanded = !expandedWrapper.classList.contains('hidden');
+
+            if (isExpanded) {
+                // --- COLLAPSE ---
+                sliderWrapper.classList.remove('hidden');
+                expandedWrapper.classList.add('hidden');
                 
-                // Show the modal
-                if (slaModal) {
-                    slaModal.classList.remove('hidden');
+                // Reset button
+                expandBtn.innerHTML = `<span>View All</span>${iconDown}`;
+                
+                // Hide all cards immediately for next animation
+                expandedCards.forEach(card => {
+                    card.classList.remove('animate-slide-in-up');
+                    card.style.opacity = 0; // Reset opacity
+                });
+                
+                // Scroll back to the slider
+                sliderWrapper.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            } else {
+                // --- EXPAND ---
+                sliderWrapper.classList.add('hidden');
+                expandedWrapper.classList.remove('hidden');
+                
+                // Update button
+                expandBtn.innerHTML = `<span>Collapse</span>${iconUp}`;
+                
+                // Staggered animation for cards
+                expandedCards.forEach((card, index) => {
                     setTimeout(() => {
-                        slaModalContent.classList.remove('opacity-0', 'scale-95');
-                        slaModalContent.classList.add('opacity-100', 'scale-100');
-                    }, 10);
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching SLA data:', error);
-                // Show the modal with default values if there's an error
-                if (slaModal) {
-                    slaModal.classList.remove('hidden');
-                    setTimeout(() => {
-                        slaModalContent.classList.remove('opacity-0', 'scale-95');
-                        slaModalContent.classList.add('opacity-100', 'scale-100');
-                    }, 10);
-                }
-            });
-        });
-    }
-    
-    if (closeSLAModal && slaModal) {
-        closeSLAModal.addEventListener('click', () => {
-            closeModal(slaModal, slaModalContent);
-        });
-    }
-    
-    if (closeSLAModalBtn && slaModal) {
-        closeSLAModalBtn.addEventListener('click', () => {
-            closeModal(slaModal, slaModalContent);
-        });
-    }
-    
-    if (slaModal) {
-        slaModal.addEventListener('click', (e) => {
-            if (e.target === slaModal) {
-                closeModal(slaModal, slaModalContent);
+                        card.style.opacity = 1; // Make visible before animation
+                        card.classList.add('animate-slide-in-up');
+                    }, index * 100); // 100ms delay between each card
+                });
+                
+                // Scroll to the expanded section
+                expandedWrapper.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
         });
     }
+
+
+    // --- DEPARTMENT SLIDER SCRIPT ---
+    const slider = document.getElementById('departmentSlider');
+    const prevBtn = document.getElementById('prevSlide');
+    const nextBtn = document.getElementById('nextSlide');
+    const dotsContainer = document.getElementById('sliderDots');
+    
+    if (slider && prevBtn && nextBtn && dotsContainer) {
+        const slides = slider.querySelectorAll('.flex-shrink-0');
+        const dots = dotsContainer.querySelectorAll('.department-dot');
+        const totalSlides = slides.length;
+        
+        if (totalSlides === 0) {
+            // Hide slider controls if no slides
+            prevBtn.style.display = 'none';
+            nextBtn.style.display = 'none';
+            dotsContainer.style.display = 'none';
+        } else {
+            let currentIndex = 0;
+
+            function getSlidesToShow() {
+                if (window.innerWidth >= 1024) return 3; // lg (lg:w-1/3)
+                if (window.innerWidth >= 768) return 2; // md (md:w-1/2)
+                return 1; // sm (w-full)
+            }
+
+            function updateSlider() {
+                const slidesToShow = getSlidesToShow();
+                // maxIndex is the total slides minus the number visible
+                const maxIndex = Math.max(0, totalSlides - slidesToShow);
+
+                // Clamp currentIndex to valid range
+                if (currentIndex > maxIndex) {
+                    currentIndex = maxIndex;
+                }
+                if (currentIndex < 0) {
+                    currentIndex = 0;
+                }
+                
+                let itemWidthPercent;
+                if (slidesToShow === 3) {
+                    itemWidthPercent = 100 / 3;
+                } else if (slidesToShow === 2) {
+                    itemWidthPercent = 50;
+                } else {
+                    itemWidthPercent = 100;
+                }
+                
+                const offset = -currentIndex * itemWidthPercent;
+                slider.style.transform = `translateX(${offset}%)`;
+                
+                // Update dots
+                dots.forEach((dot, index) => {
+                    dot.classList.toggle('bg-sky-600', index === currentIndex);
+                    dot.classList.toggle('bg-gray-300', index !== currentIndex);
+                });
+                
+                // Update buttons
+                prevBtn.disabled = currentIndex === 0;
+                nextBtn.disabled = currentIndex === maxIndex;
+            }
+
+            // --- Event Listeners ---
+            prevBtn.addEventListener('click', () => {
+                currentIndex--;
+                updateSlider();
+            });
+
+            nextBtn.addEventListener('click', () => {
+                currentIndex++;
+                updateSlider();
+            });
+
+            dots.forEach((dot, index) => {
+                dot.addEventListener('click', () => {
+                    // When a dot is clicked, we set the index
+                    // But we must also clamp it to the max possible index
+                    const slidesToShow = getSlidesToShow();
+                    const maxIndex = Math.max(0, totalSlides - slidesToShow);
+                    currentIndex = Math.min(index, maxIndex);
+                    updateSlider();
+                });
+            });
+
+            window.addEventListener('resize', updateSlider);
+
+            // Initial call to set up slider
+            updateSlider();
+        }
+    }
+
+    // --- SLA MODAL SCRIPT (REMOVED) ---
     
     // Generic close modal function
     function closeModal(modal, modalContent) {
-        modalContent.classList.remove('opacity-100', 'scale-100');
-        modalContent.classList.add('opacity-0', 'scale-95');
+        if (!modal) return;
+        modal.classList.add('opacity-0');
+        if (modalContent) {
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+        }
+        
         setTimeout(() => {
             modal.classList.add('hidden');
+            modal.classList.remove('flex');
         }, 300);
+    }
+
+    // Function to close create ticket modal specifically
+    function closeCreateTicketModal() {
+        const modal = document.getElementById('createTicketModal');
+        const modalContent = document.getElementById('modalContent');
+        if (modal) {
+            closeModal(modal, modalContent);
+        }
     }
 
     // --- MODAL SCRIPT ---
@@ -502,190 +525,156 @@ document.addEventListener('DOMContentLoaded', function() {
     const cancelBtn = document.getElementById('cancelCreateTicket');
     const modal = document.getElementById('createTicketModal');
     const modalContent = document.getElementById('modalContent');
-    const modalForm = modal.querySelector('form');
-    const openModal = () => { modal.classList.remove('hidden'); setTimeout(() => { modalContent.classList.remove('opacity-0', 'scale-95'); modalContent.classList.add('opacity-100', 'scale-100'); }, 10); };
-    const closeModalFunc = () => { modalContent.classList.remove('opacity-100', 'scale-100'); modalContent.classList.add('opacity-0', 'scale-95'); setTimeout(() => { modal.classList.add('hidden'); if (modalForm) modalForm.reset(); document.querySelectorAll('.category-btn').forEach(btn => { btn.classList.remove('ring-2', 'ring-offset-2', 'ring-sky-500', 'border-sky-600', 'text-sky-600'); btn.classList.add('text-gray-700', 'border-gray-300'); }); document.querySelectorAll('.priority-btn').forEach(btn => { btn.classList.remove('ring-2', 'ring-offset-2', 'ring-sky-500'); }); selectedCategory = ''; selectedPriority = ''; }, 300); };
-    if(openModalBtn) openModalBtn.addEventListener('click', openModal);
-    if(closeModalBtn) closeModalBtn.addEventListener('click', closeModalFunc);
-    if(cancelBtn) cancelBtn.addEventListener('click', closeModalFunc);
-    if(modal) modal.addEventListener('click', (e) => { if (e.target === modal) closeModalFunc(); });
+    const modalForm = modal ? modal.querySelector('form') : null;
+    const openModal = () => { 
+        if (modal && modalContent) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            requestAnimationFrame(() => {
+                modal.classList.remove('opacity-0');
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            });
+        }
+    };
+    if (openModalBtn) openModalBtn.addEventListener('click', openModal);
+    if (closeModalBtn) closeModalBtn.addEventListener('click', closeCreateTicketModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeCreateTicketModal);
+    if (modal) modal.addEventListener('click', (e) => { if (e.target === modal) closeCreateTicketModal(); });
 
-    // --- DEPARTMENT STATS TOGGLE (WITH ANIMATION) ---
-    const expandDepartmentsBtn = document.getElementById('expandDepartmentsBtn');
-    const expandedDepartments = document.getElementById('expandedDepartments');
-    const sliderWrapper = document.getElementById('sliderWrapper');
-    if (expandDepartmentsBtn && expandedDepartments && sliderWrapper) {
-        expandDepartmentsBtn.addEventListener('click', () => {
-            const isHidden = expandedDepartments.classList.contains('hidden');
-            const cards = expandedDepartments.querySelectorAll('.dept-card-expanded');
-
-            if (isHidden) {
-                // --- EXPANDING VIEW ---
-                sliderWrapper.classList.add('hidden');
-                expandedDepartments.classList.remove('hidden');
-                
-                // Animate each card with a delay
-                cards.forEach((card, index) => {
-                    setTimeout(() => {
-                        card.classList.add('animate-slide-in-up');
-                    }, index * 100); // 100ms stagger effect
+    // --- TICKET CREATION SCRIPT ---
+    let selectedPriority = '';
+    document.querySelectorAll('.priority-btn').forEach(button => { button.addEventListener('click', () => { document.querySelectorAll('.priority-btn').forEach(btn => btn.classList.remove('ring-2', 'ring-offset-2', 'ring-sky-500')); button.classList.add('ring-2', 'ring-offset-2', 'ring-sky-500'); selectedPriority = button.dataset.priority; }); });
+    
+    // --- ELASTIC SEARCH FUNCTIONALITY FOR REQUEST TYPE FIELD ---
+    const requestTypeField = document.getElementById('requestType');
+    const requestTypeSuggestions = document.getElementById('requestTypeSuggestions');
+    const departmentSelect = document.getElementById('department');
+    let selectedRequestType = null;
+    
+    // Function to fetch request type suggestions
+    function fetchRequestTypeSuggestions() {
+        const searchTerm = requestTypeField.value.trim();
+        const departmentName = departmentSelect.value;
+        
+        // Clear previous suggestions
+        requestTypeSuggestions.innerHTML = '';
+        
+        // Hide dropdown if no search term
+        if (searchTerm.length < 2) {
+            requestTypeSuggestions.classList.add('hidden');
+            return;
+        }
+        
+        // Fetch suggestions from API
+        const url = `/dashboard/api/tickets/suggestions/?search_term=${encodeURIComponent(searchTerm)}&department_name=${encodeURIComponent(departmentName)}`;
+        
+        fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.suggestions.length > 0) {
+                // Populate suggestions
+                data.suggestions.forEach(suggestion => {
+                    const suggestionElement = document.createElement('div');
+                    suggestionElement.className = 'px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm';
+                    suggestionElement.textContent = suggestion.suggestion_text;
+                    suggestionElement.addEventListener('click', () => {
+                        requestTypeField.value = suggestion.name;
+                        selectedRequestType = suggestion;
+                        requestTypeSuggestions.classList.add('hidden');
+                    });
+                    requestTypeSuggestions.appendChild(suggestionElement);
                 });
                 
-                expandDepartmentsBtn.innerHTML = `<span>Show Less</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>`;
+                // Show dropdown
+                requestTypeSuggestions.classList.remove('hidden');
             } else {
-                // --- COLLAPSING VIEW ---
-                expandedDepartments.classList.add('hidden');
-                sliderWrapper.classList.remove('hidden');
-                
-                // Reset cards for next time
-                cards.forEach(card => {
-                    card.classList.remove('animate-slide-in-up');
-                });
-
-                expandDepartmentsBtn.innerHTML = `<span>View All</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>`;
+                // No suggestions found
+                requestTypeSuggestions.classList.add('hidden');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching request type suggestions:', error);
+            requestTypeSuggestions.classList.add('hidden');
+        });
+    }
+    
+    // Add event listeners for request type field
+    if (requestTypeField) {
+        requestTypeField.addEventListener('input', fetchRequestTypeSuggestions);
+        requestTypeField.addEventListener('focus', fetchRequestTypeSuggestions);
+    }
+    
+    // Add event listener for department selection
+    if (departmentSelect) {
+        departmentSelect.addEventListener('change', () => {
+            if (requestTypeField.value.trim().length >= 2) {
+                fetchRequestTypeSuggestions();
             }
         });
     }
-
-    // --- INFINITE DEPARTMENT SLIDER SCRIPT ---
-    const slider = document.getElementById('departmentSlider');
-    if (slider) {
-        const prevBtn = document.getElementById('prevSlide');
-        const nextBtn = document.getElementById('nextSlide');
-        const dotsContainer = document.getElementById('sliderDots');
-        const dots = document.querySelectorAll('.department-dot');
-        
-        if (dots.length > 0) {
-            const originalSlides = Array.from(slider.children);
-            const totalOriginalItems = originalSlides.length;
-            let currentIndex;
-            let itemsPerScreen = 1;
-            let isTransitioning = false;
-            let autoPlayInterval;
-            let resizeTimeout;
-
-            const updateSliderPosition = (withTransition = true) => {
-                slider.style.transition = withTransition ? 'transform 0.5s ease-in-out' : 'none';
-                if (slider.children.length === 0) return;
-                const itemWidth = slider.children[0].getBoundingClientRect().width;
-                slider.style.transform = `translateX(${-currentIndex * itemWidth}px)`;
-                updateDots();
-            };
-
-            const updateDots = () => {
-                const dotIndex = (currentIndex - itemsPerScreen + totalOriginalItems) % totalOriginalItems;
-                dots.forEach((dot, index) => {
-                    dot.classList.toggle('bg-sky-600', index === dotIndex);
-                    dot.classList.toggle('bg-gray-300', index !== dotIndex);
-                });
-            };
-            
-            const moveTo = (newIndex) => {
-                if (isTransitioning) return;
-                isTransitioning = true;
-                currentIndex = newIndex;
-                updateSliderPosition();
-                stopAutoPlay();
-                startAutoPlay();
-            };
-
-            const handleTransitionEnd = () => {
-                isTransitioning = false;
-                if (currentIndex < itemsPerScreen) {
-                    currentIndex += totalOriginalItems;
-                    updateSliderPosition(false);
-                } else if (currentIndex >= totalOriginalItems + itemsPerScreen) {
-                    currentIndex -= totalOriginalItems;
-                    updateSliderPosition(false);
-                }
-            };
-
-            const startAutoPlay = () => {
-                stopAutoPlay();
-                autoPlayInterval = setInterval(() => moveTo(currentIndex + 1), 5000);
-            };
-
-            const stopAutoPlay = () => clearInterval(autoPlayInterval);
-            
-            const setupSlider = () => {
-                stopAutoPlay();
-                isTransitioning = false;
-                itemsPerScreen = window.innerWidth >= 1024 ? 3 : (window.innerWidth >= 768 ? 2 : 1);
-                
-                const sliderControlsVisible = totalOriginalItems > itemsPerScreen;
-                if(prevBtn) prevBtn.style.display = sliderControlsVisible ? 'block' : 'none';
-                if(nextBtn) nextBtn.style.display = sliderControlsVisible ? 'block' : 'none';
-                if(dotsContainer) dotsContainer.style.display = sliderControlsVisible ? 'flex' : 'none';
-
-                slider.innerHTML = '';
-                originalSlides.forEach(slide => slider.appendChild(slide));
-                
-                if (sliderControlsVisible) {
-                    for (let i = 0; i < itemsPerScreen; i++) {
-                        slider.appendChild(originalSlides[i].cloneNode(true));
-                    }
-                    for (let i = totalOriginalItems - 1; i >= totalOriginalItems - itemsPerScreen; i--) {
-                        slider.prepend(originalSlides[i].cloneNode(true));
-                    }
-                }
-
-                currentIndex = sliderControlsVisible ? itemsPerScreen : 0;
-                updateSliderPosition(false);
-                if (sliderControlsVisible) startAutoPlay();
-            };
-            
-            setupSlider();
-            if(nextBtn) nextBtn.addEventListener('click', () => moveTo(currentIndex + 1));
-            if(prevBtn) prevBtn.addEventListener('click', () => moveTo(currentIndex - 1));
-            slider.addEventListener('transitionend', handleTransitionEnd);
-            dots.forEach((dot, index) => {
-                dot.addEventListener('click', () => moveTo(index + itemsPerScreen));
-            });
-            window.addEventListener('resize', () => {
-                clearTimeout(resizeTimeout);
-                resizeTimeout = setTimeout(setupSlider, 250);
-            });
+    
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!requestTypeField.contains(e.target) && !requestTypeSuggestions.contains(e.target)) {
+            requestTypeSuggestions.classList.add('hidden');
         }
-    }
-
-    // --- TICKET CREATION SCRIPT ---
-    let selectedCategory = '', selectedPriority = '';
-    document.querySelectorAll('.category-btn').forEach(button => { button.addEventListener('click', () => { document.querySelectorAll('.category-btn').forEach(btn => { btn.classList.remove('ring-2', 'ring-offset-2', 'ring-sky-500', 'border-sky-600', 'text-sky-600'); btn.classList.add('text-gray-700', 'border-gray-300'); }); button.classList.add('ring-2', 'ring-offset-2', 'ring-sky-500', 'border-sky-600', 'text-sky-600'); button.classList.remove('text-gray-700', 'border-gray-300'); selectedCategory = button.textContent.trim(); }); });
-    document.querySelectorAll('.priority-btn').forEach(button => { button.addEventListener('click', () => { document.querySelectorAll('.priority-btn').forEach(btn => btn.classList.remove('ring-2', 'ring-offset-2', 'ring-sky-500')); button.classList.add('ring-2', 'ring-offset-2', 'ring-sky-500'); selectedPriority = button.dataset.priority; }); });
+    });
+    
     const submitTicketBtn = document.getElementById('submitCreateTicket');
     if (submitTicketBtn) { 
         submitTicketBtn.addEventListener('click', () => { 
-            const ticketData = { guest_name: document.getElementById('guestName').value.trim(), room_number: document.getElementById('roomNumber').value.trim(), department: document.getElementById('department').value, category: selectedCategory, priority: selectedPriority, description: document.getElementById('description').value.trim() }; 
-            if (!ticketData.guest_name || !ticketData.room_number || !ticketData.department || !ticketData.category || !ticketData.priority) { alert('Please fill in all required fields: Guest Name, Room Number, Department, Category, and Priority.'); return; } 
-            fetch('{% url "dashboard:api_create_ticket" %}', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }, body: JSON.stringify(ticketData) })
-            .then(response => response.json())
-            .then(data => { 
-                if (data.success) { 
-                    alert('Ticket created successfully!'); 
-                    location.reload(); 
-                } else { 
-                    alert('Error creating ticket: ' + (data.error || 'Unknown error')); 
-                } 
-            })
-            .catch(error => { 
-                console.error('Error:', error); 
-                alert('An error occurred. Please try again.'); 
-            }); 
-        });
-    }
-    function getCookie(name) { 
-        let cookieValue = null; 
-        if (document.cookie && document.cookie !== '') { 
-            const cookies = document.cookie.split(';'); 
-            for (let i = 0; i < cookies.length; i++) { 
-                const cookie = cookies[i].trim(); 
-                if (cookie.substring(0, name.length + 1) === (name + '=')) { 
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1)); 
-                    break; 
-                } 
+            const ticketData = { 
+                guest_name: document.getElementById('guestName').value.trim(), 
+                room_number: document.getElementById('roomNumber').value.trim(), 
+                department: document.getElementById('department').value, 
+                category: selectedRequestType ? selectedRequestType.name : '', 
+                priority: selectedPriority, 
+                description: document.getElementById('description').value.trim() 
+            }; 
+            if (!ticketData.guest_name || !ticketData.room_number || !ticketData.department || !ticketData.category || !ticketData.priority) { 
+                // Use toast notification instead of alert
+                showToast('Please fill in all required fields: Guest Name, Room Number, Department, Request Type, and Priority.', 'error');
+                return; 
             } 
-        } 
-        return cookieValue; 
+            
+            // Show confirmation modal before creating ticket
+            showConfirmationModal('Create Ticket', 'Are you sure you want to create this ticket?', function() {
+                fetch('{% url "dashboard:api_create_ticket" %}', { 
+                    method: 'POST', 
+                    headers: { 
+                        'Content-Type': 'application/json', 
+                        'X-CSRFToken': getCookie('csrftoken') 
+                    }, 
+                    body: JSON.stringify(ticketData) 
+                })
+                .then(response => response.json())
+                .then(data => { 
+                    if (data.success) { 
+                        // Use toast notification instead of alert
+                        showToast('Ticket created successfully!', 'success');
+                        // Close the modal and reset form
+                        closeModal(modal, modalContent);
+                        if (modalForm) modalForm.reset();
+                        selectedPriority = '';
+                        selectedRequestType = null;
+                        document.querySelectorAll('.priority-btn').forEach(btn => btn.classList.remove('ring-2', 'ring-offset-2', 'ring-sky-500'));
+                        document.getElementById('requestType').value = '';
+                        document.getElementById('requestTypeSuggestions').innerHTML = '';
+                        document.getElementById('requestTypeSuggestions').classList.add('hidden');
+                        location.reload(); 
+                    } else { 
+                        // Use toast notification for errors
+                        showToast('Error creating ticket: ' + (data.error || 'Unknown error'), 'error');
+                    } 
+                })
+                .catch(error => { 
+                    console.error('Error:', error); 
+                    // Use toast notification for errors
+                    showToast('An error occurred. Please try again.', 'error');
+                });
+            });
+        });
     }
 });
 </script>

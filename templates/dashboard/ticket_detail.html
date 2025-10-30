@@ -7,7 +7,7 @@
 
     <header class="w-full bg-white border-b border-gray-200 p-4 lg:p-6 flex justify-between items-center">
         <div class="flex items-center gap-4">
-            <a href="{% url 'dashboard:tickets' %}" class="text-gray-600 hover:text-gray-800" aria-label="Back to tickets">
+            <a href="{% url 'dashboard:my_tickets' %}" class="text-gray-600 hover:text-gray-800" aria-label="Back to tickets">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
             </a>
             <div>
@@ -17,7 +17,7 @@
                     <span class="px-3 py-1 text-xs font-medium text-{{ ticket_status_color }} bg-{{ ticket_status_color }}/10 rounded-full">{{ ticket_status_label }}</span>
                     <p class="text-sm text-gray-500">Created {{ created_time }}</p>
                 </div>
-                <p class="text-xs text-gray-600 lg:hidden mt-1">{{ request_type_name }} not working</p>
+                <p class="text-xs text-gray-600 lg:hidden mt-1">{{ request_type_name }} </p>
             </div>
         </div>
         <div class="flex items-center gap-2 sm:gap-4">
@@ -54,10 +54,19 @@
                             <p class="text-sm text-gray-500 flex-shrink-0">{{ created_time }}</p>
                         </div>
                         <div class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                            <h3 class="text-base font-semibold text-gray-900">{{ request_type_name }} not working</h3>
+                            <h3 class="text-base font-semibold text-gray-900">{{ request_type_name }}</h3>
                             <p class="mt-2 text-base text-gray-700 leading-relaxed">
                                 {{ ticket.notes|default:"No description provided." }}
                             </p>
+                            <!-- Resolution notes section -->
+                            {% if ticket.resolution_notes %}
+                            <div class="mt-4 pt-4 border-t border-gray-200">
+                                <h4 class="text-sm font-semibold text-gray-900">Resolution Notes</h4>
+                                <p class="mt-2 text-sm text-gray-700 leading-relaxed">
+                                    {{ ticket.resolution_notes }}
+                                </p>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -73,6 +82,15 @@
                          <p class="text-sm text-gray-700 leading-relaxed">
                             {{ ticket.notes|default:"No description provided." }}
                          </p>
+                         <!-- Resolution notes section -->
+                         {% if ticket.resolution_notes %}
+                         <div class="mt-4 pt-4 border-t border-gray-200">
+                             <h4 class="text-sm font-semibold text-gray-900">Resolution Notes</h4>
+                             <p class="mt-2 text-sm text-gray-700 leading-relaxed">
+                                 {{ ticket.resolution_notes }}
+                             </p>
+                         </div>
+                         {% endif %}
                      </div>
                 </div>
             </section>
@@ -80,6 +98,8 @@
             <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 lg:p-6">
                 <h3 class="text-base font-semibold text-gray-900 mb-4">Attachments</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {% comment %} For now, we're showing static attachments as examples {% endcomment %}
+                    {% comment %} In a real implementation, this would be dynamic based on actual attachments {% endcomment %}
                     <a href="#" class="border border-gray-200 rounded-lg p-3 flex items-center gap-3 hover:bg-gray-50">
                         <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0"><svg class="w-6 h-6 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></div>
                         <div>
@@ -95,6 +115,12 @@
                         </div>
                     </a>
                 </div>
+                {% comment %} In a real implementation, we would check for actual attachments and show this message if none exist {% endcomment %}
+                {% if False %}
+                <div class="text-center py-8 text-gray-500">
+                    <p>No attachments</p>
+                </div>
+                {% endif %}
             </section>
             
             <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 lg:p-6">
@@ -142,7 +168,8 @@
                         <button id="closeBtn" class="w-full py-2 text-sm font-medium text-white bg-green-700 rounded-lg hover:bg-green-800" data-ticket-id="{{ ticket.id }}">Close Ticket</button>
                     {% endif %}
                     
-                    {% if ticket.status != 'closed' and ticket.status != 'rejected' %}
+                    <!-- Only show escalate and reject buttons for non-completed tickets -->
+                    {% if ticket.status != 'completed' and ticket.status != 'closed' and ticket.status != 'rejected' %}
                         <button id="escalateBtn" class="w-full py-2 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600" data-ticket-id="{{ ticket.id }}">Escalate Ticket</button>
                         {% if ticket.assignee_user == user or user.is_superuser %}
                             <button id="rejectBtn" class="w-full py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50" data-ticket-id="{{ ticket.id }}">Reject Ticket</button>
@@ -154,7 +181,15 @@
             <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <h3 class="text-base font-semibold text-gray-900 mb-4">SLA Status</h3>
                 <div class="flex flex-col items-center gap-4">
-                    
+                    <!-- SLA Progress Circle - Show as completed when ticket is completed -->
+                    {% if ticket.status == 'completed' or ticket.status == 'closed' %}
+                    <div class="relative w-40 h-40 rounded-full flex items-center justify-center" 
+                         style="background: conic-gradient(#22c55e 100%, #e5e7eb 0);">
+                        <div class="absolute w-32 h-32 bg-white rounded-full flex items-center justify-center">
+                            <span class="text-3xl font-bold text-green-500">100%</span>
+                        </div>
+                    </div>
+                    {% else %}
                     <div class="relative w-40 h-40 rounded-full flex items-center justify-center" 
                          style="background: conic-gradient(
                              {% if ticket.sla_breached %}#ef4444{% elif ticket.get_sla_status == 'On Track' %}#22c55e{% else %}#f59e0b{% endif %} {{ sla_progress_percent }}%, 
@@ -166,13 +201,14 @@
                             </span>
                         </div>
                     </div>
+                    {% endif %}
 
                     <div class="text-center">
-                        <p class="font-semibold {% if ticket.sla_breached %}text-red-500{% else %}text-gray-900{% endif %}">
-                            {% if ticket.sla_breached %}OVERDUE{% else %}IN PROGRESS{% endif %}
+                        <p class="font-semibold {% if ticket.sla_breached %}text-red-500{% elif ticket.status == 'completed' or ticket.status == 'closed' %}text-green-500{% else %}text-gray-900{% endif %}">
+                            {% if ticket.status == 'completed' or ticket.status == 'closed' %}COMPLETED{% elif ticket.sla_breached %}OVERDUE{% else %}IN PROGRESS{% endif %}
                         </p>
                         <p class="text-sm text-gray-500">
-                            {% if ticket.sla_breached %}{{ ticket.get_time_left }} past due{% else %}{{ ticket.get_time_left }} remaining{% endif %}
+                            {% if ticket.status == 'completed' or ticket.status == 'closed' %}Ticket resolved{% elif ticket.sla_breached %}{{ ticket.get_time_left }} past due{% else %}{{ ticket.get_time_left }} remaining{% endif %}
                         </p>
                     </div>
 
@@ -222,17 +258,39 @@
             {% elif ticket.status == 'completed' and user == ticket.requester_user or user.groups.name == 'Front Desk' or user.is_superuser %}
                  <button id="closeBtn_mobile" class="col-span-3 w-full py-2 text-sm font-medium text-white bg-green-700 rounded-lg hover:bg-green-800" data-ticket-id="{{ ticket.id }}">Close Ticket</button>
             {% endif %}
-        </div>
-        {% if ticket.status != 'closed' and ticket.status != 'rejected' %}
-        <div class="grid grid-cols-2 gap-2 mt-2">
-            <button id="escalateBtn_mobile" class="w-full py-2 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600" data-ticket-id="{{ ticket.id }}">Escalate</button>
-            
-            {% if ticket.assignee_user == user or user.is_superuser %}
-                <button id="rejectBtn_mobile" class="w-full py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200" data-ticket-id="{{ ticket.id }}">Reject</button>
+            {% if ticket.status != 'completed' and ticket.status != 'closed' and ticket.status != 'rejected' %}
+            <div class="grid grid-cols-2 gap-2 mt-2">
+                <button id="escalateBtn_mobile" class="w-full py-2 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600" data-ticket-id="{{ ticket.id }}">Escalate</button>
+                
+                {% if ticket.assignee_user == user or user.is_superuser %}
+                    <button id="rejectBtn_mobile" class="w-full py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200" data-ticket-id="{{ ticket.id }}">Reject</button>
+                {% endif %}
+            </div>
             {% endif %}
         </div>
-        {% endif %}
     </footer>
+</div>
+
+<!-- Resolution Notes Modal -->
+<div id="resolutionNotesModal" class="fixed inset-0 z-[1000] hidden items-center justify-center p-4 backdrop-blur-sm bg-black bg-opacity-30 transition-opacity duration-300 opacity-0" onclick="closeResolutionNotesModal()">
+    <div class="w-full max-w-md rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0" onclick="event.stopPropagation()">
+        <div class="p-6">
+            <div class="flex items-start justify-between">
+                <h3 class="text-lg font-semibold text-gray-900">Resolution Notes</h3>
+                <button type="button" onclick="closeResolutionNotesModal()" class="rounded-full p-1 text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Close">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="mt-4">
+                <label for="resolutionNotesInput" class="block text-sm font-medium text-gray-700 mb-2">Please enter resolution notes:</label>
+                <textarea id="resolutionNotesInput" rows="4" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Describe how this ticket was resolved..."></textarea>
+            </div>
+            <div class="mt-6 flex justify-end gap-3">
+                <button type="button" onclick="closeResolutionNotesModal()" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50">Cancel</button>
+                <button type="button" id="submitResolutionNotes" class="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700">Submit</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -258,13 +316,22 @@ document.addEventListener('DOMContentLoaded', function() {
         let body = null;
         
         if (resolutionPrompt) {
-            const resolutionNotes = prompt('Please enter resolution notes:');
-            if (resolutionNotes === null) return; // User cancelled
-            body = JSON.stringify({ resolution_notes: resolutionNotes });
-        } else {
-             if (!confirm(confirmMessage)) return;
+            // Show resolution notes modal instead of using prompt
+            showResolutionNotesModal(url, successMessage);
+            return;
+        } else if (confirmMessage) {
+            // Use custom confirmation modal instead of browser confirm
+            showConfirmationModal('Confirm Action', confirmMessage, function() {
+                performWorkflowAction(url, successMessage, body);
+            });
+            return;
         }
+        
+        // For actions without confirmation message, proceed directly
+        performWorkflowAction(url, successMessage, body);
+    }
 
+    function performWorkflowAction(url, successMessage, body) {
         fetch(url, {
             method: 'POST',
             headers: {
@@ -276,16 +343,77 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert(successMessage);
+                // Use toast notification instead of alert
+                showToast(successMessage, 'success');
                 location.reload();
             } else {
-                alert('Error: ' + data.error);
+                // Use toast notification for errors
+                showToast('Error: ' + data.error, 'error');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred. Please try again.');
+            // Use toast notification for errors
+            showToast('An error occurred. Please try again.', 'error');
         });
+    }
+
+    // Function to show resolution notes modal
+    function showResolutionNotesModal(url, successMessage) {
+        const modal = document.getElementById('resolutionNotesModal');
+        const textarea = document.getElementById('resolutionNotesInput');
+        const submitButton = document.getElementById('submitResolutionNotes');
+        
+        if (!modal || !textarea || !submitButton) return;
+        
+        // Clear previous content
+        textarea.value = '';
+        
+        // Set up submit action
+        submitButton.onclick = function() {
+            const notes = textarea.value.trim();
+            if (!notes) {
+                showToast('Please enter resolution notes.', 'error');
+                return;
+            }
+            
+            const body = JSON.stringify({ resolution_notes: notes });
+            closeResolutionNotesModal();
+            performWorkflowAction(url, successMessage, body);
+        };
+        
+        // Show modal with animation
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        requestAnimationFrame(() => {
+            modal.classList.remove('opacity-0');
+            const dialog = modal.querySelector('div[onclick="event.stopPropagation()"]');
+            if (dialog) {
+                dialog.classList.remove('scale-95', 'opacity-0');
+                dialog.classList.add('scale-100', 'opacity-100');
+            }
+        });
+        
+        // Focus the textarea
+        setTimeout(() => textarea.focus(), 300);
+    }
+    
+    // Function to close resolution notes modal
+    function closeResolutionNotesModal() {
+        const modal = document.getElementById('resolutionNotesModal');
+        if (!modal) return;
+        
+        const dialog = modal.querySelector('div[onclick="event.stopPropagation()"]');
+        modal.classList.add('opacity-0');
+        if (dialog) {
+            dialog.classList.remove('scale-100', 'opacity-100');
+            dialog.classList.add('scale-95', 'opacity-0');
+        }
+        
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }, 300);
     }
 
     // Attach event listeners to both desktop and mobile buttons

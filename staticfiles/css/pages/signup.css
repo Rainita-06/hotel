@@ -1,0 +1,96 @@
+/* ==============================
+   Signup Page Styling
+   ============================== */
+
+.form-container {
+  max-width: 420px;
+  margin: 4rem auto;
+  padding: 2rem;
+  background: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.08);
+}
+
+/* Title */
+.form-title {
+  text-align: center;
+  font-size: 1.6rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  color: #2e7d32; /* green tone */
+}
+
+/* Form Group */
+.form-group {
+  margin-bottom: 1.2rem;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.4rem;
+  color: #333;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.65rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  outline: none;
+  font-size: 0.95rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input:focus {
+  border-color: #28a745;
+  box-shadow: 0px 0px 4px rgba(40, 167, 69, 0.4);
+}
+
+/* Error messages */
+.error {
+  margin-top: 0.3rem;
+  font-size: 0.85rem;
+  color: #d9534f;
+}
+
+/* Button */
+.btn {
+  display: inline-block;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.3s;
+  text-align: center;
+}
+
+.btn-success {
+  background: #28a745;
+  color: #fff;
+  width: 100%;
+}
+
+.btn-success:hover {
+  background: #218838;
+}
+
+/* Footer */
+.form-footer {
+  text-align: center;
+  margin-top: 1.2rem;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.form-footer a {
+  color: #28a745;
+  text-decoration: none;
+}
+
+.form-footer a:hover {
+  text-decoration: underline;
+}

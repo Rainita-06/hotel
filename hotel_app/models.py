@@ -4,6 +4,8 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 import os
+import random
+import string
 
 User = get_user_model()
 
@@ -1331,7 +1333,7 @@ class Voucher(models.Model):
     expiry_date = models.DateField(blank=True, null=True)              # existing-ish field (keep)
     redeemed = models.BooleanField(default=False)
     redeemed_at = models.DateTimeField(blank=True, null=True)
-    qr_code = models.CharField(max_length=400, blank=True, null=True)  # url / content
+    qr_code = models.TextField(blank=True, null=True)  # url / content
     qr_code_image = models.ImageField(upload_to=qr_upload_path, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     adults = models.IntegerField(default=1,blank=False, null=False)   

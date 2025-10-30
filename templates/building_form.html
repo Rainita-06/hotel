@@ -5,7 +5,7 @@
         {% if building %}Edit{% else %}Add{% endif %} Building
     </h2>
 
-    <form method="post" class="grid grid-cols-1 gap-6">
+    <form method="post" class="grid grid-cols-1 gap-6" autocomplete="off">
         {% csrf_token %}
 
         <!-- Building Name -->

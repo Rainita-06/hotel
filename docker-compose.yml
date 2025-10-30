@@ -43,7 +43,7 @@ services:
     environment:
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-django-insecure-hx$$rau=sf86q@*-bu01+yzla%!b_*8g*pfddb3_mezm_h5ff(u}
       - DJANGO_DEBUG=${DJANGO_DEBUG:-True}
-      - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,0.0.0.0}
+      - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,0.0.0.0,web}
       - DB_NAME=${DB_NAME:-temp}
       - DB_USER=${DB_USER:-hotel_user}
       - DB_PASSWORD=${DB_PASSWORD:-hotel_password}
@@ -61,7 +61,7 @@ services:
       sh -c "python manage.py migrate --noinput &&
              python manage.py collectstatic --noinput --verbosity=0 &&
              gunicorn --bind 0.0.0.0:8000 --workers 3 --timeout 120 config.wsgi:application"
-
+  
   celery:
     build: .
     container_name: hotel_celery
@@ -102,3 +102,7 @@ volumes:
   db_data:
   static_volume:
   media_volume:
+
+
+
+

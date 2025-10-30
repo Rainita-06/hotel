@@ -5,7 +5,7 @@
         {% if family %}Edit{% else %}Add{% endif %} Family
     </h2>
 
-    <form method="post" class="space-y-6">
+    <form method="post" class="space-y-6" autocomplete="off">
         {% csrf_token %}
         
         <!-- Family Name -->

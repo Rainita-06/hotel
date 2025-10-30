@@ -35,7 +35,6 @@
 
         /* Sidebar is positioned fixed and off-screen by default on mobile */
         .sidebar {
-            transform: translateX(-100%);
             position: fixed;
             top: 0;
             left: 0;
@@ -43,6 +42,12 @@
             z-index: 999;
             width: 100%;
             max-width: 256px; /* w-64 */
+            transform: translateX(-100%);
+            background-color: white;
+            transition: transform 0.3s ease-in-out;
+            
+            /* Allow the sidebar itself to scroll if its content is too tall */
+            overflow-y: auto; 
         }
         
         /* On desktop, sidebar is always visible */
@@ -70,6 +75,50 @@
         .sidebar-overlay.open {
             display: block;
         }
+
+
+        /* On large screens, sidebar is always visible and part of the flex layout */
+        @media (min-width: 1024px) {
+            .sidebar {
+                position: static; /* Let it be part of the document flow */
+                transform: translateX(0);
+                flex-shrink: 0; /* Prevent sidebar from shrinking */
+                width: 256px; /* Give it an explicit width */
+                /* It now inherits height: 100vh and overflow-y: auto from the base rule */
+            }
+            
+            .sidebar-overlay {
+                display: none !important; /* Overlay is not needed on desktop */
+            }
+
+
+            /* The main wrapper will automatically fill the remaining space due to flex-1 */
+            .main-wrapper {
+                min-width: 0; /* Prevents wide content from breaking the flex layout */
+            }
+
+
+            /* Hide the mobile hamburger button on large screens */
+            #hamburgerButton {
+                display: none;
+            }
+
+
+            /* Position the notification container properly on large screens */
+            #notificationContainer {
+                position: static;
+                margin-left: auto;
+            }
+            
+            /* Adjust header flex behavior for large screens */
+            .header-inner {
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                width: 100%;
+            }
+        }
+
 
         /* Notification dropdown animation */
         #notificationDropdown {
@@ -121,7 +170,7 @@
 <body class="bg-gray-50 font-inter">
     <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
     
-    <div class="flex min-h-screen">
+    <div class="flex h-screen bg-gray-100">
         {% if request.user.is_authenticated %}
             {% include 'dashboard/components/sidebar.html' %}
         {% endif %}
@@ -170,12 +219,13 @@
 </header>
 
             
-            <main class="flex-1 overflow-x-hidden overflow-y-auto">
+            <main class="flex-1 overflow-x-hidden overflow-y-auto main-content">
                 {% block content %}
-                    {% endblock %}
+                {% endblock %}
             </main>
         </div>
     </div>
+
 
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script>
@@ -286,6 +336,7 @@
             });
     }
 
+
     function loadDummyNotifications() {
         const dummyNotifications = [
             { id: 1, title: "New Service Request", message: "A new service request has been submitted in Housekeeping.", created_at: "2023-05-15T10:30:00Z", is_read: false, notification_type: "request" },
@@ -376,7 +427,7 @@
         if (!toastContainer) {
             toastContainer = document.createElement('div');
             toastContainer.id = 'toastNotification';
-            toastContainer.className = 'fixed top-4 right-4 z-50 hidden items-center rounded-lg px-4 py-2 text-white shadow-lg';
+            toastContainer.className = 'fixed top-4 right-4 z-[1000] hidden items-center rounded-lg px-4 py-2 text-white shadow-lg transition-all duration-300 transform translate-x-full opacity-0';
             toastContainer.innerHTML = '<span id="toastMessage"></span>';
             document.body.appendChild(toastContainer);
         }
@@ -384,15 +435,15 @@
         const toastMessage = document.getElementById('toastMessage');
         toastMessage.textContent = message;
         
+        // Reset classes
+        toastContainer.classList.remove('bg-green-500', 'bg-red-500', 'bg-blue-500', 'translate-x-full', 'opacity-0');
+
         // Set colors based on type
         if (type === 'error') {
-            toastContainer.classList.remove('bg-green-500');
             toastContainer.classList.add('bg-red-500');
         } else if (type === 'info') {
-            toastContainer.classList.remove('bg-green-500', 'bg-red-500');
             toastContainer.classList.add('bg-blue-500');
         } else {
-            toastContainer.classList.remove('bg-red-500', 'bg-blue-500');
             toastContainer.classList.add('bg-green-500');
         }
         
@@ -400,15 +451,78 @@
         toastContainer.classList.remove('hidden');
         toastContainer.classList.add('flex');
         
+        // Trigger reflow and start transition
+        requestAnimationFrame(() => {
+            toastContainer.classList.remove('translate-x-full', 'opacity-0');
+            toastContainer.classList.add('translate-x-0', 'opacity-100');
+        });
+        
         // Auto-hide after 3 seconds
         setTimeout(() => {
-            toastContainer.classList.add('hidden');
-            toastContainer.classList.remove('flex');
+            toastContainer.classList.remove('translate-x-0', 'opacity-100');
+            toastContainer.classList.add('translate-x-full', 'opacity-0');
+            setTimeout(() => {
+                toastContainer.classList.add('hidden');
+                toastContainer.classList.remove('flex');
+            }, 300);
         }, 3000);
     }
     
-    // Make showToast globally available
+    // Custom confirmation modal functions
+    function showConfirmationModal(title, message, onConfirm) {
+        const modal = document.getElementById('confirmationModal');
+        const titleElement = document.getElementById('confirmationModalTitle');
+        const messageElement = document.getElementById('confirmationModalMessage');
+        const confirmButton = document.getElementById('confirmationModalConfirm');
+        
+        if (!modal || !titleElement || !messageElement || !confirmButton) return;
+        
+        // Set modal content
+        titleElement.textContent = title;
+        messageElement.textContent = message;
+        
+        // Set up confirm action
+        confirmButton.onclick = function() {
+            closeConfirmationModal();
+            if (onConfirm && typeof onConfirm === 'function') {
+                onConfirm();
+            }
+        };
+        
+        // Show modal with animation
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        requestAnimationFrame(() => {
+            modal.classList.remove('opacity-0');
+            const dialog = modal.querySelector('div[onclick="event.stopPropagation()"]');
+            if (dialog) {
+                dialog.classList.remove('scale-95', 'opacity-0');
+                dialog.classList.add('scale-100', 'opacity-100');
+            }
+        });
+    }
+    
+    function closeConfirmationModal() {
+        const modal = document.getElementById('confirmationModal');
+        if (!modal) return;
+        
+        const dialog = modal.querySelector('div[onclick="event.stopPropagation()"]');
+        modal.classList.add('opacity-0');
+        if (dialog) {
+            dialog.classList.remove('scale-100', 'opacity-100');
+            dialog.classList.add('scale-95', 'opacity-0');
+        }
+        
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }, 300);
+    }
+    
+    // Make functions globally available
     window.showToast = showToast;
+    window.showConfirmationModal = showConfirmationModal;
+    window.closeConfirmationModal = closeConfirmationModal;
     </script>
 
     <!-- New script: Desktop hide/unhide sidebar with persistence -->
@@ -461,6 +575,59 @@
     });
     </script>
     
+    <!-- Custom Confirmation Modal with Backdrop Blur -->
+    <div id="confirmationModal" class="fixed inset-0 z-[1000] hidden items-center justify-center p-4 backdrop-blur-sm bg-black bg-opacity-30 transition-opacity duration-300 opacity-0" onclick="closeConfirmationModal()">
+        <div class="w-full max-w-md rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0" onclick="event.stopPropagation()">
+            <div class="p-6">
+                <div class="flex items-start justify-between">
+                    <h3 id="confirmationModalTitle" class="text-lg font-semibold text-gray-900">Confirm Action</h3>
+                    <button type="button" onclick="closeConfirmationModal()" class="rounded-full p-1 text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Close">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <div class="mt-4">
+                    <p id="confirmationModalMessage" class="text-gray-600">Are you sure you want to proceed?</p>
+                </div>
+                <div class="mt-6 flex justify-end gap-3">
+                    <button type="button" id="confirmationModalCancel" onclick="closeConfirmationModal()" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50">Cancel</button>
+                    <button type="button" id="confirmationModalConfirm" class="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast Notification Container -->
+    <div id="toastNotification" class="fixed top-4 right-4 z-[1000] hidden items-center rounded-lg px-4 py-2 text-white shadow-lg transition-all duration-300 transform translate-x-full opacity-0">
+        <span id="toastMessage"></span>
+    </div>
+    {% if messages %}
+<div id="app-toast-container" class="fixed top-5 right-5 z-50 space-y-2">
+  {% for message in messages %}
+  <div class="toast-message bg-green-600 text-white px-5 py-3 rounded-xl shadow-lg animate-slideIn">
+    {{ message }}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<style>
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.toast-message {
+  animation: slideIn 0.3s ease forwards;
+}
+</style>
+
+<script>
+  // Auto-hide toast after 3 seconds
+  setTimeout(() => {
+    const container = document.getElementById("app-toast-container");
+    if (container) container.remove();
+  }, 3000);
+</script>
+
     {% block extra_js %}{% endblock %}
 </body>
 </html>

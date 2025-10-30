@@ -9,7 +9,7 @@ urlpatterns = [
     path('users/', dashboard_views.dashboard_users, name='users'),
     path('manage-users/departments/', dashboard_views.dashboard_departments, name='departments'),
     path('groups/', dashboard_views.dashboard_groups, name='groups'),
-    path('locations/', dashboard_views.locations_list, name='locations'),
+    # path('locations/', dashboard_views.locations_list, name='locations'),
     
     # path('request-types/', dashboard_views.dashboard_request_types, name='request_types'),
     # path('checklists/', dashboard_views.dashboard_checklists, name='checklists'),
@@ -111,4 +111,11 @@ urlpatterns = [
     path('performance/', dashboard_views.performance_dashboard, name='performance'),
     path('gym/', dashboard_views.gym, name='gym'),
     path('gym/report/', dashboard_views.gym_report, name='gym_report'),
+    
+    # Export/Import URLs
+    path('export/users/', dashboard_views.export_user_data, name='export_user_data'),
+    path('import/users/', dashboard_views.import_user_data, name='import_user_data'),
+    
+    # Ticket suggestions API
+    path('api/tickets/suggestions/', dashboard_views.get_ticket_suggestions_api, name='api_ticket_suggestions'),
 ]
