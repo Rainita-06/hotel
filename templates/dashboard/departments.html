@@ -63,7 +63,7 @@
 >
   <div class="modal-dialog">
     <div class="modal-content">
-      <form method="post" action="{% url 'dashboard:department_create' %}">
+      <form autocomplete="off" method="post" action="{% url 'dashboard:department_create' %}">
         {% csrf_token %}
         <div class="modal-header">
           <h5 class="modal-title" id="addDepartmentModalLabel">
@@ -77,7 +77,7 @@
           ></button>
         </div>
         <div class="modal-body">
-          <input
+          <input autocomplete="off"
             type="text"
             name="name"
             class="form-control"
@@ -111,7 +111,7 @@
 >
   <div class="modal-dialog">
     <div class="modal-content">
-      <form
+      <form autocomplete="off"
         method="post"
         action="{% url 'dashboard:department_update' department.id %}"
       >
@@ -131,7 +131,7 @@
           ></button>
         </div>
         <div class="modal-body">
-          <input
+          <input autocomplete="off"
             type="text"
             name="name"
             class="form-control"
@@ -166,7 +166,7 @@
 >
   <div class="modal-dialog">
     <div class="modal-content">
-      <form
+      <form autocomplete="off"
         method="post"
         action="{% url 'dashboard:department_delete' department.id %}"
       >

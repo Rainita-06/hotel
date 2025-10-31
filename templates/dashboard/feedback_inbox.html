@@ -89,7 +89,7 @@
             <div class="px-6 py-4 border-b border-gray-200 flex flex-col md:flex-row items-center justify-between gap-4">
                 <div class="relative w-full md:w-80">
                     <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                    <input type="text" class="w-full h-10 pl-10 pr-4 bg-white rounded-md border border-gray-300 text-sm focus:ring-sky-500 focus:border-sky-500" placeholder="Search feedback, keywords...">
+                    <input autocomplete="off" type="text" class="w-full h-10 pl-10 pr-4 bg-white rounded-md border border-gray-300 text-sm focus:ring-sky-500 focus:border-sky-500" placeholder="Search feedback, keywords...">
                 </div>
                 <button class="w-full md:w-auto h-10 bg-white rounded-md border border-gray-300 flex items-center justify-center px-4 hover:bg-gray-50 transition-colors">
                     <img src="{% static 'images/feedback/export.svg' %}" alt="Export" class="w-4 h-4" />
@@ -101,7 +101,7 @@
                 <table class="min-w-full">
                     <thead class="bg-gray-50 border-b border-gray-200">
                         <tr>
-                            <th class="w-12 px-6 py-3 text-left"><input type="checkbox" class="w-4 h-4 border-gray-300 rounded text-sky-600 focus:ring-sky-500"></th>
+                            <th class="w-12 px-6 py-3 text-left"><input autocomplete="off" type="checkbox" class="w-4 h-4 border-gray-300 rounded text-sky-600 focus:ring-sky-500"></th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Guest</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
@@ -114,7 +114,7 @@
                     <tbody class="divide-y divide-gray-200 bg-white">
                         {% for feedback in feedback_data %}
                         <tr class="align-top hover:bg-gray-50 transition-colors" data-aos="fade-up" data-aos-duration="500" data-aos-once="true">
-                            <td class="px-6 py-4"><input type="checkbox" class="w-4 h-4 border-gray-300 rounded text-sky-600 focus:ring-sky-500"></td>
+                            <td class="px-6 py-4"><input autocomplete="off" type="checkbox" class="w-4 h-4 border-gray-300 rounded text-sky-600 focus:ring-sky-500"></td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ feedback.date }}</td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
@@ -164,16 +164,16 @@
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
-        <form method="post" action="{% url 'dashboard:feedback_inbox' %}" class="p-6 space-y-6 overflow-y-auto flex-grow">
+        <form autocomplete="off" method="post" action="{% url 'dashboard:feedback_inbox' %}" class="p-6 space-y-6 overflow-y-auto flex-grow">
             {% csrf_token %}
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label for="guest_name" class="block text-sm font-medium text-gray-700 mb-1">Guest Name</label>
-                    <input type="text" name="guest_name" id="guest_name" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500" placeholder="Enter guest name" required>
+                    <input autocomplete="off" type="text" name="guest_name" id="guest_name" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500" placeholder="Enter guest name" required>
                 </div>
                 <div>
                     <label for="room_number" class="block text-sm font-medium text-gray-700 mb-1">Room Number</label>
-                    <input type="text" name="room_number" id="room_number" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500" placeholder="Enter room number" required>
+                    <input autocomplete="off" type="text" name="room_number" id="room_number" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500" placeholder="Enter room number" required>
                 </div>
             </div>
 
@@ -186,15 +186,15 @@
                     <div class="rating-option rating-option-emoji text-center cursor-pointer p-2 rounded-lg transition-all duration-200" data-rating-group="overall" data-rating-value="4" title="Great"><span class="text-4xl">🙂</span><p class="text-xs text-gray-500 mt-1">Great</p></div>
                     <div class="rating-option rating-option-emoji text-center cursor-pointer p-2 rounded-lg transition-all duration-200" data-rating-group="overall" data-rating-value="5" title="Excellent"><span class="text-4xl">😄</span><p class="text-xs text-gray-500 mt-1">Excellent</p></div>
                 </div>
-                <input type="hidden" name="overall_rating" id="overall_rating" required>
+                <input autocomplete="off" type="hidden" name="overall_rating" id="overall_rating" required>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm"><h3 class="text-lg font-semibold text-gray-900 mb-4">How clean was your room?</h3><div class="grid grid-cols-3 gap-3"><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="cleanliness" data-rating-value="1">Poor</button><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="cleanliness" data-rating-value="3">Good</button><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="cleanliness" data-rating-value="5">Excellent</button></div><input type="hidden" name="cleanliness_rating" id="cleanliness_rating"></div>
-                <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm"><h3 class="text-lg font-semibold text-gray-900 mb-4">How was the staff service?</h3><div class="grid grid-cols-3 gap-3"><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="staff" data-rating-value="1">Poor</button><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="staff" data-rating-value="3">Good</button><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="staff" data-rating-value="5">Excellent</button></div><input type="hidden" name="staff_rating" id="staff_rating"></div>
+                <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm"><h3 class="text-lg font-semibold text-gray-900 mb-4">How clean was your room?</h3><div class="grid grid-cols-3 gap-3"><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="cleanliness" data-rating-value="1">Poor</button><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="cleanliness" data-rating-value="3">Good</button><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="cleanliness" data-rating-value="5">Excellent</button></div><input autocomplete="off" type="hidden" name="cleanliness_rating" id="cleanliness_rating"></div>
+                <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm"><h3 class="text-lg font-semibold text-gray-900 mb-4">How was the staff service?</h3><div class="grid grid-cols-3 gap-3"><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="staff" data-rating-value="1">Poor</button><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="staff" data-rating-value="3">Good</button><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="staff" data-rating-value="5">Excellent</button></div><input autocomplete="off" type="hidden" name="staff_rating" id="staff_rating"></div>
             </div>
 
-            <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm"><h3 class="text-lg font-semibold text-gray-900 mb-4">Would you recommend us to others?</h3><div class="grid grid-cols-2 gap-3"><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="recommend" data-rating-value="yes">Yes</button><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="recommend" data-rating-value="no">No</button></div><input type="hidden" name="recommend" id="recommend"></div>
+            <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm"><h3 class="text-lg font-semibold text-gray-900 mb-4">Would you recommend us to others?</h3><div class="grid grid-cols-2 gap-3"><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="recommend" data-rating-value="yes">Yes</button><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="recommend" data-rating-value="no">No</button></div><input autocomplete="off" type="hidden" name="recommend" id="recommend"></div>
             
             <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
                 <label for="comment" class="text-lg font-semibold text-gray-900 mb-4 block">Tell us more about your experience <span class="text-gray-500 font-normal">(optional)</span></label>
@@ -269,9 +269,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // --- FORM RE-OPEN ON ERROR ---
-    {% if form.errors %}
-        setTimeout(() => window.FeedbackModal.open('feedbackModal'), 50);
-    {% endif %}
+    // {% if form.errors %}
+    //     setTimeout(() => window.FeedbackModal.open('feedbackModal'), 50);
+    // {% endif %}
 });
 </script>
 {% endblock %}

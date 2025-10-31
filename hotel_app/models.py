@@ -87,7 +87,7 @@ class UserProfile(models.Model):
     full_name = models.CharField(max_length=160)
     phone = models.CharField(max_length=15, blank=True, null=True)
     title = models.CharField(max_length=120, blank=True, null=True)
-    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True)
+    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True )
     avatar_url = models.URLField(blank=True, null=True)
     enabled = models.BooleanField(default=True)
     timezone = models.CharField(max_length=100, blank=True, null=True)

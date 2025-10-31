@@ -66,7 +66,7 @@
         
         {% if perms.locations.view_location %}
         <a
-          href=#
+          href="{% url 'dashboard:locations' %}"
           class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:locations' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}">
           <img
             src="{% if request.resolver_match.view_name == 'dashboard:locations' %}{% static 'images/sidebar/locations_highlighted.svg' %}{% else %}{% static 'images/sidebar/locations.svg' %}{% endif %}"

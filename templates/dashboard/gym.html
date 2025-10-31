@@ -49,7 +49,7 @@
                 <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
                 </svg>
-                <input type="text" placeholder="Search members..." class="w-full h-10 pl-10 pr-4 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+                <input autocomplete="off" type="text" placeholder="Search members..." class="w-full h-10 pl-10 pr-4 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
             </div>
         </div>
         
@@ -162,7 +162,7 @@
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
       </button>
     </div>
-    <form id="gymMemberForm" method="post" action="" class="p-6 space-y-6 overflow-y-auto flex-grow">
+    <form autocomplete="off" id="gymMemberForm" method="post" action="" class="p-6 space-y-6 overflow-y-auto flex-grow">
       {% csrf_token %}
 
       {# Show form errors (non-field + field-level) #}

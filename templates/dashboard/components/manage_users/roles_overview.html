@@ -20,7 +20,7 @@
   </div>
 
   <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-    <form id="permission-form" action="" method="POST">
+    <form autocomplete="off" id="permission-form" action="" method="POST">
       {% csrf_token %}
       <div class="bg-neutral-50 border-b border-gray-200">
         <div class="min-w-[994px] grid grid-cols-[minmax(260px,1.6fr)_repeat(4,minmax(140px,1fr))]">
@@ -50,7 +50,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer" checked
+              <input autocomplete="off" type="checkbox" class="sr-only peer" checked
                      name="perm.view_guest_profiles.staff"
                      data-permission="view_guest_profiles" data-role="staff">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -60,7 +60,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer" checked
+              <input autocomplete="off" type="checkbox" class="sr-only peer" checked
                      name="perm.view_guest_profiles.supervisor"
                      data-permission="view_guest_profiles" data-role="supervisor">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -70,7 +70,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer" checked
+              <input autocomplete="off" type="checkbox" class="sr-only peer" checked
                      name="perm.view_guest_profiles.manager"
                      data-permission="view_guest_profiles" data-role="manager">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -80,7 +80,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer" checked
+              <input autocomplete="off" type="checkbox" class="sr-only peer" checked
                      name="perm.view_guest_profiles.admin"
                      data-permission="view_guest_profiles" data-role="admin">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -96,7 +96,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer"
+              <input autocomplete="off" type="checkbox" class="sr-only peer"
                      name="perm.create_guest_records.staff"
                      data-permission="create_guest_records" data-role="staff">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -106,7 +106,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer" checked
+              <input autocomplete="off" type="checkbox" class="sr-only peer" checked
                      name="perm.create_guest_records.supervisor"
                      data-permission="create_guest_records" data-role="supervisor">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -116,7 +116,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer" checked
+              <input autocomplete="off" type="checkbox" class="sr-only peer" checked
                      name="perm.create_guest_records.manager"
                      data-permission="create_guest_records" data-role="manager">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -126,7 +126,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer" checked
+              <input autocomplete="off" type="checkbox" class="sr-only peer" checked
                      name="perm.create_guest_records.admin"
                      data-permission="create_guest_records" data-role="admin">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -142,7 +142,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer"
+              <input autocomplete="off" type="checkbox" class="sr-only peer"
                      name="perm.edit_guest_information.staff"
                      data-permission="edit_guest_information" data-role="staff">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -152,7 +152,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer" checked
+              <input autocomplete="off" type="checkbox" class="sr-only peer" checked
                      name="perm.edit_guest_information.supervisor"
                      data-permission="edit_guest_information" data-role="supervisor">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -162,7 +162,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer" checked
+              <input autocomplete="off" type="checkbox" class="sr-only peer" checked
                      name="perm.edit_guest_information.manager"
                      data-permission="edit_guest_information" data-role="manager">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -172,7 +172,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer" checked
+              <input autocomplete="off" type="checkbox" class="sr-only peer" checked
                      name="perm.edit_guest_information.admin"
                      data-permission="edit_guest_information" data-role="admin">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -188,7 +188,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer"
+              <input autocomplete="off" type="checkbox" class="sr-only peer"
                      name="perm.delete_guest_records.staff"
                      data-permission="delete_guest_records" data-role="staff">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -198,7 +198,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer"
+              <input autocomplete="off" type="checkbox" class="sr-only peer"
                      name="perm.delete_guest_records.supervisor"
                      data-permission="delete_guest_records" data-role="supervisor">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -208,7 +208,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer"
+              <input autocomplete="off" type="checkbox" class="sr-only peer"
                      name="perm.delete_guest_records.manager"
                      data-permission="delete_guest_records" data-role="manager">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -218,7 +218,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer" checked
+              <input autocomplete="off" type="checkbox" class="sr-only peer" checked
                      name="perm.delete_guest_records.admin"
                      data-permission="delete_guest_records" data-role="admin">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -244,7 +244,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer" checked
+              <input autocomplete="off" type="checkbox" class="sr-only peer" checked
                      name="perm.view_service_requests.staff"
                      data-permission="view_service_requests" data-role="staff">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -254,7 +254,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer" checked
+              <input autocomplete="off" type="checkbox" class="sr-only peer" checked
                      name="perm.view_service_requests.supervisor"
                      data-permission="view_service_requests" data-role="supervisor">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -264,7 +264,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer" checked
+              <input autocomplete="off" type="checkbox" class="sr-only peer" checked
                      name="perm.view_service_requests.manager"
                      data-permission="view_service_requests" data-role="manager">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -274,7 +274,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer" checked
+              <input autocomplete="off" type="checkbox" class="sr-only peer" checked
                      name="perm.view_service_requests.admin"
                      data-permission="view_service_requests" data-role="admin">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -290,7 +290,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer"
+              <input autocomplete="off" type="checkbox" class="sr-only peer"
                      name="perm.assign_service_requests.staff"
                      data-permission="assign_service_requests" data-role="staff">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -300,7 +300,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer" checked
+              <input autocomplete="off" type="checkbox" class="sr-only peer" checked
                      name="perm.assign_service_requests.supervisor"
                      data-permission="assign_service_requests" data-role="supervisor">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -310,7 +310,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer" checked
+              <input autocomplete="off" type="checkbox" class="sr-only peer" checked
                      name="perm.assign_service_requests.manager"
                      data-permission="assign_service_requests" data-role="manager">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -320,7 +320,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer" checked
+              <input autocomplete="off" type="checkbox" class="sr-only peer" checked
                      name="perm.assign_service_requests.admin"
                      data-permission="assign_service_requests" data-role="admin">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -336,7 +336,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer"
+              <input autocomplete="off" type="checkbox" class="sr-only peer"
                      name="perm.configure_request_types.staff"
                      data-permission="configure_request_types" data-role="staff">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -346,7 +346,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer"
+              <input autocomplete="off" type="checkbox" class="sr-only peer"
                      name="perm.configure_request_types.supervisor"
                      data-permission="configure_request_types" data-role="supervisor">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -356,7 +356,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer" checked
+              <input autocomplete="off" type="checkbox" class="sr-only peer" checked
                      name="perm.configure_request_types.manager"
                      data-permission="configure_request_types" data-role="manager">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -366,7 +366,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer" checked
+              <input autocomplete="off" type="checkbox" class="sr-only peer" checked
                      name="perm.configure_request_types.admin"
                      data-permission="configure_request_types" data-role="admin">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -392,7 +392,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer"
+              <input autocomplete="off" type="checkbox" class="sr-only peer"
                      name="perm.view_analytics_dashboard.staff"
                      data-permission="view_analytics_dashboard" data-role="staff">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -402,7 +402,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer" checked
+              <input autocomplete="off" type="checkbox" class="sr-only peer" checked
                      name="perm.view_analytics_dashboard.supervisor"
                      data-permission="view_analytics_dashboard" data-role="supervisor">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -412,7 +412,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer" checked
+              <input autocomplete="off" type="checkbox" class="sr-only peer" checked
                      name="perm.view_analytics_dashboard.manager"
                      data-permission="view_analytics_dashboard" data-role="manager">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -422,7 +422,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer" checked
+              <input autocomplete="off" type="checkbox" class="sr-only peer" checked
                      name="perm.view_analytics_dashboard.admin"
                      data-permission="view_analytics_dashboard" data-role="admin">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -438,7 +438,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer"
+              <input autocomplete="off" type="checkbox" class="sr-only peer"
                      name="perm.export_data.staff"
                      data-permission="export_data" data-role="staff">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -448,7 +448,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer"
+              <input autocomplete="off" type="checkbox" class="sr-only peer"
                      name="perm.export_data.supervisor"
                      data-permission="export_data" data-role="supervisor">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -458,7 +458,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer" checked
+              <input autocomplete="off" type="checkbox" class="sr-only peer" checked
                      name="perm.export_data.manager"
                      data-permission="export_data" data-role="manager">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>
@@ -468,7 +468,7 @@
           </div>
           <div class="px-4 py-4 border-l border-gray-200 flex items-center justify-center">
             <label class="relative inline-flex items-center w-11 h-6 cursor-pointer">
-              <input type="checkbox" class="sr-only peer" checked
+              <input autocomplete="off" type="checkbox" class="sr-only peer" checked
                      name="perm.export_data.admin"
                      data-permission="export_data" data-role="admin">
               <div class="w-11 h-6 rounded-full bg-gray-200 peer-checked:bg-sky-600 transition-colors"></div>

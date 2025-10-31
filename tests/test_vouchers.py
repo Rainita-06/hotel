@@ -70,6 +70,7 @@
 
 from django.test import TestCase
 from django.urls import reverse
+from hotel_app.hotel_app.models import Building, Floor, Location, LocationFamily, LocationType
 from rest_framework.test import APIClient
 from rest_framework import status
 from rest_framework.authtoken.models import Token
@@ -206,16 +207,16 @@ class TypesAPITest(TestCase):
     def test_create_type(self):
         response = self.client.post('/api/types/', self.valid_type_data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Type.objects.count(), 1)
+        self.assertEqual(LocationType.objects.count(), 1)
 
     def test_list_types(self):
-        Type.objects.create(**self.valid_type_data)
+        LocationType.objects.create(**self.valid_type_data)
         response = self.client.get('/api/types/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
 
     def test_update_type(self):
-        type_obj = Type.objects.create(**self.valid_type_data)
+        type_obj = LocationType.objects.create(**self.valid_type_data)
         updated_data = {"name": "Deluxe Updated", "family": self.family.id}
         response = self.client.put(f'/api/types/{type_obj.id}/', updated_data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -223,13 +224,13 @@ class TypesAPITest(TestCase):
         self.assertEqual(type_obj.name, "Deluxe Updated")
 
     def test_delete_type(self):
-        type_obj = Type.objects.create(**self.valid_type_data)
+        type_obj = LocationType.objects.create(**self.valid_type_data)
         response = self.client.delete(f'/api/types/{type_obj.id}/')
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(Type.objects.count(), 0)
+        self.assertEqual(LocationType.objects.count(), 0)
 
     def test_search_types(self):
-        Type.objects.create(**self.valid_type_data)
+        LocationType.objects.create(**self.valid_type_data)
         response = self.client.get('/api/types/?search=Deluxe')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
@@ -242,7 +243,7 @@ class LocationsAPITest(TestCase):
         self.building = Building.objects.create(name="Test Building")
         self.floor = Floor.objects.create(floor_name="Test Floor", floor_number=1, building=self.building)
         self.family = LocationFamily.objects.create(name="Guestroom")
-        self.type = Type.objects.create(name="Deluxe", family=self.family)
+        self.type = LocationType.objects.create(name="Deluxe", family=self.family)
         self.valid_location_data = {
             "name": "Room 101",
             "room_no": "101",

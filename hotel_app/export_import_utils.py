@@ -7,8 +7,9 @@ from .models import Department, UserGroup, UserProfile, UserGroupMembership
 from django.core.exceptions import ValidationError
 import logging
 from django.db import transaction
-from openpyxl import Workbook
+from openpyxl import Workbook, load_workbook
 from openpyxl.utils import get_column_letter
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -17,7 +18,7 @@ User = get_user_model()
 def export_departments():
     """Export all departments as JSON"""
     departments = Department.objects.all().values(
-        'id', 'name', 'description'
+        'department_id', 'name', 'description'
     )
     return list(departments)
 
@@ -35,6 +36,12 @@ def export_users():
     users = User.objects.all().values(
         'id', 'username', 'email', 'first_name', 'last_name', 'is_active', 'is_staff', 'is_superuser', 'date_joined'
     )
+    # Convert datetime objects to timezone-naive format for Excel compatibility
+    for user in users:
+        if user.get('date_joined') and hasattr(user['date_joined'], 'replace'):
+            # Handle timezone-aware datetime objects
+            if hasattr(user['date_joined'], 'tzinfo') and user['date_joined'].tzinfo is not None:
+                user['date_joined'] = user['date_joined'].replace(tzinfo=None)
     return list(users)
 
 
@@ -44,6 +51,16 @@ def export_user_profiles():
         'user_id', 'full_name', 'phone', 'title', 'department_id', 'avatar_url',
         'enabled', 'timezone', 'preferences', 'role', 'created_at', 'updated_at'
     )
+    # Convert datetime objects to timezone-naive format for Excel compatibility
+    for profile in profiles:
+        if profile.get('created_at') and hasattr(profile['created_at'], 'replace'):
+            # Handle timezone-aware datetime objects
+            if hasattr(profile['created_at'], 'tzinfo') and profile['created_at'].tzinfo is not None:
+                profile['created_at'] = profile['created_at'].replace(tzinfo=None)
+        if profile.get('updated_at') and hasattr(profile['updated_at'], 'replace'):
+            # Handle timezone-aware datetime objects
+            if hasattr(profile['updated_at'], 'tzinfo') and profile['updated_at'].tzinfo is not None:
+                profile['updated_at'] = profile['updated_at'].replace(tzinfo=None)
     return list(profiles)
 
 
@@ -52,7 +69,107 @@ def export_user_group_memberships():
     memberships = UserGroupMembership.objects.all().values(
         'user_id', 'group_id', 'joined_at'
     )
+    # Convert datetime objects to timezone-naive format for Excel compatibility
+    for membership in memberships:
+        if membership.get('joined_at') and hasattr(membership['joined_at'], 'replace'):
+            # Handle timezone-aware datetime objects
+            if hasattr(membership['joined_at'], 'tzinfo') and membership['joined_at'].tzinfo is not None:
+                membership['joined_at'] = membership['joined_at'].replace(tzinfo=None)
     return list(memberships)
+
+
+def import_xlsx_data(uploaded_file):
+    """Import data from an Excel file"""
+    try:
+        # Load the workbook
+        wb = load_workbook(uploaded_file, read_only=True)
+        
+        # Initialize data structure
+        data = {
+            'departments': [],
+            'user_groups': [],
+            'users': [],
+            'user_profiles': [],
+            'user_group_memberships': []
+        }
+        
+        # Process each sheet
+        if 'Departments' in wb.sheetnames:
+            sheet = wb['Departments']
+            headers = [cell.value for cell in sheet[1]]
+            for row in sheet.iter_rows(min_row=2, values_only=True):
+                if any(cell is not None for cell in row):  # Skip empty rows
+                    row_data = dict(zip(headers, row))
+                    # Remove None values
+                    row_data = {k: v for k, v in row_data.items() if v is not None}
+                    data['departments'].append(row_data)
+        
+        if 'User Groups' in wb.sheetnames:
+            sheet = wb['User Groups']
+            headers = [cell.value for cell in sheet[1]]
+            for row in sheet.iter_rows(min_row=2, values_only=True):
+                if any(cell is not None for cell in row):  # Skip empty rows
+                    row_data = dict(zip(headers, row))
+                    # Convert department_id to string if it's not None
+                    if 'department_id' in row_data and row_data['department_id'] is not None:
+                        row_data['department_id'] = str(row_data['department_id'])
+                    # Remove None values
+                    row_data = {k: v for k, v in row_data.items() if v is not None}
+                    data['user_groups'].append(row_data)
+        
+        if 'Users' in wb.sheetnames:
+            sheet = wb['Users']
+            headers = [cell.value for cell in sheet[1]]
+            for row in sheet.iter_rows(min_row=2, values_only=True):
+                if any(cell is not None for cell in row):  # Skip empty rows
+                    row_data = dict(zip(headers, row))
+                    # Convert boolean fields
+                    if 'is_active' in row_data:
+                        row_data['is_active'] = bool(row_data['is_active'])
+                    if 'is_staff' in row_data:
+                        row_data['is_staff'] = bool(row_data['is_staff'])
+                    if 'is_superuser' in row_data:
+                        row_data['is_superuser'] = bool(row_data['is_superuser'])
+                    # Remove None values
+                    row_data = {k: v for k, v in row_data.items() if v is not None}
+                    data['users'].append(row_data)
+        
+        if 'User Profiles' in wb.sheetnames:
+            sheet = wb['User Profiles']
+            headers = [cell.value for cell in sheet[1]]
+            for row in sheet.iter_rows(min_row=2, values_only=True):
+                if any(cell is not None for cell in row):  # Skip empty rows
+                    row_data = dict(zip(headers, row))
+                    # Convert boolean fields
+                    if 'enabled' in row_data:
+                        row_data['enabled'] = bool(row_data['enabled'])
+                    # Convert department_id to string if it's not None
+                    if 'department_id' in row_data and row_data['department_id'] is not None:
+                        row_data['department_id'] = str(row_data['department_id'])
+                    # Remove None values
+                    row_data = {k: v for k, v in row_data.items() if v is not None}
+                    data['user_profiles'].append(row_data)
+        
+        if 'User Group Memberships' in wb.sheetnames:
+            sheet = wb['User Group Memberships']
+            headers = [cell.value for cell in sheet[1]]
+            for row in sheet.iter_rows(min_row=2, values_only=True):
+                if any(cell is not None for cell in row):  # Skip empty rows
+                    row_data = dict(zip(headers, row))
+                    # Convert user_id and group_id to string if not None
+                    if 'user_id' in row_data and row_data['user_id'] is not None:
+                        row_data['user_id'] = str(row_data['user_id'])
+                    if 'group_id' in row_data and row_data['group_id'] is not None:
+                        row_data['group_id'] = str(row_data['group_id'])
+                    # Remove None values
+                    row_data = {k: v for k, v in row_data.items() if v is not None}
+                    data['user_group_memberships'].append(row_data)
+        
+        wb.close()
+        return data
+    except Exception as e:
+        logger.error(f"Error importing Excel data: {str(e)}")
+        raise ValidationError(f"Invalid Excel file format: {str(e)}")
 
 
 def export_all_data():
@@ -148,13 +265,14 @@ def create_xlsx_export(data):
     wb = Workbook()
     
     # Remove the default sheet
-    wb.remove(wb.active)
+    if wb.active:
+        wb.remove(wb.active)
     
     # Create departments sheet
     ws_dept = wb.create_sheet("Departments")
-    ws_dept.append(['id', 'name', 'description'])
+    ws_dept.append(['department_id', 'name', 'description'])
     for dept in data['departments']:
-        ws_dept.append([dept['id'], dept['name'], dept['description']])
+        ws_dept.append([dept['department_id'], dept['name'], dept['description']])
     
     # Create user groups sheet
     ws_groups = wb.create_sheet("User Groups")
@@ -188,15 +306,16 @@ def create_xlsx_export(data):
     for ws in wb.worksheets:
         for column in ws.columns:
             max_length = 0
-            column_letter = get_column_letter(column[0].column)
-            for cell in column:
-                try:
-                    if len(str(cell.value)) > max_length:
-                        max_length = len(str(cell.value))
-                except:
-                    pass
-            adjusted_width = (max_length + 2)
-            ws.column_dimensions[column_letter].width = adjusted_width
+            if column and column[0]:
+                column_letter = get_column_letter(column[0].column)
+                for cell in column:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(str(cell.value))
+                    except:
+                        pass
+                adjusted_width = (max_length + 2)
+                ws.column_dimensions[column_letter].width = adjusted_width
     
     # Save to response
     from io import BytesIO
@@ -486,3 +605,19 @@ def import_all_data(data):
         'user_profiles': {'created': profile_created, 'updated': profile_updated},
         'user_group_memberships': {'created': membership_created, 'skipped': membership_skipped}
     }
+
+
+@transaction.atomic
+def clear_all_user_data():
+    """Clear all user-related data from the database"""
+    # Delete in reverse order to maintain referential integrity
+    UserGroupMembership.objects.all().delete()
+    UserProfile.objects.all().delete()
+    UserGroup.objects.all().delete()
+    Department.objects.all().delete()
+    
+    # Note: We don't delete User objects as they may be needed for authentication
+    # If you want to delete users too, uncomment the next line:
+    # User.objects.all().delete()
+    
+    return True
