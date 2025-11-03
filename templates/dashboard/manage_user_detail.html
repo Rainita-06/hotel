@@ -195,32 +195,28 @@
 </div>
 
 <!-- Reset Password Modal -->
-<div id="resetPasswordModal" class="fixed inset-0 z-[1000] hidden items-center justify-center p-4 backdrop-blur-sm bg-black bg-opacity-30 transition-opacity duration-300 opacity-0" onclick="closeResetPasswordModal()">
-  <div class="w-full max-w-md rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0" onclick="event.stopPropagation()">
-    <div class="p-6">
-      <div class="flex items-start justify-between">
-        <h3 class="text-lg font-semibold text-gray-900">Reset Password</h3>
-        <button type="button" onclick="closeResetPasswordModal()" class="rounded-full p-1 text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Close">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-        </button>
-      </div>
-      <form autocomplete="off" id="resetPasswordForm" class="mt-4 space-y-4">
-        {% csrf_token %}
-        <div>
-          <label for="newPassword" class="block text-sm font-medium text-gray-700 mb-2">New Password</label>
-          <input autocomplete="off" type="password" id="newPassword" class="w-full h-9 px-3 bg-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 text-sm" required />
-        </div>
-        <div>
-          <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
-          <input autocomplete="off" type="password" id="confirmPassword" class="w-full h-9 px-3 bg-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 text-sm" required />
-        </div>
-        <div class="flex items-center justify-end gap-3 mt-6">
-          <button type="button" onclick="closeResetPasswordModal()" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50">Cancel</button>
-          <button type="submit" class="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700">Reset Password</button>
-        </div>
-        <div id="resetPasswordError" class="text-sm text-red-600 hidden mt-2"></div>
-      </form>
+<div id="resetPasswordModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50">
+  <div class="w-full max-w-md rounded-lg bg-white p-6" onclick="event.stopPropagation()">
+    <div class="flex items-start justify-between">
+      <h3 class="text-lg font-semibold">Reset Password</h3>
+      <button onclick="closeResetPasswordModal()" class="rounded p-1 text-gray-500 hover:bg-gray-100">✕</button>
     </div>
+    <form id="resetPasswordForm" class="mt-4 space-y-4">
+      {% csrf_token %}
+      <div>
+        <label class="block text-sm font-medium text-gray-700">New Password</label>
+        <input type="password" id="newPassword" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" required />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Confirm Password</label>
+        <input type="password" id="confirmPassword" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" required />
+      </div>
+      <div class="flex items-center justify-end gap-2">
+        <button type="button" onclick="closeResetPasswordModal()" class="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm">Cancel</button>
+        <button type="submit" class="rounded-md bg-sky-600 px-3 py-1.5 text-sm font-medium text-white">Reset Password</button>
+      </div>
+      <div id="resetPasswordError" class="text-sm text-red-600 hidden"></div>
+    </form>
   </div>
 </div>
 {% endblock %}
@@ -243,81 +239,52 @@ if (typeof showToast === 'undefined') {
 
 // Toggle user status (activate/deactivate)
 function toggleUserStatus() {
-  const isActive = {% if profile and profile.enabled %}true{% else %}false{% endif %};
-  const action = isActive ? 'deactivate' : 'activate';
-  
-  if (confirm(`Are you sure you want to ${action} this user?`)) {
-    performToggleUserStatus();
+  if (confirm('{% if profile and profile.enabled %}Are you sure you want to deactivate this user?{% else %}Are you sure you want to activate this user?{% endif %}')) {
+    const form = document.getElementById('toggleUserStatusForm');
+    const url = form.action;
+    const csrftoken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+    
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': csrftoken,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({})
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
+    .then(data => {
+      // Show success message
+      showToast(data.enabled ? 'User activated successfully!' : 'User deactivated successfully!');
+      
+      // Reload the page after a short delay to ensure proper data loading
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      showToast('Failed to toggle user status. Please try again.', 'error');
+    });
   }
-}
-
-function performToggleUserStatus() {
-  const form = document.getElementById('toggleUserStatusForm');
-  const url = form.action;
-  const csrftoken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
-  
-  fetch(url, {
-    method: 'POST',
-    headers: {
-      'X-CSRFToken': csrftoken,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({})
-  })
-  .then(response => {
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-    return response.json();
-  })
-  .then(data => {
-    showToast(data.enabled ? 'User activated successfully!' : 'User deactivated successfully!');
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000);
-  })
-  .catch(error => {
-    console.error('Error:', error);
-    showToast('Failed to toggle user status. Please try again.', 'error');
-  });
 }
 
 // Reset password modal functions
 function openResetPasswordModal() {
   document.getElementById('resetPasswordForm').reset();
   document.getElementById('resetPasswordError').classList.add('hidden');
-  
-  const modal = document.getElementById('resetPasswordModal');
-  if (modal) {
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    
-    requestAnimationFrame(() => {
-      modal.classList.remove('opacity-0');
-      const dialog = modal.querySelector('div[onclick="event.stopPropagation()"]');
-      if (dialog) {
-        dialog.classList.remove('scale-95', 'opacity-0');
-        dialog.classList.add('scale-100', 'opacity-100');
-      }
-    });
-  }
+  document.getElementById('resetPasswordModal').classList.remove('hidden');
+  document.getElementById('resetPasswordModal').classList.add('flex');
 }
 
 function closeResetPasswordModal() {
-  const modal = document.getElementById('resetPasswordModal');
-  if (modal) {
-    const dialog = modal.querySelector('div[onclick="event.stopPropagation()"]');
-    modal.classList.add('opacity-0');
-    if (dialog) {
-      dialog.classList.remove('scale-100', 'opacity-100');
-      dialog.classList.add('scale-95', 'opacity-0');
-    }
-    
-    setTimeout(() => {
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
-    }, 300);
-  }
+  document.getElementById('resetPasswordModal').classList.add('hidden');
+  document.getElementById('resetPasswordModal').classList.remove('flex');
 }
 
 // Handle reset password form submission
@@ -348,6 +315,10 @@ document.getElementById('resetPasswordForm').addEventListener('submit', function
     'confirm_password': confirmPassword
   };
   
+  // Debugging: log the request
+  console.log('Sending password reset request for user ID:', '{{ user.pk }}');
+  console.log('Request data:', formData);
+  
   fetch('{% url "dashboard:api_reset_user_password" user.pk %}', {
     method: 'POST',
     headers: {
@@ -356,11 +327,14 @@ document.getElementById('resetPasswordForm').addEventListener('submit', function
     },
     body: JSON.stringify(formData)
   }).then(response => {
+    console.log('Response status:', response.status);
+    console.log('Response headers:', response.headers);
     if (!response.ok) {
-      return response.json().then(err => { throw new Error(err.error || 'Failed to reset password'); });
+      throw new Error('Network response was not ok');
     }
     return response.json();
   }).then(data => {
+    console.log('Response data:', data);
     if (data.success) {
       closeResetPasswordModal();
       showToast('Password has been reset successfully!', 'success');
@@ -394,19 +368,19 @@ function openEditUserModal() {
   // department select (if exists)
   const deptSelect = document.getElementById('editUserDepartment');
   if (deptSelect) {
-    // clear and add 'None' option first
+    // clear and add current
     deptSelect.innerHTML = '<option value="">None</option>';
     
-    // Add departments from hidden data
+    // Add departments using data attributes
     const deptOptions = document.getElementById('departmentOptions').innerHTML;
     deptSelect.innerHTML += deptOptions;
     
-    // Set the selected department based on the hidden input value
+    // Set the selected department
     try { 
       const selectedDept = document.getElementById('selectedDepartment').value;
-      deptSelect.value = selectedDept || ''; // Use '' for None
+      deptSelect.value = selectedDept || '';
     } catch(e) {
-      //
+      // Handle any errors silently
     }
   }
   
@@ -414,38 +388,16 @@ function openEditUserModal() {
   document.getElementById('editUserTitle').value = '{{ profile.title|default:""|escapejs }}';
   document.getElementById('editUserIsActive').checked = {{ user.is_active|yesno:"true,false" }};
   document.getElementById('editUserError').classList.add('hidden');
-  
   const modal = document.getElementById('editUserModal');
-  if (modal) {
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    
-    requestAnimationFrame(() => {
-      modal.classList.remove('opacity-0');
-      const dialog = modal.querySelector('div[onclick="event.stopPropagation()"]');
-      if (dialog) {
-        dialog.classList.remove('scale-95', 'opacity-0');
-        dialog.classList.add('scale-100', 'opacity-100');
-      }
-    });
-  }
+  if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
 }
 
 function closeEditUserModal() { 
   const modal = document.getElementById('editUserModal'); 
-  if (modal) {
-    const dialog = modal.querySelector('div[onclick="event.stopPropagation()"]');
-    modal.classList.add('opacity-0');
-    if (dialog) {
-      dialog.classList.remove('scale-100', 'opacity-100');
-      dialog.classList.add('scale-95', 'opacity-0');
-    }
-    
-    setTimeout(() => {
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
-    }, 300);
-  }
+  if (modal) { 
+    modal.classList.add('hidden'); 
+    modal.classList.remove('flex'); 
+  } 
 }
 
 function submitEditUser(e) {
@@ -461,15 +413,28 @@ function submitEditUser(e) {
   const profilePicture = document.getElementById('editUserProfilePicture').files[0];
   const is_active = document.getElementById('editUserIsActive').checked ? '1' : '0';
   const errorEl = document.getElementById('editUserError');
-  
   if (!username || !email) { 
     errorEl.textContent = 'Username and email are required.'; 
     errorEl.classList.remove('hidden'); 
     return; 
   }
   
-  // Validation checks...
-  // ... (omitted for brevity)
+  // Validate profile picture if provided
+  if (profilePicture) {
+    // Check file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+    if (!validTypes.includes(profilePicture.type)) {
+      errorEl.textContent = 'Please upload a valid image file (JPG, JPEG, PNG, or GIF).';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+    // Check file size (5MB limit)
+    if (profilePicture.size > 5 * 1024 * 1024) {
+      errorEl.textContent = 'Image file is too large. Maximum size is 5MB.';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+  }
   
   btn.disabled = true; 
   errorEl.classList.add('hidden');
@@ -482,10 +447,7 @@ function submitEditUser(e) {
   formData.append('phone', phone);
   formData.append('title', title);
   formData.append('role', role);
-  
-  // *** FIX IS HERE: Always append department, even if it's an empty string ('') ***
-  formData.append('department', department); 
-  
+  if (department) formData.append('department', department);
   if (profilePicture) formData.append('profile_picture', profilePicture);
   formData.append('is_active', is_active);
   formData.append('csrfmiddlewaretoken', document.querySelector('input[name="csrfmiddlewaretoken"]').value);
@@ -495,7 +457,7 @@ function submitEditUser(e) {
     body: formData
   }).then(response => {
     if (!response.ok) {
-      return response.json().then(err => { throw new Error(err.message || 'Network response was not ok'); });
+      throw new Error('Network response was not ok');
     }
     return response.json();
   }).then(data => {
@@ -510,20 +472,22 @@ function submitEditUser(e) {
     }
   }).catch(error => {
     console.error('Error updating user:', error);
-    errorEl.textContent = error.message || 'Failed to update user. Try again.'; 
+    errorEl.textContent = 'Failed to update user. Try again.'; 
     errorEl.classList.remove('hidden'); 
     btn.disabled = false;
   });
 }
 
-// Load permissions for the user's groups (rest of JS remains unchanged)
+// Load permissions for the user's groups
 document.addEventListener('DOMContentLoaded', function() {
   const groupIds = [{% for group in groups %}{{ group.id }},{% endfor %}];
   
   if (groupIds.length > 0) {
+    // For demo purposes, we'll show some sample permissions
     const permissionsList = document.getElementById('permissions-list');
     permissionsList.innerHTML = '';
     
+    // Sample permissions based on group names
     const samplePermissions = {
       'Admins': [
         'Manage users and groups',
@@ -545,6 +509,7 @@ document.addEventListener('DOMContentLoaded', function() {
       ]
     };
     
+    // Get permissions for the user's groups
     let permissions = [];
     {% for group in groups %}
       if (samplePermissions['{{ group.name }}']) {
@@ -552,6 +517,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     {% endfor %}
     
+    // If no specific permissions, show default ones
     if (permissions.length === 0) {
       permissions = [
         'View own profile',
@@ -561,6 +527,7 @@ document.addEventListener('DOMContentLoaded', function() {
       ];
     }
     
+    // Display permissions
     permissions.forEach(permission => {
       const div = document.createElement('div');
       div.className = 'flex items-center gap-2';
@@ -571,6 +538,7 @@ document.addEventListener('DOMContentLoaded', function() {
       permissionsList.appendChild(div);
     });
   } else {
+    // No groups assigned
     const permissionsList = document.getElementById('permissions-list');
     permissionsList.innerHTML = '<div class="text-gray-500">No permissions assigned</div>';
   }
@@ -588,73 +556,69 @@ document.addEventListener('DOMContentLoaded', function() {
 <input type="hidden" id="userIsActive" value="{% if user.is_active %}true{% else %}false{% endif %}">
 
 <!-- Edit User Modal -->
-<div id="editUserModal" class="fixed inset-0 z-[1000] hidden items-center justify-center p-4 backdrop-blur-sm bg-black bg-opacity-30 transition-opacity duration-300 opacity-0" onclick="closeEditUserModal()">
-  <div class="w-full max-w-2xl rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[90vh]" onclick="event.stopPropagation()">
-    <div class="p-6 border-b border-gray-200 flex-shrink-0">
-      <div class="flex items-start justify-between">
-        <h3 class="text-lg font-semibold text-gray-900">Edit User</h3>
-        <button type="button" onclick="closeEditUserModal()" class="rounded-full p-1 text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Close">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-        </button>
-      </div>
+<div id="editUserModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50">
+  <div class="w-full max-w-2xl rounded-lg bg-white p-6" onclick="event.stopPropagation()">
+    <div class="flex items-start justify-between">
+      <h3 class="text-lg font-semibold">Edit User</h3>
+      <button onclick="closeEditUserModal()" class="rounded p-1 text-gray-500 hover:bg-gray-100">✕</button>
     </div>
-    <form autocomplete="off" id="editUserForm" class="flex-1 overflow-y-auto p-6" onsubmit="submitEditUser(event)">
+    <form id="editUserForm" class="mt-4 grid grid-cols-1 gap-4" onsubmit="submitEditUser(event)">
       {% csrf_token %}
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="grid grid-cols-2 gap-4">
         <div>
-          <label for="editUserFullName" class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-          <input autocomplete="off" id="editUserFullName" type="text" class="w-full h-9 px-3 bg-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 text-sm" required />
+          <label class="block text-sm font-medium text-gray-700">Full Name</label>
+          <input id="editUserFullName" type="text" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" required />
         </div>
         <div>
-          <label for="editUserUsername" class="block text-sm font-medium text-gray-700 mb-2">Username</label>
-          <input autocomplete="off" id="editUserUsername" type="text" class="w-full h-9 px-3 bg-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 text-sm" required />
-        </div>
-      </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-        <div>
-          <label for="editUserEmail" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-          <input autocomplete="off" id="editUserEmail" type="email" class="w-full h-9 px-3 bg-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 text-sm" required />
-        </div>
-        <div>
-          <label for="editUserPhone" class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-          <input autocomplete="off" id="editUserPhone" type="text" class="w-full h-9 px-3 bg-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 text-sm" />
+          <label class="block text-sm font-medium text-gray-700">Username</label>
+          <input id="editUserUsername" type="text" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" required />
         </div>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+      <div class="grid grid-cols-2 gap-4">
         <div>
-          <label for="editUserTitle" class="block text-sm font-medium text-gray-700 mb-2">Title</label>
-          <input autocomplete="off" id="editUserTitle" type="text" class="w-full h-9 px-3 bg-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 text-sm" />
+          <label class="block text-sm font-medium text-gray-700">Email</label>
+          <input id="editUserEmail" type="email" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" required />
         </div>
         <div>
-          <label for="editUserDepartment" class="block text-sm font-medium text-gray-700 mb-2">Department</label>
-          <select id="editUserDepartment" class="w-full h-9 px-3 bg-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 text-sm"></select>
+          <label class="block text-sm font-medium text-gray-700">Phone</label>
+          <input id="editUserPhone" type="text" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
         </div>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+      <div class="grid grid-cols-2 gap-4">
         <div>
-          <label for="editUserRole" class="block text-sm font-medium text-gray-700 mb-2">Role</label>
-          <select id="editUserRole" class="w-full h-9 px-3 bg-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 text-sm">
+          <label class="block text-sm font-medium text-gray-700">Title</label>
+          <input id="editUserTitle" type="text" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Department</label>
+          <select id="editUserDepartment" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"></select>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Role</label>
+          <select id="editUserRole" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
             <option value="user">User</option>
             <option value="staff">Staff</option>
             <option value="admin">Admin</option>
           </select>
         </div>
         <div>
-          <label for="editUserProfilePicture" class="block text-sm font-medium text-gray-700 mb-2">Profile Picture</label>
-          <input autocomplete="off" id="editUserProfilePicture" type="file" accept="image/*" class="w-full h-9 px-3 py-1 bg-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 text-sm" />
+          <label class="block text-sm font-medium text-gray-700">Profile Picture</label>
+          <input id="editUserProfilePicture" type="file" accept="image/*" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
           <p class="mt-1 text-xs text-gray-500">Upload a JPG, JPEG, PNG, or GIF image (max 5MB)</p>
         </div>
       </div>
-      <div class="flex items-center gap-3 mt-6">
-        <input autocomplete="off" id="editUserIsActive" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500" />
-        <label for="editUserIsActive" class="text-sm text-gray-700">Active</label>
+      <div class="flex items-center gap-4">
+        <input id="editUserIsActive" type="checkbox" class="h-4 w-4" />
+        <label class="text-sm">Active</label>
       </div>
-      <div id="editUserError" class="text-sm text-red-600 hidden mt-4"></div>
+      <div class="flex items-center justify-end gap-2">
+        <button type="button" onclick="closeEditUserModal()" class="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm">Cancel</button>
+        <button id="editUserSubmit" type="submit" class="rounded-md bg-sky-600 px-3 py-1.5 text-sm font-medium text-white">Save</button>
+      </div>
+      <div id="editUserError" class="text-sm text-red-600 hidden"></div>
     </form>
-    <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-lg flex-shrink-0">
-      <button type="button" onclick="closeEditUserModal()" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50">Cancel</button>
-      <button id="editUserSubmit" type="submit" form="editUserForm" class="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700">Save</button>
-    </div>
   </div>
 </div>
 {% endblock %}

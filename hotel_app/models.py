@@ -107,6 +107,7 @@ class UserProfile(models.Model):
     
     def is_regular_user(self):
         return self.role == 'user'
+    
 
 
 class UserGroupMembership(models.Model):

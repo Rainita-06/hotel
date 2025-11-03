@@ -3425,7 +3425,9 @@ def user_update(request, user_id):
         is_staff, is_superuser = _role_to_flags(role)
         user.is_staff = is_staff
         user.is_superuser = is_superuser
-        
+        print("Received department_id:", department_id)
+        print("Department list:", Department.objects.all())
+
         user.save()
 
         # Update or create user profile
@@ -3433,6 +3435,8 @@ def user_update(request, user_id):
         profile.full_name = full_name
         profile.phone = phone
         profile.title = title
+        print("Received department_id:", department_id)
+        print("Department list:", Department.objects.all())
 
         # Handle department if provided
         if department_id:
@@ -3496,7 +3500,7 @@ def user_update(request, user_id):
                 logger.exception('Failed to save uploaded profile picture for user %s', user.pk)
 
         profile.save()
-
+    
         # Return JSON response for AJAX requests
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.META.get('CONTENT_TYPE', '').startswith('multipart/form-data'):
             return JsonResponse({
@@ -10519,7 +10523,7 @@ def user_create(request):
     role = (data.get("role") or "").strip()
     password = (data.get("password") or "").strip()
     is_active = data.get("is_active") in ("1", "true", "True", "yes")
-
+    
     errors = {}
     if not username:
         errors["username"] = ["Username is required."]
@@ -10971,6 +10975,7 @@ def manage_users_toggle_enabled(request, user_id):
     if not profile:
         return JsonResponse({'error': 'UserProfile missing'}, status=400)
     profile.enabled = not bool(profile.enabled)
+    
     profile.save(update_fields=['enabled'])
     return JsonResponse({'id': user.pk, 'enabled': profile.enabled})
 
