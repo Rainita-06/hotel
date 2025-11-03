@@ -16,7 +16,7 @@ class Department(models.Model):
     department_id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=100,blank=False, null=False)   # updated (was 120)
     description = models.CharField(max_length=255, null=True, blank=True)  
-    lead = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)       # added
+    # lead = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)       # added
     name = models.CharField(max_length=120, unique=True)
     description = models.TextField(blank=True, null=True)
     logo = models.ImageField(upload_to='department_logos/', blank=True, null=True)

@@ -119,4 +119,8 @@ urlpatterns = [
     
     # Ticket suggestions API
     path('api/tickets/suggestions/', dashboard_views.get_ticket_suggestions_api, name='api_ticket_suggestions'),
+    
+    # Twilio API
+    path('api/twilio/test-connection/', dashboard_views.test_twilio_connection, name='api_twilio_test_connection'),
+    path('api/twilio/send-test-message/', dashboard_views.send_test_twilio_message, name='api_twilio_send_test_message'),
 ]

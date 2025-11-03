@@ -72,6 +72,26 @@ You can initialize Tailwind CSS by running:
 python init_tailwind.py
 ```
 
+## Environment Variables Setup
+
+This project uses environment variables for configuration. To set up your environment:
+
+1. Copy the example files to create your local configuration:
+   ```bash
+   cp .env.example .env
+   cp .env.local.example .env.local
+   ```
+
+2. Edit the `.env` and `.env.local` files with your actual values:
+   - Database credentials
+   - Django secret key
+   - Twilio credentials (if using WhatsApp features)
+   - Other service credentials
+
+3. For development, you can also use `.env.development` which contains placeholder values.
+
+**Important**: Never commit actual credentials to version control. The `.gitignore` file is configured to exclude `.env`, `.env.local`, and `.env.production` files.
+
 ## Production-Ready Features
 
 ### Security

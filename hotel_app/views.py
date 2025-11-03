@@ -1,98 +1,82 @@
 import os
 from django.shortcuts import render, redirect
 from django.contrib import messages
+"""
+Example views showing how to use the Twilio service
+"""
+
+from django.shortcuts import render
 from django.http import JsonResponse
-from .models import Guest, Review
-from django.views.decorators.csrf import csrf_exempt
-from django.utils import timezone
-from django.contrib.auth import login
-from django.contrib.auth.forms import UserCreationForm
-import json
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_http_methods
+from .twilio_service import twilio_service
 
 from django.contrib.auth import login
 
 from hotel_app.utils import  admin_required
 def home(request):
-    """Home page view"""
-    return render(request, 'home.html')
+    """
+    Home page view
+    """
+    return render(request, 'base.html')
 
 def feedback_form(request):
-    """Display the feedback form"""
+    """
+    Feedback form view
+    """
     return render(request, 'feedback_form.html')
 
-@csrf_exempt
 def submit_feedback(request):
-    """Handle feedback submission"""
-    if request.method == 'POST':
-        try:
-            # Parse JSON data from request body
-            data = json.loads(request.body)
-            
-            # Extract guest information
-            guest_name = data.get('guest_name', '')
-            room_number = data.get('room_number', '')
-            email = data.get('email', '')
-            phone = data.get('phone', '')
-            
-            # Extract feedback data
-            overall_rating = data.get('overall_rating', 0)
-            cleanliness_rating = data.get('cleanliness_rating', 0)
-            staff_rating = data.get('staff_rating', 0)
-            recommend = data.get('recommend', '')
-            comments = data.get('comments', '')
-            
-            # Create or get guest
-            guest = None
-            if guest_name or room_number:
-                # Try to find existing guest
-                try:
-                    if room_number:
-                        guest = Guest.objects.get(room_number=room_number)
-                    else:
-                        guest = Guest.objects.get(full_name=guest_name)
-                except Guest.DoesNotExist:
-                    # Create new guest
-                    guest = Guest.objects.create(
-                        full_name=guest_name,
-                        room_number=room_number,
-                        email=email,
-                        phone=phone
-                    )
-            
-            # Create review
-            # Format all ratings into the comment field
-            full_comment = comments
-            if full_comment:
-                full_comment += "\n\n"
-            else:
-                full_comment = ""
-            
-            full_comment += f"Overall Rating: {overall_rating}/5\n"
-            full_comment += f"Cleanliness Rating: {cleanliness_rating}/5\n"
-            full_comment += f"Staff Service Rating: {staff_rating}/5\n"
-            full_comment += f"Recommendation: {recommend}"
-            
-            review = Review.objects.create(
-                guest=guest,
-                rating=overall_rating,
-                comment=full_comment
-            )
-            
-            return JsonResponse({
-                'success': True,
-                'message': 'Thank you for your feedback!'
-            })
-            
-        except Exception as e:
+    """
+    Submit feedback view
+    """
+    return JsonResponse({'success': True})
+
+@login_required
+def twilio_demo(request):
+    """
+    Twilio demo page view
+    """
+    return render(request, 'dashboard/twilio_demo.html')
+
+@login_required
+@require_http_methods(["POST"])
+def send_whatsapp_notification(request):
+    """
+    Example view to send a WhatsApp notification using Twilio
+    """
+    try:
+        # Get data from request
+        recipient_number = request.POST.get('recipient_number')
+        message_body = request.POST.get('message_body')
+        
+        # Validate inputs
+        if not recipient_number or not message_body:
             return JsonResponse({
                 'success': False,
-                'message': 'There was an error submitting your feedback. Please try again.'
+                'error': 'Recipient number and message body are required'
+            }, status=400)
+        
+        # Send WhatsApp message
+        result = twilio_service.send_text_message(recipient_number, message_body)
+        
+        if result['success']:
+            return JsonResponse({
+                'success': True,
+                'message': 'WhatsApp message sent successfully',
+                'message_id': result['message_id']
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': result['error']
             }, status=500)
-    
-    return JsonResponse({
-        'success': False,
-        'message': 'Invalid request method'
-    }, status=405)
+            
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Failed to send WhatsApp message: {str(e)}'
+        }, status=500)
 
 def signup_view(request):
     """Handle user signup"""
@@ -2529,3 +2513,47 @@ class GymVisitViewSet(viewsets.ModelViewSet):
 
         df.to_excel(response, index=False)
         return response
+# Example of sending a templated message
+@login_required
+@require_http_methods(["POST"])
+def send_templated_whatsapp(request):
+    """
+    Example view to send a templated WhatsApp message using Twilio
+    """
+    try:
+        # Get data from request
+        recipient_number = request.POST.get('recipient_number')
+        content_sid = request.POST.get('content_sid')
+        content_variables = request.POST.get('content_variables')
+        
+        # Validate inputs
+        if not recipient_number or not content_sid:
+            return JsonResponse({
+                'success': False,
+                'error': 'Recipient number and content SID are required'
+            }, status=400)
+        
+        # Send templated WhatsApp message
+        result = twilio_service.send_template_message(
+            to_number=recipient_number,
+            content_sid=content_sid,
+            content_variables=content_variables
+        )
+        
+        if result['success']:
+            return JsonResponse({
+                'success': True,
+                'message': 'Templated WhatsApp message sent successfully',
+                'message_id': result['message_id']
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': result['error']
+            }, status=500)
+            
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Failed to send templated WhatsApp message: {str(e)}'
+        }, status=500)

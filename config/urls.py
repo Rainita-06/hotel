@@ -29,8 +29,14 @@ from django.contrib.auth import logout
 from django.shortcuts import redirect
 
 def logout_view(request):
+    from django.contrib.auth import logout
     logout(request)
-    return redirect('/login/')
+    # Add cache control headers to prevent back button access
+    response = redirect('/login/')
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    return response
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -67,6 +73,11 @@ urlpatterns = [
     path('locations/add/', views.add_family, name='add_family'),
     # path('locations/search/', views.search_families, name='search_families'),
     path('locations/search/', views.search_locations, name='search_locations'),
+    # Public feedback form
+    path('', include('hotel_app.urls')),
+    
+    # Twilio demo
+    path('twilio/', include('hotel_app.twilio_urls')),
 
     path('locations/edit/<int:location_id>/', views.location_form, name='location_edit'),
     path('locations/delete/<int:location_id>/', views.location_delete, name='location_delete'),

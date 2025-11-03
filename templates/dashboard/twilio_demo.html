@@ -1,0 +1,188 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">Twilio WhatsApp Demo</h1>
+    
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <h2 class="text-xl font-semibold mb-4">Send Text Message</h2>
+        <form id="textMessageForm" class="space-y-4">
+            <div>
+                <label for="recipientNumber" class="block text-sm font-medium text-gray-700">Recipient Number</label>
+                <input type="text" id="recipientNumber" name="recipient_number" 
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                       placeholder="e.g., +1234567890">
+            </div>
+            <div>
+                <label for="messageBody" class="block text-sm font-medium text-gray-700">Message</label>
+                <textarea id="messageBody" name="message_body" rows="4"
+                          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                          placeholder="Enter your message here..."></textarea>
+            </div>
+            <button type="submit" 
+                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Send Message
+            </button>
+        </form>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-semibold mb-4">Send Templated Message</h2>
+        <form id="templatedMessageForm" class="space-y-4">
+            <div>
+                <label for="templatedRecipientNumber" class="block text-sm font-medium text-gray-700">Recipient Number</label>
+                <input type="text" id="templatedRecipientNumber" name="recipient_number" 
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                       placeholder="e.g., +1234567890">
+            </div>
+            <div>
+                <label for="contentSid" class="block text-sm font-medium text-gray-700">Content SID</label>
+                <input type="text" id="contentSid" name="content_sid" 
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                       placeholder="e.g., HX1234567890abcdef1234567890abcd">
+            </div>
+            <div>
+                <label for="contentVariables" class="block text-sm font-medium text-gray-700">Content Variables (JSON)</label>
+                <textarea id="contentVariables" name="content_variables" rows="4"
+                          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                          placeholder='{"1": "John", "2": "tomorrow"}'></textarea>
+            </div>
+            <button type="submit" 
+                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Send Templated Message
+            </button>
+        </form>
+    </div>
+    
+    <div id="result" class="mt-6 hidden">
+        <div id="successMessage" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative hidden" role="alert">
+            <strong class="font-bold">Success!</strong>
+            <span id="successText" class="block sm:inline"></span>
+        </div>
+        <div id="errorMessage" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative hidden" role="alert">
+            <strong class="font-bold">Error!</strong>
+            <span id="errorText" class="block sm:inline"></span>
+        </div>
+    </div>
+</div>
+
+<script>
+// Helper function to get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Handle text message form submission
+document.getElementById('textMessageForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    fetch('{% url "send_whatsapp_notification" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        const resultDiv = document.getElementById('result');
+        const successMessage = document.getElementById('successMessage');
+        const errorMessage = document.getElementById('errorMessage');
+        const successText = document.getElementById('successText');
+        const errorText = document.getElementById('errorText');
+        
+        if (data.success) {
+            successText.textContent = data.message;
+            successMessage.classList.remove('hidden');
+            errorMessage.classList.add('hidden');
+        } else {
+            errorText.textContent = data.error;
+            errorMessage.classList.remove('hidden');
+            successMessage.classList.add('hidden');
+        }
+        
+        resultDiv.classList.remove('hidden');
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        const resultDiv = document.getElementById('result');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+        
+        errorText.textContent = 'An error occurred while sending the message.';
+        errorMessage.classList.remove('hidden');
+        resultDiv.classList.remove('hidden');
+    });
+});
+
+// Handle templated message form submission
+document.getElementById('templatedMessageForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    // Parse content variables if provided
+    const contentVariables = formData.get('content_variables');
+    if (contentVariables) {
+        try {
+            JSON.parse(contentVariables);
+        } catch (e) {
+            alert('Content variables must be valid JSON.');
+            return;
+        }
+    }
+    
+    fetch('{% url "send_templated_whatsapp" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        const resultDiv = document.getElementById('result');
+        const successMessage = document.getElementById('successMessage');
+        const errorMessage = document.getElementById('errorMessage');
+        const successText = document.getElementById('successText');
+        const errorText = document.getElementById('errorText');
+        
+        if (data.success) {
+            successText.textContent = data.message;
+            successMessage.classList.remove('hidden');
+            errorMessage.classList.add('hidden');
+        } else {
+            errorText.textContent = data.error;
+            errorMessage.classList.remove('hidden');
+            successMessage.classList.add('hidden');
+        }
+        
+        resultDiv.classList.remove('hidden');
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        const resultDiv = document.getElementById('result');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+        
+        errorText.textContent = 'An error occurred while sending the message.';
+        errorMessage.classList.remove('hidden');
+        resultDiv.classList.remove('hidden');
+    });
+});
+</script>
+{% endblock %}

@@ -6,6 +6,22 @@ from django.shortcuts import get_object_or_404
 from .models import Notification
 from .serializers import NotificationSerializer
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+@api_view(['GET'])
+@authentication_classes([SessionAuthentication, TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def current_user(request):
+    """API endpoint to check if user is authenticated and get user info."""
+    user = request.user
+    return Response({
+        'is_authenticated': True,
+        'user_id': user.id,
+        'username': user.username,
+        'email': user.email,
+    })
 
 @api_view(['GET'])
 @authentication_classes([SessionAuthentication, TokenAuthentication])

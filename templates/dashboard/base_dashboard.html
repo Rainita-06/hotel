@@ -4,6 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>{% block title %}GuestConnect Dashboard{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
@@ -629,5 +632,31 @@
 </script>
 
     {% block extra_js %}{% endblock %}
+    
+    <script>
+    // Check authentication status on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // If this is a dashboard page, check if user is authenticated
+        if (window.location.pathname.startsWith('/dashboard/')) {
+            fetch('/api/users/me/')
+                .then(response => {
+                    if (response.status === 401) {
+                        // User is not authenticated, redirect to login
+                        window.location.href = '/login/';
+                    }
+                })
+                .catch(error => {
+                    // If there's a network error, still redirect to login for security
+                    window.location.href = '/login/';
+                });
+        }
+    });
+    
+    // Disable back button navigation to cached pages
+    history.pushState(null, null, location.href);
+    window.addEventListener('popstate', function(event) {
+        history.pushState(null, null, location.href);
+    });
+    </script>
 </body>
 </html>

@@ -13,6 +13,7 @@ urlpatterns = [
     # User Management
     path('users/', api_views.UserList.as_view(), name='user-list'),
     path('users/<int:pk>/', api_views.UserDetail.as_view(), name='user-detail'),
+    path('users/me/', api_views.current_user, name='current-user'),
     
     # Department Management
     path('departments/', api_views.DepartmentList.as_view(), name='department-list'),

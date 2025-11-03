@@ -4,7 +4,8 @@
 {% block title %}Feedback Inbox{% endblock %}
 
 {% block content %}
-<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'vendor/aos/aos.css' %}">
+
 <style>
     /* Custom styles for selected rating options for better visual feedback */
     .rating-option.selected {
@@ -20,14 +21,14 @@
 </style>
 
 <div class="p-6 bg-gray-50 min-h-screen">
-    <div class="w-full max-w-[1136px] mx-auto mb-6">
+    <div class="w-full max-w-[1136px] mx-auto mb-6" data-aos="fade" data-aos-once="true">
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div data-aos="fade-down" data-aos-duration="700" data-aos-once="true">
+            <div>
                 <h1 class="text-gray-900 text-2xl font-bold">Feedback Inbox</h1>
                 <p class="text-gray-600 text-sm">Unified view of all guest feedback across channels</p>
             </div>
-            <div data-aos="fade-left" data-aos-duration="600" data-aos-delay="100" data-aos-once="true">
-                <button id="addFeedbackBtn" class="flex items-center justify-center gap-2 px-4 py-2 bg-sky-600 rounded-md text-white hover:bg-sky-700 shadow-sm transition-colors">
+            <div>
+                <button id="addFeedbackBtn" class="flex items-center justify-center gap-2 px-4 py-2 bg-sky-600 rounded-md text-white hover:bg-sky-700 shadow-sm transition-colors" data-aos="zoom-in" data-aos-delay="50" data-aos-once="true">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
                     </svg>
@@ -38,45 +39,41 @@
     </div>
 
     <div class="w-full max-w-[1136px] mx-auto">
-        <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div class="w-full bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center justify-between"
-                 data-aos="fade-up" data-aos-duration="600" data-aos-once="true">
+        <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="w-full bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center justify-between" data-aos="fade-up" data-aos-delay="0" data-aos-once="true">
                 <div>
                     <div class="text-gray-600 text-sm font-medium">Total Feedback</div>
-                    <div class="text-gray-900 text-2xl font-bold">{{ stats.total_feedback }}</div>
+                    <div class="text-gray-900 text-xl font-bold">{{ stats.total_feedback }}</div>
                 </div>
                 <div class="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
                     <img src="{% static 'images/feedback/total_feedback.svg' %}" alt="Total Feedback" class="w-5 h-5 object-contain" />
                 </div>
             </div>
 
-            <div class="w-full bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center justify-between"
-                 data-aos="fade-up" data-aos-duration="600" data-aos-delay="100" data-aos-once="true">
+            <div class="w-full bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center justify-between" data-aos="fade-up" data-aos-delay="50" data-aos-once="true">
                 <div>
                     <div class="text-gray-600 text-sm font-medium">Avg Rating</div>
-                    <div class="text-gray-900 text-2xl font-bold">{{ stats.avg_rating }}</div>
+                    <div class="text-gray-900 text-xl font-bold">{{ stats.avg_rating }}</div>
                 </div>
                 <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
                     <img src="{% static 'images/feedback/average_rating.svg' %}" alt="Average Rating" class="w-5 h-5 object-contain" />
                 </div>
             </div>
 
-            <div class="w-full bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center justify-between"
-                 data-aos="fade-up" data-aos-duration="600" data-aos-delay="200" data-aos-once="true">
+            <div class="w-full bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center justify-between" data-aos="fade-up" data-aos-delay="100" data-aos-once="true">
                 <div>
                     <div class="text-gray-600 text-sm font-medium">Needs Attention</div>
-                    <div class="text-gray-900 text-2xl font-bold">{{ stats.needs_attention }}</div>
+                    <div class="text-gray-900 text-xl font-bold">{{ stats.needs_attention }}</div>
                 </div>
                 <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
                     <img src="{% static 'images/feedback/needs_attention.svg' %}" alt="Needs Attention" class="w-5 h-5 object-contain" />
                 </div>
             </div>
 
-            <div class="w-full bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center justify-between"
-                 data-aos="fade-up" data-aos-duration="600" data-aos-delay="300" data-aos-once="true">
+            <div class="w-full bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center justify-between" data-aos="fade-up" data-aos-delay="150" data-aos-once="true">
                 <div>
                     <div class="text-gray-600 text-sm font-medium">Response Rate</div>
-                    <div class="text-gray-900 text-2xl font-bold">{{ stats.response_rate }}%</div>
+                    <div class="text-gray-900 text-xl font-bold">{{ stats.response_rate }}%</div>
                 </div>
                 <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
                     <img src="{% static 'images/feedback/response_rate.svg' %}" alt="Response Rate" class="w-5 h-5 object-contain" />
@@ -84,14 +81,14 @@
             </div>
         </div>
 
-        <div class="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
-             data-aos="fade-up" data-aos-duration="700" data-aos-once="true">
-            <div class="px-6 py-4 border-b border-gray-200 flex flex-col md:flex-row items-center justify-between gap-4">
-                <div class="relative w-full md:w-80">
+        <!-- Entire card (including table) fades in as a single block -->
+        <div class="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" data-aos="fade-up" data-aos-once="true">
+            <div class="px-4 py-4 border-b border-gray-200 flex flex-col md:flex-row items-center justify-between gap-4">
+                <form method="get" class="relative w-full md:w-80" data-aos="fade" data-aos-delay="50" data-aos-once="true">
                     <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                    <input autocomplete="off" type="text" class="w-full h-10 pl-10 pr-4 bg-white rounded-md border border-gray-300 text-sm focus:ring-sky-500 focus:border-sky-500" placeholder="Search feedback, keywords...">
-                </div>
-                <button class="w-full md:w-auto h-10 bg-white rounded-md border border-gray-300 flex items-center justify-center px-4 hover:bg-gray-50 transition-colors">
+                    <input autocomplete="off" type="text" name="q" class="w-full h-10 pl-10 pr-4 bg-white rounded-md border border-gray-300 text-sm focus:ring-sky-500 focus:border-sky-500" placeholder="Search feedback, keywords..." value="{{ request.GET.q|default:'' }}">
+                </form>
+                <button class="w-full md:w-auto h-10 bg-white rounded-md border border-gray-300 flex items-center justify-center px-4 hover:bg-gray-50 transition-colors" data-aos="fade" data-aos-delay="100" data-aos-once="true">
                     <img src="{% static 'images/feedback/export.svg' %}" alt="Export" class="w-4 h-4" />
                     <span class="ml-2 text-gray-700 text-sm font-medium">Export</span>
                 </button>
@@ -101,42 +98,42 @@
                 <table class="min-w-full">
                     <thead class="bg-gray-50 border-b border-gray-200">
                         <tr>
-                            <th class="w-12 px-6 py-3 text-left"><input autocomplete="off" type="checkbox" class="w-4 h-4 border-gray-300 rounded text-sky-600 focus:ring-sky-500"></th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Guest</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Feedback</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Keywords</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sentiment</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                            <th class="w-12 px-4 py-3 text-left"><input autocomplete="off" type="checkbox" class="w-4 h-4 border-gray-300 rounded text-sky-600 focus:ring-sky-500"></th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Guest</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Feedback</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Keywords</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sentiment</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200 bg-white">
                         {% for feedback in feedback_data %}
-                        <tr class="align-top hover:bg-gray-50 transition-colors" data-aos="fade-up" data-aos-duration="500" data-aos-once="true">
-                            <td class="px-6 py-4"><input autocomplete="off" type="checkbox" class="w-4 h-4 border-gray-300 rounded text-sky-600 focus:ring-sky-500"></td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ feedback.date }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                        <tr class="align-top hover:bg-gray-50 transition-colors">
+                            <td class="px-4 py-4"><input autocomplete="off" type="checkbox" class="w-4 h-4 border-gray-300 rounded text-sky-600 focus:ring-sky-500"></td>
+                            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ feedback.date }}</td>
+                            <td class="px-4 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
                                     <img class="w-8 h-8 rounded-full" src="https://placehold.co/32x32/E2E8F0/334155?text={{ feedback.guest|first }}" alt="{{ feedback.guest }}">
-                                    <div class="ml-3">
-                                        <div class="text-sm font-medium text-gray-900">{{ feedback.guest }}</div>
-                                        <div class="text-sm text-gray-500">{{ feedback.room }}</div>
+                                    <div class="ml-2">
+                                        <div class="text-sm font-medium text-gray-900 truncate max-w-[120px]">{{ feedback.guest }}</div>
+                                        <div class="text-sm text-gray-500 truncate max-w-[120px]">{{ feedback.room }}</div>
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-4 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
                                     <div class="flex">
                                         {% for i in "12345" %}{% if forloop.counter <= feedback.rating %}<svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>{% else %}<svg class="w-4 h-4 text-gray-300" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>{% endif %}{% endfor %}
                                     </div>
-                                    <span class="ml-2 text-sm text-gray-900">{{ feedback.rating }}</span>
+                                    <span class="ml-1 text-sm text-gray-900">{{ feedback.rating }}</span>
                                 </div>
                             </td>
-                            <td class="px-6 py-4 text-sm text-gray-900 max-w-sm truncate">{{ feedback.feedback }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap"><div class="flex flex-wrap gap-1">{% for keyword in feedback.keywords %}<span class="px-2 py-1 text-xs font-medium rounded-full {% if feedback.sentiment == 'Positive' %}bg-green-100 text-green-800{% elif feedback.sentiment == 'Negative' %}bg-red-100 text-red-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">{{ keyword }}</span>{% endfor %}</div></td>
-                            <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 py-1 text-xs font-medium rounded-full {% if feedback.sentiment == 'Positive' %}bg-green-100 text-green-800{% elif feedback.sentiment == 'Negative' %}bg-red-100 text-red-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">{{ feedback.sentiment }}</span></td>
-                            <td class="px-6 py-4 whitespace-nowrap"><a href="{% url 'dashboard:feedback_detail' feedback.id %}" class="inline-flex items-center p-2 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-600" title="View/Edit Feedback"><img src="{% static 'images/feedback/eye.svg' %}" alt="View/Edit" class="w-5 h-5 object-contain" /></a></td>
+                            <td class="px-4 py-4 text-sm text-gray-900 max-w-xs truncate">{{ feedback.feedback }}</td>
+                            <td class="px-4 py-4 whitespace-nowrap"><div class="flex flex-wrap gap-1">{% for keyword in feedback.keywords %}<span class="px-2 py-1 text-xs font-medium rounded-full {% if feedback.sentiment == 'Positive' %}bg-green-100 text-green-800{% elif feedback.sentiment == 'Negative' %}bg-red-100 text-red-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">{{ keyword }}</span>{% endfor %}</div></td>
+                            <td class="px-4 py-4 whitespace-nowrap"><span class="px-2 py-1 text-xs font-medium rounded-full {% if feedback.sentiment == 'Positive' %}bg-green-100 text-green-800{% elif feedback.sentiment == 'Negative' %}bg-red-100 text-red-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">{{ feedback.sentiment }}</span></td>
+                            <td class="px-4 py-4 whitespace-nowrap"><a href="{% url 'dashboard:feedback_detail' feedback.id %}" class="inline-flex items-center p-2 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-600" title="View/Edit Feedback"><img src="{% static 'images/feedback/eye.svg' %}" alt="View/Edit" class="w-5 h-5 object-contain" /></a></td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -144,21 +141,51 @@
             </div>
 
             <div class="border-t border-gray-200 px-6 py-4 flex items-center justify-between">
-                <div class="text-sm text-gray-700">Showing 1 to {{ feedback_data|length }} of {{ stats.total_feedback }} results</div>
+                <div class="text-sm text-gray-700">Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ stats.total_feedback }} results</div>
+                {% if is_paginated %}
                 <div class="flex items-center gap-2">
-                    <button class="w-20 h-9 bg-white rounded-md border border-gray-300 opacity-50 text-gray-500 text-sm font-medium cursor-not-allowed">Previous</button>
-                    <button class="w-8 h-9 bg-sky-600 rounded-md border border-sky-600 text-white text-sm font-medium">1</button>
-                    <button class="w-9 h-9 bg-white rounded-md border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50">2</button>
-                    <button class="w-20 h-9 bg-white rounded-md border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50">Next</button>
+                    <button class="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-800 hover:bg-gray-50 disabled:opacity-50"
+                            onclick="goToPage({% if page_obj.has_previous %}{{ page_obj.previous_page_number }}{% else %}1{% endif %})" {% if not page_obj.has_previous %}disabled{% endif %}>Previous</button>
+
+                    {% if page_obj.number > 3 %}
+                        <button class="rounded-md px-3 py-1.5 text-sm font-medium border border-gray-200 bg-white text-gray-800 hover:bg-gray-50"
+                                onclick="goToPage(1)">1</button>
+                        {% if page_obj.number > 4 %}
+                            <span class="rounded-md px-3 py-1.5 text-sm font-medium text-gray-500">...</span>
+                        {% endif %}
+                    {% endif %}
+
+                    {% for i in paginator.page_range %}
+                        {% if i >= page_obj.number|add:'-2' and i <= page_obj.number|add:'2' %}
+                            {% if page_obj.number == i %}
+                                <button class="rounded-md px-3 py-1.5 text-sm font-medium bg-sky-600 text-white">{{ i }}</button>
+                            {% else %}
+                                <button class="rounded-md px-3 py-1.5 text-sm font-medium border border-gray-200 bg-white text-gray-800 hover:bg-gray-50"
+                                        onclick="goToPage({{ i }})">{{ i }}</button>
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.number < paginator.num_pages|add:'-2' %}
+                        {% if page_obj.number < paginator.num_pages|add:'-3' %}
+                            <span class="rounded-md px-3 py-1.5 text-sm font-medium text-gray-500">...</span>
+                        {% endif %}
+                        <button class="rounded-md px-3 py-1.5 text-sm font-medium border border-gray-200 bg-white text-gray-800 hover:bg-gray-50"
+                                onclick="goToPage({{ paginator.num_pages }})">{{ paginator.num_pages }}</button>
+                    {% endif %}
+
+                    <button class="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-800 hover:bg-gray-50 disabled:opacity-50"
+                            onclick="goToPage({% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}{{ paginator.num_pages }}{% endif %})" {% if not page_obj.has_next %}disabled{% endif %}>Next</button>
                 </div>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
 
 <div id="feedbackModal" class="fixed inset-0 z-[1000] hidden items-center justify-center p-4 backdrop-blur-sm bg-black bg-opacity-30 transition-opacity duration-300 opacity-0" onclick="window.FeedbackModal.close('feedbackModal')">
-    <div class="w-full max-w-2xl rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[95vh]" onclick="event.stopPropagation()">
-        <div class="flex justify-between items-center p-6 border-b border-gray-200 flex-shrink-0">
+    <div class="w-full max-w-2xl rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[95vh]" onclick="event.stopPropagation()" data-aos="zoom-in" data-aos-duration="400" data-aos-once="true">
+        <div class="flex justify-between items-center p-6 border-b border-gray-200 flex-shrink-0" data-aos="fade" data-aos-delay="50">
             <h2 class="text-xl font-semibold text-gray-900">Add Feedback</h2>
             <button type="button" onclick="window.FeedbackModal.close('feedbackModal')" class="rounded-full p-1 text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Close">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -166,7 +193,7 @@
         </div>
         <form autocomplete="off" method="post" action="{% url 'dashboard:feedback_inbox' %}" class="p-6 space-y-6 overflow-y-auto flex-grow">
             {% csrf_token %}
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" data-aos="fade-up" data-aos-once="true">
                 <div>
                     <label for="guest_name" class="block text-sm font-medium text-gray-700 mb-1">Guest Name</label>
                     <input autocomplete="off" type="text" name="guest_name" id="guest_name" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500" placeholder="Enter guest name" required>
@@ -177,40 +204,73 @@
                 </div>
             </div>
 
-            <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+            <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm" data-aos="fade-up" data-aos-once="true">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">How would you rate your overall experience?</h3>
                 <div class="flex flex-wrap justify-center gap-4 sm:gap-6 md:gap-8">
-                    <div class="rating-option rating-option-emoji text-center cursor-pointer p-2 rounded-lg transition-all duration-200" data-rating-group="overall" data-rating-value="1" title="Poor"><span class="text-4xl">😞</span><p class="text-xs text-gray-500 mt-1">Poor</p></div>
-                    <div class="rating-option rating-option-emoji text-center cursor-pointer p-2 rounded-lg transition-all duration-200" data-rating-group="overall" data-rating-value="2" title="Fair"><span class="text-4xl">😕</span><p class="text-xs text-gray-500 mt-1">Fair</p></div>
-                    <div class="rating-option rating-option-emoji text-center cursor-pointer p-2 rounded-lg transition-all duration-200" data-rating-group="overall" data-rating-value="3" title="Good"><span class="text-4xl">😐</span><p class="text-xs text-gray-500 mt-1">Good</p></div>
-                    <div class="rating-option rating-option-emoji text-center cursor-pointer p-2 rounded-lg transition-all duration-200" data-rating-group="overall" data-rating-value="4" title="Great"><span class="text-4xl">🙂</span><p class="text-xs text-gray-500 mt-1">Great</p></div>
-                    <div class="rating-option rating-option-emoji text-center cursor-pointer p-2 rounded-lg transition-all duration-200" data-rating-group="overall" data-rating-value="5" title="Excellent"><span class="text-4xl">😄</span><p class="text-xs text-gray-500 mt-1">Excellent</p></div>
+                    <div class="rating-option rating-option-emoji text-center cursor-pointer p-2 rounded-lg" data-rating-group="overall" data-rating-value="1" title="Poor" data-aos="zoom-in" data-aos-delay="0"><span class="text-4xl">😞</span><p class="text-xs text-gray-500 mt-1">Poor</p></div>
+                    <div class="rating-option rating-option-emoji text-center cursor-pointer p-2 rounded-lg" data-rating-group="overall" data-rating-value="2" title="Fair" data-aos="zoom-in" data-aos-delay="50"><span class="text-4xl">😕</span><p class="text-xs text-gray-500 mt-1">Fair</p></div>
+                    <div class="rating-option rating-option-emoji text-center cursor-pointer p-2 rounded-lg" data-rating-group="overall" data-rating-value="3" title="Good" data-aos="zoom-in" data-aos-delay="100"><span class="text-4xl">😐</span><p class="text-xs text-gray-500 mt-1">Good</p></div>
+                    <div class="rating-option rating-option-emoji text-center cursor-pointer p-2 rounded-lg" data-rating-group="overall" data-rating-value="4" title="Great" data-aos="zoom-in" data-aos-delay="150"><span class="text-4xl">🙂</span><p class="text-xs text-gray-500 mt-1">Great</p></div>
+                    <div class="rating-option rating-option-emoji text-center cursor-pointer p-2 rounded-lg" data-rating-group="overall" data-rating-value="5" title="Excellent" data-aos="zoom-in" data-aos-delay="200"><span class="text-4xl">😄</span><p class="text-xs text-gray-500 mt-1">Excellent</p></div>
                 </div>
                 <input autocomplete="off" type="hidden" name="overall_rating" id="overall_rating" required>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm"><h3 class="text-lg font-semibold text-gray-900 mb-4">How clean was your room?</h3><div class="grid grid-cols-3 gap-3"><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="cleanliness" data-rating-value="1">Poor</button><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="cleanliness" data-rating-value="3">Good</button><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="cleanliness" data-rating-value="5">Excellent</button></div><input autocomplete="off" type="hidden" name="cleanliness_rating" id="cleanliness_rating"></div>
-                <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm"><h3 class="text-lg font-semibold text-gray-900 mb-4">How was the staff service?</h3><div class="grid grid-cols-3 gap-3"><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="staff" data-rating-value="1">Poor</button><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="staff" data-rating-value="3">Good</button><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="staff" data-rating-value="5">Excellent</button></div><input autocomplete="off" type="hidden" name="staff_rating" id="staff_rating"></div>
+                <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm" data-aos="fade-up" data-aos-once="true">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">How clean was your room?</h3>
+                    <div class="grid grid-cols-3 gap-3">
+                        <button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="cleanliness" data-rating-value="1">Poor</button>
+                        <button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="cleanliness" data-rating-value="3">Good</button>
+                        <button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="cleanliness" data-rating-value="5">Excellent</button>
+                    </div>
+                    <input autocomplete="off" type="hidden" name="cleanliness_rating" id="cleanliness_rating">
+                </div>
+                <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm" data-aos="fade-up" data-aos-delay="50" data-aos-once="true">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">How was the staff service?</h3>
+                    <div class="grid grid-cols-3 gap-3">
+                        <button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="staff" data-rating-value="1">Poor</button>
+                        <button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="staff" data-rating-value="3">Good</button>
+                        <button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="staff" data-rating-value="5">Excellent</button>
+                    </div>
+                    <input autocomplete="off" type="hidden" name="staff_rating" id="staff_rating">
+                </div>
             </div>
 
-            <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm"><h3 class="text-lg font-semibold text-gray-900 mb-4">Would you recommend us to others?</h3><div class="grid grid-cols-2 gap-3"><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="recommend" data-rating-value="yes">Yes</button><button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="recommend" data-rating-value="no">No</button></div><input autocomplete="off" type="hidden" name="recommend" id="recommend"></div>
+            <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm" data-aos="fade-up" data-aos-once="true">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Would you recommend us to others?</h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="recommend" data-rating-value="yes">Yes</button>
+                    <button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="recommend" data-rating-value="no">No</button>
+                </div>
+                <input autocomplete="off" type="hidden" name="recommend" id="recommend">
+            </div>
             
-            <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+            <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm" data-aos="fade-up" data-aos-delay="50" data-aos-once="true">
                 <label for="comment" class="text-lg font-semibold text-gray-900 mb-4 block">Tell us more about your experience <span class="text-gray-500 font-normal">(optional)</span></label>
                 <textarea name="comment" id="comment" rows="5" class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500" placeholder="Write your comments here..."></textarea>
             </div>
+            
+            <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-lg flex-shrink-0 -mx-6 -mb-6" data-aos="fade-up" data-aos-once="true">
+                <button type="button" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50" onclick="window.FeedbackModal.close('feedbackModal')">Cancel</button>
+                <button type="submit" class="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 shadow-sm">Submit Feedback</button>
+            </div>
         </form>
-        <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-lg flex-shrink-0">
-            <button type="button" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50" onclick="window.FeedbackModal.close('feedbackModal')">Cancel</button>
-            <button id="feedbackSubmit" type="submit" class="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 shadow-sm">Submit Feedback</button>
-        </div>
     </div>
 </div>
-<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+
+<script src="{% static 'vendor/aos/aos.js' %}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    AOS.init({ once: true, duration: 600, easing: 'ease-out' });
+    // Initialize AOS (subtle, once)
+    if (window.AOS) {
+        AOS.init({
+            duration: 600,
+            easing: 'ease-out',
+            once: true,
+            offset: 24
+        });
+    }
 
     // --- MODAL LOGIC ---
     window.FeedbackModal = (function(){
@@ -225,6 +285,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (dialog) {
                     dialog.classList.remove('scale-95', 'opacity-0');
                     dialog.classList.add('scale-100', 'opacity-100');
+                }
+                // Refresh AOS so modal content animations are recognized
+                if (window.AOS && typeof AOS.refreshHard === 'function') {
+                    AOS.refreshHard();
                 }
             });
         };
@@ -273,5 +337,12 @@ document.addEventListener('DOMContentLoaded', function() {
     //     setTimeout(() => window.FeedbackModal.open('feedbackModal'), 50);
     // {% endif %}
 });
+
+// --- PAGINATION FUNCTION ---
+function goToPage(page) {
+    const url = new URL(window.location);
+    url.searchParams.set('page', page);
+    window.location.href = url.toString();
+}
 </script>
 {% endblock %}

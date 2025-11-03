@@ -90,9 +90,9 @@
             <td class="max-w-xs px-6 py-4">
               <div class="flex min-w-0 items-center gap-3">
                 <div class="h-2 w-32 flex-shrink-0 rounded-full bg-gray-200">
-                  <div class="h-2 rounded-full {{ dept.performance_color|default:'bg-green-500' }}" style="width: {{ dept.performance_pct|default:'0%' }};"></div>
+                  <div class="h-2 rounded-full" style="width: {{ dept.performance_pct|default:'0%' }}; background-color: {{ dept.performance_color|default:'#22c55e' }};"></div>
                 </div>
-                <div class="text-sm font-medium {{ dept.performance_color|default:'text-green-600' }}">{{ dept.performance_pct|default:'0%' }}</div>
+                <div class="text-sm font-medium" style="color: {{ dept.performance_color|default:'#22c55e' }};">{{ dept.performance_pct|default:'0%' }}</div>
               </div>
             </td>
             <td class="px-6 py-4">
@@ -132,15 +132,37 @@
       {% if is_paginated %}
       <div id="serverPagination" class="inline-flex items-center gap-2">
         <button class="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-800 hover:bg-gray-50 disabled:opacity-50"
-                onclick="goToPage({{ page_obj.previous_page_number }})" {% if not page_obj.has_previous %}disabled{% endif %}>Previous</button>
+                onclick="goToPage({% if page_obj.has_previous %}{{ page_obj.previous_page_number }}{% else %}1{% endif %})" {% if not page_obj.has_previous %}disabled{% endif %}>Previous</button>
+
+        {% if page_obj.number > 3 %}
+          <button class="rounded-md px-3 py-1.5 text-sm font-medium border border-gray-200 bg-white text-gray-800 hover:bg-gray-50"
+                  onclick="goToPage(1)">1</button>
+          {% if page_obj.number > 4 %}
+            <span class="rounded-md px-3 py-1.5 text-sm font-medium text-gray-500">...</span>
+          {% endif %}
+        {% endif %}
 
         {% for i in paginator.page_range %}
-          <button class="rounded-md px-3 py-1.5 text-sm font-medium {% if page_obj.number == i %}bg-sky-600 text-white{% else %}border border-gray-200 bg-white text-gray-800 hover:bg-gray-50{% endif %}"
-                  onclick="goToPage({{ i }})">{{ i }}</button>
+          {% if i >= page_obj.number|add:'-2' and i <= page_obj.number|add:'2' %}
+            {% if page_obj.number == i %}
+              <button class="rounded-md px-3 py-1.5 text-sm font-medium bg-sky-600 text-white">{{ i }}</button>
+            {% else %}
+              <button class="rounded-md px-3 py-1.5 text-sm font-medium border border-gray-200 bg-white text-gray-800 hover:bg-gray-50"
+                      onclick="goToPage({{ i }})">{{ i }}</button>
+            {% endif %}
+          {% endif %}
         {% endfor %}
 
+        {% if page_obj.number < paginator.num_pages|add:'-2' %}
+          {% if page_obj.number < paginator.num_pages|add:'-3' %}
+            <span class="rounded-md px-3 py-1.5 text-sm font-medium text-gray-500">...</span>
+          {% endif %}
+          <button class="rounded-md px-3 py-1.5 text-sm font-medium border border-gray-200 bg-white text-gray-800 hover:bg-gray-50"
+                  onclick="goToPage({{ paginator.num_pages }})">{{ paginator.num_pages }}</button>
+        {% endif %}
+
         <button class="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-800 hover:bg-gray-50 disabled:opacity-50"
-                onclick="goToPage({{ page_obj.next_page_number }})" {% if not page_obj.has_next %}disabled{% endif %}>Next</button>
+                onclick="goToPage({% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}{{ paginator.num_pages }}{% endif %})" {% if not page_obj.has_next %}disabled{% endif %}>Next</button>
       </div>
       {% endif %}
     </div>
@@ -218,8 +240,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // --------------- Pagination ---------------
 function goToPage(page) {
+  // Validate page number to prevent invalid URLs
+  const pageNum = parseInt(page);
+  if (isNaN(pageNum) || pageNum < 1) {
+    return;
+  }
+  
   const url = new URL(window.location);
-  url.searchParams.set('page', page);
+  url.searchParams.set('page', pageNum);
   window.location.href = url.toString();
 }
 
