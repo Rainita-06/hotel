@@ -65,26 +65,58 @@
         {% endif %}
         
         {% if perms.locations.view_location %}
-        <a
-          href="{% url 'dashboard:locations' %}"
-          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:locations' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}">
-          <img
-            src="{% if request.resolver_match.view_name == 'dashboard:locations' %}{% static 'images/sidebar/locations_highlighted.svg' %}{% else %}{% static 'images/sidebar/locations.svg' %}{% endif %}"
-            alt="Locations Icon"
-            class="w-5 h-5"
-          />
-          <span class="font-medium">Locations </span>
-        </a>
-         <a
-          href="{% url 'checkin_form' %}"
-          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'checkin_form' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}">
-          <img
-            src="{% if request.resolver_match.view_name == 'checkin_form' %}{% static 'images/sidebar/locations_highlighted.svg' %}{% else %}{% static 'images/sidebar/locations.svg' %}{% endif %}"
-            alt="Locations Icon"
-            class="w-5 h-5"
-          />
-          <span class="font-medium">Breakfast Voucher </span>
-        </a>
+        {% with current=request.resolver_match.view_name %}
+<a
+  href="{% url 'dashboard:locations' %}"
+  class="flex items-center gap-3 px-3 py-2 rounded-lg 
+         {% if current in "dashboard:locations locations_list floors_list types_list location_manage building_cards" %}
+             text-sky-600 bg-sky-100
+         {% else %}
+             text-gray-700 hover:bg-gray-100
+         {% endif %}">
+  <img
+    src="{% if current in "dashboard:locations locations_list floors_list types_list location_manage building_cards" %}
+             {% static 'images/sidebar/locations_highlighted.svg' %}
+         {% else %}
+             {% static 'images/sidebar/locations.svg' %}
+         {% endif %}"
+         alt="{% if current in "dashboard:locations locations_list floors_list types_list location_manage building_cards" %}
+             Active Location Icon
+         {% else %}
+             Location Icon
+         {% endif %}"
+    class="w-5 h-5"
+  />
+  <span class="font-medium">Locations</span>
+</a>
+{% endwith %}
+
+         {% with current=request.resolver_match.view_name %}
+<a
+  href="{% url 'checkin_form' %}"
+  class="flex items-center gap-3 px-3 py-2 rounded-lg 
+         {% if current in "checkin_form scan_voucher breakfast_voucher_report" %}
+             text-sky-600 bg-sky-100
+         {% else %}
+             text-gray-700 hover:bg-gray-100
+         {% endif %}">
+  <img
+    src="{% if current in "checkin_form scan_voucher breakfast_voucher_report" %}
+             {% static 'images/sidebar/locations_highlighted.svg' %}
+         {% else %}
+             {% static 'images/sidebar/locations.svg' %}
+         {% endif %}"
+         alt="{% if current in "checkin_form scan_voucher breakfast_voucher_report" %}
+            Active Location Icon
+         {% else %}
+            Location Icon
+         {% endif %}"
+    class="w-5 h-5"
+  />
+  <span class="font-medium">Breakfast Voucher</span>
+</a>
+
+{% endwith %}
         {% endif %}
         
         {% if perms.tickets.view_servicerequest %}
@@ -143,17 +175,34 @@
         {% endif %}
         
         {% if perms.gym.view_gymmember %}
-        <a
-          href="{% url 'member_list' %}"
-          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'member_list' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
-        >
-          <img
-            src="{% if request.resolver_match.view_name == 'member_list' %}{% static 'images/sidebar/gym_highlighted.svg' %}{% else %}{% static 'images/sidebar/gym.svg' %}{% endif %}"
-            alt="Gym Icon"
-            class="w-5 h-5"
-          />
-          <span class="font-medium">Gym</span>
-        </a>
+       {% with current=request.resolver_match.view_name %}
+<a
+  href="{% url 'member_list' %}"
+  class="flex items-center gap-3 px-3 py-2 rounded-lg 
+         {% if current in "member_list gym_report data_checker" %}
+             text-sky-600 bg-sky-100
+         {% else %}
+             text-gray-700 hover:bg-gray-100
+         {% endif %}">
+  
+  <img
+    src="{% if current in "member_list gym_report data_checker" %}
+             {% static 'images/sidebar/gym_highlighted.svg' %}
+         {% else %}
+             {% static 'images/sidebar/gym.svg' %}
+         {% endif %}"
+    alt="{% if current in "member_list gym_report data_checker" %}
+             Active Gym Icon
+         {% else %}
+             Gym Icon
+         {% endif %}"
+    class="w-5 h-5"
+  />
+  
+  <span class="font-medium">Gym</span>
+</a>
+{% endwith %}
+
         {% endif %}
         
         {% if perms.integrations.view_integration %}

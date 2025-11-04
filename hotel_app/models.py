@@ -315,10 +315,10 @@ class Location(models.Model):
     # updated (was FK)
     type = models.ForeignKey(LocationType, on_delete=models.CASCADE, null=True, blank=True)
       # updated (was FK)
-    floor = models.ForeignKey(Floor, on_delete=models.CASCADE, blank=False, null=False,related_name='locations')
+    floor = models.ForeignKey(Floor, on_delete=models.CASCADE, blank=True, null=True,related_name='locations')
             # updated (was FK)
     pavilion = models.CharField(max_length=120, null=True, blank=True)   # added
-    room_no = models.CharField(max_length=40,blank=False, null=False)
+    room_no = models.CharField(max_length=40,blank=True, null=True)
     capacity = models.IntegerField(blank=True, null=True)
     building = models.ForeignKey('Building', models.DO_NOTHING,blank=False, null=False,related_name='locations')  # kept for compatibility
     is_occupied = models.BooleanField(default=False)

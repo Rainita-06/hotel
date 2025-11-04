@@ -27,7 +27,14 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-hx$rau=sf86q@*
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1,web').split(',')
+# For development, allow connections from local network devices
+# In production, replace with specific domain names
+ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1,192.168.1.4,10.178.254.135,192.168.126.1,192.168.142.1,192.168.202.1').split(',')
+
+# Session settings - 8 hours for development
+SESSION_COOKIE_AGE = 8 * 60 * 60  # 8 hours in seconds
+SESSION_SAVE_EVERY_REQUEST = True  # Refresh session timeout on each request
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Keep session after browser close
 
 
 # Application definition

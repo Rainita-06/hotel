@@ -2244,6 +2244,7 @@ def ticket_detail(request, ticket_id):
         location_name = service_request.location.name
         room_number = getattr(service_request.location, 'room_no', 'N/A') or 'N/A'
         if hasattr(service_request.location, 'floor') and service_request.location.floor:
+
             floor = f"{service_request.location.floor.floor_number} Floor"
             if service_request.location.floor.building:
                 building = service_request.location.floor.building.name
@@ -4592,32 +4593,32 @@ def dashboard_locations(request):
     }
     return render(request, "dashboard/locations.html", context)
 
-@require_permission([ADMINS_GROUP])
-def location_create(request):
-    if request.method == "POST":
-        form = LocationForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Location created successfully.")
-    return redirect("dashboard:locations")
+# @require_permission([ADMINS_GROUP])
+# def location_create(request):
+#     if request.method == "POST":
+#         form = LocationForm(request.POST)
+#         if form.is_valid():
+#             form.save()
+#             messages.success(request, "Location created successfully.")
+#     return redirect("dashboard:locations")
 
-@require_permission([ADMINS_GROUP])
-def location_update(request, loc_id):
-    location = get_object_or_404(Location, pk=loc_id)
-    if request.method == "POST":
-        form = LocationForm(request.POST, instance=location)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Location updated successfully.")
-    return redirect("dashboard:locations")
+# @require_permission([ADMINS_GROUP])
+# def location_update(request, loc_id):
+#     location = get_object_or_404(Location, pk=loc_id)
+#     if request.method == "POST":
+#         form = LocationForm(request.POST, instance=location)
+#         if form.is_valid():
+#             form.save()
+#             messages.success(request, "Location updated successfully.")
+#     return redirect("dashboard:locations")
 
-@require_permission([ADMINS_GROUP])
-def location_delete(request, loc_id):
-    location = get_object_or_404(Location, pk=loc_id)
-    if request.method == "POST":
-        location.delete()
-        messages.success(request, "Location deleted successfully.")
-    return redirect("dashboard:locations")
+# @require_permission([ADMINS_GROUP])
+# def location_delete(request, loc_id):
+#     location = get_object_or_404(Location, pk=loc_id)
+#     if request.method == "POST":
+#         location.delete()
+#         messages.success(request, "Location deleted successfully.")
+#     return redirect("dashboard:locations")
 
 
 
@@ -6984,6 +6985,8 @@ def location_form(request, location_id=None):
         room_no = request.POST.get('room_no')
         pavilion = request.POST.get('pavilion')
         capacity = request.POST.get('capacity') or None
+
+        
 
         if location:
             location.name = name
