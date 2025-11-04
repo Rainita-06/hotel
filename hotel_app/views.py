@@ -561,7 +561,7 @@ def location_form(request, location_id=None):
         loc_type = request.POST.get('type') or None
         floor = request.POST.get('floor') or None
         building = request.POST.get('building') or None
-        room_no = request.POST.get('room_no')
+        # room_no = request.POST.get('room_no')or None
         pavilion = request.POST.get('pavilion')
         capacity = request.POST.get('capacity') or None
 
@@ -573,7 +573,7 @@ def location_form(request, location_id=None):
             location.building_id = building
             location.status = status
             location.description = description
-            location.room_no = room_no
+            # location.room_no = room_no
             location.pavilion = pavilion
             location.capacity = capacity
             location.save()
@@ -584,7 +584,7 @@ def location_form(request, location_id=None):
                 type_id=loc_type,
                 floor_id=floor,
                 building_id=building,
-                room_no=room_no,
+                # room_no=room_no,
                 status=status,
                     description=description,
                 pavilion=pavilion,

@@ -2243,7 +2243,7 @@ def ticket_detail(request, ticket_id):
     if service_request.location:
         location_name = service_request.location.name
         room_number = getattr(service_request.location, 'room_no', 'N/A') or 'N/A'
-        if service_request.location.floor:
+        if hasattr(service_request.location, 'floor') and service_request.location.floor:
             floor = f"{service_request.location.floor.floor_number} Floor"
             if service_request.location.floor.building:
                 building = service_request.location.floor.building.name
@@ -5881,7 +5881,7 @@ def get_ticket_suggestions_api(request):
             
             for config in department_configs:
                 request_type = config.request_type
-                if request_type.id not in seen_request_types:
+                if request_type.request_type_id not in seen_request_types:
                     # Create suggestion text based on request type and department
                     suggestion_text = f"{request_type.name} - {config.department.name}"
                     if request_type.description:
@@ -5890,14 +5890,14 @@ def get_ticket_suggestions_api(request):
                     # Only include suggestions that match the search term
                     if search_term in request_type.name.lower() or search_term in suggestion_text.lower():
                         suggestions.append({
-                            'id': request_type.id,
+                            'id': request_type.request_type_id,
                             'name': request_type.name,
                             'description': request_type.description or '',
                             'department': config.department.name,
                             'suggestion_text': suggestion_text
                         })
                     
-                    seen_request_types.add(request_type.id)
+                    seen_request_types.add(request_type.request_type_id)
             
             # Limit to 10 suggestions
             suggestions = suggestions[:10]
