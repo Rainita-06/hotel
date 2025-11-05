@@ -102,150 +102,18 @@
         }
     });
     
-    // Request notification permissions on login form submission
+    // Request notification permissions after successful login
     document.addEventListener('DOMContentLoaded', function() {
         const loginForm = document.querySelector('form');
         if (loginForm) {
             loginForm.addEventListener('submit', function() {
-                // Request browser notification permissions
-                requestNotificationPermission();
+                // We'll request notification permissions after login is successful
+                // This will be handled by the dashboard page
             });
         }
         
-        // Also add a manual button for mobile users who might have missed the prompt
-        addNotificationEnableButton();
+        // Remove the manual notification button as requested
+        // The prompt will now happen automatically when the user accesses the dashboard
     });
-    
-    // Check if the browser supports notifications
-    function addNotificationEnableButton() {
-        if (!("Notification" in window)) {
-            console.log("This browser does not support desktop notification");
-            return;
-        }
-        
-        // Only add button if permission is not already granted
-        if (Notification.permission !== "granted") {
-            // Create notification enable button
-            const enableBtn = document.createElement("button");
-            enableBtn.textContent = "Enable Notifications";
-            enableBtn.id = "enableNotificationsBtn";
-            enableBtn.className = "w-full mt-4 py-2 px-4 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-md transition-colors";
-            
-            // Add button after the form
-            const form = document.querySelector('form');
-            if (form) {
-                form.parentNode.insertBefore(enableBtn, form.nextSibling);
-            }
-            
-            // Add event listener
-            enableBtn.addEventListener("click", function() {
-                requestNotificationPermission();
-                // Remove button after clicking
-                enableBtn.remove();
-            });
-        }
-    }
-    
-    function requestNotificationPermission() {
-        // Check if browser notifications are supported
-        if (!("Notification" in window)) {
-            console.log("This browser does not support desktop notification");
-            showNotificationToast("Your browser does not support notifications.", "error");
-            return;
-        }
-        
-        // Check if we've already sent a test notification in this session
-        const testNotificationSent = sessionStorage.getItem('testNotificationSent');
-        
-        if (Notification.permission === "granted") {
-            console.log("Browser notifications already granted");
-            // Show a toast notification to confirm
-            showNotificationToast("Notifications already enabled", "success");
-            // Send a test notification only once per session
-            if (!testNotificationSent) {
-                sendTestNotification();
-                sessionStorage.setItem('testNotificationSent', 'true');
-            }
-        } else {
-            // Request permission
-            Notification.requestPermission().then(function (permission) {
-                if (permission === "granted") {
-                    console.log("Browser notification permission granted");
-                    // Show a toast notification to confirm
-                    showNotificationToast("Notification permissions granted successfully!", "success");
-                    // Send a test notification only once per session
-                    if (!testNotificationSent) {
-                        // Delay to ensure mobile browsers can process the permission
-                        setTimeout(() => {
-                            sendTestNotification();
-                            sessionStorage.setItem('testNotificationSent', 'true');
-                        }, 1000);
-                    }
-                } else if (permission === "denied") {
-                    console.log("Browser notification permission denied");
-                    // Show a toast notification to inform
-                    showNotificationToast("Notifications blocked. Enable in browser settings.", "info");
-                }
-            }).catch(function(error) {
-                console.error("Error requesting notification permission:", error);
-                showNotificationToast("Error requesting notification permissions", "error");
-            });
-        }
-    }
-    
-    function sendTestNotification() {
-        // Check if browser notifications are supported
-        if (!("Notification" in window) || Notification.permission !== "granted") {
-            return;
-        }
-        
-        // Create browser notification options with mobile-friendly settings
-        const options = {
-            body: "You will now receive notifications for important updates",
-            icon: "/static/images/favicon.ico",
-            badge: "/static/images/favicon.ico",
-            tag: "test-notification-" + Date.now(), // Unique tag
-            renotify: true,
-            requireInteraction: true, // Keep notification visible until user interacts
-            vibrate: [200, 100, 200], // Vibration pattern for mobile devices
-            silent: false // Ensure sound is played
-        };
-        
-        // Try to create notification with error handling
-        try {
-            new Notification("Welcome! Notifications Enabled", options);
-        } catch (error) {
-            console.error("Error creating test notification:", error);
-        }
-    }
-    
-    function showNotificationToast(message, type) {
-        // Create a simple toast notification for the login page
-        const toast = document.createElement('div');
-        toast.className = `fixed top-4 right-4 z-[1000] px-4 py-2 rounded-lg text-white shadow-lg ${
-            type === 'error' ? 'bg-red-500' : type === 'info' ? 'bg-blue-500' : 'bg-green-500'
-        }`;
-        toast.textContent = message;
-        toast.style.transition = 'all 0.3s ease';
-        toast.style.maxWidth = '90vw'; // Better for mobile
-        document.body.appendChild(toast);
-        
-        // Animate in
-        setTimeout(() => {
-            toast.style.transform = 'translateX(0)';
-            toast.style.opacity = '1';
-        }, 10);
-        
-        // Auto-hide after 4 seconds
-        setTimeout(() => {
-            toast.style.transform = 'translateX(100%)';
-            toast.style.opacity = '0';
-            setTimeout(() => {
-                if (toast.parentNode) {
-                    toast.parentNode.removeChild(toast);
-                }
-            }, 300);
-        }, 4000);
-    }
 </script>
 {% endblock %}

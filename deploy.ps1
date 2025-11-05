@@ -12,7 +12,7 @@ if ($LocalDB) {
     if (-Not (Test-Path "docker-compose.local-db.yml")) {
         Write-Host "docker-compose.local-db.yml not found. Please ensure you're in the correct directory." -ForegroundColor Red
         exit 1
-    }
+    }       
     
     # Check if .env.local file exists, if not copy from .env.production
     if (-Not (Test-Path ".env.local")) {
