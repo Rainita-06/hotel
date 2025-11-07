@@ -109,7 +109,7 @@ DATABASES = {
             'charset': 'utf8mb4',
         },
         'TEST': {
-            'NAME': 'hotel',
+            'NAME': 'hotell',
         }
     }
 }

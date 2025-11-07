@@ -1595,8 +1595,8 @@ def create_voucher_checkin(request):
         voucher.qr_code_image.save(file_name, ContentFile(buffer.getvalue()), save=True)
 
         voucher.save()
-        qr_image_path = voucher.qr_code_image.path  # local file path
-        os.startfile(qr_image_path)
+        # qr_image_path = voucher.qr_code_image.path  # local file path
+        # os.startfile(qr_image_path)
         # Absolute URL for QR sharing
         qr_absolute_url = request.build_absolute_uri(voucher.qr_code_image.url)
 
@@ -2196,8 +2196,8 @@ def edit_member(request, member_id):
             member.qr_expired = True
 
         member.save()
-        qr_image_path = member.qr_code_image.path  # local file path
-        os.startfile(qr_image_path)
+        # qr_image_path = member.qr_code_image.path  # local file path
+        # os.startfile(qr_image_path)
         messages.success(request, f"{member.full_name} ✅ Member updated successfully.")
         qr_absolute_url = request.build_absolute_uri(member.qr_code_image.url)
 
