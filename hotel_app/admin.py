@@ -82,8 +82,10 @@ models_to_register = [
     models.Department, models.UserGroup, models.UserGroupMembership,
     models.Building, models.Floor, models.LocationFamily, models.LocationType,
     models.RequestFamily, models.WorkFamily, models.Workflow, models.WorkflowStep, models.WorkflowTransition,
-    models.Checklist, models.ChecklistItem, models.RequestType,
+    models.Checklist, models.ChecklistItem, models.RequestType, models.RequestKeyword,
     models.ServiceRequest, models.ServiceRequestStep, models.ServiceRequestChecklist,
+    models.WhatsAppConversation, models.WhatsAppMessage, models.UnmatchedRequest,
+    models.FeedbackQuestion, models.FeedbackSession, models.FeedbackResponse,
     models.Guest, models.GuestComment,
     models.GymMember, models.GymVisitor, models.GymVisit,
 ]

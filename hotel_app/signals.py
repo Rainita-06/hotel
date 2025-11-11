@@ -252,3 +252,51 @@ def complaint_post_save(sender, instance, created, **kwargs):
     except Exception:
         # don't allow notification failures to interrupt request
         pass
+
+
+# ---- Guest Check-in/Check-out WhatsApp Signals ----
+from .models import Guest
+from .whatsapp_workflow import workflow_handler
+
+
+@receiver(pre_save, sender=Guest)
+def guest_pre_save(sender, instance, **kwargs):
+    """Capture previous state before save to detect check-in/check-out changes."""
+    try:
+        if not instance.pk:
+            instance._pre_save_instance = None
+            return
+        previous = Guest.objects.filter(pk=instance.pk).first()
+        instance._pre_save_instance = previous
+    except Exception:
+        instance._pre_save_instance = None
+
+
+@receiver(post_save, sender=Guest)
+def guest_post_save(sender, instance, created, **kwargs):
+    """Send WhatsApp messages on check-in and check-out events."""
+    try:
+        prev = getattr(instance, '_pre_save_instance', None)
+        
+        # Check if check-in status changed
+        if prev:
+            prev_status = prev.get_current_status()
+            current_status = instance.get_current_status()
+            
+            # Guest just checked in
+            if prev_status != 'checked_in' and current_status == 'checked_in':
+                workflow_handler.send_welcome_for_checkin(instance)
+            
+            # Guest just checked out
+            if prev_status != 'checked_out' and current_status == 'checked_out':
+                workflow_handler.send_checkout_feedback_invite(instance)
+        elif created:
+            # New guest - check if they're already checked in
+            if instance.get_current_status() == 'checked_in':
+                workflow_handler.send_welcome_for_checkin(instance)
+    
+    except Exception as e:
+        # Don't allow notification failures to interrupt request
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f'Error sending WhatsApp message for guest {instance.pk}: {str(e)}', exc_info=True)

@@ -18,18 +18,30 @@ from django.utils.text import slugify
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from django.contrib.auth import get_user_model
 import os
-
-import os
-
-import os
 import logging
 
 # Import all models from hotel_app
 from hotel_app.models import (
-    Department, Location, RequestType, Checklist,
-    Complaint, Review, Guest,
-    Voucher,  ServiceRequest, UserProfile, UserGroup, UserGroupMembership,
-    Notification, GymMember, SLAConfiguration, DepartmentRequestSLA, TwilioSettings  # Add SLAConfiguration and DepartmentRequestSLA models
+    Department,
+    Location,
+    RequestType,
+    RequestKeyword,
+    Checklist,
+    Complaint,
+    Review,
+    Guest,
+    Voucher,
+    ServiceRequest,
+    UserProfile,
+    UserGroup,
+    UserGroupMembership,
+    Notification,
+    GymMember,
+    SLAConfiguration,
+    DepartmentRequestSLA,
+    TwilioSettings,
+    
+    UnmatchedRequest,
 )
 
 # Import all forms from the local forms.py
@@ -42,6 +54,7 @@ from .forms import (
 # Import local utils and services
 from .utils import user_in_group, create_notification
 from hotel_app.whatsapp_service import WhatsAppService
+from hotel_app.whatsapp_workflow import workflow_handler
 from .rbac_services import get_accessible_sections, can_access_section
 from .section_permissions import require_section_permission, user_has_section_permission
 
@@ -2452,6 +2465,18 @@ def tickets(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
+    # Get unmatched requests for admin review
+    from hotel_app.models import UnmatchedRequest, RequestType as RT
+    unmatched_requests = UnmatchedRequest.objects.filter(
+        status=UnmatchedRequest.STATUS_PENDING
+    ).select_related(
+        'guest', 'conversation', 'request_type', 'department'
+    ).order_by('-received_at')[:50]  # Show last 50 pending unmatched requests
+    
+    # Get all departments and request types for dropdowns
+    all_departments = Department.objects.all().order_by('name')
+    all_request_types = RT.objects.filter(active=True).order_by('name')
+    
     context = {
         'departments': departments_data,
         'tickets': page_obj,  # Pass the page_obj to the template
@@ -2462,6 +2487,10 @@ def tickets(request):
         'priority_filter': priority_filter,
         'status_filter': status_filter,
         'search_query': search_query,
+        # Unmatched requests for review
+        'unmatched_requests': unmatched_requests,
+        'all_departments': all_departments,
+        'all_request_types': all_request_types,
     }
     return render(request, 'dashboard/tickets.html', context)
 
@@ -6376,6 +6405,111 @@ def get_ticket_suggestions_api(request):
     
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
+
+@login_required
+@require_permission([ADMINS_GROUP, STAFF_GROUP])
+def resolve_unmatched_request_api(request, unmatched_id):
+    """API endpoint to resolve an unmatched request by creating a ticket and optionally adding keywords."""
+    if request.method == 'POST':
+        try:
+            from hotel_app.models import (
+                UnmatchedRequest, ServiceRequest, RequestType, 
+                Department, RequestKeyword, Location
+            )
+            import json
+            
+            unmatched = get_object_or_404(UnmatchedRequest, pk=unmatched_id, status=UnmatchedRequest.STATUS_PENDING)
+            
+            data = json.loads(request.body.decode('utf-8'))
+            department_id = data.get('department_id')
+            request_type_id = data.get('request_type_id')
+            new_request_type_name = data.get('new_request_type_name', '').strip()
+            new_keyword = data.get('new_keyword', '').strip()
+            
+            # Validate department
+            if not department_id:
+                return JsonResponse({'success': False, 'error': 'Department is required'}, status=400)
+            
+            try:
+                department = Department.objects.get(pk=department_id)
+            except Department.DoesNotExist:
+                return JsonResponse({'success': False, 'error': 'Department not found'}, status=400)
+            
+            # Handle request type
+            request_type = None
+            if request_type_id:
+                try:
+                    request_type = RequestType.objects.get(pk=request_type_id)
+                except RequestType.DoesNotExist:
+                    return JsonResponse({'success': False, 'error': 'Request type not found'}, status=400)
+            elif new_request_type_name:
+                # Create new request type
+                request_type, created = RequestType.objects.get_or_create(
+                    name=new_request_type_name,
+                    defaults={
+                        'default_department': department,
+                        'active': True
+                    }
+                )
+                if created and new_keyword:
+                    # Add keyword mapping for the new request type
+                    RequestKeyword.objects.get_or_create(
+                        keyword=new_keyword.lower(),
+                        request_type=request_type,
+                        defaults={'weight': 1}
+                    )
+            else:
+                return JsonResponse({'success': False, 'error': 'Request type or new request type name is required'}, status=400)
+            
+            # Get or create location from guest's room number if available
+            location = None
+            if unmatched.guest and unmatched.guest.room_number:
+                location, _ = Location.objects.get_or_create(
+                    room_no=unmatched.guest.room_number,
+                    defaults={'name': f'Room {unmatched.guest.room_number}'}
+                )
+            
+            # Create service request
+            service_request = ServiceRequest.objects.create(
+                request_type=request_type,
+                guest=unmatched.guest,
+                department=department,
+                location=location,
+                priority='normal',
+                status='pending',
+                source='whatsapp',
+                notes=f"Resolved from unmatched request:\n{unmatched.message_body}",
+            )
+            
+            # Mark unmatched request as resolved
+            unmatched.mark_resolved(user=request.user, ticket=service_request, save=True)
+            
+            # Update unmatched request with department and request type for reference
+            unmatched.department = department
+            unmatched.request_type = request_type
+            unmatched.save(update_fields=['department', 'request_type'])
+            
+            # If admin provided a new keyword for an existing request type, add it to mapping
+            if request_type and new_keyword and not new_request_type_name:
+                RequestKeyword.objects.get_or_create(
+                    keyword=new_keyword.lower(),
+                    request_type=request_type,
+                    defaults={'weight': 1}
+                )
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Unmatched request resolved and ticket created successfully',
+                'ticket_id': service_request.id
+            })
+            
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f'Error resolving unmatched request: {str(e)}', exc_info=True)
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    
+    return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
 
 
 # ---- Feedback View ----
