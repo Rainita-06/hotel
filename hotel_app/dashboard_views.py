@@ -8,11 +8,11 @@ from django.http import JsonResponse
 from django.contrib.auth.models import User, Group
 from django.db.models import Count, Avg, Q
 from django.db.models.functions import TruncHour
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ImproperlyConfigured
 from django.utils import timezone
 from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse
-from django.views.decorators.http import require_http_methods
-from django.db import connection, transaction
+from django.views.decorators.http import require_http_methods, require_POST
+from django.db import connection, transaction, OperationalError, ProgrammingError
 from django.conf import settings
 from django.utils.text import slugify
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
@@ -29,7 +29,7 @@ from hotel_app.models import (
     Department, Location, RequestType, Checklist,
     Complaint, Review, Guest,
     Voucher,  ServiceRequest, UserProfile, UserGroup, UserGroupMembership,
-    Notification, GymMember, SLAConfiguration, DepartmentRequestSLA  # Add SLAConfiguration and DepartmentRequestSLA models
+    Notification, GymMember, SLAConfiguration, DepartmentRequestSLA, TwilioSettings  # Add SLAConfiguration and DepartmentRequestSLA models
 )
 
 # Import all forms from the local forms.py
@@ -134,7 +134,7 @@ _register_section_rules(['configure_requests_api', 'configure_requests_api_field
 
 _register_section_rules(['messaging_setup'],
                         'messaging', 'view')
-_register_section_rules(['test_twilio_connection', 'send_test_twilio_message'],
+_register_section_rules(['test_twilio_connection', 'send_test_twilio_message', 'save_twilio_setting'],
                         'messaging', 'edit')
 
 _register_section_rules(['feedback_inbox', 'feedback_detail'],
@@ -1160,18 +1160,38 @@ def messaging_setup(request):
     
     # Check Twilio configuration
     twilio_configured = False
+    twilio_account_sid = ''
+    twilio_auth_token = ''
+    twilio_whatsapp_from = ''
+    twilio_api_key_sid = ''
+    twilio_api_key_secret = ''
+    twilio_test_to_number = ''
+
     try:
         from hotel_app.twilio_service import twilio_service
         twilio_configured = twilio_service.is_configured()
+        twilio_account_sid = twilio_service.account_sid or ''
+        twilio_auth_token = twilio_service.auth_token or ''
+        twilio_api_key_sid = twilio_service.api_key_sid or ''
+        twilio_api_key_secret = twilio_service.api_key_secret or ''
+        twilio_whatsapp_from = twilio_service.whatsapp_from or ''
+        twilio_test_to_number = twilio_service.test_to_number or ''
     except Exception:
         pass
-    
-    # Get Twilio settings from environment
-    from django.conf import settings
-    twilio_account_sid = getattr(settings, 'TWILIO_ACCOUNT_SID', '')
-    twilio_auth_token = getattr(settings, 'TWILIO_AUTH_TOKEN', '')
-    twilio_whatsapp_from = getattr(settings, 'TWILIO_WHATSAPP_FROM', '')
-    twilio_test_to_number = getattr(settings, 'TWILIO_TEST_TO_NUMBER', '')
+
+    # Fall back to persisted settings if the service isn't initialised yet
+    if not any([twilio_account_sid, twilio_auth_token, twilio_api_key_sid, twilio_whatsapp_from, twilio_test_to_number]):
+        try:
+            twilio_settings_obj = TwilioSettings.objects.first()
+        except (OperationalError, ProgrammingError):
+            twilio_settings_obj = None
+        if twilio_settings_obj:
+            twilio_account_sid = twilio_settings_obj.account_sid or ''
+            twilio_auth_token = twilio_settings_obj.auth_token or ''
+            twilio_api_key_sid = twilio_settings_obj.api_key_sid or ''
+            twilio_api_key_secret = twilio_settings_obj.api_key_secret or ''
+            twilio_whatsapp_from = twilio_settings_obj.whatsapp_from or ''
+            twilio_test_to_number = twilio_settings_obj.test_to_number or ''
     
     context = {
         'templates': templates,
@@ -1179,6 +1199,8 @@ def messaging_setup(request):
         'twilio_configured': twilio_configured,
         'twilio_account_sid': twilio_account_sid,
         'twilio_auth_token': twilio_auth_token,
+        'twilio_api_key_sid': twilio_api_key_sid,
+        'twilio_api_key_secret': twilio_api_key_secret,
         'twilio_whatsapp_from': twilio_whatsapp_from,
         'twilio_test_to_number': twilio_test_to_number,
     }
@@ -2115,6 +2137,55 @@ def clear_user_data(request):
 
 @login_required
 @require_permission([ADMINS_GROUP, STAFF_GROUP])
+@require_POST
+def save_twilio_setting(request):
+    """Persist a single Twilio credential field provided by the user."""
+    field = request.POST.get('field')
+    value = request.POST.get('value', '')
+
+    field_map = {
+        'account_sid': 'account_sid',
+        'auth_token': 'auth_token',
+        'api_key_sid': 'api_key_sid',
+        'api_key_secret': 'api_key_secret',
+        'whatsapp_from': 'whatsapp_from',
+        'test_to_number': 'test_to_number',
+    }
+
+    label_map = {
+        'account_sid': 'Account SID',
+        'auth_token': 'Auth Token',
+        'api_key_sid': 'API Key SID',
+        'api_key_secret': 'API Key Secret',
+        'whatsapp_from': 'WhatsApp From number',
+        'test_to_number': 'Test recipient number',
+    }
+
+    if field not in field_map:
+        return JsonResponse({'success': False, 'error': 'Invalid field'}, status=400)
+
+    try:
+        from hotel_app.twilio_service import twilio_service
+        twilio_service.update_credentials(
+            updated_by=request.user,
+            **{field_map[field]: value}
+        )
+    except ImproperlyConfigured as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Unable to save Twilio setting: {str(e)}'
+        }, status=500)
+
+    return JsonResponse({
+        'success': True,
+        'message': f'{label_map[field]} saved successfully.'
+    })
+
+
+@login_required
+@require_permission([ADMINS_GROUP, STAFF_GROUP])
 def test_twilio_connection(request):
     """Test Twilio connection with provided credentials"""
     if request.method != 'POST':
@@ -2123,83 +2194,70 @@ def test_twilio_connection(request):
     # Get credentials from request
     account_sid = request.POST.get('account_sid')
     auth_token = request.POST.get('auth_token')
+    api_key_sid = request.POST.get('api_key_sid')
+    api_key_secret = request.POST.get('api_key_secret')
     whatsapp_from = request.POST.get('whatsapp_from')
     test_to_number = request.POST.get('test_to_number')
     
     # Validate inputs
-    if not account_sid or not auth_token or not whatsapp_from:
-        return JsonResponse({'error': 'Missing required parameters'}, status=400)
+    has_auth_token = bool(auth_token)
+    has_api_key = bool(api_key_sid and api_key_secret)
+
+    if not account_sid or not whatsapp_from or (not has_auth_token and not has_api_key):
+        return JsonResponse({'error': 'Account SID, WhatsApp From, and either Auth Token or API Key credentials are required.'}, status=400)
     
     try:
-        # Test Twilio connection by creating a client and fetching account info
-        from twilio.rest import Client
         from twilio.base.exceptions import TwilioException
-        
-        client = Client(account_sid, auth_token)
-        
-        # Try to fetch account details to verify credentials
-        account = client.api.accounts(account_sid).fetch()
-        
-        # If we have a test number, try to send a test message using our improved service
-        if test_to_number:
-            try:
-                # Use our improved Twilio service
-                from hotel_app.twilio_service import TwilioService
-                
-                # Create a temporary service instance with the provided credentials
-                temp_service = TwilioService()
-                temp_service.account_sid = account_sid
-                temp_service.auth_token = auth_token
-                temp_service.whatsapp_from = whatsapp_from
-                temp_service.client = client
-                
-                # Send a simple test message
-                result = temp_service.send_text_message(
-                    to_number=test_to_number,
-                    body='Connection test successful from Hotel Management System'
-                )
-                
-                if result['success']:
-                    return JsonResponse({
-                        'success': True,
-                        'message': 'Twilio connection and message sending successful',
-                        'account_sid': account_sid,
-                        'message_sid': result['message_id']
-                    })
-                else:
-                    return JsonResponse({
-                        'success': True,
-                        'message': 'Twilio connection successful but message sending failed',
-                        'account_sid': account_sid,
-                        'warning': result['error']
-                    })
-            except TwilioException as e:
-                # If message sending fails, still return success for connection but with warning
-                return JsonResponse({
-                    'success': True,
-                    'message': 'Twilio connection successful but message sending failed',
-                    'account_sid': account_sid,
-                    'warning': str(e)
-                })
-            except Exception as e:
-                # Handle other exceptions
-                return JsonResponse({
-                    'success': True,
-                    'message': 'Twilio connection successful but message sending failed',
-                    'account_sid': account_sid,
-                    'warning': f'Unexpected error: {str(e)}'
-                })
+        from twilio.rest import Client
+        from hotel_app.twilio_service import twilio_service
+
+        if has_auth_token:
+            client = Client(account_sid, auth_token)
         else:
-            # If we get here, the credentials are valid
-            return JsonResponse({
-                'success': True,
-                'message': 'Twilio connection successful',
-                'account_sid': account_sid
-            })
+            client = Client(api_key_sid, api_key_secret, account_sid=account_sid)
+        client.api.accounts(account_sid).fetch()
+
+        # Persist credentials for the shared service
+        twilio_service.update_credentials(
+            account_sid=account_sid,
+            auth_token=auth_token,
+            api_key_sid=api_key_sid,
+            api_key_secret=api_key_secret,
+            whatsapp_from=whatsapp_from,
+            test_to_number=test_to_number,
+            updated_by=request.user
+        )
+
+        response_payload = {
+            'success': True,
+            'message': 'Twilio connection successful',
+            'account_sid': account_sid
+        }
+
+        if test_to_number:
+            result = twilio_service.send_text_message(
+                to_number=test_to_number,
+                body='Connection test successful from Hotel Management System'
+            )
+
+            if result['success']:
+                response_payload['message'] = 'Twilio connection and message sending successful'
+                response_payload['message_sid'] = result['message_id']
+            else:
+                response_payload['message'] = 'Twilio connection successful but message sending failed'
+                response_payload['warning'] = result['error']
+
+        return JsonResponse(response_payload)
+
     except TwilioException as e:
         return JsonResponse({
             'success': False,
             'error': f'Twilio connection failed: {str(e)}'
+        }, status=400)
+    except ImproperlyConfigured as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
         }, status=400)
     except Exception as e:
         return JsonResponse({

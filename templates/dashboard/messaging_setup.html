@@ -116,29 +116,54 @@
                     </div>
                 </div>
 
-                <!-- Toast Container -->
-                <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
-
                 <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
                     <div class="space-y-6">
                         <div>
                             <label class="text-gray-900 text-sm font-medium block">Twilio Account SID</label>
-                            <input id="twilio_account_sid" autocomplete="off" type="text" placeholder="ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" value="{{ twilio_account_sid|default:'' }}" class="mt-2 w-full h-12 px-4 bg-white rounded-lg border border-gray-200 text-base placeholder-gray-400 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                            <div class="mt-2 flex gap-2">
+                                <input id="twilio_account_sid" autocomplete="off" type="text" placeholder="ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" value="{{ twilio_account_sid|default:'' }}" class="flex-1 h-12 px-4 bg-white rounded-lg border border-gray-200 text-base placeholder-gray-400 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                                <button type="button" class="twilio-save-btn h-12 px-4 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-medium transition-colors" data-twilio-save data-field="account_sid" data-input="twilio_account_sid">Save</button>
+                            </div>
                             <p class="text-gray-600 text-xs mt-1">Your Twilio Account SID</p>
                         </div>
                         <div>
                             <label class="text-gray-900 text-sm font-medium block">Twilio Auth Token</label>
-                            <input id="twilio_auth_token" autocomplete="off" type="password" placeholder="Your Twilio Auth Token" value="{{ twilio_auth_token|default:'' }}" class="mt-2 w-full h-12 px-4 bg-white rounded-lg border border-gray-200 text-base placeholder-gray-400 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                            <div class="mt-2 flex gap-2">
+                                <input id="twilio_auth_token" autocomplete="off" type="password" placeholder="Your Twilio Auth Token" value="{{ twilio_auth_token|default:'' }}" class="flex-1 h-12 px-4 bg-white rounded-lg border border-gray-200 text-base placeholder-gray-400 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                                <button type="button" class="twilio-save-btn h-12 px-4 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-medium transition-colors" data-twilio-save data-field="auth_token" data-input="twilio_auth_token">Save Token</button>
+                            </div>
                             <p class="text-gray-600 text-xs mt-1">Your Twilio Auth Token</p>
                         </div>
                         <div>
+                            <label class="text-gray-900 text-sm font-medium block">Twilio API Key SID (optional)</label>
+                            <div class="mt-2 flex gap-2">
+                                <input id="twilio_api_key_sid" autocomplete="off" type="text" placeholder="SKXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" value="{{ twilio_api_key_sid|default:'' }}" class="flex-1 h-12 px-4 bg-white rounded-lg border border-gray-200 text-base placeholder-gray-400 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                                <button type="button" class="twilio-save-btn h-12 px-4 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-medium transition-colors" data-twilio-save data-field="api_key_sid" data-input="twilio_api_key_sid">Save</button>
+                            </div>
+                            <p class="text-gray-600 text-xs mt-1">Use this if you authenticate with Twilio API Keys instead of the Auth Token.</p>
+                        </div>
+                        <div>
+                            <label class="text-gray-900 text-sm font-medium block">Twilio API Key Secret (optional)</label>
+                            <div class="mt-2 flex gap-2">
+                                <input id="twilio_api_key_secret" autocomplete="off" type="password" placeholder="Your Twilio API Key Secret" value="{{ twilio_api_key_secret|default:'' }}" class="flex-1 h-12 px-4 bg-white rounded-lg border border-gray-200 text-base placeholder-gray-400 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                                <button type="button" class="twilio-save-btn h-12 px-4 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-medium transition-colors" data-twilio-save data-field="api_key_secret" data-input="twilio_api_key_secret">Save Secret</button>
+                            </div>
+                            <p class="text-gray-600 text-xs mt-1">Paired with the API Key SID when using API Key authentication.</p>
+                        </div>
+                        <div>
                             <label class="text-gray-900 text-sm font-medium block">WhatsApp From Number</label>
-                            <input id="twilio_whatsapp_from" autocomplete="off" type="text" placeholder="whatsapp:+14155238886" value="{{ twilio_whatsapp_from|default:'' }}" class="mt-2 w-full h-12 px-4 bg-white rounded-lg border border-gray-200 text-base placeholder-gray-400 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                            <div class="mt-2 flex gap-2">
+                                <input id="twilio_whatsapp_from" autocomplete="off" type="text" placeholder="whatsapp:+14155238886" value="{{ twilio_whatsapp_from|default:'' }}" class="flex-1 h-12 px-4 bg-white rounded-lg border border-gray-200 text-base placeholder-gray-400 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                                <button type="button" class="twilio-save-btn h-12 px-4 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-medium transition-colors" data-twilio-save data-field="whatsapp_from" data-input="twilio_whatsapp_from">Save</button>
+                            </div>
                             <p class="text-gray-600 text-xs mt-1">Your Twilio WhatsApp sender number</p>
                         </div>
                         <div>
                             <label class="text-gray-900 text-sm font-medium block">Test To Number</label>
-                            <input id="twilio_test_to_number" autocomplete="off" type="text" placeholder="whatsapp:+1234567890" value="{{ twilio_test_to_number|default:'' }}" class="mt-2 w-full h-12 px-4 bg-white rounded-lg border border-gray-200 text-base placeholder-gray-400 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                            <div class="mt-2 flex gap-2">
+                                <input id="twilio_test_to_number" autocomplete="off" type="text" placeholder="whatsapp:+1234567890" value="{{ twilio_test_to_number|default:'' }}" class="flex-1 h-12 px-4 bg-white rounded-lg border border-gray-200 text-base placeholder-gray-400 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                                <button type="button" class="twilio-save-btn h-12 px-4 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-medium transition-colors" data-twilio-save data-field="test_to_number" data-input="twilio_test_to_number">Save</button>
+                            </div>
                             <p class="text-gray-600 text-xs mt-1">Recipient number for testing connection</p>
                         </div>
                     </div>
@@ -485,31 +510,76 @@
             });
         });
 
-        // Handle form inputs - Note: This selector is not standard and might not work.
-        // A better approach would be to add a class to the save buttons.
-        const saveButtons = document.querySelectorAll('button');
-        saveButtons.forEach(button => {
-            if (button.textContent.trim() === 'Save') {
-                button.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    // Add your save logic here
-                    showToast('Settings saved successfully!', 'success');
+        const twilioSaveButtons = document.querySelectorAll('[data-twilio-save]');
+        const twilioSaveUrl = '{% url "dashboard:api_twilio_save_field" %}';
+
+        twilioSaveButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const field = button.getAttribute('data-field');
+                const inputId = button.getAttribute('data-input');
+                const inputEl = document.getElementById(inputId);
+
+                if (!field || !inputEl) {
+                    showToast('Unable to locate the selected Twilio setting.', 'error');
+                    return;
+                }
+
+                const value = inputEl.value;
+                const originalText = button.dataset.originalText || button.textContent.trim() || 'Save';
+                if (!button.dataset.originalText) {
+                    button.dataset.originalText = originalText;
+                }
+
+                button.disabled = true;
+                button.textContent = 'Saving...';
+
+                fetch(twilioSaveUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: new URLSearchParams({
+                        field: field,
+                        value: value
+                    })
+                })
+                .then(response => response.json().then(data => ({ ok: response.ok, data })))
+                .then(({ ok, data }) => {
+                    if (ok && data && data.success) {
+                        showToast(data.message || 'Twilio setting saved successfully.', 'success');
+                    } else {
+                        const errorMessage = (data && data.error) || 'Failed to save Twilio setting.';
+                        showToast(errorMessage, 'error');
+                    }
+                })
+                .catch(() => {
+                    showToast('Failed to save Twilio setting. Please try again.', 'error');
+                })
+                .finally(() => {
+                    button.disabled = false;
+                    button.textContent = button.dataset.originalText || originalText;
                 });
-            }
+            });
         });
-        
+
         // Test Twilio Connection
         const testTwilioButton = document.getElementById('test_twilio_connection');
         if (testTwilioButton) {
             testTwilioButton.addEventListener('click', function() {
                 const accountSid = document.getElementById('twilio_account_sid').value;
                 const authToken = document.getElementById('twilio_auth_token').value;
+                const apiKeySid = document.getElementById('twilio_api_key_sid').value;
+                const apiKeySecret = document.getElementById('twilio_api_key_secret').value;
                 const whatsappFrom = document.getElementById('twilio_whatsapp_from').value;
                 const testToNumber = document.getElementById('twilio_test_to_number').value;
                 
                 // Simple validation
-                if (!accountSid || !authToken || !whatsappFrom) {
-                    showToast('Please fill in all Twilio configuration fields', 'error');
+                const hasAuthToken = !!authToken;
+                const hasApiKeyCredentials = apiKeySid && apiKeySecret;
+
+                if (!accountSid || !whatsappFrom || (!hasAuthToken && !hasApiKeyCredentials)) {
+                    showToast('Provide Account SID, WhatsApp From number, and either Auth Token or API Key SID/Secret.', 'error');
                     return;
                 }
                 
@@ -528,6 +598,8 @@
                     body: new URLSearchParams({
                         'account_sid': accountSid,
                         'auth_token': authToken,
+                        'api_key_sid': apiKeySid,
+                        'api_key_secret': apiKeySecret,
                         'whatsapp_from': whatsappFrom,
                         'test_to_number': testToNumber
                     })
@@ -571,70 +643,6 @@
                 }
             }
             return cookieValue;
-        }
-        
-        // Toast notification function
-        function showToast(message, type = 'info') {
-            const toastContainer = document.getElementById('toast-container');
-            
-            // Create toast element
-            const toast = document.createElement('div');
-            toast.className = 'flex items-center w-full max-w-xs p-4 text-gray-500 bg-white rounded-lg shadow dark:text-gray-400 dark:bg-gray-800';
-            toast.role = 'alert';
-            
-            // Set toast colors based on type
-            let bgColor, textColor, icon;
-            switch(type) {
-                case 'success':
-                    bgColor = 'bg-green-100 text-green-500';
-                    textColor = 'text-green-500';
-                    icon = '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>';
-                    break;
-                case 'error':
-                    bgColor = 'bg-red-100 text-red-500';
-                    textColor = 'text-red-500';
-                    icon = '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>';
-                    break;
-                case 'warning':
-                    bgColor = 'bg-yellow-100 text-yellow-500';
-                    textColor = 'text-yellow-500';
-                    icon = '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>';
-                    break;
-                default:
-                    bgColor = 'bg-blue-100 text-blue-500';
-                    textColor = 'text-blue-500';
-                    icon = '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>';
-            }
-            
-            toast.innerHTML = `
-                <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 ${bgColor} rounded-lg">
-                    ${icon}
-                    <span class="sr-only">${type}</span>
-                </div>
-                <div class="ml-3 text-sm font-normal">${message}</div>
-                <button type="button" class="ml-auto -mx-1.5 -my-1.5 bg-white text-gray-400 hover:text-gray-900 rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 hover:bg-gray-100 inline-flex h-8 w-8 dark:text-gray-500 dark:hover:text-white dark:bg-gray-800 dark:hover:bg-gray-700" data-dismiss-target="#toast-default" aria-label="Close">
-                    <span class="sr-only">Close</span>
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
-                </button>
-            `;
-            
-            // Add toast to container
-            toastContainer.appendChild(toast);
-            
-            // Remove toast after 5 seconds
-            setTimeout(() => {
-                if (toast.parentNode) {
-                    toast.parentNode.removeChild(toast);
-                }
-            }, 5000);
-            
-            // Add close button functionality
-            const closeButton = toast.querySelector('[aria-label="Close"]');
-            closeButton.addEventListener('click', () => {
-                if (toast.parentNode) {
-                    toast.parentNode.removeChild(toast);
-                }
-            });
         }
     });
 </script>

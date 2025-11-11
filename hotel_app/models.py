@@ -1244,6 +1244,38 @@ class DepartmentRequestSLA(models.Model):
         db_table='department_request_sla'
 
 
+class TwilioSettings(models.Model):
+    """Store Twilio WhatsApp credentials configurable via the dashboard."""
+
+    account_sid = models.CharField(max_length=64, blank=True, default='')
+    auth_token = models.CharField(max_length=128, blank=True, default='')
+    api_key_sid = models.CharField(max_length=64, blank=True, default='')
+    api_key_secret = models.CharField(max_length=128, blank=True, default='')
+    whatsapp_from = models.CharField(max_length=34, blank=True, default='')
+    test_to_number = models.CharField(max_length=34, blank=True, default='')
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='twilio_settings_updates'
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Twilio Setting"
+        verbose_name_plural = "Twilio Settings"
+        db_table = 'twilio_settings'
+
+    def __str__(self):
+        return "Twilio Settings"
+
+    @classmethod
+    def get_solo(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+
 # # Legacy models for backward compatibility (will be deprecated)
 # class BreakfastVoucher(models.Model):
 #     """Legacy model - use Voucher instead"""

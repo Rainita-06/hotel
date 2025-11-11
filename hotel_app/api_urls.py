@@ -1,6 +1,8 @@
-from django.urls import path, include
+from django.urls import include, path
+
+from . import api_views
 
 urlpatterns = [
-    # Include notification API URLs
+    path('users/me/', api_views.current_user, name='api-current-user'),
     path('', include('hotel_app.api_notification_urls')),
 ]

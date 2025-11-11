@@ -122,5 +122,6 @@ urlpatterns = [
     
     # Twilio API
     path('api/twilio/test-connection/', dashboard_views.test_twilio_connection, name='api_twilio_test_connection'),
+    path('api/twilio/save-field/', dashboard_views.save_twilio_setting, name='api_twilio_save_field'),
     path('api/twilio/send-test-message/', dashboard_views.send_test_twilio_message, name='api_twilio_send_test_message'),
 ]
