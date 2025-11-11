@@ -77,12 +77,6 @@ class UserGroup(models.Model):
 
 
 class UserProfile(models.Model):
-    USER_ROLES = [
-        ('admin', 'Admin'),
-        ('staff', 'Front Desk/Staff'),
-        ('user', 'User'),
-    ]
-    
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, primary_key=True)
     full_name = models.CharField(max_length=160)
     phone = models.CharField(max_length=15, blank=True, null=True)
@@ -92,7 +86,7 @@ class UserProfile(models.Model):
     enabled = models.BooleanField(default=True)
     timezone = models.CharField(max_length=100, blank=True, null=True)
     preferences = models.JSONField(blank=True, null=True)
-    role = models.CharField(max_length=20, choices=USER_ROLES, default='user')
+    role = models.CharField(max_length=150, blank=True, null=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -100,13 +94,22 @@ class UserProfile(models.Model):
         return str(self.full_name or getattr(self.user, "username", "Unknown User"))
     
     def is_admin(self):
-        return self.role == 'admin'
+        role_value = (self.role or '').lower()
+        if role_value in {'admin', 'admins', 'administrator', 'superuser'}:
+            return True
+        return self.user.is_superuser or self.user.groups.filter(name__iexact='Admins').exists()
     
     def is_staff_member(self):
-        return self.role == 'staff'
+        role_value = (self.role or '').lower()
+        if role_value in {'staff', 'front desk', 'frontdesk', 'front desk team'}:
+            return True
+        return self.user.groups.filter(name__iexact='Staff').exists()
     
     def is_regular_user(self):
-        return self.role == 'user'
+        role_value = (self.role or '').lower()
+        if role_value in {'user', 'users'}:
+            return True
+        return self.user.groups.filter(name__iexact='Users').exists()
     
 
 
@@ -1490,3 +1493,64 @@ class Voucher(models.Model):
 #         proxy = True
 #         verbose_name = 'Master Location'
 #         verbose_name_plural = 'Master Locations'
+
+
+# ---- Section Permissions ----
+
+class Section(models.Model):
+    """
+    Model representing sidebar sections for permission management.
+    Each section can have view, add, change, delete permissions.
+    """
+    name = models.CharField(max_length=50, unique=True, db_index=True)
+    display_name = models.CharField(max_length=100)
+    description = models.TextField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'section'
+        ordering = ['name']
+        verbose_name = 'Section'
+        verbose_name_plural = 'Sections'
+    
+    def __str__(self):
+        return self.display_name
+    
+    def get_permission_codename(self, action):
+        """Get permission codename for an action (view, add, change, delete)"""
+        return f'{action}_{self.name}'
+    
+    @classmethod
+    def get_or_create_sections(cls):
+        """Get or create all standard sidebar sections"""
+        sections = [
+            ('users', 'Users', 'Manage Users section'),
+            ('locations', 'Locations', 'Locations management section'),
+            ('tickets', 'Tickets', 'Service Requests/Tickets section'),
+            ('my_tickets', 'My Tickets', 'My Tickets section'),
+            ('requests', 'Predefined Requests', 'Predefined Requests configuration section'),
+            ('sla', 'SLA Configuration', 'SLA Configuration section'),
+            ('messaging', 'Messaging Setup', 'Messaging Setup section'),
+            ('gym', 'Gym Management', 'Gym Management section'),
+            ('integrations', 'Integrations', 'Integrations section'),
+            ('analytics', 'Analytics', 'Analytics section'),
+            ('performance', 'Performance', 'Performance Dashboard section'),
+            ('feedback', 'Feedback', 'Feedback/Reviews section'),
+            ('breakfast_voucher', 'Breakfast Voucher', 'Breakfast Voucher section'),
+            ('dashboard', 'Dashboard', 'Dashboard overview section'),
+        ]
+        
+        created_sections = []
+        for name, display_name, description in sections:
+            section, created = cls.objects.get_or_create(
+                name=name,
+                defaults={
+                    'display_name': display_name,
+                    'description': description,
+                    'is_active': True
+                }
+            )
+            created_sections.append(section)
+        return created_sections

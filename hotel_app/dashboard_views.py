@@ -43,6 +43,133 @@ from .forms import (
 from .utils import user_in_group, create_notification
 from hotel_app.whatsapp_service import WhatsAppService
 from .rbac_services import get_accessible_sections, can_access_section
+from .section_permissions import require_section_permission, user_has_section_permission
+
+# ---- Section Permission Mapping Helpers ----
+
+def _make_static_rule(section, action):
+    def rule(request, section=section, action=action):
+        return section, action
+    return rule
+
+def _make_method_rule(section, default_action='view', edit_methods=None):
+    edit_methods = edit_methods or {'POST', 'PUT', 'PATCH', 'DELETE'}
+    def rule(request, section=section, default_action=default_action, edit_methods=edit_methods):
+        action = 'edit' if request.method.upper() in edit_methods else default_action
+        return section, action
+    return rule
+
+def _make_custom_rule(func):
+    return func
+
+SECTION_PERMISSION_RULES = {}
+
+def _register_section_rules(names, section, action='view', rule_factory=None):
+    if rule_factory is None:
+        rule = _make_static_rule(section, action)
+    else:
+        rule = rule_factory
+    for name in names:
+        SECTION_PERMISSION_RULES[name] = rule
+
+def _check_section_permission(request, view_func):
+    resolver = SECTION_PERMISSION_RULES.get(view_func.__name__)
+    if not resolver:
+        return False
+    try:
+        section, action = resolver(request)
+    except Exception:
+        return False
+    if not section or not action:
+        return False
+    if action == 'edit':
+        return (
+            user_has_section_permission(request.user, section, 'add')
+            or user_has_section_permission(request.user, section, 'change')
+            or user_has_section_permission(request.user, section, 'delete')
+        )
+    return user_has_section_permission(request.user, section, action)
+
+# Section registration
+_register_section_rules(
+    ['dashboard_view', 'dashboard_main', 'dashboard2_view'],
+    'dashboard',
+    'view'
+)
+
+_register_section_rules(
+    ['dashboard_users', 'manage_users', 'manage_users_all', 'manage_users_groups',
+     'manage_users_profiles', 'manage_user_detail', 'dashboard_departments',
+     'dashboard_groups', 'manage_users_roles'],
+    'users',
+    'view'
+)
+
+SECTION_PERMISSION_RULES['manage_users_api_users'] = _make_method_rule('users')
+_register_section_rules(['manage_users_api_filters', 'api_group_permissions', 'api_group_members',
+                         'api_department_members'],
+                        'users', 'view')
+_register_section_rules(['manage_users_api_bulk_action', 'api_notify_all_groups',
+                         'api_notify_department', 'api_group_permissions_update',
+                         'api_bulk_permissions_update', 'api_reset_user_password',
+                         'manage_users_toggle_enabled', 'add_group_member',
+                         'remove_group_member', 'user_create', 'user_update',
+                         'user_delete', 'department_create', 'department_update',
+                         'department_delete', 'assign_department_lead', 'group_create',
+                         'group_update', 'group_delete'],
+                        'users', 'edit')
+
+_register_section_rules(['tickets', 'ticket_detail', 'my_tickets', 'get_ticket_suggestions_api'],
+                        'tickets', 'view')
+_register_section_rules(['create_ticket_api', 'assign_ticket_api', 'accept_ticket_api',
+                         'start_ticket_api', 'complete_ticket_api', 'close_ticket_api',
+                         'escalate_ticket_api', 'reject_ticket_api'],
+                        'tickets', 'edit')
+
+_register_section_rules(['configure_requests'],
+                        'requests', 'view')
+_register_section_rules(['configure_requests_api', 'configure_requests_api_fields',
+                         'configure_requests_api_bulk_action'],
+                        'requests', 'edit')
+
+_register_section_rules(['messaging_setup'],
+                        'messaging', 'view')
+_register_section_rules(['test_twilio_connection', 'send_test_twilio_message'],
+                        'messaging', 'edit')
+
+_register_section_rules(['feedback_inbox', 'feedback_detail'],
+                        'feedback', 'view')
+
+_register_section_rules(['integrations'],
+                        'integrations', 'view')
+
+_register_section_rules(['sla_configuration'],
+                        'sla', 'view')
+_register_section_rules(['api_sla_configuration_update'],
+                        'sla', 'edit')
+
+_register_section_rules(['analytics_dashboard'],
+                        'analytics', 'view')
+
+_register_section_rules(['performance_dashboard'],
+                        'performance', 'view')
+
+_register_section_rules(['dashboard_locations', 'locations_list'],
+                        'locations', 'view')
+_register_section_rules(['location_delete'],
+                        'locations', 'edit')
+
+_register_section_rules(['dashboard_guests', 'guest_detail', 'dashboard_vouchers',
+                         'voucher_detail', 'voucher_analytics', 'guest_qr_codes'],
+                        'breakfast_voucher', 'view')
+_register_section_rules(['voucher_create', 'voucher_update', 'voucher_delete',
+                         'regenerate_voucher_qr', 'share_voucher_whatsapp',
+                         'regenerate_guest_qr', 'share_guest_qr_whatsapp',
+                         'get_guest_whatsapp_message'],
+                        'breakfast_voucher', 'edit')
+
+_register_section_rules(['gym', 'gym_report'],
+                        'gym', 'view')
 
 # Import export/import utilities
 from .export_import_utils import create_export_file, import_all_data, validate_import_data
@@ -179,7 +306,22 @@ def require_permission(group_names):
         def wrapper(request, *args, **kwargs):
             if request.user.is_superuser or any(user_in_group(request.user, group) for group in group_names):
                 return view_func(request, *args, **kwargs)
-            raise PermissionDenied("You don't have permission to access this page.")
+            if _check_section_permission(request, view_func):
+                return view_func(request, *args, **kwargs)
+            
+            # Render custom permission denied page instead of raising exception
+            from django.shortcuts import render
+            context = {
+                'section_name': 'access',
+                'permission_action': 'required_group',
+                'user': request.user,
+            }
+            return render(
+                request, 
+                'dashboard/permission_denied.html', 
+                context,
+                status=403
+            )
         return wrapper
     return decorator
 
@@ -188,21 +330,70 @@ def require_role(roles):
     """Decorator to require specific roles for a view."""
     if not isinstance(roles, (list, tuple)):
         roles = [roles]
+
+    # Build a normalized set of role/group names for comparison
+    normalized_roles = set()
+    role_aliases = {
+        'admin': ['admin', 'admins', 'administrator', 'superuser', 'Admins'],
+        'staff': ['staff', 'front desk', 'frontdesk', 'front desk team', 'Staff'],
+        'user': ['user', 'users', 'basic', 'Users'],
+    }
+
+    for role in roles:
+        if role is None:
+            continue
+        role_str = str(role).strip()
+        if not role_str:
+            continue
+        normalized_roles.add(role_str)
+        normalized_roles.add(role_str.lower())
+        aliases = role_aliases.get(role_str.lower(), [])
+        for alias in aliases:
+            normalized_roles.add(alias)
+            normalized_roles.add(alias.lower())
     
     def decorator(view_func):
         @login_required
         def wrapper(request, *args, **kwargs):
             # Check if user has the required role
             if hasattr(request.user, 'userprofile'):
-                user_role = request.user.userprofile.role
-                if user_role in roles or request.user.is_superuser:
+                user_role = (request.user.userprofile.role or '').strip()
+                if request.user.is_superuser:
                     return view_func(request, *args, **kwargs)
+                if user_role:
+                    if user_role in normalized_roles or user_role.lower() in normalized_roles:
+                        return view_func(request, *args, **kwargs)
             
-            # Fallback to group-based permissions for backward compatibility
-            if request.user.is_superuser or any(user_in_group(request.user, role) for role in roles):
+            # Check group membership directly
+            user_groups = getattr(request.user, 'groups', None)
+            if user_groups:
+                for group in user_groups.all():
+                    group_name = group.name
+                    if group_name in normalized_roles or group_name.lower() in normalized_roles:
+                        return view_func(request, *args, **kwargs)
+            
+            if _check_section_permission(request, view_func):
                 return view_func(request, *args, **kwargs)
                 
-            raise PermissionDenied("You don't have permission to access this page.")
+            # Fallback to explicit helper for backwards compatibility
+            if request.user.is_superuser or any(
+                user_in_group(request.user, role) for role in normalized_roles
+            ):
+                return view_func(request, *args, **kwargs)
+            
+            # Render custom permission denied page instead of raising exception
+            from django.shortcuts import render
+            context = {
+                'section_name': 'access',
+                'permission_action': 'required_role',
+                'user': request.user,
+            }
+            return render(
+                request, 
+                'dashboard/permission_denied.html', 
+                context,
+                status=403
+            )
         return wrapper
     return decorator
 
@@ -922,7 +1113,7 @@ def manage_users(request):
     return redirect('dashboard:manage_users_all')
 
 
-@require_permission([ADMINS_GROUP, STAFF_GROUP])
+@require_section_permission('messaging', 'view')
 def messaging_setup(request):
     """Messaging Setup main screen. Provides templates, stats and connection info.
 
@@ -1053,6 +1244,7 @@ def manage_users_all(request):
         
 
 @login_required
+@require_permission([ADMINS_GROUP, STAFF_GROUP])
 def manage_users_api_users(request, user_id=None):
     """Return a JSON list of users for the Manage Users frontend poller.
 
@@ -1157,6 +1349,7 @@ def manage_users_api_users(request, user_id=None):
 
 
 @login_required
+@require_permission([ADMINS_GROUP, STAFF_GROUP])
 def manage_users_api_filters(request):
     """Return available roles and departments for the Manage Users filters.
 
@@ -1178,6 +1371,7 @@ def manage_users_api_filters(request):
 
 @require_http_methods(['POST'])
 @login_required
+@require_permission([ADMINS_GROUP, STAFF_GROUP])
 @user_passes_test(lambda u: u.is_superuser or u.is_staff)
 def manage_users_api_bulk_action(request):
     """Bulk action endpoint. Expects JSON body with 'action' and 'user_ids' list.
@@ -1207,6 +1401,7 @@ def manage_users_api_bulk_action(request):
     return JsonResponse({'changed': changed, 'action': action})
 
 @login_required
+@require_permission([ADMINS_GROUP, STAFF_GROUP])
 def manage_users_groups(request):
     q = (request.GET.get('q') or '').strip()
 
@@ -1478,49 +1673,66 @@ def api_notify_department(request, dept_id):
 @login_required
 @require_permission([ADMINS_GROUP, STAFF_GROUP])
 def api_group_permissions(request, group_id):
-    """Return JSON list of permissions for a user group."""
+    """Return JSON list of section permissions for a user group."""
     try:
-        from django.contrib.auth.models import Group
+        from django.contrib.auth.models import Group, Permission
+        from django.contrib.contenttypes.models import ContentType
+        from hotel_app.models import Section
+        
         group = get_object_or_404(Group, pk=group_id)
         
-        # Define permissions based on group name (this is a simplified approach)
-        # In a real application, you would have a more sophisticated permission system
-        permissions = []
+        # Get all section permissions for this group
+        section_content_type = ContentType.objects.get_for_model(Section)
+        group_permissions = group.permissions.filter(content_type=section_content_type)
         
-        # Default permissions for all groups
-        base_permissions = [
-            "view_profile",
-            "update_profile",
-            "view_requests",
-            "update_requests"
-        ]
+        # Organize permissions by section
+        permissions_by_section = {}
+        sections = Section.objects.filter(is_active=True).order_by('name')
         
-        # Add specific permissions based on group name
-        if group.name == "Admins":
-            permissions = base_permissions + [
-                "manage_users",
-                "manage_groups",
-                "system_config",
-                "view_reports",
-                "manage_departments",
-                "full_access"
-            ]
-        elif group.name == "Staff":
-            permissions = base_permissions + [
-                "view_team_reports",
-                "manage_team",
-                "assign_requests",
-                "view_dept_data"
-            ]
-        elif group.name == "Users":
-            permissions = base_permissions
-        else:
-            permissions = base_permissions
+        for section in sections:
+            section_key = section.name
+            permissions_by_section[section_key] = {
+                'display_name': section.display_name,
+                'view': False,
+                'edit': False,
+                'raw': {
+                    'view': False,
+                    'add': False,
+                    'change': False,
+                    'delete': False,
+                }
+            }
+            
+            for action in ['view', 'add', 'change', 'delete']:
+                codename = section.get_permission_codename(action)
+                if group_permissions.filter(codename=codename).exists():
+                    permissions_by_section[section_key]['raw'][action] = True
+                    if action == 'view':
+                        permissions_by_section[section_key]['view'] = True
+            raw_perms = permissions_by_section[section_key]['raw']
+            if raw_perms['add'] or raw_perms['change'] or raw_perms['delete']:
+                permissions_by_section[section_key]['edit'] = True
+        
+        # Also return a flat list for backward compatibility
+        flat_permissions = []
+        for section_name, perms in permissions_by_section.items():
+            raw = perms.get('raw', {})
+            for action, enabled in raw.items():
+                if enabled:
+                    flat_permissions.append(f"{section_name}.{action}")
+        
+        return JsonResponse({
+            'permissions': flat_permissions,
+            'permissions_by_section': permissions_by_section,
+            'group_name': group.name,
+            'group_id': group.id,
+        })
             
     except Exception as e:
-        permissions = []
-    
-    return JsonResponse({'permissions': permissions})
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f'Error getting group permissions: {str(e)}', exc_info=True)
+        return JsonResponse({'error': str(e), 'permissions': []}, status=500)
 
 
 @login_required
@@ -1541,25 +1753,119 @@ def api_group_permissions_update(request, group_id):
         except json.JSONDecodeError:
             return JsonResponse({'error': 'Invalid JSON data'}, status=400)
         
-        # Get permissions from request
-        permissions = data.get('permissions', [])
+        # Get section permissions from request
+        from django.contrib.contenttypes.models import ContentType
+        from hotel_app.models import Section
         
-        # Get permission objects from codenames
+        raw_permissions_by_section = data.get('permissions_by_section', {}) or {}
+        flat_permissions = data.get('permissions', []) or []
+        
+        # Normalize payload to {'section': {'view': bool, 'edit': bool}}
+        def _normalize_permissions(payload):
+            normalized = {}
+            for section_name, perms in payload.items():
+                if not isinstance(perms, dict):
+                    continue
+                raw = perms.get('raw', {}) if isinstance(perms.get('raw'), dict) else {}
+                view_flag = perms.get('view')
+                edit_flag = perms.get('edit')
+                if view_flag is None:
+                    view_flag = (
+                        raw.get('view', False)
+                        or perms.get('view', False)
+                    )
+                if edit_flag is None:
+                    edit_flag = (
+                        perms.get('edit', False)
+                        or perms.get('add', False)
+                        or perms.get('change', False)
+                        or perms.get('delete', False)
+                        or raw.get('add', False)
+                        or raw.get('change', False)
+                        or raw.get('delete', False)
+                    )
+                normalized[section_name] = {
+                    'view': bool(view_flag),
+                    'edit': bool(edit_flag),
+                }
+            return normalized
+        
+        normalized_permissions = _normalize_permissions(raw_permissions_by_section)
+        
+        if flat_permissions:
+            for perm_string in flat_permissions:
+                try:
+                    section_name, action = perm_string.split('.')
+                except ValueError:
+                    continue
+                entry = normalized_permissions.setdefault(section_name, {'view': False, 'edit': False})
+                if action == 'view':
+                    entry['view'] = True
+                elif action in ('add', 'change', 'delete'):
+                    entry['edit'] = True
+        
+        # Get ContentType for Section model
+        section_content_type = ContentType.objects.get_for_model(Section)
+        
+        # Get all section permissions that should be assigned
         permission_objects = []
-        for codename in permissions:
-            try:
-                perm = Permission.objects.get(codename=codename)
-                permission_objects.append(perm)
-            except Permission.DoesNotExist:
-                # Skip permissions that don't exist
-                continue
+        sections = Section.objects.filter(is_active=True)
         
-        # Update group permissions
-        group.permissions.set(permission_objects)
+        for section in sections:
+            desired = normalized_permissions.get(section.name, {'view': False, 'edit': False})
+            desired_view = desired.get('view', False)
+            desired_edit = desired.get('edit', False)
+            for action in ['view']:
+                if desired_view:
+                    codename = section.get_permission_codename(action)
+                    try:
+                        perm = Permission.objects.get(
+                            codename=codename,
+                            content_type=section_content_type
+                        )
+                        permission_objects.append(perm)
+                    except Permission.DoesNotExist:
+                        continue
+            if desired_edit:
+                for action in ['add', 'change', 'delete']:
+                    codename = section.get_permission_codename(action)
+                    try:
+                        perm = Permission.objects.get(
+                            codename=codename,
+                            content_type=section_content_type
+                        )
+                        permission_objects.append(perm)
+                    except Permission.DoesNotExist:
+                        continue
         
-        return JsonResponse({'success': True, 'message': 'Permissions updated successfully'})
+        # Remove duplicates from permission_objects by using a dict keyed by ID
+        unique_perms_dict = {perm.id: perm for perm in permission_objects}
+        permission_objects = list(unique_perms_dict.values())
         
+        # Use transactions to ensure atomicity and prevent duplicates
+        from django.db import transaction
+        with transaction.atomic():
+            # Clear all existing section permissions first to avoid duplicates
+            # This ensures a clean state before adding new permissions
+            existing_section_perms = group.permissions.filter(content_type=section_content_type)
+            if existing_section_perms.exists():
+                # Convert to list to evaluate queryset before removal
+                perms_to_clear = list(existing_section_perms)
+                group.permissions.remove(*perms_to_clear)
+            
+            # Add the new section permissions (Django's add() handles duplicates gracefully, but we've cleared them)
+            if permission_objects:
+                group.permissions.add(*permission_objects)
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Permissions updated successfully',
+            'permissions_count': len(permission_objects)
+        })
     except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f'Error updating group permissions: {str(e)}', exc_info=True)
         return JsonResponse({'error': str(e)}, status=500)
 
 
@@ -3521,6 +3827,7 @@ def api_group_members(request, group_id):
     return JsonResponse({'members': members})
 
 @login_required
+@require_permission([ADMINS_GROUP, STAFF_GROUP])
 def manage_users_roles(request):
     ctx = dict(active_tab="roles",
                breadcrumb_title="Roles & Permissions",
@@ -3531,10 +3838,21 @@ def manage_users_roles(request):
     return render(request, 'dashboard/roles.html', ctx)
 
 @login_required
+@require_section_permission('users', 'view')
 def manage_users_profiles(request):
-    # Get the standard Django groups (Admins, Staff, Users)
+    """Manage user profiles (Groups) and their section permissions."""
     from django.contrib.auth.models import Group
-    groups = Group.objects.filter(name__in=['Admins', 'Staff', 'Users']).order_by('name')
+    from hotel_app.models import Section
+    from hotel_app.section_permissions import user_has_section_permission
+    
+    # Check if user can manage profiles
+    can_manage = (
+        request.user.is_superuser or
+        user_has_section_permission(request.user, 'users', 'change')
+    )
+    
+    # Get all Django groups (not just the three default ones)
+    groups = Group.objects.all().order_by('name')
     
     # Get user count for each group
     group_user_counts = {}
@@ -3542,20 +3860,16 @@ def manage_users_profiles(request):
         count = group.user_set.count()
         group_user_counts[group.name] = count
     
-    # Check user permissions to determine what they can see
-    user_permissions = []
-    if request.user.is_superuser:
-        # Superuser has all permissions
-        user_permissions = ['manage_users', 'manage_groups', 'system_config', 'view_reports', 'manage_departments', 'full_access']
-    elif request.user.groups.filter(name='Admins').exists():
-        # Admin permissions
-        user_permissions = ['manage_users', 'manage_groups', 'view_reports', 'manage_departments']
-    elif request.user.groups.filter(name='Staff').exists():
-        # Staff permissions
-        user_permissions = ['view_team_reports', 'manage_team', 'assign_requests', 'view_dept_data']
-    else:
-        # Basic user permissions
-        user_permissions = ['view_profile', 'update_profile']
+    # Get all sections for permission display
+    sections = Section.objects.filter(is_active=True).order_by('name')
+    
+    # Check user permissions to determine what they can see/do
+    user_permissions = {
+        'view': user_has_section_permission(request.user, 'users', 'view'),
+        'add': user_has_section_permission(request.user, 'users', 'add'),
+        'change': user_has_section_permission(request.user, 'users', 'change'),
+        'delete': user_has_section_permission(request.user, 'users', 'delete'),
+    }
     
     ctx = dict(
         active_tab="profiles",
@@ -3566,7 +3880,9 @@ def manage_users_profiles(request):
         primary_label="Create Profile",
         groups=groups,
         group_user_counts=group_user_counts,
-        user_permissions=user_permissions  # Pass user permissions to template
+        user_permissions=user_permissions,
+        can_manage=can_manage,
+        sections=sections,
     )
     return render(request, 'dashboard/user_profiles.html', ctx)
 
@@ -3879,31 +4195,43 @@ def user_update(request, user_id):
             profile.department = None
 
         # Handle role assignment to Django groups
+        # The role field now contains the Django Group name directly (e.g., "Managers", "Users", "Staff")
         if role:
             # First, remove user from all groups
             user.groups.clear()
             
-            # Then add to the appropriate group based on role
-            role_mapping = {
-                'admin': 'Admins',
-                'admins': 'Admins',
-                'administrator': 'Admins',
-                'superuser': 'Admins',
-                'staff': 'Staff',
-                'front desk': 'Staff',
-                'front desk team': 'Staff',
-                'user': 'Users',
-                'users': 'Users'
-            }
-            
-            group_name = role_mapping.get(role.lower(), 'Users')
+            # Try to find the group by name (role is now the group name)
             try:
-                group = Group.objects.get(name=group_name)
+                group = Group.objects.get(name=role)
                 user.groups.add(group)
             except Group.DoesNotExist:
-                # If the group doesn't exist, create it
-                group = Group.objects.create(name=group_name)
-                user.groups.add(group)
+                # If the group doesn't exist, try legacy role mapping for backward compatibility
+                role_mapping = {
+                    'admin': 'Admins',
+                    'admins': 'Admins',
+                    'administrator': 'Admins',
+                    'superuser': 'Admins',
+                    'staff': 'Staff',
+                    'front desk': 'Staff',
+                    'front desk team': 'Staff',
+                    'user': 'Users',
+                    'users': 'Users'
+                }
+
+                group_name = role_mapping.get(role.lower(), role)  # Use role as group name if not in mapping
+                try:
+                    group = Group.objects.get(name=group_name)
+                    user.groups.add(group)
+                except Group.DoesNotExist:
+                    # If the group still doesn't exist, create it
+                    group = Group.objects.create(name=group_name)
+                    user.groups.add(group)
+            # Update profile role to match group name
+            profile.role = user.groups.first().name if user.groups.exists() else ''
+        else:
+            # No role provided: clear groups and reset profile role
+            user.groups.clear()
+            profile.role = ''
 
         # Handle profile picture upload
         profile_picture = request.FILES.get('profile_picture') if hasattr(request, 'FILES') else None
@@ -3952,7 +4280,8 @@ def manage_user_detail(request, user_id):
     Context to template:
     - user: User instance
     - profile: UserProfile or None
-    - groups: Queryset of Group objects
+    - groups: Queryset of Group objects (user's current groups)
+    - all_groups: Queryset of all Django Groups (for role dropdown)
     - departments: Queryset of Department objects
     - avatar_url: str or None
     - requests_handled, messages_sent, avg_rating, response_rate
@@ -3960,6 +4289,12 @@ def manage_user_detail(request, user_id):
     user = get_object_or_404(User, pk=user_id)
     profile = getattr(user, 'userprofile', None)
     groups = user.groups.all()
+    primary_group = groups.first()
+
+    # Get all Django Groups for the role dropdown (these are the "profiles")
+    from django.contrib.auth.models import Group
+    all_groups = Group.objects.all().order_by('name')
+
     try:
         departments = Department.objects.all()
     except Exception:
@@ -3990,19 +4325,20 @@ def manage_user_detail(request, user_id):
     if profile and getattr(profile, 'avatar_url', None):
         avatar_url = profile.avatar_url
 
-    # Determine user role based on groups
-    user_role = "User"
-    if user.is_superuser:
+    # Determine user's current role/profile based on primary group
+    if primary_group:
+        user_role = primary_group.name
+    elif user.is_superuser:
         user_role = "Admin"
-    elif user.is_staff and groups.filter(name="Staff").exists():
-        user_role = "Staff"
-    elif groups.filter(name="Users").exists():
-        user_role = "User"
+    else:
+        user_role = ""
 
     context = {
         'user': user,
         'profile': profile,
         'groups': groups,
+        'primary_group': primary_group,
+        'all_groups': all_groups,  # All available groups/profiles for dropdown
         'departments': departments,
         'avatar_url': avatar_url,
         'requests_handled': requests_handled,
@@ -4509,59 +4845,128 @@ def dashboard_groups(request):
     }
     return render(request, "dashboard/groups.html", context)
 
+@login_required
+@require_section_permission('users', 'add')
 @require_http_methods(['POST'])
 @csrf_protect
 def group_create(request):
     """
-    Create a user group. Department is matched by name if provided.
-    If department is provided, the group name will be formatted as "Department - Group Name".
+    Create a Django Group (for User Profiles) or UserGroup (for Groups tab).
+    Determines which type to create based on request parameter or context.
+    For User Profiles page, creates Django Group.
+    For Groups tab, creates UserGroup.
     """
     name = (request.POST.get("name") or "").strip()
     description = (request.POST.get("description") or "").strip()
     department_name = (request.POST.get("department") or "").strip()
+    group_type = request.POST.get("group_type", "django_group")  # "django_group" or "user_group"
 
     errors = {}
     if not name:
         errors["name"] = ["Group name is required."]
     
-    dept_obj = None
-    final_group_name = name
-    if department_name:
-        dept_obj = Department.objects.filter(name__iexact=department_name).first()
-        if not dept_obj:
-            errors["department"] = [f"Department '{department_name}' not found."]
-        else:
-            # Format group name as "Department - Group Name"
-            final_group_name = f"{dept_obj.name} - {name}"
-    
-    # Check if a group with the final name already exists
-    if UserGroup.objects.filter(name__iexact=final_group_name).exists():
-        errors["name"] = [f"Group '{final_group_name}' already exists."]
+    # Check if group already exists
+    if group_type == "django_group":
+        # Create Django Group (for User Profiles)
+        from django.contrib.auth.models import Group
+        from hotel_app.models import UserProfile
+        from hotel_app.signals import ROLE_TO_GROUP_MAPPING
+        
+        if Group.objects.filter(name=name).exists():
+            errors["name"] = [f"Group '{name}' already exists."]
+        
+        if errors:
+            return JsonResponse({"success": False, "errors": errors}, status=400)
+        
+        try:
+            # Create Django Group (for profiles, we don't need role - just a name)
+            # Django Groups are just permission containers, not tied to UserProfile roles
+            group = Group.objects.create(name=name)
+            
+            # Assign default permissions (Dashboard & My Tickets view)
+            try:
+                from django.contrib.contenttypes.models import ContentType
+                from django.contrib.auth.models import Permission
+                from hotel_app.models import Section
+                
+                section_content_type = ContentType.objects.get_for_model(Section)
+                default_sections = Section.objects.filter(name__in=['dashboard', 'my_tickets'])
+                for section in default_sections:
+                    codename = section.get_permission_codename('view')
+                    try:
+                        perm = Permission.objects.get(
+                            codename=codename,
+                            content_type=section_content_type
+                        )
+                        group.permissions.add(perm)
+                    except Permission.DoesNotExist:
+                        continue
+            except Exception:
+                # Ignore permission assignment errors but log for debugging
+                import logging
+                logging.getLogger(__name__).warning(
+                    "Unable to assign default dashboard/my_tickets permissions to group %s",
+                    name,
+                    exc_info=True
+                )
+            
+            # Note: For Django Groups (profiles), we don't assign users here
+            # Users are assigned to groups separately through the user management interface
+            # The role field is only relevant for UserGroups, not Django Groups
+            
+            response_data = {
+                "success": True,
+                "group": {
+                    "id": group.id,
+                    "name": group.name,
+                }
+            }
+            return JsonResponse(response_data)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f'Error creating group: {str(e)}', exc_info=True)
+            return JsonResponse({"success": False, "errors": {"non_field_errors": [str(e)]}}, status=500)
+    else:
+        # Create UserGroup (for Groups tab)
+        dept_obj = None
+        final_group_name = name
+        if department_name:
+            dept_obj = Department.objects.filter(name__iexact=department_name).first()
+            if not dept_obj:
+                errors["department"] = [f"Department '{department_name}' not found."]
+            else:
+                # Format group name as "Department - Group Name"
+                final_group_name = f"{dept_obj.name} - {name}"
 
-    if errors:
-        return JsonResponse({"success": False, "errors": errors}, status=400)
+        # Check if a group with the final name already exists
+        if UserGroup.objects.filter(name__iexact=final_group_name).exists():
+            errors["name"] = [f"Group '{final_group_name}' already exists."]
 
-    try:
-        grp = UserGroup.objects.create(
-            name=final_group_name,
-            description=description or None,
-            department=dept_obj
-        )
-    except Exception as e:
-        return JsonResponse({"success": False, "errors": {"non_field_errors": [str(e)]}}, status=500)
+        if errors:
+            return JsonResponse({"success": False, "errors": errors}, status=400)
 
-    # Return additional information about the group including department
-    response_data = {
-        "success": True, 
-        "group": {
-            "id": grp.id, 
-            "name": grp.name,
-            "description": grp.description,
-            "department_id": grp.department.id if grp.department else None,
-            "department_name": grp.department.name if grp.department else None
+        try:
+            grp = UserGroup.objects.create(
+                name=final_group_name,
+                description=description or None,
+                department=dept_obj
+            )
+        except Exception as e:
+            return JsonResponse({"success": False, "errors": {"non_field_errors": [str(e)]}}, status=500)
+
+        # Return additional information about the group including department
+        response_data = {
+            "success": True,
+            "group": {
+                "id": grp.id,
+                "name": grp.name,
+                "description": grp.description,
+                "department_id": grp.department.id if grp.department else None,
+                "department_name": grp.department.name if grp.department else None
+            }
         }
-    }
-    return JsonResponse(response_data)
+        return JsonResponse(response_data)
 
 @require_permission([ADMINS_GROUP])
 def group_update(request, group_id):
@@ -5917,7 +6322,7 @@ def get_ticket_suggestions_api(request):
 
 # ---- Feedback View ----
 @login_required
-@user_passes_test(is_staff)
+@require_section_permission('feedback', 'view')
 def feedback_inbox(request):
     """Feedback inbox view showing all guest feedback."""
     from .models import Review, Guest
@@ -6055,7 +6460,7 @@ def feedback_inbox(request):
 
 
 @login_required
-@user_passes_test(is_staff)
+@require_section_permission('feedback', 'view')
 def feedback_detail(request, feedback_id):
     """Feedback detail view showing detailed information about a specific feedback."""
     from .models import Review, Guest
@@ -6704,6 +7109,8 @@ from django.contrib import messages
 
 from django.core.paginator import Paginator
 
+@login_required
+@require_section_permission('locations', 'view')
 def locations_list(request):
     locations = Location.objects.all().order_by('-location_id')
     families = LocationFamily.objects.all()

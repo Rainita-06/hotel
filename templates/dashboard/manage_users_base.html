@@ -60,7 +60,7 @@
           </div>
         </div>
 
-        <button id="primaryActionBtn" type="button"
+        <button id="primaryActionBtn" type="button" onclick="if(typeof openPrimaryAction === 'function') { openPrimaryAction(); } else { console.error('openPrimaryAction not defined'); }"
                 class="inline-flex items-center gap-2 h-10 px-4 rounded-lg bg-sky-600 text-white text-base font-medium font-['Inter'] hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition-colors">
           <img src="{% static 'images/sidebar/settings.svg' %}" alt="Plus" class="w-5 h-5" />
           <span id="primaryActionLabel">{{ primary_label|default:"Create User" }}</span>
@@ -119,15 +119,35 @@
     <form autocomplete="off" id="createGroupForm" class="p-6 space-y-4 overflow-y-auto flex-grow">
       {% csrf_token %}
       <div>
-        <label class="block text-sm font-medium text-gray-700">Group Name</label>
-        <input autocomplete="off" type="text" id="createGroupName" name="name" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="e.g. Floor Supervisors" required />
+        <label for="createGroupName" class="block text-sm font-medium text-gray-700">Profile Name</label>
+        <input autocomplete="off" type="text" id="createGroupName" name="name" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="e.g. Managers, Supervisors" required />
+        <p id="createGroupNameHint" class="mt-1 text-xs text-gray-500"></p>
       </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Description</label>
+      <div id="createGroupRoleDiv" style="display: none;">
+        <label for="createGroupRole" class="block text-sm font-medium text-gray-700">Role Type</label>
+        <select id="createGroupRole" name="role" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" required>
+          <option value="">Select Role</option>
+          <option value="admin">Admin</option>
+          <option value="staff">Staff</option>
+          <option value="user">User</option>
+        </select>
+        <p class="mt-1 text-xs text-gray-500">This determines the base role for users assigned to this profile</p>
+      </div>
+      <div id="createGroupUsersDiv" style="display: none;">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Assign Users (optional)</label>
+        <div class="border border-gray-300 rounded-md p-3 max-h-48 overflow-y-auto">
+          <div id="createGroupUsersList" class="space-y-2">
+            <p class="text-sm text-gray-500">Loading users...</p>
+          </div>
+        </div>
+        <p class="mt-1 text-xs text-gray-500">Selected users will be assigned to this profile and their role will be updated</p>
+      </div>
+      <div id="createGroupDescriptionDiv">
+        <label for="createGroupDescription" class="block text-sm font-medium text-gray-700">Description</label>
         <textarea id="createGroupDescription" name="description" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Optional description"></textarea>
       </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Department (optional)</label>
+      <div id="createGroupDepartmentDiv">
+        <label for="createGroupDepartment" class="block text-sm font-medium text-gray-700">Department (optional)</label>
         <select id="createGroupDepartment" name="department" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500">
           <option value="">None</option>
         </select>
@@ -136,7 +156,7 @@
     </form>
     <div class="flex items-center justify-end gap-3 p-5 border-t bg-gray-50 rounded-b-lg flex-shrink-0">
       <button type="button" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50" onclick="closeModal('createGroupModal')">Cancel</button>
-      <button id="createGroupSubmit" type="submit" form="createGroupForm" class="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700">Create Group</button>
+      <button id="createGroupSubmit" type="button" class="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700">Create Group</button>
     </div>
   </div>
 </div>
@@ -323,226 +343,39 @@
 {% if active_tab == 'profiles' %}
 <!-- Edit Permissions Modal -->
 <div id="editPermissionsModal" role="dialog" aria-modal="true" aria-labelledby="editPermissionsTitle"
-     class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0" onclick="closeModal('editPermissionsModal')">
-  <div data-modal-content class="w-full max-w-4xl rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[90vh]" onclick="event.stopPropagation()">
+     class="fixed inset-0 z-[1000] hidden items-center justify-center p-4 backdrop-blur-sm bg-black bg-opacity-30 transition-opacity duration-300 opacity-0" onclick="closeModal('editPermissionsModal')">
+  <div data-modal-content class="w-full max-w-5xl rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[95vh]" onclick="event.stopPropagation()">
     <div class="flex items-start justify-between p-5 border-b flex-shrink-0">
-      <h3 id="editPermissionsTitle" class="modal-title text-lg font-semibold text-gray-900">Edit Permissions</h3>
+      <h3 id="editPermissionsTitle" class="text-lg font-semibold text-gray-900">Edit Permissions</h3>
       <button type="button" onclick="closeModal('editPermissionsModal')" class="rounded-full p-1 text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Close">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
       </button>
     </div>
-    <form autocomplete="off" id="editPermissionsForm" class="p-6 space-y-6 overflow-y-auto">
+    <form autocomplete="off" id="editPermissionsForm" class="p-6 space-y-4 overflow-y-auto flex-grow">
       <input autocomplete="off" type="hidden" id="editGroupId" name="group_id">
       <div class="mb-4">
         <h4 class="text-md font-medium text-gray-900" id="editGroupName"></h4>
-        <p class="text-sm text-gray-600">Select the permissions for this group</p>
+        <p class="text-sm text-gray-600">Select section permissions for this profile</p>
       </div>
 
-      <!-- Tables omitted for brevity: identical to your original with .permission-toggle checkboxes -->
-      <!-- Core, Admin, Staff permissions tables -->
-      <div class="space-y-6">
-        <div>
-          <h5 class="text-sm font-medium text-gray-900 mb-2">Core Permissions</h5>
-          <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-              <thead class="bg-gray-50">
-                <tr>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permission</th>
-                  <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                </tr>
-              </thead>
-              <tbody class="bg-white divide-y divide-gray-200">
-                <tr>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">View own profile</td>
-                  <td class="px-6 py-4 whitespace-nowrap text-center">
-                    <div class="flex items-center justify-center">
-                      <label class="inline-flex items-center cursor-pointer">
-                        <input autocomplete="off" type="checkbox" name="perm_view_profile" class="sr-only peer permission-toggle" data-permission="view_profile">
-                        <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
-                      </label>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Update own profile</td>
-                  <td class="px-6 py-4 whitespace-nowrap text-center">
-                    <div class="flex items-center justify-center">
-                      <label class="inline-flex items-center cursor-pointer">
-                        <input autocomplete="off" type="checkbox" name="perm_update_profile" class="sr-only peer permission-toggle" data-permission="update_profile">
-                        <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
-                      </label>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">View assigned requests</td>
-                  <td class="px-6 py-4 whitespace-nowrap text-center">
-                    <div class="flex items-center justify-center">
-                      <label class="inline-flex items-center cursor-pointer">
-                        <input autocomplete="off" type="checkbox" name="perm_view_requests" class="sr-only peer permission-toggle" data-permission="view_requests">
-                        <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
-                      </label>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Update request status</td>
-                  <td class="px-6 py-4 whitespace-nowrap text-center">
-                    <div class="flex items-center justify-center">
-                      <label class="inline-flex items-center cursor-pointer">
-                        <input autocomplete="off" type="checkbox" name="perm_update_requests" class="sr-only peer permission-toggle" data-permission="update_requests">
-                        <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
-                      </label>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div>
-          <h5 class="text-sm font-medium text-gray-900 mb-2">Admin Permissions</h5>
-          <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-              <thead class="bg-gray-50">
-                <tr>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permission</th>
-                  <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                </tr>
-              </thead>
-              <tbody class="bg-white divide-y divide-gray-200">
-                <tr>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Manage users</td>
-                  <td class="px-6 py-4 whitespace-nowrap text-center">
-                    <div class="flex items-center justify-center">
-                      <label class="inline-flex items-center cursor-pointer">
-                        <input autocomplete="off" type="checkbox" name="perm_manage_users" class="sr-only peer permission-toggle" data-permission="manage_users">
-                        <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
-                      </label>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Manage groups</td>
-                  <td class="px-6 py-4 whitespace-nowrap text-center">
-                    <div class="flex items-center justify-center">
-                      <label class="inline-flex items-center cursor-pointer">
-                        <input autocomplete="off" type="checkbox" name="perm_manage_groups" class="sr-only peer permission-toggle" data-permission="manage_groups">
-                        <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
-                      </label>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">System configuration</td>
-                  <td class="px-6 py-4 whitespace-nowrap text-center">
-                    <div class="flex items-center justify-center">
-                      <label class="inline-flex items-center cursor-pointer">
-                        <input autocomplete="off" type="checkbox" name="perm_system_config" class="sr-only peer permission-toggle" data-permission="system_config">
-                        <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
-                      </label>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">View all reports</td>
-                  <td class="px-6 py-4 whitespace-nowrap text-center">
-                    <div class="flex items-center justify-center">
-                      <label class="inline-flex items-center cursor-pointer">
-                        <input autocomplete="off" type="checkbox" name="perm_view_reports" class="sr-only peer permission-toggle" data-permission="view_reports">
-                        <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
-                      </label>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Manage departments</td>
-                  <td class="px-6 py-4 whitespace-nowrap text-center">
-                    <div class="flex items-center justify-center">
-                      <label class="inline-flex items-center cursor-pointer">
-                        <input autocomplete="off" type="checkbox" name="perm_manage_departments" class="sr-only peer permission-toggle" data-permission="manage_departments">
-                        <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
-                      </label>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Full system access</td>
-                  <td class="px-6 py-4 whitespace-nowrap text-center">
-                    <div class="flex items-center justify-center">
-                      <label class="inline-flex items-center cursor-pointer">
-                        <input autocomplete="off" type="checkbox" name="perm_full_access" class="sr-only peer permission-toggle" data-permission="full_access">
-                        <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
-                      </label>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div>
-          <h5 class="text-sm font-medium text-gray-900 mb-2">Staff Permissions</h5>
-          <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-              <thead class="bg-gray-50">
-                <tr>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permission</th>
-                  <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                </tr>
-              </thead>
-              <tbody class="bg-white divide-y divide-gray-200">
-                <tr>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">View team reports</td>
-                  <td class="px-6 py-4 whitespace-nowrap text-center">
-                    <div class="flex items-center justify-center">
-                      <label class="inline-flex items-center cursor-pointer">
-                        <input autocomplete="off" type="checkbox" name="perm_view_team_reports" class="sr-only peer permission-toggle" data-permission="view_team_reports">
-                        <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
-                      </label>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Manage team members</td>
-                  <td class="px-6 py-4 whitespace-nowrap text-center">
-                    <div class="flex items-center justify-center">
-                      <label class="inline-flex items-center cursor-pointer">
-                        <input autocomplete="off" type="checkbox" name="perm_manage_team" class="sr-only peer permission-toggle" data-permission="manage_team">
-                        <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
-                      </label>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Assign requests</td>
-                  <td class="px-6 py-4 whitespace-nowrap text-center">
-                    <div class="flex items-center justify-center">
-                      <label class="inline-flex items-center cursor-pointer">
-                        <input autocomplete="off" type="checkbox" name="perm_assign_requests" class="sr-only peer permission-toggle" data-permission="assign_requests">
-                        <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
-                      </label>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">View department data</td>
-                  <td class="px-6 py-4 whitespace-nowrap text-center">
-                    <div class="flex items-center justify-center">
-                      <label class="inline-flex items-center cursor-pointer">
-                        <input autocomplete="off" type="checkbox" name="perm_view_dept_data" class="sr-only peer permission-toggle" data-permission="view_dept_data">
-                        <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
-                      </label>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+      <!-- Section-based permissions table -->
+      <div class="overflow-x-auto border border-gray-200 rounded-lg">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Section</th>
+              <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">View</th>
+              <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Edit</th>
+            </tr>
+          </thead>
+          <tbody id="editPermissionsTableBody" class="bg-white divide-y divide-gray-200">
+            <tr>
+              <td colspan="3" class="px-4 py-4 text-center text-sm text-gray-500">Loading sections...</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
+      <div id="editPermissionsError" class="text-sm text-red-600 hidden"></div>
     </form>
     <div class="flex items-center justify-end gap-3 p-5 border-t bg-gray-50 rounded-b-lg flex-shrink-0">
       <button type="button" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50" onclick="closeModal('editPermissionsModal')">Cancel</button>
@@ -769,9 +602,15 @@
   function openEditPermissionsModal(groupId, groupName) {
     const idEl = document.getElementById('editGroupId');
     const nameEl = document.getElementById('editGroupName');
+    const errorEl = document.getElementById('editPermissionsError');
     if (!idEl || !nameEl) {
       console.error('Edit Permissions modal elements not found in DOM. Ensure modals render inside the content block.');
       return;
+    }
+    // Clear any previous errors
+    if (errorEl) {
+      errorEl.classList.add('hidden');
+      errorEl.textContent = '';
     }
     idEl.value = groupId;
     nameEl.textContent = groupName;
@@ -787,24 +626,62 @@
 
   // Load group permissions into the modal
   function loadGroupPermissions(groupId) {
-    const form = document.getElementById('editPermissionsForm');
-    if (!form) return;
+    const tbody = document.getElementById('editPermissionsTableBody');
+    if (!tbody) return;
 
-    const switches = form.querySelectorAll('.permission-toggle');
-    switches.forEach(s => { s.checked = false; s.disabled = true; });
+    tbody.innerHTML = '<tr><td colspan="3" class="px-4 py-4 text-center text-sm text-gray-500">Loading permissions...</td></tr>';
 
-    fetch(`/dashboard/api/groups/${groupId}/permissions/`)
+    fetch(`{% url "dashboard:api_group_permissions" 0 %}`.replace('0', groupId))
       .then(response => response.json())
       .then(data => {
-        switches.forEach(s => {
-          s.disabled = false;
-          s.checked = !!(data.permissions && data.permissions.includes(s.dataset.permission));
+        if (!data.permissions_by_section) {
+          tbody.innerHTML = '<tr><td colspan="3" class="px-4 py-4 text-center text-sm text-red-500">Failed to load permissions</td></tr>';
+          return;
+        }
+
+        // Build table rows from section permissions
+        tbody.innerHTML = '';
+        const sections = data.permissions_by_section;
+        
+        // Sort sections by display name for better UX
+        const sortedSections = Object.entries(sections).sort((a, b) => {
+          const nameA = a[1].display_name || a[0];
+          const nameB = b[1].display_name || b[0];
+          return nameA.localeCompare(nameB);
         });
+        
+        for (const [sectionName, perms] of sortedSections) {
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-gray-50';
+          // Escape HTML to prevent XSS
+          const displayName = (perms.display_name || sectionName).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          const escapedSectionName = sectionName.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          const editEnabled = perms.edit || (perms.raw && (perms.raw.add || perms.raw.change || perms.raw.delete));
+          tr.innerHTML = `
+            <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">${displayName}</td>
+            <td class="px-4 py-3 whitespace-nowrap text-center">
+              <label class="inline-flex items-center cursor-pointer">
+                <input type="checkbox" class="sr-only peer section-permission-toggle" 
+                       data-section="${escapedSectionName}" data-action="view" 
+                       ${perms.view ? 'checked' : ''}>
+                <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
+              </label>
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap text-center">
+              <label class="inline-flex items-center cursor-pointer">
+                <input type="checkbox" class="sr-only peer section-permission-toggle" 
+                       data-section="${escapedSectionName}" data-action="edit" 
+                       ${editEnabled ? 'checked' : ''}>
+                <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-checked:bg-sky-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:translate-x-full"></div>
+              </label>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        }
       })
       .catch(error => {
         console.error('Error loading group permissions:', error);
-        switches.forEach(s => { s.disabled = false; });
-        alert('Failed to load permissions. Please try again.');
+    tbody.innerHTML = '<tr><td colspan="3" class="px-4 py-4 text-center text-sm text-red-500">Failed to load permissions. Please try again.</td></tr>';
       });
   }
 
@@ -827,24 +704,57 @@
     saveButton.disabled = true;
     saveButton.textContent = 'Saving...';
 
-    // Collect selected permissions
+    // Collect section permissions - include all sections, checked and unchecked
     const form = document.getElementById('editPermissionsForm');
-    const checkboxes = form.querySelectorAll('.permission-toggle:checked');
-    const permissions = Array.from(checkboxes).map(cb => cb.dataset.permission);
+    const allCheckboxes = form.querySelectorAll('.section-permission-toggle');
+    
+    // Build permissions_by_section object for all sections
+    const permissions_by_section = {};
+    
+    // Initialize sections with view/edit set to false
+    allCheckboxes.forEach(cb => {
+      const section = cb.dataset.section;
+      if (!permissions_by_section[section]) {
+        permissions_by_section[section] = {
+          view: false,
+          edit: false
+        };
+      }
+    });
+    
+    // Set checked permissions to true
+    allCheckboxes.forEach(cb => {
+      if (cb.checked) {
+        const section = cb.dataset.section;
+        const action = cb.dataset.action;
+        permissions_by_section[section][action] = true;
+      }
+    });
 
-    fetch(`/dashboard/api/groups/${groupId}/permissions/update/`, {
+    const updateUrl = `{% url "dashboard:api_group_permissions_update" 0 %}`.replace('0', groupId);
+    fetch(updateUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-CSRFToken': getCookie('csrftoken')
       },
-      body: JSON.stringify({ permissions: permissions })
+      body: JSON.stringify({ permissions_by_section: permissions_by_section })
     })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+    .then(async response => {
+      let data;
+      try {
+        data = await response.json();
+      } catch (e) {
+        // If response is not JSON, create a data object with error
+        data = { error: `HTTP error! status: ${response.status}` };
       }
-      return response.json();
+      
+      if (!response.ok) {
+        const errorMsg = data.error || data.message || `HTTP error! status: ${response.status}`;
+        throw new Error(errorMsg);
+      }
+      
+      return data;
     })
     .then(data => {
       if (data.success) {
@@ -853,17 +763,22 @@
         // Reload the page to reflect changes
         setTimeout(() => { window.location.reload(); }, 1000);
       } else {
-        throw new Error(data.error || 'Failed to update permissions');
+        throw new Error(data.error || data.message || 'Failed to update permissions');
       }
     })
     .catch(error => {
       console.error('Error updating permissions:', error);
-      alert('Error updating permissions: ' + error.message);
-    })
-    .finally(() => {
+      const errorEl = document.getElementById('editPermissionsError');
+      if (errorEl) {
+        errorEl.textContent = 'Error updating permissions: ' + (error.message || error);
+        errorEl.classList.remove('hidden');
+      } else {
+        alert('Error updating permissions: ' + (error.message || error));
+      }
+      // Re-enable button on error
       saveButton.disabled = false;
       saveButton.textContent = 'Save Permissions';
-    });
+    })
   }
   window.handleEditPermissionsSubmit = handleEditPermissionsSubmit;
 
@@ -945,6 +860,162 @@
   // Toast timeout holder
   let __toastTimeout;
 
+  // Define openPrimaryAction BEFORE DOMContentLoaded so it's available for inline onclick
+  function openPrimaryAction() {
+    try {
+      const tab = String(window.manageUsersActiveTab || 'all').trim().toLowerCase();
+      console.log('openPrimaryAction: tab =', tab, 'manageUsersActiveTab =', window.manageUsersActiveTab);
+      
+      if (tab === 'profiles') {
+        // For profiles tab, create a new Django Group (role/profile)
+        // Reset form first
+        const form = document.getElementById('createGroupForm');
+        if (!form) {
+          console.error('createGroupForm not found');
+          return;
+        }
+        form.reset();
+        
+        // Update modal title and submit button text
+        const modalTitle = document.getElementById('createGroupTitle');
+        const submitBtn = document.getElementById('createGroupSubmit');
+        const nameLabel = document.querySelector('label[for="createGroupName"]');
+        const nameInput = document.getElementById('createGroupName');
+        const nameHint = document.getElementById('createGroupNameHint');
+        const descDiv = document.getElementById('createGroupDescriptionDiv');
+        const deptDiv = document.getElementById('createGroupDepartmentDiv');
+        const errorEl = document.getElementById('createGroupError');
+        const roleDiv = document.getElementById('createGroupRoleDiv');
+        const usersDiv = document.getElementById('createGroupUsersDiv');
+        
+        if (modalTitle) modalTitle.textContent = 'Create Profile';
+        if (submitBtn) submitBtn.textContent = 'Create Profile';
+        if (nameLabel) nameLabel.textContent = 'Profile Name';
+        if (nameInput) {
+          nameInput.placeholder = 'e.g. Managers, Supervisors';
+          nameInput.setAttribute('required', 'required');
+        }
+        if (nameHint) {
+          nameHint.textContent = 'This will create a new role/profile that can be assigned to users';
+        }
+        // Hide role selector and user selection for profiles (Django Groups don't need these)
+        if (roleDiv) roleDiv.style.display = 'none';
+        if (usersDiv) usersDiv.style.display = 'none';
+        // Hide description and department fields for profiles (Django Groups don't have these)
+        if (descDiv) descDiv.style.display = 'none';
+        if (deptDiv) deptDiv.style.display = 'none';
+        if (errorEl) {
+          errorEl.classList.add('hidden');
+          errorEl.textContent = '';
+        }
+        
+        // Show the modal
+        console.log('About to call showModal for createGroupModal');
+        const modal = document.getElementById('createGroupModal');
+        console.log('Modal element found:', !!modal);
+        if (modal) {
+          if (typeof showModal === 'function') {
+            showModal('createGroupModal');
+            console.log('showModal called successfully');
+          } else {
+            console.error('showModal function not defined');
+            // Fallback: manually show modal
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => {
+              modal.classList.remove('opacity-0');
+              const modalContent = modal.querySelector('[data-modal-content]');
+              if (modalContent) {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+              }
+            }, 10);
+          }
+        } else {
+          console.error('createGroupModal element not found in DOM');
+          alert('Error: Modal not found. Please refresh the page.');
+        }
+        return;
+      }
+      
+      if (tab === 'groups') {
+        // For groups tab, update modal title and submit button text
+        // Reset form first
+        const form = document.getElementById('createGroupForm');
+        if (form) form.reset();
+        
+        const modalTitle = document.getElementById('createGroupTitle');
+        const submitBtn = document.getElementById('createGroupSubmit');
+        const nameLabel = document.querySelector('label[for="createGroupName"]');
+        const nameInput = document.getElementById('createGroupName');
+        const nameHint = document.getElementById('createGroupNameHint');
+        const descDiv = document.getElementById('createGroupDescriptionDiv');
+        const deptDiv = document.getElementById('createGroupDepartmentDiv');
+        const errorEl = document.getElementById('createGroupError');
+        
+        if (modalTitle) modalTitle.textContent = 'Create Group';
+        if (submitBtn) submitBtn.textContent = 'Create Group';
+        if (nameLabel) nameLabel.textContent = 'Group Name';
+        if (nameInput) {
+          nameInput.placeholder = 'e.g. Floor Supervisors';
+          nameInput.setAttribute('required', 'required');
+        }
+        if (nameHint) {
+          nameHint.textContent = '';
+        }
+        // Show description and department fields for UserGroups
+        // Hide role selector and user selection for groups
+        const roleDiv = document.getElementById('createGroupRoleDiv');
+        const usersDiv = document.getElementById('createGroupUsersDiv');
+        if (roleDiv) roleDiv.style.display = 'none';
+        if (usersDiv) usersDiv.style.display = 'none';
+        if (descDiv) descDiv.style.display = 'block';
+        if (deptDiv) deptDiv.style.display = 'block';
+        if (errorEl) {
+          errorEl.classList.add('hidden');
+          errorEl.textContent = '';
+        }
+        
+        const modal = document.getElementById('createGroupModal');
+        if (modal && typeof showModal === 'function') {
+          showModal('createGroupModal');
+        } else if (modal) {
+          modal.classList.remove('hidden');
+          modal.classList.add('flex');
+          setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            const modalContent = modal.querySelector('[data-modal-content]');
+            if (modalContent) {
+              modalContent.classList.remove('scale-95', 'opacity-0');
+              modalContent.classList.add('scale-100', 'opacity-100');
+            }
+          }, 10);
+        }
+        return;
+      }
+      if (tab === 'departments') {
+        // This function is defined in `departments_list.html` and will be available in scope
+        if (typeof openAddDepartmentModal === 'function') {
+          openAddDepartmentModal();
+        } else {
+          console.error('openAddDepartmentModal function not found.');
+        }
+        return;
+      }
+      
+      // Default: open invite user modal
+      if (typeof openInviteUserModal === 'function') {
+        openInviteUserModal();
+      } else {
+        console.error('openInviteUserModal function not found');
+      }
+    } catch (error) {
+      console.error('Error in openPrimaryAction:', error);
+      alert('An error occurred while opening the modal: ' + error.message);
+    }
+  }
+  window.openPrimaryAction = openPrimaryAction;
+
   document.addEventListener('DOMContentLoaded', function() {
     // Initialize AOS animations
     if (window.AOS) {
@@ -958,6 +1029,8 @@
     if (label) {
       if (tab === 'groups') {
         label.textContent = 'Create Group';
+      } else if (tab === 'profiles') {
+        label.textContent = 'Create Profile';
       } else if (tab === 'departments') {
         label.textContent = 'Add Department';
       } else {
@@ -966,8 +1039,60 @@
     }
 
     // Attach button and form handlers
-    document.getElementById('primaryActionBtn')?.addEventListener('click', () => openPrimaryAction());
-    document.getElementById('createGroupForm')?.addEventListener('submit', (e) => submitCreateGroup(e));
+    const primaryActionBtn = document.getElementById('primaryActionBtn');
+    if (primaryActionBtn) {
+      // Remove any existing onclick to avoid conflicts
+      primaryActionBtn.removeAttribute('onclick');
+      primaryActionBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Primary action button clicked via addEventListener, tab:', tab, 'manageUsersActiveTab:', window.manageUsersActiveTab);
+        if (typeof openPrimaryAction === 'function') {
+          openPrimaryAction();
+        } else {
+          console.error('openPrimaryAction function is not defined');
+          alert('Error: openPrimaryAction function not found. Please refresh the page.');
+        }
+      });
+      console.log('Primary action button handler attached successfully');
+    } else {
+      console.error('primaryActionBtn not found in DOM');
+    }
+    
+    // Attach form submission handlers
+    const createGroupForm = document.getElementById('createGroupForm');
+    const createGroupSubmitBtn = document.getElementById('createGroupSubmit');
+    
+    if (createGroupForm && createGroupSubmitBtn) {
+      // Attach submit handler to form
+      createGroupForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        console.log('createGroupForm submit event triggered');
+        if (typeof submitCreateGroup === 'function') {
+          submitCreateGroup(e);
+        } else {
+          console.error('submitCreateGroup function is not defined');
+          alert('Error: submitCreateGroup function not found. Please refresh the page.');
+        }
+      });
+      
+      // Also attach click handler to submit button as backup
+      createGroupSubmitBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        console.log('createGroupSubmit button clicked');
+        const form = document.getElementById('createGroupForm');
+        if (form) {
+          // Trigger form submit event
+          const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+          form.dispatchEvent(submitEvent);
+        }
+      });
+      
+      console.log('createGroupForm submit handler attached successfully');
+    } else {
+      console.error('createGroupForm or createGroupSubmitBtn not found in DOM', {createGroupForm: !!createGroupForm, createGroupSubmitBtn: !!createGroupSubmitBtn});
+    }
+    
     document.getElementById('inviteUserForm')?.addEventListener('submit', (e) => submitInviteUser(e));
     document.getElementById('editPermissionsForm')?.addEventListener('submit', (e) => handleEditPermissionsSubmit(e));
     document.getElementById('bulkEditPermissionsForm')?.addEventListener('submit', (e) => handleBulkEditPermissionsSubmit(e));
@@ -977,7 +1102,10 @@
 
   function showModal(id) {
     const modal = document.getElementById(id);
-    if (!modal) return;
+    if (!modal) {
+      console.error('Modal not found:', id);
+      return;
+    }
     const modalContent = modal.querySelector('[data-modal-content]');
 
     modal.classList.remove('hidden');
@@ -1045,8 +1173,97 @@
   }
 
   function openPrimaryAction() {
-    const tab = String(window.manageUsersActiveTab || 'all').trim().toLowerCase();
-    if (tab === 'groups') {
+    try {
+      const tab = String(window.manageUsersActiveTab || 'all').trim().toLowerCase();
+      console.log('openPrimaryAction: tab =', tab, 'manageUsersActiveTab =', window.manageUsersActiveTab);
+      
+      if (tab === 'profiles') {
+        // For profiles tab, create a new Django Group (role/profile)
+        // Reset form first
+        const form = document.getElementById('createGroupForm');
+        if (!form) {
+          console.error('createGroupForm not found');
+          return;
+        }
+        form.reset();
+        
+        // Update modal title and submit button text
+        const modalTitle = document.getElementById('createGroupTitle');
+        const submitBtn = document.getElementById('createGroupSubmit');
+        const nameLabel = document.querySelector('label[for="createGroupName"]');
+        const nameInput = document.getElementById('createGroupName');
+        const nameHint = document.getElementById('createGroupNameHint');
+        const descDiv = document.getElementById('createGroupDescriptionDiv');
+        const deptDiv = document.getElementById('createGroupDepartmentDiv');
+        const errorEl = document.getElementById('createGroupError');
+        const roleDiv = document.getElementById('createGroupRoleDiv');
+        const usersDiv = document.getElementById('createGroupUsersDiv');
+        
+        if (modalTitle) modalTitle.textContent = 'Create Profile';
+        if (submitBtn) submitBtn.textContent = 'Create Profile';
+        if (nameLabel) nameLabel.textContent = 'Profile Name';
+        if (nameInput) {
+          nameInput.placeholder = 'e.g. Managers, Supervisors';
+          nameInput.setAttribute('required', 'required');
+        }
+        if (nameHint) {
+          nameHint.textContent = 'This will create a new role/profile that can be assigned to users';
+        }
+        // Hide role selector and user selection for profiles (Django Groups don't need these)
+        if (roleDiv) roleDiv.style.display = 'none';
+        if (usersDiv) usersDiv.style.display = 'none';
+        // Hide description and department fields for profiles (Django Groups don't have these)
+        if (descDiv) descDiv.style.display = 'none';
+        if (deptDiv) deptDiv.style.display = 'none';
+        if (errorEl) {
+          errorEl.classList.add('hidden');
+          errorEl.textContent = '';
+        }
+        
+        // Show the modal
+        console.log('Calling showModal for createGroupModal');
+        showModal('createGroupModal');
+        return;
+      }
+      
+      if (tab === 'groups') {
+      // For groups tab, update modal title and submit button text
+      // Reset form first
+      const form = document.getElementById('createGroupForm');
+      if (form) form.reset();
+      
+      const modalTitle = document.getElementById('createGroupTitle');
+      const submitBtn = document.getElementById('createGroupSubmit');
+      const nameLabel = document.querySelector('label[for="createGroupName"]');
+      const nameInput = document.getElementById('createGroupName');
+      const nameHint = document.getElementById('createGroupNameHint');
+      const descDiv = document.getElementById('createGroupDescriptionDiv');
+      const deptDiv = document.getElementById('createGroupDepartmentDiv');
+      const errorEl = document.getElementById('createGroupError');
+      
+      if (modalTitle) modalTitle.textContent = 'Create Group';
+      if (submitBtn) submitBtn.textContent = 'Create Group';
+      if (nameLabel) nameLabel.textContent = 'Group Name';
+      if (nameInput) {
+        nameInput.placeholder = 'e.g. Floor Supervisors';
+        nameInput.setAttribute('required', 'required');
+      }
+      if (nameHint) {
+        nameHint.textContent = '';
+      }
+      // Show description and department fields for UserGroups
+      // Hide role selector and user selection for groups
+      const roleDiv = document.getElementById('createGroupRoleDiv');
+      const usersDiv = document.getElementById('createGroupUsersDiv');
+      if (roleDiv) roleDiv.style.display = 'none';
+      if (usersDiv) usersDiv.style.display = 'none';
+      if (descDiv) descDiv.style.display = 'block';
+      if (deptDiv) deptDiv.style.display = 'block';
+      if (errorEl) {
+        errorEl.classList.add('hidden');
+        errorEl.textContent = '';
+      }
+      
       showModal('createGroupModal');
       return;
     }
@@ -1059,8 +1276,15 @@
       }
       return;
     }
+    
+    // Default: open invite user modal
     openInviteUserModal();
+    } catch (error) {
+      console.error('Error in openPrimaryAction:', error);
+      alert('An error occurred while opening the modal: ' + error.message);
+    }
   }
+  window.openPrimaryAction = openPrimaryAction;
 
   function openInviteUserModal() {
     const form = document.getElementById('inviteUserForm');
@@ -1106,47 +1330,112 @@
 
   function submitCreateGroup(e) {
     e.preventDefault();
+    console.log('submitCreateGroup called');
     const btn = document.getElementById('createGroupSubmit');
     const form = e.target;
     const errorEl = document.getElementById('createGroupError');
-    const formData = new FormData(form);
-
-    if (!formData.get('name')?.trim()) {
-      errorEl.textContent = 'Group name is required.';
-      errorEl.classList.remove('hidden');
+    if (!errorEl) {
+      console.error('createGroupError element not found');
       return;
+    }
+    
+    const formData = new FormData(form);
+    const name = formData.get('name')?.trim();
+
+    if (!name) {
+      errorEl.textContent = 'Profile name is required.';
+      errorEl.classList.remove('hidden');
+      btn.disabled = false;
+      return;
+    }
+    
+    console.log('Form data:', {
+      name: name,
+      group_type: formData.get('group_type'),
+      tab: window.manageUsersActiveTab
+    });
+
+    // Determine group type based on active tab
+    const tab = String(window.manageUsersActiveTab || 'all').trim().toLowerCase();
+    console.log('Active tab:', tab);
+    
+    if (tab === 'profiles') {
+      // For profiles tab, create Django Group (only needs name)
+      formData.append('group_type', 'django_group');
+      console.log('Creating Django Group for profiles');
+    } else {
+      // For groups tab, create UserGroup
+      formData.append('group_type', 'user_group');
+      console.log('Creating UserGroup');
     }
 
     btn.disabled = true;
     btn.textContent = 'Creating...';
     errorEl.classList.add('hidden');
+    
+    console.log('Submitting form to:', '{% url "dashboard:group_create" %}');
+    console.log('FormData contents:', Array.from(formData.entries()));
 
     fetch('{% url "dashboard:group_create" %}', {
       method: 'POST',
-      headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Accept': 'application/json' },
+      headers: { 
+        'X-CSRFToken': getCookie('csrftoken'), 
+        'Accept': 'application/json'
+      },
       body: formData
     })
     .then(async response => {
-      const payload = await response.json().catch(() => ({}));
+      console.log('Response status:', response.status);
+      const payload = await response.json().catch((e) => {
+        console.error('Error parsing JSON:', e);
+        return { error: 'Failed to parse server response' };
+      });
+      
+      console.log('Response payload:', payload);
+      
       if (!response.ok) {
-        const msg = payload.errors ? Object.values(payload.errors).flat().join(', ') : payload.detail || 'Failed to create group.';
-        throw new Error(msg);
+        let errorMsg = 'Failed to create profile.';
+        if (payload.errors) {
+          // Handle field-specific errors
+          const errorMessages = Object.values(payload.errors).flat();
+          errorMsg = errorMessages.join(', ');
+        } else if (payload.error) {
+          errorMsg = payload.error;
+        } else if (payload.detail) {
+          errorMsg = payload.detail;
+        } else {
+          errorMsg = `Server error: ${response.status} ${response.statusText}`;
+        }
+        throw new Error(errorMsg);
+      }
+      return payload;
+    })
+    .then((data) => {
+      console.log('Success response:', data);
+      if (data.success) {
+        closeModal('createGroupModal');
+        const successMsg = tab === 'profiles' ? 'Profile created successfully!' : 'Group created successfully!';
+        showToast(successMsg, 'success');
+        // Reload page to show new profile
+        setTimeout(() => { window.location.reload(); }, 700);
+      } else {
+        throw new Error(data.error || 'Failed to create profile');
       }
     })
-    .then(() => {
-      closeModal('createGroupModal');
-      showToast('Group created successfully!', 'success');
-      setTimeout(() => { window.location.reload(); }, 700);
-    })
     .catch(err => {
-      errorEl.textContent = err.message;
+      console.error('Error creating profile:', err);
+      errorEl.textContent = err.message || 'An error occurred while creating the profile. Please try again.';
       errorEl.classList.remove('hidden');
+      // Scroll error into view
+      errorEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     })
     .finally(() => {
       btn.disabled = false;
-      btn.textContent = 'Create Group';
+      const tab = String(window.manageUsersActiveTab || 'all').trim().toLowerCase();
+      btn.textContent = tab === 'profiles' ? 'Create Profile' : 'Create Group';
     });
   }
+  window.submitCreateGroup = submitCreateGroup;
 
   function submitInviteUser(e) {
     e.preventDefault();

@@ -157,6 +157,14 @@ class UserProfileAdmin(admin.ModelAdmin):
     fields = ('user', 'full_name', 'department', 'title', 'phone', 'role', 'enabled', 'avatar_url', 'timezone')
 
 
+@admin.register(models.Section)
+class SectionAdmin(admin.ModelAdmin):
+    list_display = ('name', 'display_name', 'is_active', 'created_at')
+    search_fields = ('name', 'display_name', 'description')
+    list_filter = ('is_active', 'created_at')
+    fields = ('name', 'display_name', 'description', 'is_active')
+
+
 # Register proxies and models if not already registered
 # MasterUser proxy registration
 try:

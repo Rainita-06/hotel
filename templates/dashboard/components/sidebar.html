@@ -42,7 +42,8 @@
     </div>
 
     <!-- Management Section - Visible based on user permissions -->
-    {% if perms.dashboard.view_dashboard %}
+    {% load section_permissions %}
+    {% if user|has_section_permission:'dashboard.view' %}
     <div>
       <div
         class="px-3 py-1 text-gray-400 text-xs font-semibold tracking-tight"
@@ -50,7 +51,7 @@
         Management
       </div>
       <div class="space-y-1">
-        {% if perms.users.view_user %}
+        {% if user|has_section_permission:'users.view' %}
         <a
           href="{% url 'dashboard:manage_users' %}"
           class="flex items-center gap-3 px-3 py-2 rounded-lg {% if '/dashboard/manage-users' in request.path %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
@@ -64,7 +65,7 @@
         </a>
         {% endif %}
         
-        {% if perms.locations.view_location %}
+        {% if user|has_section_permission:'locations.view' %}
         {% with current=request.resolver_match.view_name %}
 <a
   href="{% url 'dashboard:locations' %}"
@@ -90,7 +91,9 @@
   <span class="font-medium">Locations</span>
 </a>
 {% endwith %}
-
+        {% endif %}
+        
+        {% if user|has_section_permission:'breakfast_voucher.view' %}
          {% with current=request.resolver_match.view_name %}
 <a
   href="{% url 'checkin_form' %}"
@@ -119,7 +122,7 @@
 {% endwith %}
         {% endif %}
         
-        {% if perms.tickets.view_servicerequest %}
+        {% if user|has_section_permission:'tickets.view' %}
         <a
            href="{% url 'dashboard:tickets' %}"
           class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:tickets' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
@@ -133,7 +136,7 @@
         </a>
         {% endif %}
         
-        {% if perms.requests.view_requesttype %}
+        {% if user|has_section_permission:'requests.view' %}
         <a
           href="{% url 'dashboard:configure_requests' %}"
           class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:configure_requests' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
@@ -147,7 +150,7 @@
         </a>
         {% endif %}
         
-        {% if perms.sla.view_slaconfiguration %}
+        {% if user|has_section_permission:'sla.view' %}
         <a
           href="{% url 'dashboard:sla_configuration' %}"
           class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:sla_configuration' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}">
@@ -160,7 +163,7 @@
         </a>
         {% endif %}
         
-        {% if perms.messaging.view_messaging %}
+        {% if user|has_section_permission:'messaging.view' %}
         <a
           href="{% url 'dashboard:messaging_setup' %}"
           class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:messaging_setup' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
@@ -174,7 +177,7 @@
         </a>
         {% endif %}
         
-        {% if perms.gym.view_gymmember %}
+        {% if user|has_section_permission:'gym.view' %}
        {% with current=request.resolver_match.view_name %}
 <a
   href="{% url 'member_list' %}"
@@ -205,7 +208,7 @@
 
         {% endif %}
         
-        {% if perms.integrations.view_integration %}
+        {% if user|has_section_permission:'integrations.view' %}
         <a
           href="{% url 'dashboard:integrations' %}"
           class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:integrations' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
@@ -228,7 +231,7 @@
     {% endif %}
 
     <!-- Analytics Section - Visible based on user permissions -->
-    {% if perms.analytics.view_analytics %}
+    {% if user|has_section_permission:'analytics.view' %}
     <div>
       <div
         class="px-3 py-1 text-gray-400 text-xs font-semibold tracking-tight"
@@ -247,7 +250,7 @@
           />
           <span class="font-medium">Analytics</span>
         </a>
-        {% if perms.performance.view_performance %}
+        {% if user|has_section_permission:'performance.view' %}
         <a
           href="{% url 'dashboard:performance' %}"
           class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:performance' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
@@ -260,7 +263,7 @@
           <span class="font-medium">Performance</span>
         </a>
         {% endif %}
-        {% if perms.feedback.view_review %}
+        {% if user|has_section_permission:'feedback.view' %}
         <a
           href="{% url 'dashboard:feedback_inbox' %}"
           class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:feedback_inbox' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"

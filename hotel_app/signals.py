@@ -14,6 +14,107 @@ def create_profile(sender, instance, created, **kwargs):
         UserProfile._default_manager.create(user=instance, full_name=instance.get_full_name() or instance.username)
 
 
+# Sync UserProfile role with Django Groups
+from django.contrib.auth.models import Group
+from django.db.models.signals import m2m_changed
+from .models import UserProfile
+
+# Thread-local storage to prevent infinite loops
+import threading
+_sync_lock = threading.local()
+
+def is_syncing():
+    """Check if we're currently syncing to prevent infinite loops"""
+    return getattr(_sync_lock, 'syncing', False)
+
+def set_syncing(value):
+    """Set sync flag to prevent infinite loops"""
+    _sync_lock.syncing = value
+
+@receiver(post_save, sender=UserProfile)
+def sync_userprofile_to_group(sender, instance, created, **kwargs):
+    """
+    Sync UserProfile role with Django auth.Group membership.
+    When a UserProfile's role changes, update the user's group membership.
+    """
+    # Prevent infinite loops
+    if is_syncing():
+        return
+        
+    try:
+        set_syncing(True)
+        user = instance.user
+        role = (instance.role or '').strip()
+        
+        if not role:
+            # Remove user from all groups if no role provided
+            user.groups.clear()
+            return
+        
+        # Get or create the group matching the profile role name
+        group, _ = Group.objects.get_or_create(name=role)
+        
+        # Remove user from all groups first, then add the single role group
+        user.groups.clear()
+        user.groups.add(group)
+            
+    except Exception as e:
+        # Don't break user creation if group sync fails
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f'Error syncing UserProfile to Group: {str(e)}', exc_info=True)
+    finally:
+        set_syncing(False)
+
+
+@receiver(m2m_changed, sender=User.groups.through)
+def sync_user_groups_to_profile(sender, instance, action, pk_set, **kwargs):
+    """
+    Sync Django Group membership back to UserProfile role.
+    When a user's group membership changes via m2m, update their UserProfile role.
+    This handles cases where groups are changed directly (e.g., via admin).
+    """
+    # Only handle post_add and post_remove actions
+    if action not in ['post_add', 'post_remove', 'post_clear']:
+        return
+        
+    # Prevent infinite loops
+    if is_syncing():
+        return
+        
+    try:
+        set_syncing(True)
+        # Only sync if user has a profile
+        if not hasattr(instance, 'userprofile'):
+            return
+        
+        profile = instance.userprofile
+        user = instance
+        
+        # Ensure user only belongs to a single group (primary role group)
+        user_groups = list(user.groups.all())
+        if user_groups:
+            primary_group = user_groups[0]
+            # Remove any additional groups beyond the first
+            for extra_group in user_groups[1:]:
+                user.groups.remove(extra_group)
+            new_role = primary_group.name
+        else:
+            primary_group = None
+            new_role = ''
+        
+        if profile.role != new_role:
+            UserProfile.objects.filter(pk=profile.pk).update(role=new_role)
+                
+    except Exception as e:
+        # Don't break user creation if profile sync fails
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f'Error syncing User groups to UserProfile: {str(e)}', exc_info=True)
+    finally:
+        set_syncing(False)
+
+
 # Audit logging for create/update/delete
 from django.db.models.signals import post_delete, post_save
 from django.apps import apps

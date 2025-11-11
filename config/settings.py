@@ -98,7 +98,11 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
+<<<<<<< Updated upstream
         'ENGINE': 'django.db.backends.mysql',
+=======
+        'ENGINE': 'mysql.connector.django',
+>>>>>>> Stashed changes
         'NAME': os.environ.get('DB_NAME', 'hotel'),
         'USER': os.environ.get('DB_USER', 'root'),
         'PASSWORD': os.environ.get('DB_PASSWORD', ''),
