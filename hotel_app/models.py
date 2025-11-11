@@ -14,38 +14,33 @@ User = get_user_model()
 from django.contrib.auth.models import User
 class Department(models.Model):
     department_id = models.BigAutoField(primary_key=True)
-    name = models.CharField(max_length=100,blank=False, null=False)   # updated (was 120)
+    name = models.CharField(max_length=100, blank=False, null=False)   # updated (was 120)
     description = models.CharField(max_length=255, null=True, blank=True)  
-    # lead = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)       # added
+    lead = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)       # added
     name = models.CharField(max_length=120, unique=True)
     description = models.TextField(blank=True, null=True)
     logo = models.ImageField(upload_to='department_logos/', blank=True, null=True)
 
     class Meta:
-        db_table = 'department'
+        db_table = 'Department'
+        
     def __str__(self):
-        return self.name
+        return str(self.name)
 
     @property
     def total_users(self):
         return User.objects.filter(department=self).count() 
+        
     def get_logo_url(self):
         """Get the logo URL for this department, handling both old and new storage methods"""
         if self.logo:
             # Check if it's a new-style logo (stored in department directory)
-            if f'departments/{self.pk}/' in self.logo.name:
+            if self.logo.name and f'departments/{self.pk}/' in self.logo.name:
                 return self.logo.url
             else:
                 # Old-style logo, return as is
                 return self.logo.url
         return None 
-# class Department(models.Model):
-#     name = models.CharField(max_length=120, unique=True)
-#     description = models.TextField(blank=True, null=True)
-
-#     def __str__(self):
-#         return str(self.name)
-
 
 class Checklist(models.Model):
     checklist_id = models.BigAutoField(primary_key=True)

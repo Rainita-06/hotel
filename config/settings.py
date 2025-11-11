@@ -98,18 +98,19 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get('DB_NAME', 'hotel'),
+        'ENGINE': 'mysql.connector.django',
+        'NAME': os.environ.get('DB_NAME', 'temp'),
         'USER': os.environ.get('DB_USER', 'root'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'root'),
         'HOST': os.environ.get('DB_HOST', '127.0.0.1'),
         'PORT': os.environ.get('DB_PORT', '3306'),
         'OPTIONS': {
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            'autocommit': True,
+            'use_unicode': True,
             'charset': 'utf8mb4',
         },
         'TEST': {
-            'NAME': 'hotell',
+            'NAME': 'hotel',
         }
     }
 }
