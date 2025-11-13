@@ -339,6 +339,80 @@ class TwilioService:
         """
         return self.send_whatsapp_message(to_number=to_number, body=body)
     
+    def send_button_message(self, to_number, body_text, buttons, fallback_text=None):
+        """
+        Send an interactive button message. Falls back to plain text if interactive
+        messages are not supported or fail.
+        """
+        if not buttons:
+            return self.send_text_message(to_number, fallback_text or body_text)
+        
+        formatted_to = self._format_whatsapp_number(to_number)
+        if self.whatsapp_from:
+            from_number = (
+                self.whatsapp_from.replace('whatsapp:', '')
+                if self.whatsapp_from.startswith('whatsapp:')
+                else self.whatsapp_from
+            )
+            formatted_from = self._format_whatsapp_number(from_number)
+        else:
+            formatted_from = self.whatsapp_from
+        
+        interactive_buttons = []
+        for idx, button in enumerate(buttons):
+            reply_id = str(
+                button.get("payload")
+                or button.get("id")
+                or f"option_{idx + 1}"
+            )
+            title = button.get("title") or f"Option {idx + 1}"
+            interactive_buttons.append(
+                {
+                    "type": "reply",
+                    "reply": {
+                        "id": reply_id[:128],
+                        "title": title[:24],
+                    },
+                }
+            )
+        
+        interactive_payload = {
+            "type": "button",
+            "body": {"text": body_text},
+            "action": {"buttons": interactive_buttons},
+        }
+        
+        try:
+            client = self._ensure_client()
+            if client and self.is_configured():
+                message = client.messages.create(
+                    from_=formatted_from,
+                    to=formatted_to,
+                    interactive=interactive_payload,
+                    body=fallback_text or body_text,
+                )
+                logger.info(
+                    "Interactive WhatsApp message sent to %s (SID: %s)",
+                    formatted_to,
+                    message.sid,
+                )
+                return {
+                    "success": True,
+                    "message_id": message.sid,
+                    "status": message.status,
+                    "to": message.to,
+                    "from": message.from_,
+                }
+        except Exception as exc:
+            logger.error(
+                "Failed to send interactive WhatsApp message to %s: %s",
+                formatted_to,
+                exc,
+            )
+            return {"success": False, "error": str(exc)}
+        
+        return self._mock_send_buttons(formatted_to, body_text, interactive_buttons)
+    
     def is_configured(self):
         """
         Check if Twilio service is properly configured
@@ -351,6 +425,26 @@ class TwilioService:
             or (self.account_sid and self.api_key_sid and self.api_key_secret)
         )
         return bool(credentials_ready and self.whatsapp_from)
+
+    def _mock_send_buttons(self, to_number, body_text, buttons):
+        """Mock interactive button sending for development environments."""
+        import uuid
+        titles = [
+            btn.get("reply", {}).get("title")
+            for btn in buttons
+        ]
+        logger.info(
+            "MOCK: Sending button message to %s: %s -> %s",
+            to_number,
+            body_text,
+            titles,
+        )
+        return {
+            "success": True,
+            "message_id": str(uuid.uuid4()),
+            "type": "interactive",
+            "to": to_number,
+        }
 
 # Global service instance (will be initialized even if not configured)
 twilio_service = TwilioService()

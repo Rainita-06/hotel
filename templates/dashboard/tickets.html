@@ -31,6 +31,54 @@
     #expandedDepartments .dept-card-expanded {
         opacity: 0;
     }
+
+    .tickets-table-wrapper {
+        max-width: 100%;
+        overflow-x: auto;
+    }
+
+    .tickets-table-wrapper table {
+        width: 100%;
+        border-collapse: separate;
+        table-layout: fixed;
+    }
+
+    .tickets-table-wrapper th,
+    .tickets-table-wrapper td {
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    .tickets-table-wrapper .message-cell div {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+.autocomplete-list {
+    position: absolute;
+    z-index: 50;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 0.5rem;
+    margin-top: 0.25rem;
+    max-height: 12rem;
+    overflow-y: auto;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+}
+
+.autocomplete-item {
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+}
+
+.autocomplete-item:hover {
+    background: #eff6ff;
+}
 </style>
 {% endblock extra_css %}
 
@@ -198,7 +246,9 @@
                             <th scope="col" class="p-4 text-left"><input autocomplete="off" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500"></th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Ticket ID</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Priority</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Subject</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Department</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Request Type</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Priority</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Owner</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">SLA %</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
@@ -209,18 +259,34 @@
                         {% for ticket in tickets %}
                         <tr>
                             <td class="p-4"><input autocomplete="off" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500"></td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{{ ticket.id }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4 text-sm font-medium text-gray-900">#{{ ticket.id }}</td>
+                            <td class="px-6 py-4">
                                 <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-{{ ticket.priority_color }}-100 text-{{ ticket.priority_color }}-700">{{ ticket.get_priority_display }}</span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ ticket.request_type.name }}{% if ticket.location %} - {{ ticket.location }}{% endif %}</td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4 text-sm text-gray-900">
+                                {% if ticket.department %}
+                                    {{ ticket.department.name }}
+                                {% elif ticket.request_type and ticket.request_type.default_department %}
+                                    {{ ticket.request_type.default_department.name }}
+                                {% else %}
+                                    <span class="text-gray-400">Not Assigned</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-900 break-words">
+                                <div class="flex flex-col">
+                                    <span>{{ ticket.request_type.name|default:"General Request" }}</span>
+                                    {% if ticket.location %}
+                                        <span class="text-xs text-gray-500 mt-1">{{ ticket.location }}</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
                                 <div class="flex items-center">
                                     <img class="w-6 h-6 rounded-full" src="{{ ticket.assignee_user.profile.avatar.url|default:'/static/images/default_avatar.png' }}" alt="Avatar">
                                     <div class="ml-3 text-sm text-gray-900">{% if ticket.assignee_user %}{{ ticket.assignee_user.get_full_name|default:ticket.assignee_user.username }}{% else %}Unassigned{% endif %}</div>
                                 </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4">
                                 <div class="flex items-center gap-2">
                                     {% if ticket.response_sla_breached or ticket.resolution_sla_breached %}
                                         <span class="px-2 py-1 text-xs font-medium text-white bg-red-500 rounded-full">Breached</span>
@@ -230,10 +296,10 @@
                                     <span class="text-sm text-gray-500">{{ ticket.get_time_left }}</span>
                                 </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4">
                                 <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-{{ ticket.status_color }}-100 text-{{ ticket.status_color }}-700">{{ ticket.get_status_display }}</span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <td class="px-6 py-4 text-sm">
                                 <div class="flex items-center">
                                     <a href="{% url 'dashboard:ticket_detail' ticket.id %}" class="p-2 rounded-lg text-gray-500 hover:bg-sky-100 hover:text-sky-600 transition-colors duration-200">
                                         <img src="{% static 'images/tickets/eye.svg' %}" alt="View ticket" class="w-6 h-6">
@@ -243,7 +309,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="8" class="px-6 py-4 text-center text-gray-500">
+                            <td colspan="9" class="px-6 py-4 text-center text-gray-500">
                                 No tickets found matching your criteria.
                             </td>
                         </tr>
@@ -293,7 +359,14 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label for="guestName" class="block text-sm font-medium text-gray-700 mb-1">Guest Name</label>
-                        <div class="relative"><div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><img src="{% static 'images/tickets/guest.svg' %}" alt="Guest Icon" class="h-5 w-5 text-gray-400" /></div><input autocomplete="off" type="text" id="guestName" placeholder="Enter guest name" class="w-full h-11 pl-10 pr-4 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500"></div>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <img src="{% static 'images/tickets/guest.svg' %}" alt="Guest Icon" class="h-5 w-5 text-gray-400" />
+                            </div>
+                            <input autocomplete="off" type="text" id="guestName" placeholder="Search guest name..." class="w-full h-11 pl-10 pr-4 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                            <input type="hidden" id="guestId" value="">
+                            <div id="guestSuggestions" class="absolute z-20 mt-1 w-full bg-white shadow-lg rounded-md hidden max-h-60 overflow-auto border border-gray-200"></div>
+                        </div>
                     </div>
                     <div>
                         <label for="roomNumber" class="block text-sm font-medium text-gray-700 mb-1">Room Number</label>
@@ -344,8 +417,8 @@
             <h2 class="text-gray-900 text-lg font-semibold font-['Inter']">Unmatched Requests Review</h2>
             <span class="px-3 py-1 text-sm font-medium text-yellow-800 bg-yellow-100 rounded-full">{{ unmatched_requests|length }} pending</span>
         </div>
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
+        <div class="tickets-table-wrapper overflow-x-auto">
+            <table class="w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Phone</th>
@@ -354,42 +427,65 @@
                         <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Received</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Department</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Request Type</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Priority</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Match Status</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     {% for unmatched in unmatched_requests %}
                     <tr id="unmatched-row-{{ unmatched.id }}">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ unmatched.phone_number }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {{ unmatched.guest.full_name|default:"Unknown" }}
+                        <td class="px-6 py-4 align-top text-sm text-gray-900 break-words">{{ unmatched.phone_number }}</td>
+                        <td class="px-6 py-4 align-top text-sm text-gray-900 break-words">
+                            {{ unmatched.display_guest_name }}
                         </td>
-                        <td class="px-6 py-4 text-sm text-gray-900 max-w-xs">
-                            <div class="truncate" title="{{ unmatched.message_body }}">{{ unmatched.message_body|truncatewords:10 }}</div>
+                        <td class="px-6 py-4 align-top text-sm text-gray-900 break-words message-cell">
+                            <div title="{{ unmatched.message_body }}">{{ unmatched.message_body }}</div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td class="px-6 py-4 align-top text-sm text-gray-500">
                             {{ unmatched.received_at|date:"M d, Y H:i" }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <select id="dept-{{ unmatched.id }}" class="text-sm border border-gray-300 rounded px-2 py-1">
+                        <td class="px-6 py-4 align-top">
+                            <select id="dept-{{ unmatched.id }}" class="text-sm border border-gray-300 rounded px-2 py-1 w-full"
+                                    data-unmatched-id="{{ unmatched.id }}"
+                                    data-preselected="{{ unmatched.preselected_department_id|default:'' }}">
                                 <option value="">Select Department</option>
                                 {% for dept in all_departments %}
-                                <option value="{{ dept.id }}" {% if unmatched.department_id == dept.id %}selected{% endif %}>{{ dept.name }}</option>
+                                <option value="{{ dept.id }}" {% if unmatched.preselected_department_id == dept.id %}selected{% endif %}>{{ dept.name }}</option>
                                 {% endfor %}
                             </select>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <select id="reqtype-{{ unmatched.id }}" class="text-sm border border-gray-300 rounded px-2 py-1">
+                        <td class="px-6 py-4 align-top">
+                            <select id="reqtype-{{ unmatched.id }}"
+                                    class="text-sm border border-gray-300 rounded px-2 py-1 w-full"
+                                    data-unmatched-id="{{ unmatched.id }}"
+                                    data-preselected="{{ unmatched.preselected_request_type_id|default:'' }}"
+                                    data-preselected-name="{{ unmatched.preselected_request_type_name|default:'' }}">
                                 <option value="">Select Request Type</option>
-                                {% for rt in all_request_types %}
-                                <option value="{{ rt.id }}" {% if unmatched.request_type_id == rt.id %}selected{% endif %}>{{ rt.name }}</option>
-                                {% endfor %}
                             </select>
-                            <input type="text" id="new-reqtype-{{ unmatched.id }}" placeholder="Or create new..." class="text-sm border border-gray-300 rounded px-2 py-1 mt-1 w-full hidden">
+                            {% if unmatched.matched_keywords_display %}
+                            <div class="mt-1 text-xs text-gray-500">Keywords: {{ unmatched.matched_keywords_display|join:", " }}</div>
+                            {% endif %}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        <td class="px-6 py-4 align-top">
+                            <select id="priority-{{ unmatched.id }}"
+                                    class="text-sm border border-gray-300 rounded px-2 py-1 w-full"
+                                    data-default-priority="{{ unmatched.default_priority|default:'Medium' }}"
+                                    data-unmatched-id="{{ unmatched.id }}">
+                                <option value="Critical">Critical</option>
+                                <option value="High">High</option>
+                                <option value="Medium">Medium</option>
+                                <option value="Low">Low</option>
+                            </select>
+                        </td>
+                        <td class="px-6 py-4 align-top">
+                            <span class="inline-flex items-center justify-center px-3 py-1 text-xs font-semibold rounded-full {{ unmatched.status_class }}">
+                                {{ unmatched.status_label }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 align-top text-sm">
                             <button onclick="resolveUnmatched({{ unmatched.id }})" class="px-3 py-1 bg-sky-600 text-white rounded hover:bg-sky-700 text-sm">
-                                Resolve
+                                Submit
                             </button>
                         </td>
                     </tr>
@@ -693,7 +789,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 department: document.getElementById('department').value, 
                 category: selectedRequestType ? selectedRequestType.name : '', 
                 priority: selectedPriority, 
-                description: document.getElementById('description').value.trim() 
+                description: document.getElementById('description').value.trim(),
+                guest_id: document.getElementById('guestId').value || null 
             }; 
             if (!ticketData.guest_name || !ticketData.room_number || !ticketData.department || !ticketData.category || !ticketData.priority) { 
                 // Use toast notification instead of alert
@@ -741,32 +838,371 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // --- UNMATCHED REQUESTS RESOLUTION ---
-    function resolveUnmatched(unmatchedId) {
+    const requestTypesByDepartment = JSON.parse('{{ request_types_by_department_json|escapejs }}');
+    
+    console.log('Request Types by Department:', requestTypesByDepartment);
+
+    const requestTypesIndex = (() => {
+        const map = new Map();
+        Object.values(requestTypesByDepartment || {}).forEach(list => {
+            (list || []).forEach(rt => {
+                const key = String(rt.id);
+                if (!map.has(key)) {
+                    map.set(key, rt);
+                }
+            });
+        });
+        return map;
+    })();
+    const allRequestTypes = Array.from(requestTypesIndex.values());
+
+    const departmentRequestTypes = (() => {
+        const map = new Map();
+        // Use the data directly from requestTypesByDepartment (already grouped by dept)
+        Object.keys(requestTypesByDepartment || {}).forEach(deptId => {
+            const rtList = requestTypesByDepartment[deptId] || [];
+            map.set(deptId, rtList);
+        });
+        return map;
+    })();
+    
+    console.log('Department Request Types Map:', departmentRequestTypes);
+
+    function getRequestTypesForDepartment(departmentId) {
+        if (!departmentId) {
+            return [];
+        }
+        const key = String(departmentId);
+        const matches = departmentRequestTypes.get(key);
+        console.log(`Getting request types for department ${departmentId}:`, matches);
+        if (matches && matches.length) {
+            return matches;
+        }
+        return [];
+    }
+
+    function populateRequestTypeSelect(unmatchedId, { preservePreselection = false } = {}) {
         const deptSelect = document.getElementById(`dept-${unmatchedId}`);
         const reqTypeSelect = document.getElementById(`reqtype-${unmatchedId}`);
-        const newReqTypeInput = document.getElementById(`new-reqtype-${unmatchedId}`);
+        if (!reqTypeSelect) {
+            console.warn(`Request type select not found for unmatched ${unmatchedId}`);
+            return;
+        }
+
+        const preselectedName = reqTypeSelect.dataset.preselectedName || '';
+
+        // Only restore preselected department if we're on initial load and department hasn't been selected
+        if (deptSelect && preservePreselection) {
+            const preselectedDept = deptSelect.dataset.preselected;
+            // Only set if there's a preselection AND the dropdown is still empty
+            if (preselectedDept && !deptSelect.value) {
+                deptSelect.value = preselectedDept;
+                console.log(`Set preselected department ${preselectedDept} for unmatched ${unmatchedId}`);
+            }
+        }
+
+        const departmentId = deptSelect ? deptSelect.value : '';
+        console.log(`Populating request types for unmatched ${unmatchedId}, department: ${departmentId}`);
         
-        const departmentId = deptSelect.value;
-        const requestTypeId = reqTypeSelect.value;
-        const newRequestTypeName = newReqTypeInput ? newReqTypeInput.value.trim() : '';
+        const preselectedValue = reqTypeSelect.dataset.preselected || '';
+        const currentValue = preservePreselection
+            ? (preselectedValue || reqTypeSelect.value)
+            : reqTypeSelect.value;
+
+        // Enable request type select only if department is selected
+        const hasDepartment = Boolean(departmentId);
+        reqTypeSelect.innerHTML = '<option value="">Select Request Type</option>';
         
-        if (!departmentId) {
+        if (!hasDepartment) {
+            reqTypeSelect.disabled = true;
+            reqTypeSelect.classList.add('cursor-not-allowed', 'opacity-60');
+            console.log(`Request type select disabled - no department selected`);
+        } else {
+            reqTypeSelect.disabled = false;
+            reqTypeSelect.classList.remove('cursor-not-allowed', 'opacity-60');
+            console.log(`Request type select enabled for department ${departmentId}`);
+        }
+        
+        const options = getRequestTypesForDepartment(departmentId);
+        console.log(`Found ${options.length} request types for department ${departmentId}`);
+
+        const seenOptionIds = new Set();
+        options.forEach(rt => {
+            if (!rt) {
+                return;
+            }
+            const optionId = String(rt.id);
+            if (seenOptionIds.has(optionId)) {
+                return;
+            }
+            seenOptionIds.add(optionId);
+            const option = document.createElement('option');
+            option.value = optionId;
+            option.textContent = rt.name;
+            reqTypeSelect.appendChild(option);
+        });
+
+        const ensureOptionPresent = (value, label) => {
+            if (!value) {
+                return;
+            }
+            if (!reqTypeSelect.querySelector(`option[value="${value}"]`)) {
+                const fallbackOption = document.createElement('option');
+                fallbackOption.value = value;
+                fallbackOption.textContent = label || `Request #${value}`;
+                reqTypeSelect.appendChild(fallbackOption);
+            }
+        };
+
+        if (currentValue && reqTypeSelect.querySelector(`option[value="${currentValue}"]`)) {
+            reqTypeSelect.value = currentValue;
+        } else if (preselectedValue && reqTypeSelect.querySelector(`option[value="${preselectedValue}"]`)) {
+            reqTypeSelect.value = preselectedValue;
+        } else if (preselectedValue && preselectedName) {
+            ensureOptionPresent(preselectedValue, preselectedName);
+            reqTypeSelect.value = preselectedValue;
+        } else {
+            reqTypeSelect.value = '';
+        }
+
+        // Keep dataset in sync with the currently selected option
+        reqTypeSelect.dataset.preselected = reqTypeSelect.value || '';
+        const selectedOption = reqTypeSelect.options[reqTypeSelect.selectedIndex];
+        reqTypeSelect.dataset.preselectedName = selectedOption ? selectedOption.textContent : '';
+    }
+
+    function autoAssignDepartmentForRequestType(unmatchedId) {
+        const deptSelect = document.getElementById(`dept-${unmatchedId}`);
+        const reqTypeSelect = document.getElementById(`reqtype-${unmatchedId}`);
+        if (!deptSelect || !reqTypeSelect) {
+            return;
+        }
+
+        const selectedId = reqTypeSelect.value;
+        if (!selectedId) {
+            return;
+        }
+
+        const meta = requestTypesIndex.get(String(selectedId));
+        if (!meta || !meta.default_department_id) {
+            return;
+        }
+
+        const suggestedDeptId = String(meta.default_department_id);
+        const userSelected = deptSelect.dataset.userSelected === 'true';
+
+        if (!deptSelect.value || (!userSelected && deptSelect.value !== suggestedDeptId)) {
+            deptSelect.value = suggestedDeptId;
+            deptSelect.dataset.preselected = suggestedDeptId;
+            deptSelect.dataset.userSelected = 'false';
+            populateRequestTypeSelect(unmatchedId, { preservePreselection: true });
+        }
+    }
+
+    function initialiseUnmatchedRow(unmatchedId) {
+        const deptSelect = document.getElementById(`dept-${unmatchedId}`);
+        const reqTypeSelect = document.getElementById(`reqtype-${unmatchedId}`);
+        const prioritySelect = document.getElementById(`priority-${unmatchedId}`);
+
+        // Initialize priority dropdown
+        if (prioritySelect) {
+            const defaultPriority = prioritySelect.dataset.defaultPriority || 'Normal';
+            prioritySelect.value = defaultPriority;
+        }
+
+        // Set up department select tracking
+        if (deptSelect) {
+            // Only mark as preselected if it has a value from server
+            if (deptSelect.value) {
+                deptSelect.dataset.userSelected = 'false'; // Server-set, not user-set
+            } else {
+                deptSelect.dataset.userSelected = 'false';
+            }
+            
+            deptSelect.addEventListener('change', () => {
+                // User manually changed department
+                deptSelect.dataset.userSelected = 'true';
+                deptSelect.dataset.preselected = deptSelect.value || '';
+                // Clear request type selection when department changes
+                if (reqTypeSelect) {
+                    reqTypeSelect.dataset.preselected = '';
+                    reqTypeSelect.dataset.preselectedName = '';
+                }
+                populateRequestTypeSelect(unmatchedId);
+            });
+        }
+
+        // Set up request type select tracking
+        if (reqTypeSelect) {
+            reqTypeSelect.addEventListener('change', () => {
+                reqTypeSelect.dataset.preselected = reqTypeSelect.value;
+                const currentOption = reqTypeSelect.options[reqTypeSelect.selectedIndex];
+                reqTypeSelect.dataset.preselectedName = currentOption ? currentOption.textContent : '';
+                // Don't auto-assign department if user has manually selected one
+                if (deptSelect && deptSelect.dataset.userSelected !== 'true') {
+                    autoAssignDepartmentForRequestType(unmatchedId);
+                }
+            });
+        }
+
+        // Now populate with initial values
+        populateRequestTypeSelect(unmatchedId, { preservePreselection: true });
+    }
+
+    document.querySelectorAll('select[id^="reqtype-"]').forEach(select => {
+        const unmatchedId = select.dataset.unmatchedId;
+        if (unmatchedId) {
+            initialiseUnmatchedRow(unmatchedId);
+        }
+    });
+
+    // --- GUEST AUTOCOMPLETE FOR MANUAL TICKET CREATION ---
+    const guestNameInput = document.getElementById('guestName');
+    const guestSuggestions = document.getElementById('guestSuggestions');
+    const guestIdInput = document.getElementById('guestId');
+    const roomNumberInput = document.getElementById('roomNumber');
+
+    function clearGuestSelection() {
+        if (guestIdInput) {
+            guestIdInput.value = '';
+        }
+    }
+
+    function hideGuestSuggestions() {
+        if (guestSuggestions) {
+            guestSuggestions.innerHTML = '';
+            guestSuggestions.classList.add('hidden');
+        }
+    }
+
+    function populateGuestSuggestions(items) {
+        if (!guestSuggestions) {
+            return;
+        }
+        guestSuggestions.innerHTML = '';
+        if (!items.length) {
+            hideGuestSuggestions();
+            return;
+        }
+
+        items.forEach(item => {
+            const option = document.createElement('div');
+            option.className = 'px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm flex flex-col';
+            option.innerHTML = `
+                <span class="font-medium text-gray-900">${item.name}</span>
+                <span class="text-xs text-gray-500">${item.room_number ? `Room ${item.room_number}` : 'No room on file'}</span>
+            `;
+            option.addEventListener('click', () => {
+                guestNameInput.value = item.name;
+                if (guestIdInput) {
+                    guestIdInput.value = item.id;
+                }
+                if (roomNumberInput) {
+                    if (item.room_number) {
+                        roomNumberInput.value = item.room_number;
+                    }
+                    roomNumberInput.dataset.userEdited = 'false';
+                }
+                hideGuestSuggestions();
+            });
+            guestSuggestions.appendChild(option);
+        });
+
+        guestSuggestions.classList.remove('hidden');
+    }
+
+    function fetchGuestSuggestions(query) {
+        const url = `{% url 'dashboard:api_search_guests' %}?q=${encodeURIComponent(query)}`;
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    populateGuestSuggestions(data.results || []);
+                } else {
+                    hideGuestSuggestions();
+                }
+            })
+            .catch(() => hideGuestSuggestions());
+    }
+
+    if (roomNumberInput && !roomNumberInput.dataset.userEdited) {
+        roomNumberInput.dataset.userEdited = 'false';
+    }
+
+    if (guestNameInput) {
+        guestNameInput.addEventListener('input', () => {
+            clearGuestSelection();
+            const query = guestNameInput.value.trim();
+            if (roomNumberInput && !roomNumberInput.dataset.userEdited) {
+                roomNumberInput.value = '';
+            }
+            if (query.length < 2) {
+                hideGuestSuggestions();
+                return;
+            }
+            fetchGuestSuggestions(query);
+        });
+
+        guestNameInput.addEventListener('focus', () => {
+            const query = guestNameInput.value.trim();
+            if (query.length >= 2) {
+                fetchGuestSuggestions(query);
+            }
+        });
+    }
+
+    document.addEventListener('click', (event) => {
+        if (guestSuggestions && !guestSuggestions.contains(event.target) && event.target !== guestNameInput) {
+            hideGuestSuggestions();
+        }
+    });
+
+    if (roomNumberInput) {
+        roomNumberInput.addEventListener('input', () => {
+            roomNumberInput.dataset.userEdited = 'true';
+            clearGuestSelection();
+        });
+    }
+
+    window.resolveUnmatched = function(unmatchedId) {
+        const deptSelect = document.getElementById(`dept-${unmatchedId}`);
+        const reqTypeSelect = document.getElementById(`reqtype-${unmatchedId}`);
+        const prioritySelect = document.getElementById(`priority-${unmatchedId}`);
+
+        let departmentId = deptSelect ? (deptSelect.value || '') : '';
+        const rawRequestTypeId = reqTypeSelect ? (reqTypeSelect.value || '') : '';
+        const selectedPriority =
+            prioritySelect && prioritySelect.value ? prioritySelect.value : 'Medium';
+
+        const requestTypeMeta = rawRequestTypeId ? requestTypesIndex.get(String(rawRequestTypeId)) : null;
+        if (!departmentId && requestTypeMeta && requestTypeMeta.default_department_id) {
+            departmentId = String(requestTypeMeta.default_department_id);
+            if (deptSelect) {
+                deptSelect.value = departmentId;
+                deptSelect.dataset.preselected = departmentId;
+                deptSelect.dataset.userSelected = 'false';
+            }
+        }
+
+        const requestTypeId = rawRequestTypeId ? parseInt(rawRequestTypeId, 10) : null;
+        const departmentIdInt = departmentId ? parseInt(departmentId, 10) : NaN;
+
+        if (!departmentId || Number.isNaN(departmentIdInt)) {
             showToast('Please select a department', 'error');
             return;
         }
-        
-        if (!requestTypeId && !newRequestTypeName) {
-            showToast('Please select a request type or create a new one', 'error');
+
+        if (!requestTypeId) {
+            showToast('Please select a request type', 'error');
             return;
         }
-        
+
         const data = {
-            department_id: parseInt(departmentId),
-            request_type_id: requestTypeId ? parseInt(requestTypeId) : null,
-            new_request_type_name: newRequestTypeName,
-            new_keyword: newRequestTypeName ? newRequestTypeName.toLowerCase() : ''
+            department_id: departmentIdInt,
+            request_type_id: requestTypeId || null,
+            priority: selectedPriority
         };
-        
+
         fetch(`{% url 'dashboard:api_resolve_unmatched_request' 0 %}`.replace('0', unmatchedId), {
             method: 'POST',
             headers: {
@@ -778,8 +1214,13 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                showToast('Unmatched request resolved and ticket created successfully!', 'success');
-                // Remove the row
+                const ticketMessage = data.ticket_id
+                    ? `Ticket #${data.ticket_id} created.`
+                    : 'Ticket created.';
+                const notificationMessage = data.guest_notified === false
+                    ? ' Guest notification could not be sent.'
+                    : ' Guest has been notified.';
+                showToast(`${ticketMessage}${notificationMessage}`, data.guest_notified === false ? 'warning' : 'success');
                 const row = document.getElementById(`unmatched-row-${unmatchedId}`);
                 if (row) {
                     row.style.opacity = '0';
@@ -793,21 +1234,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error:', error);
             showToast('An error occurred. Please try again.', 'error');
         });
-    }
-    
-    // Show/hide new request type input when "Or create new..." is needed
-    document.querySelectorAll('[id^="reqtype-"]').forEach(select => {
-        select.addEventListener('change', function() {
-            const unmatchedId = this.id.replace('reqtype-', '');
-            const newInput = document.getElementById(`new-reqtype-${unmatchedId}`);
-            if (this.value === '' && newInput) {
-                newInput.classList.remove('hidden');
-            } else if (newInput) {
-                newInput.classList.add('hidden');
-                newInput.value = '';
-            }
-        });
-    });
+    };
 });
 </script>
 {% endblock extra_js %}

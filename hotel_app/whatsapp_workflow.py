@@ -67,12 +67,7 @@ class DetectedRequest:
 class WhatsAppWorkflow:
     """Central handler for WhatsApp message flows."""
 
-    MENU_MESSAGE_BASE = (
-        "Please choose an option:\n"
-        "1. Raise a Service Request\n"
-        "2. Check My Request Status"
-    )
-    MENU_FEEDBACK_SUFFIX = "\n3. Give Feedback"
+    MENU_MESSAGE_PROMPT = "Please choose one of the options below:"
 
     UNKNOWN_GUEST_MESSAGE = (
         "Hi! We couldn’t find a booking linked to this number. "
@@ -82,8 +77,7 @@ class WhatsAppWorkflow:
         "Please describe your issue (for example: 'Need housekeeping', 'TV not working', etc.)"
     )
     UNMATCHED_CONFIRMATION = (
-        "Thanks for sharing. We could not automatically classify this request, "
-        "so our team will review and assist you shortly."
+        "We are working on your request. Our team will assist you shortly."
     )
     INVALID_OPTION_MESSAGE = "Sorry, I didn’t understand that. Please choose an option from the menu."
     EMPTY_MESSAGE_PROMPT = (
@@ -217,11 +211,35 @@ class WhatsAppWorkflow:
         except Exception:
             logger.exception("Failed to log outbound WhatsApp message.")
 
-    def _menu_message(self, guest_status: str) -> str:
-        menu = self.MENU_MESSAGE_BASE
+    def _menu_message(self, guest_status: str):
+        buttons = [
+            {"id": "MENU_RAISE_REQUEST", "title": "Raise a Request", "payload": "1"},
+            {"id": "MENU_CHECK_STATUS", "title": "Check Request Status", "payload": "2"},
+        ]
         if guest_status == WhatsAppConversation.GUEST_STATUS_CHECKED_OUT:
-            menu += self.MENU_FEEDBACK_SUFFIX
-        return menu
+            buttons.append(
+                {"id": "MENU_FEEDBACK", "title": "Give Feedback", "payload": "3"}
+            )
+
+        button_titles = [button["title"] for button in buttons]
+        if not button_titles:
+            fallback = self.MENU_MESSAGE_PROMPT
+        elif len(button_titles) == 1:
+            fallback = f"{self.MENU_MESSAGE_PROMPT} {button_titles[0]}."
+        elif len(button_titles) == 2:
+            fallback = f"{self.MENU_MESSAGE_PROMPT} {button_titles[0]} or {button_titles[1]}."
+        else:
+            fallback = (
+                f"{self.MENU_MESSAGE_PROMPT} "
+                f"{', '.join(button_titles[:-1])}, or {button_titles[-1]}."
+            )
+
+        return {
+            "type": "menu_buttons",
+            "body": self.MENU_MESSAGE_PROMPT,
+            "buttons": buttons,
+            "fallback": fallback,
+        }
 
     def _prepare_greeting(self, guest: Optional[Guest], voucher: Optional[Voucher], guest_status: str) -> List[str]:
         # Determine guest name from guest or voucher
@@ -518,6 +536,26 @@ class WhatsAppWorkflow:
         Returns a tuple of (messages_to_reply, conversation_instance).
         """
         body = (payload.get("Body") or "").strip()
+        button_payload = (
+            payload.get("ButtonPayload")
+            or payload.get("button_payload")
+            or payload.get("payload")
+        )
+        button_text = payload.get("ButtonText") or payload.get("button_text")
+        interactive_payload = payload.get("interactive")
+        if isinstance(interactive_payload, dict):
+            if interactive_payload.get("type") == "button_reply":
+                reply = interactive_payload.get("button_reply") or {}
+                button_payload = reply.get("id") or reply.get("payload") or button_payload
+                button_text = reply.get("title") or button_text
+            elif interactive_payload.get("type") == "list_reply":
+                reply = interactive_payload.get("list_reply") or {}
+                button_payload = reply.get("id") or button_payload
+                button_text = reply.get("title") or button_text
+
+        if not body and button_text:
+            body = button_text.strip()
+
         from_number = payload.get("From") or payload.get("WaId") or ""
         normalized_number = self.normalize_incoming_number(from_number)
 
@@ -542,7 +580,20 @@ class WhatsAppWorkflow:
         if not body:
             return ([self.EMPTY_MESSAGE_PROMPT, self._menu_message(guest_status)], conversation)
 
-        lower_body = body.lower()
+        composite_input = button_payload or button_text or body
+        lower_body = str(composite_input or "").strip().lower()
+        button_aliases = {
+            "raise a request": "1",
+            "raise request": "1",
+            "menu_raise_request": "1",
+            "check request status": "2",
+            "check status": "2",
+            "menu_check_status": "2",
+            "give feedback": "3",
+            "menu_feedback": "3",
+        }
+        lower_body = button_aliases.get(lower_body, lower_body)
+
         messages: List[str] = []
 
         # Feedback flow
@@ -621,18 +672,25 @@ class WhatsAppWorkflow:
             with transaction.atomic():
                 if detected:
                     service_request = self._create_service_request(conversation, detected, body)
+                    request_name = detected.request_type.name
+                    department_name = (
+                        service_request.department.name
+                        if service_request.department
+                        else "our team"
+                    )
                     messages.append(
-                        f"Your request for {detected.request_type.name} has been logged as ticket #{service_request.id}. "
-                        f"Our {service_request.department.name if service_request.department else 'team'} will assist you shortly."
+                        f"We are working on your request. Ticket #{service_request.id} for {request_name} is now with the {department_name} team."
                     )
                 else:
                     self._create_unmatched_entry(conversation, body, detected)
                     messages.append(self.UNMATCHED_CONFIRMATION)
 
-            conversation.current_state = WhatsAppConversation.STATE_AWAITING_MENU
+            conversation.current_state = WhatsAppConversation.STATE_IDLE
             conversation.context.pop("pending_request_started_at", None)
-            conversation.save(update_fields=["current_state", "context", "updated_at"])
-            messages.append(self._menu_message(guest_status))
+            conversation.menu_presented_at = None
+            conversation.save(
+                update_fields=["current_state", "context", "menu_presented_at", "updated_at"]
+            )
             return messages, conversation
 
         messages.append(self._menu_message(guest_status))
@@ -643,18 +701,71 @@ class WhatsAppWorkflow:
         conversation: WhatsAppConversation,
         messages: Iterable[str],
     ) -> None:
-        for body in messages:
+        for outgoing in messages:
+            body_to_log = outgoing
+            status = None
+            sid = None
+            error = None
+            result = None
             try:
-                result = twilio_service.send_text_message(conversation.phone_number, body)
+                if isinstance(outgoing, dict):
+                    if outgoing.get("type") == "menu_buttons":
+                        body_text = outgoing.get("body") or "Please choose an option:"
+                        buttons = outgoing.get("buttons") or []
+                        fallback_text = outgoing.get("fallback") or self.MENU_MESSAGE_PROMPT
+                        result = twilio_service.send_button_message(
+                            conversation.phone_number,
+                            body_text,
+                            buttons,
+                            fallback_text=fallback_text,
+                        )
+                        if not result or not result.get("success", False):
+                            result = twilio_service.send_text_message(
+                                conversation.phone_number, fallback_text
+                            )
+                            body_to_log = fallback_text
+                        else:
+                            body_to_log = f"{body_text} [buttons]"
+                    else:
+                        payload_text = (
+                            outgoing.get("body")
+                            or outgoing.get("text")
+                            or self.MENU_MESSAGE_PROMPT
+                        )
+                        result = twilio_service.send_text_message(
+                            conversation.phone_number, payload_text
+                        )
+                        body_to_log = payload_text
+                else:
+                    result = twilio_service.send_text_message(
+                        conversation.phone_number, outgoing
+                    )
+                    body_to_log = outgoing
+
                 status = result.get("status") if isinstance(result, dict) else None
                 sid = result.get("message_id") if isinstance(result, dict) else None
                 error = result.get("error") if isinstance(result, dict) else None
                 if not result or not result.get("success", True):
-                    logger.warning("Failed to send WhatsApp message to %s: %s", conversation.phone_number, error)
-                self._log_outbound_message(conversation, body, status=status, message_sid=sid, error=error)
+                    logger.warning(
+                        "Failed to send WhatsApp message to %s: %s",
+                        conversation.phone_number,
+                        error,
+                    )
+                self._log_outbound_message(
+                    conversation,
+                    str(body_to_log),
+                    status=status,
+                    message_sid=sid,
+                    error=error,
+                )
             except Exception as exc:
                 logger.exception("Twilio send_text_message failed.")
-                self._log_outbound_message(conversation, body, status="failed", error=str(exc))
+                self._log_outbound_message(
+                    conversation,
+                    str(body_to_log),
+                    status="failed",
+                    error=str(exc),
+                )
 
         conversation.last_system_message_at = timezone.now()
         conversation.save(update_fields=["last_system_message_at", "updated_at"])

@@ -1,5 +1,6 @@
 import json
 import datetime
+import re
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
@@ -19,13 +20,13 @@ from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from django.contrib.auth import get_user_model
 import os
 import logging
+from django.core.serializers.json import DjangoJSONEncoder
 
 # Import all models from hotel_app
 from hotel_app.models import (
     Department,
     Location,
     RequestType,
-    RequestKeyword,
     Checklist,
     Complaint,
     Review,
@@ -42,6 +43,7 @@ from hotel_app.models import (
     TwilioSettings,
     
     UnmatchedRequest,
+    WhatsAppConversation,
 )
 
 # Import all forms from the local forms.py
@@ -57,6 +59,72 @@ from hotel_app.whatsapp_service import WhatsAppService
 from hotel_app.whatsapp_workflow import workflow_handler
 from .rbac_services import get_accessible_sections, can_access_section
 from .section_permissions import require_section_permission, user_has_section_permission
+
+
+def _send_ticket_acknowledgement(ticket, *, guest=None, phone_number=None, conversation=None):
+    """
+    Notify the guest that a ticket has been created and capture acknowledgement delivery.
+
+    Args:
+        ticket (ServiceRequest): The ticket that was created.
+        guest (Guest | None): Optional guest record to infer contact details.
+        phone_number (str | None): Optional fallback phone number.
+        conversation (WhatsAppConversation | None): Existing conversation to reuse.
+
+    Returns:
+        bool: True if a notification was successfully sent or queued, False otherwise.
+    """
+    import logging
+
+    request_name = ticket.request_type.name if ticket.request_type else "your request"
+    team_name = ticket.department.name if ticket.department else "our team"
+    ack_message = (
+        f"We are working on your request. "
+        f"Ticket #{ticket.id} for {request_name} is now with the {team_name} team."
+    )
+
+    logger = logging.getLogger(__name__)
+
+    target_conversation = conversation
+    if not target_conversation and guest:
+        target_conversation = (
+            guest.whatsapp_conversations.order_by("-updated_at").first()
+        )
+
+    normalized_phone = None
+    if phone_number:
+        normalized_phone = workflow_handler.normalize_incoming_number(phone_number)
+
+    if not target_conversation and normalized_phone:
+        target_conversation = (
+            WhatsAppConversation.objects.filter(phone_number=normalized_phone)
+            .order_by("-updated_at")
+            .first()
+        )
+
+    if target_conversation:
+        try:
+            workflow_handler.send_outbound_messages(target_conversation, [ack_message])
+            return True
+        except Exception:
+            logger.exception("Failed to send ticket acknowledgement via conversation.")
+
+    destination_phone = normalized_phone
+    if not destination_phone and guest and guest.phone:
+        destination_phone = guest.phone
+
+    if destination_phone:
+        from hotel_app.twilio_service import twilio_service
+
+        try:
+            if twilio_service.is_configured():
+                result = twilio_service.send_text_message(destination_phone, ack_message)
+                return bool(result and result.get("success"))
+        except Exception:
+            logger.exception("Failed to send ticket acknowledgement via Twilio.")
+
+    return False
+
 
 # ---- Section Permission Mapping Helpers ----
 
@@ -2467,16 +2535,178 @@ def tickets(request):
     
     # Get unmatched requests for admin review
     from hotel_app.models import UnmatchedRequest, RequestType as RT
-    unmatched_requests = UnmatchedRequest.objects.filter(
+    unmatched_requests_qs = UnmatchedRequest.objects.filter(
         status=UnmatchedRequest.STATUS_PENDING
     ).select_related(
         'guest', 'conversation', 'request_type', 'department'
     ).order_by('-received_at')[:50]  # Show last 50 pending unmatched requests
-    
+    unmatched_requests = list(unmatched_requests_qs)
+
     # Get all departments and request types for dropdowns
     all_departments = Department.objects.all().order_by('name')
-    all_request_types = RT.objects.filter(active=True).order_by('name')
     
+    # Build request types by department using DepartmentRequestSLA configurations
+    request_types_by_department = {}
+    sla_configs = DepartmentRequestSLA.objects.select_related('department', 'request_type').all()
+    
+    for config in sla_configs:
+        dept_id = str(config.department_id)
+        rt_id = config.request_type.request_type_id
+        entry = {
+            'id': rt_id,
+            'name': config.request_type.name,
+            'default_department_id': config.department_id,
+        }
+        
+        # Check if this request type is already added for this department
+        if dept_id not in request_types_by_department:
+            request_types_by_department[dept_id] = []
+        
+        # Avoid duplicates
+        if not any(rt['id'] == rt_id for rt in request_types_by_department[dept_id]):
+            request_types_by_department[dept_id].append(entry)
+    
+    request_types_by_department_json = json.dumps(request_types_by_department, cls=DjangoJSONEncoder)
+    
+    # Also get all request types for reference
+    all_request_types = list(
+        RT.objects.filter(active=True)
+        .select_related('default_department')
+        .order_by('name')
+    )
+
+    processed_unmatched_requests = []
+    for unmatched in unmatched_requests:
+        detected = None
+        try:
+            detected = workflow_handler._detect_request_type(unmatched.message_body or '')
+        except Exception:
+            detected = None
+
+        preselected_department_id = unmatched.department_id
+        preselected_request_type_id = getattr(unmatched.request_type, 'request_type_id', None)
+
+        matched_keywords = set(filter(None, (unmatched.keywords or [])))
+        suggested_request_type_name = None
+
+        if detected:
+            matched_keywords.update(detected.matched_keywords or [])
+            if not preselected_request_type_id:
+                preselected_request_type_id = detected.request_type.request_type_id
+            if not preselected_department_id and detected.request_type.default_department_id:
+                preselected_department_id = detected.request_type.default_department_id
+            suggested_request_type_name = detected.request_type.name
+
+        matched_keywords = sorted({kw.lower() for kw in matched_keywords if kw})
+
+        auto_detected = False
+        if isinstance(unmatched.context, dict):
+            auto_detected = unmatched.context.get('auto_detected', False)
+        if detected and unmatched.request_type_id and detected.request_type.request_type_id == unmatched.request_type_id:
+            auto_detected = True
+        elif detected and not unmatched.request_type_id:
+            auto_detected = True
+
+        status_label = 'Unmatched'
+        status_class = 'bg-amber-100 text-amber-800'
+        status_hint = ''
+        match_state = 'unmatched'
+
+        if unmatched.request_type_id:
+            match_state = 'matched'
+            status_label = 'Matched'
+            status_class = 'bg-emerald-100 text-emerald-700'
+            status_hint = ''
+        elif detected:
+            match_state = 'matched'
+            status_label = 'Matched'
+            status_class = 'bg-emerald-100 text-emerald-700'
+            status_hint = ''
+            preselected_request_type_id = detected.request_type.request_type_id
+            if not preselected_department_id and detected.request_type.default_department_id:
+                preselected_department_id = detected.request_type.default_department_id
+            suggested_request_type_name = detected.request_type.name
+
+        display_guest_name = (
+            unmatched.guest.full_name
+            if unmatched.guest and unmatched.guest.full_name
+            else unmatched.conversation.guest.full_name
+            if unmatched.conversation
+            and unmatched.conversation.guest
+            and unmatched.conversation.guest.full_name
+            else None
+        )
+
+        if (not display_guest_name or display_guest_name == 'Unknown') and unmatched.phone_number:
+            detected_guest = None
+            try:
+                detected_guest = workflow_handler.find_guest_by_number(unmatched.phone_number)
+            except Exception:
+                detected_guest = None
+            if detected_guest:
+                display_guest_name = (
+                    detected_guest.full_name
+                    or detected_guest.guest_id
+                    or display_guest_name
+                )
+                if unmatched.guest is None:
+                    unmatched.guest = detected_guest
+
+        if not display_guest_name:
+            context_name = ''
+            if isinstance(unmatched.context, dict):
+                context_name = unmatched.context.get('guest_name') or ''
+            display_guest_name = context_name.strip() or 'Unknown'
+
+        if display_guest_name == 'Unknown':
+            phone_digits = re.sub(r'\D', '', unmatched.phone_number or '')
+            if len(phone_digits) >= 6:
+                tail_digits = phone_digits[-10:] if len(phone_digits) >= 10 else phone_digits
+                guest_lookup = Guest.objects.filter(phone__icontains=tail_digits).order_by('-updated_at').first()
+                if guest_lookup:
+                    if guest_lookup.full_name:
+                        display_guest_name = guest_lookup.full_name
+                    elif guest_lookup.guest_id:
+                        display_guest_name = guest_lookup.guest_id
+                    if unmatched.guest is None:
+                        unmatched.guest = guest_lookup
+
+                if display_guest_name == 'Unknown':
+                    try:
+                        voucher = None
+                        if unmatched.conversation and getattr(unmatched.conversation, "voucher", None):
+                            voucher = unmatched.conversation.voucher
+                        if not voucher:
+                            voucher = workflow_handler.find_voucher_by_number(unmatched.phone_number or "")
+                    except Exception:
+                        voucher = None
+                    if voucher and voucher.guest_name:
+                        display_guest_name = voucher.guest_name.strip() or display_guest_name
+
+                if display_guest_name == 'Unknown' and phone_digits:
+                    display_guest_name = f"Guest {phone_digits[-4:]}"
+
+        unmatched.display_guest_name = display_guest_name
+        unmatched.preselected_department_id = preselected_department_id
+        unmatched.preselected_request_type_id = preselected_request_type_id
+        unmatched.status_label = status_label
+        unmatched.status_class = status_class
+        unmatched.status_hint = status_hint
+        unmatched.match_state = match_state
+        unmatched.auto_detected = auto_detected
+        unmatched.matched_keywords_display = matched_keywords
+        unmatched.suggested_request_type_name = suggested_request_type_name
+        default_priority = 'Medium'
+        if isinstance(unmatched.context, dict):
+            ctx_priority = unmatched.context.get('priority')
+            if isinstance(ctx_priority, str) and ctx_priority:
+                normalized_priority = ctx_priority.strip().title()
+                if normalized_priority in {'Critical', 'High', 'Medium', 'Low'}:
+                    default_priority = normalized_priority
+        unmatched.default_priority = default_priority
+
+        processed_unmatched_requests.append(unmatched)
+
     context = {
         'departments': departments_data,
         'tickets': page_obj,  # Pass the page_obj to the template
@@ -2488,9 +2718,10 @@ def tickets(request):
         'status_filter': status_filter,
         'search_query': search_query,
         # Unmatched requests for review
-        'unmatched_requests': unmatched_requests,
+        'unmatched_requests': processed_unmatched_requests,
         'all_departments': all_departments,
         'all_request_types': all_request_types,
+        'request_types_by_department_json': request_types_by_department_json,
     }
     return render(request, 'dashboard/tickets.html', context)
 
@@ -5487,12 +5718,26 @@ def create_ticket_api(request):
             data = json.loads(request.body.decode('utf-8'))
             
             # Extract data from request
-            guest_name = data.get('guest_name')
-            room_number = data.get('room_number')
+            guest_name = (data.get('guest_name') or '').strip()
+            room_number = (data.get('room_number') or '').strip()
             department_name = data.get('department')
             category = data.get('category')
             priority = data.get('priority')
             description = data.get('description')
+            guest_id = data.get('guest_id')
+
+            guest = None
+            if guest_id:
+                try:
+                    guest = Guest.objects.get(pk=guest_id)
+                except Guest.DoesNotExist:
+                    guest = None
+
+            if guest:
+                if not guest_name:
+                    guest_name = guest.full_name or guest.guest_id or ''
+                if (not room_number) and guest.room_number:
+                    room_number = guest.room_number
             
             # Validate required fields
             if not guest_name or not room_number or not department_name or not category or not priority:
@@ -5518,18 +5763,39 @@ def create_ticket_api(request):
             
             # Map priority to model values
             priority_mapping = {
+                'Critical': 'critical',
                 'High': 'high',
                 'Medium': 'normal',
                 'Normal': 'normal',
                 'Low': 'low',
             }
             model_priority = priority_mapping.get(priority, 'normal')
+
+            if guest is None:
+                guest_queryset = Guest.objects.all()
+                if room_number:
+                    guest_queryset = guest_queryset.filter(room_number__iexact=room_number)
+                if guest_name:
+                    guest = (
+                        guest_queryset.filter(full_name__iexact=guest_name)
+                        .order_by('-updated_at')
+                        .first()
+                    )
+                if guest is None:
+                    guest = guest_queryset.order_by('-updated_at').first()
+                if guest is None and guest_name:
+                    guest = (
+                        Guest.objects.filter(full_name__iexact=guest_name)
+                        .order_by('-updated_at')
+                        .first()
+                    )
             
             # Create service request
             service_request = ServiceRequest.objects.create(
                 request_type=request_type,
                 location=location,
                 requester_user=request.user,
+                guest=guest,
                 department=department,
                 priority=model_priority,
                 status='pending',
@@ -5538,11 +5804,17 @@ def create_ticket_api(request):
             
             # Notify department staff
             service_request.notify_department_staff()
+
+            guest_notified = _send_ticket_acknowledgement(
+                service_request,
+                guest=guest,
+            )
             
             return JsonResponse({
                 'success': True,
                 'message': 'Ticket created successfully',
-                'ticket_id': service_request.id
+                'ticket_id': service_request.id,
+                'guest_notified': guest_notified,
             })
             
         except Exception as e:
@@ -6408,101 +6680,137 @@ def get_ticket_suggestions_api(request):
 
 @login_required
 @require_permission([ADMINS_GROUP, STAFF_GROUP])
+def search_guests_api(request):
+    """Autocomplete endpoint for guest lookup by name or room number."""
+    if request.method != 'GET':
+        return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
+
+    query = (request.GET.get('q') or '').strip()
+    results = []
+    if query:
+        guests = (
+            Guest.objects.filter(
+                Q(full_name__icontains=query)
+                | Q(room_number__icontains=query)
+                | Q(guest_id__icontains=query)
+            )
+            .order_by('-updated_at')[:10]
+        )
+        for guest in guests:
+            results.append({
+                'id': guest.id,
+                'name': guest.full_name or guest.guest_id or f'Guest {guest.pk}',
+                'room_number': guest.room_number or '',
+                'guest_id': guest.guest_id or '',
+                'phone': guest.phone or '',
+            })
+
+    return JsonResponse({'success': True, 'results': results})
+
+
+@login_required
+@require_permission([ADMINS_GROUP, STAFF_GROUP])
 def resolve_unmatched_request_api(request, unmatched_id):
     """API endpoint to resolve an unmatched request by creating a ticket and optionally adding keywords."""
     if request.method == 'POST':
         try:
             from hotel_app.models import (
-                UnmatchedRequest, ServiceRequest, RequestType, 
-                Department, RequestKeyword, Location
+                UnmatchedRequest, ServiceRequest, RequestType,
+                Department
             )
             import json
-            
-            unmatched = get_object_or_404(UnmatchedRequest, pk=unmatched_id, status=UnmatchedRequest.STATUS_PENDING)
-            
-            data = json.loads(request.body.decode('utf-8'))
-            department_id = data.get('department_id')
-            request_type_id = data.get('request_type_id')
-            new_request_type_name = data.get('new_request_type_name', '').strip()
-            new_keyword = data.get('new_keyword', '').strip()
-            
-            # Validate department
-            if not department_id:
-                return JsonResponse({'success': False, 'error': 'Department is required'}, status=400)
-            
+
+            unmatched = get_object_or_404(
+                UnmatchedRequest,
+                pk=unmatched_id,
+                status=UnmatchedRequest.STATUS_PENDING,
+            )
+
+            data = json.loads(request.body.decode("utf-8"))
+            department_id = data.get("department_id")
+            request_type_id = data.get("request_type_id")
             try:
-                department = Department.objects.get(pk=department_id)
-            except Department.DoesNotExist:
-                return JsonResponse({'success': False, 'error': 'Department not found'}, status=400)
-            
-            # Handle request type
-            request_type = None
-            if request_type_id:
+                department_id = int(department_id) if department_id is not None else None
+            except (TypeError, ValueError):
+                department_id = None
+            try:
+                request_type_id = int(request_type_id) if request_type_id is not None else None
+            except (TypeError, ValueError):
+                request_type_id = None
+            priority_label = str(data.get("priority", "Medium")).strip()
+            priority_label = priority_label.title() if priority_label else "Medium"
+
+            if not request_type_id:
+                return JsonResponse(
+                    {"success": False, "error": "Request type is required"},
+                    status=400,
+                )
+
+            try:
+                request_type = RequestType.objects.get(pk=request_type_id)
+            except RequestType.DoesNotExist:
+                return JsonResponse(
+                    {"success": False, "error": "Request type not found"},
+                    status=400,
+                )
+
+            department = None
+            if department_id:
                 try:
-                    request_type = RequestType.objects.get(pk=request_type_id)
-                except RequestType.DoesNotExist:
-                    return JsonResponse({'success': False, 'error': 'Request type not found'}, status=400)
-            elif new_request_type_name:
-                # Create new request type
-                request_type, created = RequestType.objects.get_or_create(
-                    name=new_request_type_name,
-                    defaults={
-                        'default_department': department,
-                        'active': True
-                    }
-                )
-                if created and new_keyword:
-                    # Add keyword mapping for the new request type
-                    RequestKeyword.objects.get_or_create(
-                        keyword=new_keyword.lower(),
-                        request_type=request_type,
-                        defaults={'weight': 1}
+                    department = Department.objects.get(pk=department_id)
+                except Department.DoesNotExist:
+                    return JsonResponse(
+                        {"success": False, "error": "Department not found"}, status=400
                     )
+            elif request_type.default_department_id:
+                department = request_type.default_department
             else:
-                return JsonResponse({'success': False, 'error': 'Request type or new request type name is required'}, status=400)
-            
-            # Get or create location from guest's room number if available
-            location = None
-            if unmatched.guest and unmatched.guest.room_number:
-                location, _ = Location.objects.get_or_create(
-                    room_no=unmatched.guest.room_number,
-                    defaults={'name': f'Room {unmatched.guest.room_number}'}
+                return JsonResponse(
+                    {"success": False, "error": "Department is required"},
+                    status=400,
                 )
-            
-            # Create service request
+
+            priority_mapping = {
+                "critical": "critical",
+                "high": "high",
+                "medium": "normal",
+                "normal": "normal",
+                "low": "low",
+            }
+            priority_value = priority_mapping.get(priority_label.lower(), "normal")
+
             service_request = ServiceRequest.objects.create(
                 request_type=request_type,
                 guest=unmatched.guest,
                 department=department,
-                location=location,
-                priority='normal',
-                status='pending',
-                source='whatsapp',
-                notes=f"Resolved from unmatched request:\n{unmatched.message_body}",
+                priority=priority_value,
+                status="pending",
+                source="whatsapp",
+                notes=f"Resolved from unmatched request:\n{unmatched.message_body or ''}".strip(),
             )
-            
-            # Mark unmatched request as resolved
+
             unmatched.mark_resolved(user=request.user, ticket=service_request, save=True)
-            
-            # Update unmatched request with department and request type for reference
             unmatched.department = department
             unmatched.request_type = request_type
-            unmatched.save(update_fields=['department', 'request_type'])
-            
-            # If admin provided a new keyword for an existing request type, add it to mapping
-            if request_type and new_keyword and not new_request_type_name:
-                RequestKeyword.objects.get_or_create(
-                    keyword=new_keyword.lower(),
-                    request_type=request_type,
-                    defaults={'weight': 1}
-                )
-            
-            return JsonResponse({
-                'success': True,
-                'message': 'Unmatched request resolved and ticket created successfully',
-                'ticket_id': service_request.id
-            })
-            
+            unmatched.save(update_fields=["department", "request_type"])
+
+            conversation = getattr(unmatched, "conversation", None)
+            guest_notified = _send_ticket_acknowledgement(
+                service_request,
+                guest=unmatched.guest,
+                phone_number=unmatched.phone_number,
+                conversation=conversation,
+            )
+
+            return JsonResponse(
+                {
+                    "success": True,
+                    "message": "Unmatched request resolved and ticket created successfully",
+                    "ticket_id": service_request.id,
+                    "guest_notified": guest_notified,
+                }
+            )
+
         except Exception as e:
             import logging
             logger = logging.getLogger(__name__)
@@ -6778,12 +7086,32 @@ def create_ticket_api(request):
                 'Low': 'low',
             }
             model_priority = priority_mapping.get(priority, 'normal')
+
+            guest = None
+            guest_queryset = Guest.objects.all()
+            if room_number:
+                guest_queryset = guest_queryset.filter(room_number__iexact=room_number)
+            if guest_name:
+                guest = (
+                    guest_queryset.filter(full_name__iexact=guest_name)
+                    .order_by('-updated_at')
+                    .first()
+                )
+            if guest is None:
+                guest = guest_queryset.order_by('-updated_at').first()
+            if guest is None and guest_name:
+                guest = (
+                    Guest.objects.filter(full_name__iexact=guest_name)
+                    .order_by('-updated_at')
+                    .first()
+                )
             
             # Create service request (SLA times will be set automatically in the model's save method)
             service_request = ServiceRequest.objects.create(
                 request_type=request_type,
                 location=location,
                 requester_user=request.user,
+                guest=guest,
                 department=department,
                 priority=model_priority,
                 status='pending',
@@ -6792,11 +7120,17 @@ def create_ticket_api(request):
             
             # Notify department staff
             service_request.notify_department_staff()
+
+            guest_notified = _send_ticket_acknowledgement(
+                service_request,
+                guest=guest,
+            )
             
             return JsonResponse({
                 'success': True,
                 'message': 'Ticket created successfully',
-                'ticket_id': service_request.id
+                'ticket_id': service_request.id,
+                'guest_notified': guest_notified,
             })
             
         except Exception as e:

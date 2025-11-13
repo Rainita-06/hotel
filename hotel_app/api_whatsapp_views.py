@@ -23,10 +23,13 @@ def whatsapp_webhook(request):
     payload = request.POST.dict()
     messages, conversation = workflow_handler.handle_incoming_message(payload)
 
+    # Send messages asynchronously via workflow handler instead of TwiML response
+    # This allows proper button message handling
+    if conversation:
+        workflow_handler.send_outbound_messages(conversation, messages)
+    
+    # Return empty TwiML response (messages are sent via API)
     response = MessagingResponse()
-    for message in messages:
-        response.message(message)
-
     xml = str(response)
     return HttpResponse(xml, content_type="application/xml")
 

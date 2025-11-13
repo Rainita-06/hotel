@@ -14,6 +14,7 @@ from .twilio_service import twilio_service
 from django.contrib.auth import login
 
 from hotel_app.utils import  admin_required
+from hotel_app.section_permissions import require_section_permission
 def home(request):
     """
     Home page view
@@ -1544,6 +1545,7 @@ import io
 from django.core.files.base import ContentFile
 from django.urls import reverse
 @login_required
+@require_section_permission('breakfast_voucher', 'view')
 def create_voucher_checkin(request):
     if request.method == "POST":
         guest_name = request.POST.get("guest_name")
@@ -1628,6 +1630,8 @@ from .models import Voucher
 from django.utils import timezone
 # import pandas as pd
 
+@login_required
+@require_section_permission('breakfast_voucher', 'view')
 def breakfast_voucher_report(request):
     
     
@@ -1671,6 +1675,7 @@ from django.utils.timezone import now
 from .models import Voucher
 
 @login_required
+@require_section_permission('breakfast_voucher', 'change')
 def mark_checkout(request, voucher_id):
     """
     Mark a voucher as checked out (set today's date as checkout).
@@ -1769,6 +1774,7 @@ def validate_voucher(request):
 
  
 @login_required
+@require_section_permission('breakfast_voucher', 'view')
 def scan_voucher_page(request):
     return render(request, "scan_voucher.html")
 
