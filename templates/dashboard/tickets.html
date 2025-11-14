@@ -414,7 +414,7 @@
     {% if unmatched_requests %}
     <div class="mt-6 w-full bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-on-load">
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-gray-900 text-lg font-semibold font-['Inter']">Unmatched Requests Review</h2>
+            <h2 class="text-gray-900 text-lg font-semibold font-['Inter']">Requests Review</h2>
             <span class="px-3 py-1 text-sm font-medium text-yellow-800 bg-yellow-100 rounded-full">{{ unmatched_requests|length }} pending</span>
         </div>
         <div class="tickets-table-wrapper overflow-x-auto">
@@ -451,7 +451,7 @@
                                     data-preselected="{{ unmatched.preselected_department_id|default:'' }}">
                                 <option value="">Select Department</option>
                                 {% for dept in all_departments %}
-                                <option value="{{ dept.id }}" {% if unmatched.preselected_department_id == dept.id %}selected{% endif %}>{{ dept.name }}</option>
+                                <option value="{{ dept.pk }}" {% if unmatched.preselected_department_id == dept.pk %}selected{% endif %}>{{ dept.name }}</option>
                                 {% endfor %}
                             </select>
                         </td>
@@ -839,22 +839,20 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // --- UNMATCHED REQUESTS RESOLUTION ---
     const requestTypesByDepartment = JSON.parse('{{ request_types_by_department_json|escapejs }}');
+    const allRequestTypes = JSON.parse('{{ all_request_types_json|escapejs }}');
     
     console.log('Request Types by Department:', requestTypesByDepartment);
-
+    
     const requestTypesIndex = (() => {
         const map = new Map();
-        Object.values(requestTypesByDepartment || {}).forEach(list => {
-            (list || []).forEach(rt => {
-                const key = String(rt.id);
-                if (!map.has(key)) {
-                    map.set(key, rt);
-                }
-            });
+        (allRequestTypes || []).forEach(rt => {
+            const key = String(rt.id);
+            if (!map.has(key)) {
+                map.set(key, rt);
+            }
         });
         return map;
     })();
-    const allRequestTypes = Array.from(requestTypesIndex.values());
 
     const departmentRequestTypes = (() => {
         const map = new Map();
@@ -913,17 +911,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const hasDepartment = Boolean(departmentId);
         reqTypeSelect.innerHTML = '<option value="">Select Request Type</option>';
         
-        if (!hasDepartment) {
-            reqTypeSelect.disabled = true;
-            reqTypeSelect.classList.add('cursor-not-allowed', 'opacity-60');
-            console.log(`Request type select disabled - no department selected`);
-        } else {
-            reqTypeSelect.disabled = false;
-            reqTypeSelect.classList.remove('cursor-not-allowed', 'opacity-60');
-            console.log(`Request type select enabled for department ${departmentId}`);
-        }
+        // Always enable request type selection; if no department chosen, show all request types
+        reqTypeSelect.disabled = false;
+        reqTypeSelect.classList.remove('cursor-not-allowed', 'opacity-60');
         
-        const options = getRequestTypesForDepartment(departmentId);
+        const options = hasDepartment ? getRequestTypesForDepartment(departmentId) : (allRequestTypes || []);
         console.log(`Found ${options.length} request types for department ${departmentId}`);
 
         const seenOptionIds = new Set();

@@ -2574,6 +2574,18 @@ def tickets(request):
         .select_related('default_department')
         .order_by('name')
     )
+    # JSON payload for all request types (fallback in UI when no department selected)
+    all_request_types_json = json.dumps(
+        [
+            {
+                'id': rt.request_type_id,
+                'name': rt.name,
+                'default_department_id': rt.default_department_id,
+            }
+            for rt in all_request_types
+        ],
+        cls=DjangoJSONEncoder
+    )
 
     processed_unmatched_requests = []
     for unmatched in unmatched_requests:
@@ -2722,6 +2734,7 @@ def tickets(request):
         'all_departments': all_departments,
         'all_request_types': all_request_types,
         'request_types_by_department_json': request_types_by_department_json,
+        'all_request_types_json': all_request_types_json,
     }
     return render(request, 'dashboard/tickets.html', context)
 

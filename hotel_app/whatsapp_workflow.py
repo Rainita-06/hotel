@@ -60,6 +60,8 @@ class DetectedRequest:
     """Container for detected request metadata."""
 
     request_type: RequestType
+    matched_keywords: List[str]
+    score: int
     matched_keywords: Sequence[str]
     score: int
 
