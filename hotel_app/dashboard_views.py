@@ -826,8 +826,9 @@ def dashboard2_view(request):
     # Vouchers
     try:
         vouchers_issued = Voucher.objects.count()
-        vouchers_redeemed = Voucher.objects.filter(status="redeemed").count()
-        vouchers_expired = Voucher.objects.filter(status="expired").count()
+        vouchers_redeemed = Voucher.objects.filter(redeemed=True).count()
+        # Treat vouchers expired if expiry_date < today
+        vouchers_expired = Voucher.objects.filter(expiry_date__lt=today).count()
     except Exception:
         vouchers_issued = vouchers_redeemed = vouchers_expired = 0
 
@@ -887,7 +888,7 @@ def dashboard2_view(request):
             'negative': [15, 10, 20, 15, 12, 10, 8],
         }
 
-    # Occupancy
+    # Occupancy (active guests today)
     try:
         # Prefer datetime fields if set, otherwise use date fields
         occupancy_qs = Guest.objects.filter(
@@ -901,6 +902,101 @@ def dashboard2_view(request):
         occupancy_rate = 0
 
     occupancy_data = {'occupied': occupancy_today, 'rate': round(occupancy_rate, 1)}
+
+    # Active tickets (Service Requests still open)
+    try:
+        active_tickets_count = ServiceRequest.objects.filter(status__in=['pending', 'accepted', 'in_progress']).count()
+    except Exception:
+        active_tickets_count = 0
+
+    # SLA breaches in last 24h
+    try:
+        now = timezone.now()
+        since_24h = now - datetime.timedelta(hours=24)
+        sla_breaches_24h = ServiceRequest.objects.filter(
+            updated_at__gte=since_24h
+        ).filter(
+            Q(sla_breached=True) | Q(response_sla_breached=True) | Q(resolution_sla_breached=True)
+        ).count()
+    except Exception:
+        sla_breaches_24h = 0
+
+    # Average response time (created_at -> accepted_at) over last 30 days
+    try:
+        from django.db.models import F, DurationField, ExpressionWrapper
+        since_30d = timezone.now() - datetime.timedelta(days=30)
+        qs_resp = ServiceRequest.objects.filter(
+            accepted_at__isnull=False, created_at__gte=since_30d
+        ).annotate(
+            resp_delta=ExpressionWrapper(F('accepted_at') - F('created_at'), output_field=DurationField())
+        )
+        avg_resp = qs_resp.aggregate(avg=Avg('resp_delta'))['avg']
+        if avg_resp:
+            total_minutes = int(avg_resp.total_seconds() // 60)
+            avg_response_display = f"{total_minutes}m" if total_minutes < 90 else f"{total_minutes // 60}h {total_minutes % 60}m"
+        else:
+            avg_response_display = "—"
+    except Exception:
+        avg_response_display = "—"
+
+    # Staff efficiency: % completed (last 30d) that met resolution SLA
+    try:
+        since_30d = timezone.now() - datetime.timedelta(days=30)
+        completed_qs = ServiceRequest.objects.filter(completed_at__gte=since_30d)
+        total_completed = completed_qs.count()
+        met_sla = completed_qs.filter(resolution_sla_breached=False).count() if total_completed else 0
+        staff_efficiency_pct = int(round((met_sla / total_completed) * 100)) if total_completed else 0
+    except Exception:
+        staff_efficiency_pct = 0
+
+    # Active GYM members (status Active and not expired)
+    try:
+        active_gym_members = GymMember.objects.filter(status="Active").exclude(expiry_date__lt=today).count()
+    except Exception:
+        active_gym_members = 0
+
+    # Trend data for charts (last 7 days)
+    try:
+        labels = []
+        tickets_series = []
+        feedback_series = []
+        for i in range(6, -1, -1):
+            day = today - datetime.timedelta(days=i)
+            labels.append(day.strftime('%a'))
+            tickets_series.append(ServiceRequest.objects.filter(created_at__date=day).count())
+            feedback_series.append(Review.objects.filter(created_at__date=day).count())
+        trend_labels_json = json.dumps(labels)
+        tickets_data_json = json.dumps(tickets_series)
+        feedback_data_json = json.dumps(feedback_series)
+        feedback_total = sum(feedback_series)
+        peak_day_tickets_val = max(tickets_series) if tickets_series else 0
+        peak_day_feedback_val = max(feedback_series) if feedback_series else 0
+    except Exception:
+        trend_labels_json = json.dumps(['Mon','Tue','Wed','Thu','Fri','Sat','Sun'])
+        tickets_data_json = json.dumps([0,0,0,0,0,0,0])
+        feedback_data_json = json.dumps([0,0,0,0,0,0,0])
+        feedback_total = 0
+        peak_day_tickets_val = 0
+        peak_day_feedback_val = 0
+
+    # Sentiment (last 30 days)
+    try:
+        since_30d = timezone.now() - datetime.timedelta(days=30)
+        reviews_30 = Review.objects.filter(created_at__gte=since_30d)
+        pos_count = reviews_30.filter(rating__gte=4).count()
+        neu_count = reviews_30.filter(rating=3).count()
+        neg_count = reviews_30.filter(rating__lte=2).count()
+        total_reviews = max(1, pos_count + neu_count + neg_count)
+        pos_pct = int(round(pos_count / total_reviews * 100))
+        neu_pct = int(round(neu_count / total_reviews * 100))
+        neg_pct = max(0, 100 - pos_pct - neu_pct)
+        overall_rating = round(average_review_rating or 0, 1)
+    except Exception:
+        pos_count = neu_count = neg_count = 0
+        pos_pct = 68
+        neu_pct = 22
+        neg_pct = 10
+        overall_rating = round(average_review_rating or 0, 1)
 
     # Fetch actual critical tickets (high priority service requests)
     try:
@@ -1060,28 +1156,31 @@ def dashboard2_view(request):
     context = {
         'user_name': request.user.get_full_name() or request.user.username,
         # Stats data
-        'active_tickets': open_complaints,
+        'active_tickets': active_tickets_count,
         'avg_review_rating': round(average_review_rating, 1) if average_review_rating else 0,
-        'sla_breaches': 0,  # This would need to be calculated from actual SLA breaches
+        'sla_breaches': sla_breaches_24h,
         'vouchers_redeemed': vouchers_redeemed,
         'guest_satisfaction': round(average_review_rating * 20) if average_review_rating else 0,  # Convert 5-star to 100%
-        'avg_response_time': '12m',  # This would need to be calculated from actual response times
-        'staff_efficiency': 87,  # This would need to be calculated from actual metrics
-        'active_gym_members': 389,  # This would need to be fetched from actual data
+        'avg_response_time': avg_response_display,
+        'staff_efficiency': staff_efficiency_pct,
+        'active_gym_members': active_gym_members,
         'active_guests': occupancy_today,
-        # Chart data - simplified for dashboard2
-        'tickets_data': requests_values[:7] if len(requests_values) >= 7 else requests_values + [0] * (7 - len(requests_values)),
-        'feedback_data': feedback_data['positive'][:7] if len(feedback_data['positive']) >= 7 else feedback_data['positive'] + [0] * (7 - len(feedback_data['positive'])),
-        'peak_day_tickets': max(requests_values) if requests_values else 0,
-        'peak_day_feedback': max(feedback_data['positive']) if feedback_data['positive'] else 0,
-        'weekly_growth': 18,  # This would need to be calculated from actual data
+        # Trend chart data
+        'trend_labels': trend_labels_json,
+        'tickets_data': tickets_data_json,
+        'feedback_data': feedback_data_json,
+        'feedback_total': feedback_total,
+        'peak_day_tickets': peak_day_tickets_val,
+        'peak_day_feedback': peak_day_feedback_val,
+        'weekly_growth': 18,  # placeholder unless growth tracking is implemented
         # Sentiment data
-        'positive_reviews': sum(feedback_data['positive']),
-        'neutral_reviews': sum(feedback_data['neutral']),
-        'negative_reviews': sum(feedback_data['negative']),
-        'positive_count': sum(feedback_data['positive']),
-        'neutral_count': sum(feedback_data['neutral']),
-        'negative_count': sum(feedback_data['negative']),
+        'positive_reviews': pos_pct,
+        'neutral_reviews': neu_pct,
+        'negative_reviews': neg_pct,
+        'positive_count': pos_count,
+        'neutral_count': neu_count,
+        'negative_count': neg_count,
+        'overall_rating': overall_rating,
         # Department data - using real data where possible
         'departments': [
             {'name': 'Housekeeping', 'tickets': requests_values[0] if len(requests_values) > 0 else 15, 'color': 'sky-600'},
@@ -2605,6 +2704,17 @@ def tickets(request):
             matched_keywords.update(detected.matched_keywords or [])
             if not preselected_request_type_id:
                 preselected_request_type_id = detected.request_type.request_type_id
+            # Prefer SLA configuration mapping to choose department for this request type
+            if not preselected_department_id:
+                try:
+                    # Find first department that has SLA configured for this request type
+                    from hotel_app.models import DepartmentRequestSLA as DR
+                    sla_match = DR.objects.filter(request_type_id=preselected_request_type_id).order_by('department_id').first()
+                    if sla_match:
+                        preselected_department_id = sla_match.department_id
+                except Exception:
+                    preselected_department_id = preselected_department_id or None
+            # Fallback to request type's default department
             if not preselected_department_id and detected.request_type.default_department_id:
                 preselected_department_id = detected.request_type.default_department_id
             suggested_request_type_name = detected.request_type.name
@@ -2635,6 +2745,16 @@ def tickets(request):
             status_class = 'bg-emerald-100 text-emerald-700'
             status_hint = ''
             preselected_request_type_id = detected.request_type.request_type_id
+            # Prefer SLA configuration mapping
+            if not preselected_department_id:
+                try:
+                    from hotel_app.models import DepartmentRequestSLA as DR
+                    sla_match = DR.objects.filter(request_type_id=preselected_request_type_id).order_by('department_id').first()
+                    if sla_match:
+                        preselected_department_id = sla_match.department_id
+                except Exception:
+                    preselected_department_id = preselected_department_id or None
+            # Fallback to request type's default department
             if not preselected_department_id and detected.request_type.default_department_id:
                 preselected_department_id = detected.request_type.default_department_id
             suggested_request_type_name = detected.request_type.name
@@ -2849,10 +2969,17 @@ def ticket_detail(request, ticket_id):
     
     status_data = status_mapping.get(service_request.status, {'label': 'Pending', 'color': 'yellow-400'})
     
-    # Get requester name
+    # Get requester/guest info
     requester_name = 'Unknown'
     if service_request.requester_user:
         requester_name = service_request.requester_user.get_full_name() or service_request.requester_user.username
+    guest_name = ''
+    guest_phone = ''
+    guest_room_number = ''
+    if getattr(service_request, 'guest', None):
+        guest_name = (service_request.guest.full_name or '').strip()
+        guest_phone = (service_request.guest.phone or '').strip()
+        guest_room_number = (service_request.guest.room_number or '').strip()
     
     # Get assignee name
     assignee_name = 'Unassigned'
@@ -3027,6 +3154,9 @@ def ticket_detail(request, ticket_id):
         'request_type_name': request_type_name,
         'location_name': location_name,
         'room_number': room_number,
+        'guest_name': guest_name or requester_name,
+        'guest_phone': guest_phone,
+        'guest_room_number': guest_room_number or room_number,
         'floor': floor,
         'building': building,
         'room_type': room_type,
@@ -6783,6 +6913,16 @@ def resolve_unmatched_request_api(request, unmatched_id):
                     status=400,
                 )
 
+            # Ensure unmatched is linked to a Guest (by phone) so guest name/room propagate to the ticket
+            if not unmatched.guest and unmatched.phone_number:
+                try:
+                    guest_lookup = workflow_handler.find_guest_by_number(unmatched.phone_number)
+                except Exception:
+                    guest_lookup = None
+                if guest_lookup:
+                    unmatched.guest = guest_lookup
+                    unmatched.save(update_fields=["guest"])
+
             priority_mapping = {
                 "critical": "critical",
                 "high": "high",
@@ -6830,6 +6970,31 @@ def resolve_unmatched_request_api(request, unmatched_id):
             logger.error(f'Error resolving unmatched request: {str(e)}', exc_info=True)
             return JsonResponse({'success': False, 'error': str(e)}, status=500)
     
+    return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
+
+
+@login_required
+@require_permission([ADMINS_GROUP, STAFF_GROUP])
+def ignore_unmatched_request_api(request, unmatched_id):
+    """API endpoint to drop/ignore an unmatched request (e.g., duplicates)."""
+    if request.method == 'POST':
+        try:
+            from hotel_app.models import UnmatchedRequest
+            unmatched = get_object_or_404(
+                UnmatchedRequest,
+                pk=unmatched_id,
+                status=UnmatchedRequest.STATUS_PENDING,
+            )
+            unmatched.status = UnmatchedRequest.STATUS_IGNORED
+            unmatched.resolved_by = request.user
+            unmatched.resolved_at = timezone.now()
+            unmatched.save(update_fields=["status", "resolved_by", "resolved_at"])
+            return JsonResponse({"success": True, "message": "Unmatched request dropped"})
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f'Error ignoring unmatched request: {str(e)}', exc_info=True)
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
     return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
 
 

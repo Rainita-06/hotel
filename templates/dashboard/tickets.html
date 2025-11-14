@@ -248,11 +248,10 @@
                             <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Priority</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Department</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Request Type</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Priority</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Assigned To</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Owner</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">SLA %</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
@@ -299,13 +298,7 @@
                             <td class="px-6 py-4">
                                 <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-{{ ticket.status_color }}-100 text-{{ ticket.status_color }}-700">{{ ticket.get_status_display }}</span>
                             </td>
-                            <td class="px-6 py-4 text-sm">
-                                <div class="flex items-center">
-                                    <a href="{% url 'dashboard:ticket_detail' ticket.id %}" class="p-2 rounded-lg text-gray-500 hover:bg-sky-100 hover:text-sky-600 transition-colors duration-200">
-                                        <img src="{% static 'images/tickets/eye.svg' %}" alt="View ticket" class="w-6 h-6">
-                                    </a>
-                                </div>
-                            </td>
+                           
                         </tr>
                         {% empty %}
                         <tr>
@@ -486,6 +479,9 @@
                         <td class="px-6 py-4 align-top text-sm">
                             <button onclick="resolveUnmatched({{ unmatched.id }})" class="px-3 py-1 bg-sky-600 text-white rounded hover:bg-sky-700 text-sm">
                                 Submit
+                            </button>
+                            <button onclick="dropUnmatched({{ unmatched.id }})" class="px-3 py-1 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 text-sm ml-2">
+                                Drop
                             </button>
                         </td>
                     </tr>
@@ -976,11 +972,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const meta = requestTypesIndex.get(String(selectedId));
-        if (!meta || !meta.default_department_id) {
-            return;
-        }
+        let suggestedDeptId = meta && meta.default_department_id ? String(meta.default_department_id) : '';
 
-        const suggestedDeptId = String(meta.default_department_id);
+        // Fallback: find a department that contains this request type in its allowed list
+        if (!suggestedDeptId) {
+            for (const [deptId, list] of departmentRequestTypes.entries()) {
+                if ((list || []).some(rt => String(rt.id) === String(selectedId))) {
+                    suggestedDeptId = String(deptId);
+                    break;
+                }
+            }
+        }
+        if (!suggestedDeptId) return;
+
         const userSelected = deptSelect.dataset.userSelected === 'true';
 
         if (!deptSelect.value || (!userSelected && deptSelect.value !== suggestedDeptId)) {
@@ -1213,6 +1217,34 @@ document.addEventListener('DOMContentLoaded', function() {
                     ? ' Guest notification could not be sent.'
                     : ' Guest has been notified.';
                 showToast(`${ticketMessage}${notificationMessage}`, data.guest_notified === false ? 'warning' : 'success');
+                const row = document.getElementById(`unmatched-row-${unmatchedId}`);
+                if (row) {
+                    row.style.opacity = '0';
+                    setTimeout(() => row.remove(), 300);
+                }
+            } else {
+                showToast('Error: ' + (data.error || 'Unknown error'), 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('An error occurred. Please try again.', 'error');
+        });
+    };
+
+    // Drop as duplicate
+    window.dropUnmatched = function(unmatchedId) {
+        fetch(`{% url 'dashboard:api_ignore_unmatched_request' 0 %}`.replace('0', unmatchedId), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Request dropped as duplicate.', 'success');
                 const row = document.getElementById(`unmatched-row-${unmatchedId}`);
                 if (row) {
                     row.style.opacity = '0';

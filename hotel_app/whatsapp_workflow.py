@@ -318,8 +318,30 @@ class WhatsAppWorkflow:
             matches = matches + [kw_lower]
             keyword_map[keyword.request_type_id] = (current_score, matches)
 
+        # Fallback: use RequestType name/description tokens when no explicit keywords matched
         if not keyword_map:
-            return None
+            for rt in RequestType.objects.filter(active=True).only("request_type_id", "name", "description", "default_department_id"):
+                rt_id = rt.request_type_id
+                score, matches = keyword_map.get(rt_id, (0, []))
+
+                # Strong boost if full name appears in text
+                rt_name_norm = (rt.name or "").strip().lower()
+                if rt_name_norm and rt_name_norm in normalized:
+                    score += 5
+                    matches = matches + [rt_name_norm]
+
+                # Token-level soft matches for name + description
+                name_tokens = set(re.findall(r"[a-zA-Z0-9']+", rt.name.lower())) if rt.name else set()
+                desc_tokens = set(re.findall(r"[a-zA-Z0-9']+", rt.description.lower())) if rt.description else set()
+                potential_tokens = name_tokens.union(desc_tokens)
+
+                token_hits = [t for t in potential_tokens if t and t in tokens]
+                if token_hits:
+                    score += len(token_hits)  # 1 point per token hit
+                    matches = matches + token_hits
+
+                if score > 0:
+                    keyword_map[rt_id] = (score, matches)
 
         best_type_id = max(keyword_map, key=lambda key: keyword_map[key][0])
         score, matches = keyword_map[best_type_id]
@@ -633,8 +655,19 @@ class WhatsAppWorkflow:
                     update_fields=["current_state", "menu_presented_at", "welcome_sent_at", "updated_at"]
                 )
                 messages.append(self._menu_message(guest_status))
+
+                # If the user's initial message already contains recognizable keywords,
+                # create a matched review entry so it appears pre-filled in the dashboard.
+                try:
+                    detected_pre = self._detect_request_type(body)
+                    if detected_pre:
+                        self._create_unmatched_entry(conversation, body, detected_pre)
+                except Exception:
+                    pass
             else:
-                self._create_unmatched_entry(conversation, body)
+                # Unknown guest/voucher; still attempt to detect and persist matched request type
+                detected = self._detect_request_type(body)
+                self._create_unmatched_entry(conversation, body, detected)
                 conversation.current_state = WhatsAppConversation.STATE_IDLE
                 conversation.save(update_fields=["current_state", "updated_at"])
             return messages, conversation
@@ -660,6 +693,16 @@ class WhatsAppWorkflow:
                 messages.append("We would love to hear about your stay. Reply 'Yes' to begin or 'No' to skip.")
                 return messages, conversation
 
+            # If the message doesn't match a menu option, try to detect request intent
+            detected_mid = self._detect_request_type(body)
+            if detected_mid:
+                # Create a matched review entry and acknowledge
+                self._create_unmatched_entry(conversation, body, detected_mid)
+                messages.append(self.UNMATCHED_CONFIRMATION)
+                conversation.current_state = WhatsAppConversation.STATE_IDLE
+                conversation.save(update_fields=["current_state", "updated_at"])
+                return messages, conversation
+
             messages.append(self.INVALID_OPTION_MESSAGE)
             messages.append(self._menu_message(guest_status))
             return messages, conversation
@@ -672,20 +715,10 @@ class WhatsAppWorkflow:
             detected = self._detect_request_type(body)
 
             with transaction.atomic():
-                if detected:
-                    service_request = self._create_service_request(conversation, detected, body)
-                    request_name = detected.request_type.name
-                    department_name = (
-                        service_request.department.name
-                        if service_request.department
-                        else "our team"
-                    )
-                    messages.append(
-                        f"We are working on your request. Ticket #{service_request.id} for {request_name} is now with the {department_name} team."
-                    )
-                else:
-                    self._create_unmatched_entry(conversation, body, detected)
-                    messages.append(self.UNMATCHED_CONFIRMATION)
+                # Do not create a ticket directly. Always create a review entry.
+                # If matched, assign the request type and its default department.
+                self._create_unmatched_entry(conversation, body, detected)
+                messages.append(self.UNMATCHED_CONFIRMATION)
 
             conversation.current_state = WhatsAppConversation.STATE_IDLE
             conversation.context.pop("pending_request_started_at", None)

@@ -122,6 +122,7 @@ urlpatterns = [
     path('api/tickets/suggestions/', dashboard_views.get_ticket_suggestions_api, name='api_ticket_suggestions'),
     # Unmatched requests API
     path('api/unmatched-requests/<int:unmatched_id>/resolve/', dashboard_views.resolve_unmatched_request_api, name='api_resolve_unmatched_request'),
+    path('api/unmatched-requests/<int:unmatched_id>/ignore/', dashboard_views.ignore_unmatched_request_api, name='api_ignore_unmatched_request'),
     
     # Twilio API
     path('api/twilio/test-connection/', dashboard_views.test_twilio_connection, name='api_twilio_test_connection'),

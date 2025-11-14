@@ -2,7 +2,7 @@
   <div class=" h-14 left-[24px] top-0 absolute flex gap-8">
     <!-- Checkin Tab -->
     <a href="{% url 'checkin_form' %}"
-       class="w-32 self-stretch text-center text-sm font-medium font-['Inter'] 
+       class="w-32 self-stretch text-center text-sm font-medium font-['Inter'] pt-5
               {% if request.resolver_match.url_name == 'checkin_form' %}
                 text-sky-600 border-b-2 border-sky-600
               {% else %}
@@ -15,7 +15,7 @@
 
     <!-- Scan Tab -->
     <a href="{% url 'scan_voucher' %}"
-       class="w-28 self-stretch text-center text-sm font-medium font-['Inter']
+       class="w-28 self-stretch text-center text-sm font-medium font-['Inter'] pt-5
               {% if request.resolver_match.url_name == 'scan_voucher' %}
                 text-sky-600 border-b-2 border-sky-600
               {% else %}
@@ -26,7 +26,7 @@
 
     <!-- Breakfast Report Tab -->
     <a href="{% url 'breakfast_voucher_report' %}"
-       class="w-40 self-stretch text-center text-sm font-medium font-['Inter']
+       class="w-40 self-stretch text-center text-sm font-medium font-['Inter'] pt-5
               {% if request.resolver_match.url_name == 'breakfast_voucher_report' %}
                 text-sky-600 border-b-2 border-sky-600
               {% else %}
