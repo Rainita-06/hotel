@@ -255,7 +255,7 @@ def complaint_post_save(sender, instance, created, **kwargs):
 
 
 # ---- Guest Check-in/Check-out WhatsApp Signals ----
-from .models import Guest
+from .models import Guest, ServiceRequest
 from .whatsapp_workflow import workflow_handler
 
 
@@ -300,3 +300,90 @@ def guest_post_save(sender, instance, created, **kwargs):
         import logging
         logger = logging.getLogger(__name__)
         logger.error(f'Error sending WhatsApp message for guest {instance.pk}: {str(e)}', exc_info=True)
+
+
+@receiver(post_save, sender=ServiceRequest)
+def service_request_post_save(sender, instance, created, **kwargs):
+    """Send notifications when a service request is created or updated."""
+    try:
+        # Only send notifications for newly created requests
+        if created:
+            # For WhatsApp-created tickets, send notifications to department staff
+            if instance.source == 'whatsapp':
+                # Notify department staff
+                instance.notify_department_staff()
+                
+                # Try to send WhatsApp acknowledgment to guest
+                from hotel_app.dashboard_views import _send_ticket_acknowledgement
+                _send_ticket_acknowledgement(instance, guest=instance.guest)
+            else:
+                # For non-WhatsApp tickets, notify department staff
+                instance.notify_department_staff()
+        else:
+            # Handle status changes for existing requests
+            prev_status = getattr(instance, '_pre_save_status', None)
+            if prev_status and prev_status != instance.status:
+                # Status has changed, send appropriate notifications
+                if instance.status == 'accepted':
+                    # Notify assigned user
+                    instance.notify_assigned_user()
+                elif instance.status == 'in_progress':
+                    # Notify requester that work has started
+                    if instance.requester_user:
+                        from .utils import create_notification
+                        create_notification(
+                            recipient=instance.requester_user,
+                            title=f"Work Started on Ticket #{instance.pk}",
+                            message=f"Work has started on your ticket #{instance.pk}: {instance.request_type.name}.",
+                            notification_type='info',
+                            related_object=instance
+                        )
+                elif instance.status == 'completed':
+                    # Notify requester that ticket is completed
+                    if instance.requester_user:
+                        from .utils import create_notification
+                        create_notification(
+                            recipient=instance.requester_user,
+                            title=f"Ticket #{instance.pk} Completed",
+                            message=f"Your ticket #{instance.pk} has been completed: {instance.request_type.name}.",
+                            notification_type='success',
+                            related_object=instance
+                        )
+                elif instance.status == 'closed':
+                    # Notify requester that ticket is closed
+                    instance.notify_requester_on_closure()
+                elif instance.status == 'escalated':
+                    # Notify department leader
+                    instance.notify_department_leader_on_escalation()
+                elif instance.status == 'rejected':
+                    # Notify requester that ticket is rejected
+                    if instance.requester_user:
+                        from .utils import create_notification
+                        create_notification(
+                            recipient=instance.requester_user,
+                            title=f"Ticket #{instance.pk} Rejected",
+                            message=f"Your ticket #{instance.pk} has been rejected: {instance.request_type.name}.",
+                            notification_type='warning',
+                            related_object=instance
+                        )
+    except Exception as e:
+        # Don't allow notification failures to interrupt request
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f'Error sending notification for service request {instance.pk}: {str(e)}', exc_info=True)
+
+
+@receiver(pre_save, sender=ServiceRequest)
+def service_request_pre_save(sender, instance, **kwargs):
+    """Capture previous state before save to detect status changes."""
+    try:
+        if not instance.pk:
+            instance._pre_save_status = None
+            return
+        previous = ServiceRequest.objects.filter(pk=instance.pk).first()
+        if previous:
+            instance._pre_save_status = previous.status
+        else:
+            instance._pre_save_status = None
+    except Exception:
+        instance._pre_save_status = None

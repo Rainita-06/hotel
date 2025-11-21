@@ -251,7 +251,7 @@
                             <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Assigned To</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Owner</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">SLA %</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
@@ -281,8 +281,22 @@
                             </td>
                             <td class="px-6 py-4">
                                 <div class="flex items-center">
-                                    <img class="w-6 h-6 rounded-full" src="{{ ticket.assignee_user.profile.avatar.url|default:'/static/images/default_avatar.png' }}" alt="Avatar">
-                                    <div class="ml-3 text-sm text-gray-900">{% if ticket.assignee_user %}{{ ticket.assignee_user.get_full_name|default:ticket.assignee_user.username }}{% else %}Unassigned{% endif %}</div>
+                                    {% if ticket.assignee_user %}
+                                        <img class="w-6 h-6 rounded-full" src="{{ ticket.assignee_user.profile.avatar.url|default:'/static/images/default_avatar.png' }}" alt="Avatar" onerror="this.src='{% static "images/default_avatar.png" %}';">
+                                        <div class="ml-3 text-sm text-gray-900">{{ ticket.assignee_user.get_full_name|default:ticket.assignee_user.username }}</div>
+                                    {% else %}
+                                        <span class="text-gray-400">Unassigned</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    {% if ticket.requester %}
+                                        <img class="w-6 h-6 rounded-full" src="{{ ticket.requester.profile.avatar.url|default:'/static/images/default_avatar.png' }}" alt="Owner Avatar" onerror="this.src='{% static "images/default_avatar.png" %}';">
+                                        <div class="ml-3 text-sm text-gray-900">{{ ticket.requester.get_full_name|default:ticket.requester.username }}</div>
+                                    {% else %}
+                                        <span class="text-gray-400">Unknown</span>
+                                    {% endif %}
                                 </div>
                             </td>
                             <td class="px-6 py-4">
@@ -296,7 +310,9 @@
                                 </div>
                             </td>
                             <td class="px-6 py-4">
-                                <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-{{ ticket.status_color }}-100 text-{{ ticket.status_color }}-700">{{ ticket.get_status_display }}</span>
+                                <a href="{% url 'dashboard:ticket_detail' ticket.id %}" class="text-gray-600 hover:text-gray-900">
+                                    <img src="{% static 'images/tickets/eye.svg' %}" alt="View" class="w-5 h-5">
+                                </a>
                             </td>
                            
                         </tr>

@@ -32,11 +32,8 @@ COPY . /app/
 RUN chown -R appuser:appuser /app
 USER appuser
 
-# Collect static files
-RUN python manage.py collectstatic --noinput --verbosity=0
-
 # Expose port
 EXPOSE 8000
 
 # Run the application
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "120", "config.wsgi:application"]
+CMD ["sh", "-c", "python manage.py collectstatic --noinput --verbosity=0 && gunicorn --bind 0.0.0.0:8000 --workers 3 --timeout 120 config.wsgi:application"]
