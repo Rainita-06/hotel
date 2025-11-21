@@ -3387,7 +3387,10 @@ def whatsapp_webhook(request):
         Voucher.objects.filter(phone_number__icontains=phone_digits).first()
         or Voucher.objects.filter(phone_number__icontains=phone_last10).first()
     )
-
+    if not voucher:
+        print("⚠️ Guest not found for phone:", phone_digits)
+        resp.message("⚠️ Sorry! Your number is not registered in our system.")
+        return HttpResponse(str(resp))
     guest_name = voucher.guest_name if voucher else "Guest"
     room_no = voucher.room_no if voucher else "N/A"
 
@@ -3501,6 +3504,7 @@ def tickets_view(request):
     }
 
     return render(request, "dashboard/ticket_review.html", context)
+
 
 
 # -----------------------------------------------------------

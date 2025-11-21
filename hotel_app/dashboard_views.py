@@ -1176,6 +1176,35 @@ def manage_users_api_filters(request):
     return JsonResponse({'roles': roles, 'departments': departments})
 
 
+# @require_http_methods(['POST'])
+# @login_required
+# @user_passes_test(lambda u: u.is_superuser or u.is_staff)
+# def manage_users_api_bulk_action(request):
+#     """Bulk action endpoint. Expects JSON body with 'action' and 'user_ids' list.
+#     Supported actions: enable, disable
+#     """
+#     try:
+#         body = json.loads(request.body.decode('utf-8'))
+#     except Exception:
+#         return HttpResponseBadRequest('invalid json')
+#     action = body.get('action')
+#     ids = body.get('user_ids') or []
+#     if action not in ('enable', 'disable'):
+#         return HttpResponseBadRequest('unsupported action')
+#     if not isinstance(ids, list):
+#         return HttpResponseBadRequest('user_ids must be list')
+#     users = User.objects.filter(id__in=ids).select_related('userprofile')
+#     changed = []
+#     for u in users:
+#         profile = getattr(u, 'userprofile', None)
+#         if not profile:
+#             continue
+#         new_val = True if action == 'enable' else False
+#         if profile.enabled != new_val:
+#             profile.enabled = new_val
+#             profile.save(update_fields=['enabled'])
+#             changed.append(u.id)
+#     return JsonResponse({'changed': changed, 'action': action})
 @require_http_methods(['POST'])
 @login_required
 @user_passes_test(lambda u: u.is_superuser or u.is_staff)
@@ -1187,23 +1216,36 @@ def manage_users_api_bulk_action(request):
         body = json.loads(request.body.decode('utf-8'))
     except Exception:
         return HttpResponseBadRequest('invalid json')
+
     action = body.get('action')
     ids = body.get('user_ids') or []
+
     if action not in ('enable', 'disable'):
         return HttpResponseBadRequest('unsupported action')
+
     if not isinstance(ids, list):
         return HttpResponseBadRequest('user_ids must be list')
+
     users = User.objects.filter(id__in=ids).select_related('userprofile')
     changed = []
+
+    new_val = True if action == 'enable' else False
+
     for u in users:
         profile = getattr(u, 'userprofile', None)
         if not profile:
             continue
-        new_val = True if action == 'enable' else False
-        if profile.enabled != new_val:
-            profile.enabled = new_val
-            profile.save(update_fields=['enabled'])
-            changed.append(u.id)
+        
+        # Update UserProfile.enabled
+        profile.enabled = new_val
+        profile.save(update_fields=['enabled'])
+
+        # Update Django auth_user.is_active ALSO
+        u.is_active = new_val
+        u.save(update_fields=['is_active'])
+
+        changed.append(u.id)
+
     return JsonResponse({'changed': changed, 'action': action})
 
 @login_required
@@ -2100,6 +2142,7 @@ def tickets(request):
     paginator = Paginator(all_reviews, 10)  # 10 reviews per page
     page_number = request.GET.get('page')
     page_ob = paginator.get_page(page_number)
+    
     context = {
         'departments': departments_data,
         'page_ob':page_ob,
@@ -4054,19 +4097,47 @@ def user_delete(request, user_id):
     return redirect("dashboard:users")
 
 
+# @require_permission([ADMINS_GROUP])
+# def manage_users_toggle_enabled(request, user_id):
+#     """Toggle the 'enabled' flag on a user's UserProfile. Expects POST."""
+#     if request.method != 'POST':
+#         return JsonResponse({'error': 'POST required'}, status=405)
+#     user = get_object_or_404(User, pk=user_id)
+#     profile = getattr(user, 'userprofile', None)
+#     if not profile:
+#         return JsonResponse({'error': 'UserProfile missing'}, status=400)
+#     profile.enabled = not bool(profile.enabled)
+#     profile.save(update_fields=['enabled'])
+#     return JsonResponse({'id': user.pk, 'enabled': profile.enabled})
+
 @require_permission([ADMINS_GROUP])
 def manage_users_toggle_enabled(request, user_id):
-    """Toggle the 'enabled' flag on a user's UserProfile. Expects POST."""
+    """Toggle enabled and keep Django user.is_active in sync."""
     if request.method != 'POST':
         return JsonResponse({'error': 'POST required'}, status=405)
+
     user = get_object_or_404(User, pk=user_id)
     profile = getattr(user, 'userprofile', None)
+
     if not profile:
         return JsonResponse({'error': 'UserProfile missing'}, status=400)
-    profile.enabled = not bool(profile.enabled)
-    profile.save(update_fields=['enabled'])
-    return JsonResponse({'id': user.pk, 'enabled': profile.enabled})
 
+    # Toggle the value
+    new_val = not bool(profile.enabled)
+
+    # Update UserProfile.enabled
+    profile.enabled = new_val
+    profile.save(update_fields=['enabled'])
+
+    # Update Django auth_user.is_active
+    user.is_active = new_val
+    user.save(update_fields=['is_active'])
+
+    return JsonResponse({
+        'id': user.pk,
+        'enabled': profile.enabled,
+        'is_active': user.is_active
+    })
 
 # ---- Department Management ----
 @require_permission([ADMINS_GROUP, STAFF_GROUP])

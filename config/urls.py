@@ -149,7 +149,7 @@ urlpatterns = [
     path("whatsapp/webhook/", views.whatsapp_webhook, name="whatsapp_webhook"),
     path("dashboard/tickets/", views.tickets_view, name="tickets_view"),
     path('tickets/review/submit/<int:review_id>/', views.submit_ticket_review, name='submit_ticket_review'),
-
+    
     # path("tickets/review/<int:ticket_id>/", views.submit_ticket_review, name="submit_ticket_review"),
     # path("dashboard/", views.dashboard_view, name="dashboard_view"),
         # path('tickets/review/', views.review_unclassified_tickets, name='review_unclassified_tickets'),
