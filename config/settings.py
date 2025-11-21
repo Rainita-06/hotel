@@ -91,15 +91,23 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'config.wsgi.application'
+CSRF_TRUSTED_ORIGINS = [
+    "https://loose-palmer-automobiles-marks.trycloudflare.com"
+]
 
-
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.trycloudflare.com",
+]
+# settings.py
+SECURE_CONTENT_SECURITY_POLICY = "default-src 'self'; script-src 'self'; style-src 'self'"
+SECURE_CONTENT_TYPE_NOSNIFF = True
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
     'default': {
-        'ENGINE': 'mysql.connector.django',
-        'NAME': os.environ.get('DB_NAME', 'temp'),
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.environ.get('DB_NAME', 'hotel_data'),
         'USER': os.environ.get('DB_USER', 'root'),
         'PASSWORD': os.environ.get('DB_PASSWORD', 'root'),
         'HOST': os.environ.get('DB_HOST', '127.0.0.1'),

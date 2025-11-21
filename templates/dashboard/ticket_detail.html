@@ -44,12 +44,12 @@
 
             <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 lg:p-6">
                 <div class="hidden lg:flex items-start gap-4">
-                    <img class="w-10 h-10 rounded-full" src="{{ ticket.requester_user.userprofile.avatar_url|default:'/static/images/tickets/default_avatar.png' }}" alt="Requester Avatar" onerror="this.src='/static/images/tickets/default_avatar.png'"/>
+                    <img class="w-10 h-10 rounded-full" src="{{ ticket.requester_user.userprofile.avatar_url|default:'/static/images/tickets/default_avatar.png' }}" alt="Requester Avatar" "/>
                     <div class="w-full">
                         <div class="flex justify-between items-start">
                             <div>
-                                <p class="text-base font-semibold text-gray-900">{{ requester_name }}</p>
-                                <p class="text-sm text-gray-500">Guest • Room {{ room_number }} • VIP Member</p>
+                                <p class="text-base font-semibold text-gray-900">{{guest_name|default:requester_name}}</p>
+                                <p class="text-sm text-gray-500">  Guest: {{ guest_name|default:"Unknown" }} • Room {{ room_number|default:"N/A" }}</p>
                             </div>
                             <p class="text-sm text-gray-500 flex-shrink-0">{{ created_time }}</p>
                         </div>

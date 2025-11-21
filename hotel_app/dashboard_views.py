@@ -1625,7 +1625,7 @@ from django.http import JsonResponse
 
 from hotel_app.models import User
 from .forms import GymMemberForm
-from .models import GymMember
+from .models import GymMember, TicketReview
 
 # Constants
 ADMINS_GROUP = 'Admins'
@@ -2087,9 +2087,22 @@ def tickets(request):
     paginator = Paginator(processed_tickets, 10)  # Show 10 tickets per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+    matched_reviews = TicketReview.objects.filter(
+        is_matched__in=[True, 1],
+        moved_to_ticket__in=[False, 0]
+    ).select_related("matched_department", "matched_request_type").order_by('-created_at')
+
+    unmatched_reviews = TicketReview.objects.filter(
+        is_matched__in=[False, 0],
+        moved_to_ticket__in=[False, 0]
+    ).order_by('-created_at')
+    all_reviews = list(matched_reviews) + list(unmatched_reviews)
+    paginator = Paginator(all_reviews, 10)  # 10 reviews per page
+    page_number = request.GET.get('page')
+    page_ob = paginator.get_page(page_number)
     context = {
         'departments': departments_data,
+        'page_ob':page_ob,
         'tickets': page_obj,  # Pass the page_obj to the template
         'page_obj': page_obj,  # Pass it again as page_obj for clarity
         'total_tickets': tickets_queryset.count(),
@@ -2098,6 +2111,8 @@ def tickets(request):
         'priority_filter': priority_filter,
         'status_filter': status_filter,
         'search_query': search_query,
+        "matched_reviews": matched_reviews,
+        "unmatched_reviews": unmatched_reviews,
     }
     return render(request, 'dashboard/tickets.html', context)
 
@@ -2235,21 +2250,25 @@ def ticket_detail(request, ticket_id):
     
     # Get location info
     location_name = 'Unknown Location'
-    room_number = 'N/A'
+    room_number = service_request.room_no or 'N/A'
     floor = 'N/A'
     building = 'N/A'
     room_type = 'N/A'
+    guest_name = service_request.guest_name or requester_name
     
     if service_request.location:
-        location_name = service_request.location.name
-        room_number = getattr(service_request.location, 'room_no', 'N/A') or 'N/A'
+        location_name = getattr(service_request.location, 'name', 'Unknown Location')
+        room_number = getattr(service_request.location, 'room_no', room_number)
         if hasattr(service_request.location, 'floor') and service_request.location.floor:
-
             floor = f"{service_request.location.floor.floor_number} Floor"
             if service_request.location.floor.building:
                 building = service_request.location.floor.building.name
-        if service_request.location.type:
+        if hasattr(service_request.location, 'type') and service_request.location.type:
             room_type = service_request.location.type.name
+
+# ✅ If unmatched (Twilio message converted), guest_name & room_no still show
+    if not service_request.location and not service_request.guest_name:
+        guest_name = requester_name or "Unknown Guest"
     
     # Get department info - Use the actual department from the service request
     department_name = 'Unknown Department'
@@ -2391,6 +2410,7 @@ def ticket_detail(request, ticket_id):
         'location_name': location_name,
         'room_number': room_number,
         'floor': floor,
+        'guest_name':guest_name,
         'building': building,
         'room_type': room_type,
         'department_name': department_name,
@@ -7511,4 +7531,59 @@ def building_edit(request, building_id):
         messages.success(request, "Building updated successfully!")
         return redirect("building_cards")
     return render(request, "building_form.html", {"building": building})
+
+
+@login_required
+def tickets_view(request):
+    """Dashboard showing ServiceRequest tickets + TicketReview (matched/unmatched)."""
+
+    # ---- ServiceRequest Tickets ----
+    search_query = request.GET.get("search", "")
+    department_filter = request.GET.get("department", "")
+    priority_filter = request.GET.get("priority", "")
+    status_filter = request.GET.get("status", "")
+
+    tickets = ServiceRequest.objects.all().order_by("-created_at")
+
+    if search_query:
+        tickets = tickets.filter(notes__icontains=search_query)
+    if department_filter:
+        tickets = tickets.filter(department__name__icontains=department_filter)
+    if priority_filter:
+        tickets = tickets.filter(priority__iexact=priority_filter.lower())
+    if status_filter:
+        tickets = tickets.filter(status__iexact=status_filter.lower())
+
+    paginator = Paginator(tickets, 10)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    # ---- TicketReview Data ----
+    matched_reviews = TicketReview.objects.filter(
+    is_matched__in=[True, 1],
+    moved_to_ticket__in=[False, 0]
+).select_related("matched_department", "matched_request_type")
+
+    unmatched_reviews = TicketReview.objects.filter(
+    is_matched__in=[False, 0],
+    moved_to_ticket__in=[False, 0]
+)
+
+
+    # ---- Context ----
+    context = {
+        "tickets": page_obj.object_list,
+        "page_obj": page_obj,
+        "departments": Department.objects.all(),
+        "request_types": RequestType.objects.filter(active=True),
+        "search_query": search_query,
+        "department_filter": department_filter,
+        "priority_filter": priority_filter,
+        "status_filter": status_filter,
+        "matched_reviews": matched_reviews,
+        "unmatched_reviews": unmatched_reviews,
+    }
+
+    return render(request, "dashboard/ticket_review.html", context)
+
 

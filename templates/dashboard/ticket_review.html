@@ -1,0 +1,231 @@
+{% load static %}
+{% block content %}
+<div class="w-full max-w-[1184px] mx-auto bg-transparent">
+
+    <!-- Header -->
+    <div class="w-full h-20 bg-white border-b border-gray-200 flex items-center px-6">
+        <div class="w-full flex justify-between items-center">
+            <div>
+                <h1 class="text-gray-900 text-2xl font-bold font-['Inter']">Ticket Reviews</h1>
+                <p class="text-gray-600 text-sm font-normal font-['Inter']">Review and approve tickets from guests before creating Service Requests.</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <button class="p-2 rounded-lg hover:bg-gray-100">
+                    <img src="{% static 'images/tickets/help.svg' %}" alt="Help" class="w-6 h-6" />
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="p-6">
+        <!-- Main Reviews Section -->
+        <div class="mt-6 w-full bg-white rounded-xl shadow-sm border border-gray-200 animate-on-load">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-gray-900 text-lg font-semibold font-['Inter']">Guest Ticket Reviews</h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Guest</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Room No</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Request Type</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Department</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Priority</th>
+                            <th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for r in matched_reviews %}
+                        <tr class="hover:bg-gray-50 transition">
+                            <td class="p-4 text-sm font-medium text-gray-900">#{{ r.id }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-900">{{ r.guest_name }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-900">{{ r.room_no }}</td>
+                            
+                            <!-- Description with Toggle -->
+                            <td class="px-6 py-4 text-sm text-gray-600 max-w-xs">
+                                <div class="flex flex-col">
+                                    {% if r.request_text|length > 50 %}
+                                        <span id="short-desc-{{ r.id }}">{{ r.request_text|slice:":50" }}...</span>
+                                        <span id="full-desc-{{ r.id }}" class="hidden">{{ r.request_text }}</span>
+                                        <button type="button" class="text-blue-500 hover:text-blue-700 text-xs mt-1"
+                                                onclick="toggleDescription('{{ r.id }}')">View full</button>
+                                    {% else %}
+                                        {{ r.request_text }}
+                                    {% endif %}
+                                </div>
+                            </td>
+
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                    ✅ Matched
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-900">{{ r.matched_request_type.name }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-900">{{ r.matched_department.name }}</td>
+                            <td class="px-6 py-4">
+                                <select name="priority" class="border border-gray-300 rounded-lg px-2 py-1 text-sm focus:ring-2 focus:ring-blue-400" onchange="this.form.submit()">
+                                    <option value="normal">Normal</option>
+                                    <option value="high" selected>High</option>
+                                    <option value="critical">Critical</option>
+                                </select>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <form method="post" action="{% url 'submit_ticket_review' r.id %}" class="inline-flex items-center gap-2">
+                                    {% csrf_token %}
+                                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors">
+                                        Approve
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+
+                        {% for r in unmatched_reviews %}
+                        <tr class="hover:bg-gray-50 transition">
+    <form method="post" action="{% url 'submit_ticket_review' r.id %}">
+        {% csrf_token %}
+
+        <!-- ID -->
+        <td class="p-4 text-sm font-medium text-gray-900">#{{ r.id }}</td>
+
+        <!-- Guest -->
+        <td class="px-6 py-4 text-sm text-gray-900">{{ r.guest_name }}</td>
+
+        <!-- Room -->
+        <td class="px-6 py-4 text-sm text-gray-900">{{ r.room_no|default:"-" }}</td>
+
+        <!-- Description with Toggle -->
+        <td class="px-6 py-4 text-sm text-gray-600 max-w-xs">
+            <div class="flex flex-col">
+                {% if r.request_text|length > 50 %}
+                    <span id="short-desc-{{ r.id }}">{{ r.request_text|slice:":50" }}...</span>
+                    <span id="full-desc-{{ r.id }}" class="hidden">{{ r.request_text }}</span>
+
+                    <button type="button" 
+                        class="text-blue-500 hover:text-blue-700 text-xs mt-1"
+                        onclick="toggleDescription('{{ r.id }}')">
+                        View full
+                    </button>
+                {% else %}
+                    {{ r.request_text }}
+                {% endif %}
+            </div>
+        </td>
+
+        <!-- Status -->
+        <td class="px-6 py-4 whitespace-nowrap">
+            <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800">
+                ⚠️ Unmatched
+            </span>
+        </td>
+<td class="px-6 py-4"></td>
+        <!-- Department -->
+        <td class="px-6 py-4">
+            <select name="department"
+                class="border border-gray-300 rounded-lg px-2 py-1 text-sm w-32"
+                required>
+                <option value="" disabled selected>Select Dept</option>
+                {% for d in departments %}
+                    <option value="{{ d.id }}">{{ d.name }}</option>
+                {% endfor %}
+            </select>
+        </td>
+
+        <!-- Priority -->
+        <td class="px-6 py-4">
+            <select name="priority"
+                class="border border-gray-300 rounded-lg px-2 py-1 text-sm">
+                <option value="normal">Normal</option>
+                <option value="high" selected>High</option>
+                <option value="critical">Critical</option>
+            </select>
+        </td>
+
+        <!-- Approve Button -->
+        <td class="px-6 py-4 text-center">
+            <button type="submit"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors">
+                Approve
+            </button>
+        </td>
+
+    </form>
+</tr>
+
+                        {% endfor %}
+
+                        {% if not matched_reviews and not unmatched_reviews %}
+                        <tr>
+                            <td colspan="9" class="px-6 py-12 text-center text-gray-500">
+                                <div class="flex flex-col items-center gap-2">
+                                    <svg class="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                    <p class="font-medium">No ticket reviews available.</p>
+                                    <p class="text-sm">Approved or unmatched tickets will appear here.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- ✅ Pagination -->
+            {% if page_ob %}
+            <div class="px-6 py-4 border-t border-gray-200 flex justify-between items-center">
+                <div class="text-sm text-gray-500">
+                    Showing {{ page_ob.start_index }}–{{ page_ob.end_index }} of {{ page_ob.paginator.count }} tickets
+                </div>
+                <div class="flex items-center gap-2">
+                    {% if page_ob.has_previous %}
+                        <a href="?page={{ page_ob.previous_page_number }}" class="px-3 h-8 text-sm rounded-lg border border-gray-300 bg-white hover:bg-gray-50 flex items-center">Previous</a>
+                    {% else %}
+                        <button class="px-3 h-8 text-sm rounded-lg border border-gray-300 bg-white opacity-50" disabled>Previous</button>
+                    {% endif %}
+
+                    {% for num in page_ob.paginator.page_range %}
+                        {% if num == page_ob.number %}
+                            <span class="px-3 h-8 text-sm rounded-lg bg-blue-100 text-blue-800 font-medium">{{ num }}</span>
+                        {% elif num > page_ob.number|add:'-3' and num < page_ob.number|add:'3' %}
+                            <a href="?page={{ num }}" class="px-3 h-8 text-sm rounded-lg border border-gray-300 bg-white hover:bg-gray-50 flex items-center">{{ num }}</a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_ob.has_next %}
+                        <a href="?page={{ page_ob.next_page_number }}" class="px-3 h-8 text-sm rounded-lg border border-gray-300 bg-white hover:bg-gray-50 flex items-center">Next</a>
+                    {% else %}
+                        <button class="px-3 h-8 text-sm rounded-lg border border-gray-300 bg-white opacity-50" disabled>Next</button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- ✅ JS for Description Toggle -->
+<script>
+function toggleDescription(id) {
+    const shortDesc = document.getElementById(`short-desc-${id}`);
+    const fullDesc = document.getElementById(`full-desc-${id}`);
+    const button = event.target;
+
+    if (shortDesc.classList.contains('hidden')) {
+        shortDesc.classList.remove('hidden');
+        fullDesc.classList.add('hidden');
+        button.textContent = 'View full';
+    } else {
+        shortDesc.classList.add('hidden');
+        fullDesc.classList.remove('hidden');
+        button.textContent = 'View less';
+    }
+}
+
+</script>
+{% endblock content %}

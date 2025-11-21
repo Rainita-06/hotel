@@ -140,6 +140,25 @@ urlpatterns = [
     path("data-checker/", views.data_checker, name="data_checker"),
      path('members/<int:member_id>/', views.member_detail, name='member_detail'),
 
+     # urls.py
+
+    # path("whatsapp/webhook/", views.whatsapp_webhook, name="whatsapp_webhook"),
+    # path("tickets/review/", views.review_tickets, name="review_tickets"),
+    # path("tickets/review/submit/<int:ticket_id>/", views.submit_ticket_review, name="submit_ticket_review"),
+    # path("dashboard/", views.dashboard_view, name="dashboard_view"),
+    path("whatsapp/webhook/", views.whatsapp_webhook, name="whatsapp_webhook"),
+    path("dashboard/tickets/", views.tickets_view, name="tickets_view"),
+    path('tickets/review/submit/<int:review_id>/', views.submit_ticket_review, name='submit_ticket_review'),
+
+    # path("tickets/review/<int:ticket_id>/", views.submit_ticket_review, name="submit_ticket_review"),
+    # path("dashboard/", views.dashboard_view, name="dashboard_view"),
+        # path('tickets/review/', views.review_unclassified_tickets, name='review_unclassified_tickets'),
+    # path('tickets/review/submit/<int:ticket_id>/', views.submit_ticket_review, name='submit_ticket_review'),
+#  path("dashboard/tickets/", views.ticket_review_dashboard, name="ticket_review_dashboard"),
+
+    #   path("dashboard/review-queue/", views.review_queue_view, name="review_queue_view"),
+    # path("dashboard/review/<int:review_id>/submit/", views.submit_review, name="submit_review"),
+    
     path('api/', include(router.urls)),
     
     #Api for authorization

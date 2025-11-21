@@ -14,7 +14,7 @@ User = get_user_model()
 from django.contrib.auth.models import User
 class Department(models.Model):
     department_id = models.BigAutoField(primary_key=True)
-    name = models.CharField(max_length=100, blank=False, null=False)   # updated (was 120)
+    # name = models.CharField(max_length=100,blank=False, null=False)   # updated (was 120)
     description = models.CharField(max_length=255, null=True, blank=True)  
     lead = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)       # added
     name = models.CharField(max_length=120, unique=True)
@@ -315,7 +315,7 @@ class Location(models.Model):
     pavilion = models.CharField(max_length=120, null=True, blank=True)   # added
     room_no = models.CharField(max_length=40,blank=True, null=True)
     capacity = models.IntegerField(blank=True, null=True)
-    building = models.ForeignKey('Building', models.DO_NOTHING,blank=False, null=False,related_name='locations')  # kept for compatibility
+    building = models.ForeignKey('Building', models.DO_NOTHING,blank=True, null=True,related_name='locations')  # kept for compatibility
     is_occupied = models.BooleanField(default=False)
     class Meta:
         db_table = 'location'
@@ -404,7 +404,100 @@ class RequestType(models.Model):
     class Meta:
         db_table='request_type'
 
+# class ReviewQueue(models.Model):
+#     """
+#     📩 Temporary holding area for incoming WhatsApp messages.
+#     Admin reviews → moves to ServiceRequest.
+#     """
+#     guest_name = models.CharField(max_length=100, blank=True, null=True)
+#     phone_number = models.CharField(max_length=50)
+#     room_no = models.CharField(max_length=10, blank=True, null=True)
+#     message_text = models.TextField()
+#     matched_request_type = models.ForeignKey(RequestType, on_delete=models.SET_NULL, null=True, blank=True)
+#     guest_info = models.TextField(blank=True, null=True)
+#     created_at = models.DateTimeField(default=timezone.now)
 
+#     def __str__(self):
+#         return f"Review #{self.id} - {self.phone_number}"
+#     class Meta:
+#         db_table='review_queue'
+# class IncomingMessage(models.Model):
+#     """Stores all WhatsApp messages (matched/unmatched) before classification"""
+#     guest_name = models.CharField(max_length=100, blank=True)
+#     phone_number = models.CharField(max_length=50)
+#     room_no = models.CharField(max_length=50, blank=True)
+#     body = models.TextField()
+#     received_at = models.DateTimeField(default=timezone.now)
+#     reviewed = models.BooleanField(default=False)
+
+#     def __str__(self):
+#         return f"{self.guest_name or 'Guest'} ({self.phone_number})"
+#     class Meta:
+#         db_table="income"
+from django.utils import timezone
+from django.conf import settings
+
+class TicketReview(models.Model):
+    """Temporary holding model for requests before creating final ServiceRequest"""
+    
+    voucher = models.ForeignKey('Voucher', on_delete=models.SET_NULL, null=True, blank=True)
+    guest_name = models.CharField(max_length=120, blank=True, null=True)
+    room_no = models.CharField(max_length=50, blank=True, null=True)
+    phone_number = models.CharField(max_length=50, blank=False, null=False, db_index=True)
+    request_text = models.TextField(blank=True, null=True)
+
+    matched_request_type = models.ForeignKey('RequestType', on_delete=models.SET_NULL, null=True, blank=True)
+    matched_department = models.ForeignKey('Department', on_delete=models.SET_NULL, null=True, blank=True)
+    priority = models.CharField(max_length=20, default='normal')
+
+    # AI / rule confidence score
+    match_confidence = models.FloatField(default=0.0)
+    is_matched = models.BooleanField(default=False)
+
+    review_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('pending', 'Pending'),
+            ('approved', 'Approved'),
+            ('rejected', 'Rejected'),
+        ],
+        default='pending'
+    )
+
+    reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    reviewed_at = models.DateTimeField(blank=True, null=True)
+    moved_to_ticket = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"TicketReview #{self.pk} - {self.guest_name or self.phone_number}"
+
+    class Meta:
+        db_table = "ticket_review"
+        ordering = ['-created_at']
+
+# from django.db import models
+# from django.utils import timezone
+
+# # Existing models: Voucher, RequestType, Department, DepartmentRequestSLA, ServiceRequest
+
+# class UnclassifiedTicket(models.Model):
+#     """
+#     All incoming WhatsApp requests (matched or unmatched)
+#     go here first for review.
+#     """
+#     voucher = models.ForeignKey("Voucher", on_delete=models.SET_NULL, null=True, blank=True)
+#     guest_name = models.CharField(max_length=255, blank=True, null=True)
+#     room_no = models.CharField(max_length=50, blank=True, null=True)
+#     phone_number = models.CharField(max_length=50, blank=True, null=True)
+#     body = models.TextField()
+#     created_at = models.DateTimeField(default=timezone.now)
+#     reviewed = models.BooleanField(default=False)
+
+#     def __str__(self):
+#         return f"Ticket #{self.pk} - {self.guest_name or 'Unknown'}"
+#     class Meta:
+#         db_table="unclassified"
 class ServiceRequest(models.Model):
     PRIORITY_CHOICES = [
         ('low', 'Low'),
@@ -422,7 +515,10 @@ class ServiceRequest(models.Model):
         ('escalated', 'Escalated'),
         ('rejected', 'Rejected'),
     ]
-    
+    guest_name = models.CharField(max_length=100, blank=True, null=True)
+    room_no = models.CharField(max_length=50, blank=True, null=True)
+    phone_number = models.CharField(max_length=50, blank=True, null=True)
+    body = models.TextField(blank=True, null=True) 
     request_type = models.ForeignKey(RequestType, on_delete=models.SET_NULL, null=True, blank=True)
     location = models.ForeignKey(Location, on_delete=models.SET_NULL, null=True, blank=True)
     requester_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='requests_made')
