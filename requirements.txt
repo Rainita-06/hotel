@@ -12,8 +12,4 @@ pandas
 openpyxl==3.1.5
 openpyxl==3.1.5
 twilio==8.8.0
-<<<<<<< HEAD
-
-=======
 django-extensions>=3.2
->>>>>>> 6e87767 (twilio,dashboard data)
