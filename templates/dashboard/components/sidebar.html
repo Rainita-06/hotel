@@ -3,14 +3,8 @@
 <div id="sidebar" class="sidebar w-64 h-screen bg-white border-r border-gray-200 flex flex-col sidebar-transition">
   <div class="px-6 py-5 border-b border-gray-200">
     <div class="flex items-center gap-3">
-      <div
-        class="w-10 h-10 bg-sky-600 rounded-lg flex justify-center items-center"
-      >
-        <img
-          src="{% static 'images/sidebar/GuestConnect.svg' %}"
-          alt="GuestConnect"
-          class="w-6 h-6"
-        />
+      <div class="w-10 h-10 bg-sky-600 rounded-lg flex justify-center items-center">
+        <img src="{% static 'images/sidebar/GuestConnect.svg' %}" alt="GuestConnect" class="w-6 h-6" />
       </div>
 
       <div>
@@ -22,203 +16,124 @@
 
   <nav class="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
     <div>
-      <div
-        class="px-3 py-1 text-gray-400 text-xs font-semibold tracking-tight"
-      >
+      <div class="px-3 py-1 text-gray-400 text-xs font-semibold tracking-tight">
         Overview
       </div>
 
-      <a
-        href="{% url 'dashboard:main' %}"
-        class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:main' %} text-sky-600 bg-sky-100 {% else %} text-gray-600 hover:bg-gray-100 {% endif %}"
-      >
+      <a href="{% url 'dashboard:main' %}"
+        class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:main' %} text-sky-600 bg-sky-100 {% else %} text-gray-600 hover:bg-gray-100 {% endif %}">
         <img
           src="{% if request.resolver_match.view_name == 'dashboard:main' %}{% static 'images/sidebar/dashboard_highlighted.svg' %}{% else %}{% static 'images/sidebar/dashboard.svg' %}{% endif %}"
-          alt="Dashboard Icon"
-          class="w-5 h-5"
-        />
+          alt="Dashboard Icon" class="w-5 h-5" />
         <span class="font-medium">Dashboard</span>
       </a>
     </div>
 
     <!-- Management Section - Visible based on user permissions -->
-    {% if perms.dashboard.view_dashboard %}
+    {% load section_permissions %}
+    {% if user|has_section_permission:'dashboard.view' %}
     <div>
-      <div
-        class="px-3 py-1 text-gray-400 text-xs font-semibold tracking-tight"
-      >
+      <div class="px-3 py-1 text-gray-400 text-xs font-semibold tracking-tight">
         Management
       </div>
       <div class="space-y-1">
-        {% if perms.users.view_user %}
-        <a
-          href="{% url 'dashboard:manage_users' %}"
-          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if '/dashboard/manage-users' in request.path %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
-        >
+        {% if user|has_section_permission:'users.view' %}
+        <a href="{% url 'dashboard:manage_users' %}"
+          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if '/dashboard/manage-users' in request.path %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}">
           <img
             src="{% if '/dashboard/manage-users' in request.path %}{% static 'images/sidebar/manage_users_highlighted.svg' %}{% else %}{% static 'images/sidebar/manage_users.svg' %}{% endif %}"
-            alt="Manage Users Icon"
-            class="w-5 h-5"
-          />
+            alt="Manage Users Icon" class="w-5 h-5" />
           <span class="font-medium">Users</span>
         </a>
         {% endif %}
-        
-        {% if perms.locations.view_location %}
+
+        {% if user|has_section_permission:'locations.view' %}
         {% with current=request.resolver_match.view_name %}
-<a
-  href="{% url 'dashboard:locations' %}"
-  class="flex items-center gap-3 px-3 py-2 rounded-lg 
-         {% if current in "dashboard:locations locations_list floors_list types_list location_manage building_cards" %}
-             text-sky-600 bg-sky-100
-         {% else %}
-             text-gray-700 hover:bg-gray-100
-         {% endif %}">
-  <img
-    src="{% if current in "dashboard:locations locations_list floors_list types_list location_manage building_cards" %}
-             {% static 'images/sidebar/locations_highlighted.svg' %}
-         {% else %}
-             {% static 'images/sidebar/locations.svg' %}
-         {% endif %}"
-         alt="{% if current in "dashboard:locations locations_list floors_list types_list location_manage building_cards" %}
-             Active Location Icon
-         {% else %}
-             Location Icon
-         {% endif %}"
-    class="w-5 h-5"
-  />
-  <span class="font-medium">Locations</span>
-</a>
-{% endwith %}
-
-         {% with current=request.resolver_match.view_name %}
-<a
-  href="{% url 'checkin_form' %}"
-  class="flex items-center gap-3 px-3 py-2 rounded-lg 
-         {% if current in "checkin_form scan_voucher breakfast_voucher_report" %}
-             text-sky-600 bg-sky-100
-         {% else %}
-             text-gray-700 hover:bg-gray-100
-         {% endif %}">
-  <img
-    src="{% if current in "checkin_form scan_voucher breakfast_voucher_report" %}
-             {% static 'images/sidebar/locations_highlighted.svg' %}
-         {% else %}
-             {% static 'images/sidebar/locations.svg' %}
-         {% endif %}"
-         alt="{% if current in "checkin_form scan_voucher breakfast_voucher_report" %}
-            Active Location Icon
-         {% else %}
-            Location Icon
-         {% endif %}"
-    class="w-5 h-5"
-  />
-  <span class="font-medium">Breakfast Voucher</span>
-</a>
-
-{% endwith %}
+        <a href="{% url 'dashboard:locations' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg 
+         {% if current in 'dashboard:locations locations_list floors_list types_list location_manage building_cards' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}">
+          <img src="{% if current in 'dashboard:locations locations_list floors_list types_list location_manage building_cards' %} {% static 'images/sidebar/locations_highlighted.svg' %} {% else %} {% static 'images/sidebar/locations.svg' %} {% endif %}" alt="{% if current in 'dashboard:locations locations_list floors_list types_list location_manage building_cards' %} Active Location Icon {% else %} Location Icon {% endif %}" class="w-5 h-5" />
+          <span class="font-medium">Locations</span>
+        </a>
+        {% endwith %}
         {% endif %}
-        
-        {% if perms.tickets.view_servicerequest %}
-        <a
-           href="{% url 'dashboard:tickets' %}"
-          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:tickets' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
-        >
+
+        {% if user|has_section_permission:'breakfast_voucher.view' %}
+        {% with current=request.resolver_match.view_name %}
+        <a href="{% url 'checkin_form' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg 
+         {% if current in 'checkin_form scan_voucher breakfast_voucher_report' %} text-sky-600 bg-sky-100 {% else %}
+          text-gray-700 hover:bg-gray-100 {% endif %}">
+          <img src="{% if current in 'checkin_form scan_voucher breakfast_voucher_report' %} {% static 'images/sidebar/locations_highlighted.svg' %} {% else %} {% static 'images/sidebar/locations.svg' %}
+            {% endif %}" alt="{% if current in 'checkin_form scan_voucher breakfast_voucher_report' %} Active Location
+            Icon {% else %} Location Icon {% endif %}" class="w-5 h-5" />
+          <span class="font-medium">Breakfast Voucher</span>
+        </a>
+
+        {% endwith %}
+        {% endif %}
+
+        {% if user|has_section_permission:'tickets.view' %}
+        <a href="{% url 'dashboard:tickets' %}"
+          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:tickets' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}">
           <img
             src="{% if request.resolver_match.view_name == 'dashboard:tickets' %}{% static 'images/sidebar/configure_requests_highlighted.svg' %}{% else %}{% static 'images/sidebar/configure_request.svg' %}{% endif %}"
-            alt="Tickets Icon"
-            class="w-5 h-5"
-          />
+            alt="Tickets Icon" class="w-5 h-5" />
           <span class="font-medium">Tickets</span>
         </a>
         {% endif %}
-        
-        {% if perms.requests.view_requesttype %}
-        <a
-          href="{% url 'dashboard:configure_requests' %}"
-          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:configure_requests' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
-        >
+
+        {% if user|has_section_permission:'requests.view' %}
+        <a href="{% url 'dashboard:configure_requests' %}"
+          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:configure_requests' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}">
           <img
             src="{% if request.resolver_match.view_name == 'dashboard:configure_requests' %}{% static 'images/sidebar/configure_requests_highlighted.svg' %}{% else %}{% static 'images/sidebar/configure_request.svg' %}{% endif %}"
-            alt="Configure Requests Icon"
-            class="w-5 h-5"
-          />
+            alt="Configure Requests Icon" class="w-5 h-5" />
           <span class="font-medium">Predefined Requests</span>
         </a>
         {% endif %}
-        
-        {% if perms.sla.view_slaconfiguration %}
-        <a
-          href="{% url 'dashboard:sla_configuration' %}"
+
+        {% if user|has_section_permission:'sla.view' %}
+        <a href="{% url 'dashboard:sla_configuration' %}"
           class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:sla_configuration' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}">
           <img
             src="{% if request.resolver_match.view_name == 'dashboard:sla_configuration' %}{% static 'images/sidebar/sla_highlighted.svg' %}{% else %}{% static 'images/sidebar/sla.svg' %}{% endif %}"
-            alt="SLA Configuration Icon"
-            class="w-5 h-5"
-          />
+            alt="SLA Configuration Icon" class="w-5 h-5" />
           <span class="font-medium">SLA Configuration</span>
         </a>
         {% endif %}
-        
-        {% if perms.messaging.view_messaging %}
-        <a
-          href="{% url 'dashboard:messaging_setup' %}"
-          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:messaging_setup' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
-        >
+
+        {% if user|has_section_permission:'messaging.view' %}
+        <a href="{% url 'dashboard:messaging_setup' %}"
+          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:messaging_setup' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}">
           <img
             src="{% if request.resolver_match.view_name == 'dashboard:messaging_setup' %}{% static 'images/sidebar/messaging_highlighted.svg' %}{% else %}{% static 'images/sidebar/messaging.svg' %}{% endif %}"
-            alt="Messaging Setup Icon"
-            class="w-5 h-5"
-          />
+            alt="Messaging Setup Icon" class="w-5 h-5" />
           <span class="font-medium">Messaging Setup</span>
         </a>
         {% endif %}
-        
-        {% if perms.gym.view_gymmember %}
-       {% with current=request.resolver_match.view_name %}
-<a
-  href="{% url 'member_list' %}"
-  class="flex items-center gap-3 px-3 py-2 rounded-lg 
-         {% if current in "member_list gym_report data_checker" %}
-             text-sky-600 bg-sky-100
-         {% else %}
-             text-gray-700 hover:bg-gray-100
-         {% endif %}">
-  
-  <img
-    src="{% if current in "member_list gym_report data_checker" %}
-             {% static 'images/sidebar/gym_highlighted.svg' %}
-         {% else %}
-             {% static 'images/sidebar/gym.svg' %}
-         {% endif %}"
-    alt="{% if current in "member_list gym_report data_checker" %}
-             Active Gym Icon
-         {% else %}
-             Gym Icon
-         {% endif %}"
-    class="w-5 h-5"
-  />
-  
-  <span class="font-medium">Gym</span>
-</a>
-{% endwith %}
 
+        {% if user|has_section_permission:'gym.view' %}
+        {% with current=request.resolver_match.view_name %}
+        <a href="{% url 'member_list' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg 
+         {% if current in 'member_list gym_report data_checker' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}">
+
+          <img src="{% if current in 'member_list gym_report data_checker' %} {% static 'images/sidebar/gym_highlighted.svg' %} {% else %} {% static 'images/sidebar/gym.svg' %} {% endif %}"
+            alt="{% if current in 'member_list gym_report data_checker' %} Active Gym Icon {% else %} Gym Icon {% endif %}" class="w-5 h-5" />
+
+          <span class="font-medium">Gym</span>
+        </a>
+        {% endwith %}
         {% endif %}
-        
-        {% if perms.integrations.view_integration %}
-        <a
-          href="{% url 'dashboard:integrations' %}"
-          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:integrations' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
-        >
+
+        {% if user|has_section_permission:'integrations.view' %}
+        <a href="{% url 'dashboard:integrations' %}"
+          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:integrations' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}">
           <img
             src="{% if request.resolver_match.view_name == 'dashboard:integrations' %}{% static 'images/sidebar/integration_highlighted.svg' %}{% else %}{% static 'images/sidebar/integration.svg' %}{% endif %}"
-            alt="Integration Icon"
-            class="w-5 h-5"
-          />
+            alt="Integration Icon" class="w-5 h-5" />
           <span class="font-medium">Integration</span>
           <div class="ml-auto">
             <div class="w-2.5 h-3.5 relative bg-black/0 border-gray-200 overflow-hidden">
-              
+
             </div>
           </div>
         </a>
@@ -228,48 +143,34 @@
     {% endif %}
 
     <!-- Analytics Section - Visible based on user permissions -->
-    {% if perms.analytics.view_analytics %}
+    {% if user|has_section_permission:'analytics.view' %}
     <div>
-      <div
-        class="px-3 py-1 text-gray-400 text-xs font-semibold tracking-tight"
-      >
+      <div class="px-3 py-1 text-gray-400 text-xs font-semibold tracking-tight">
         Analytics
       </div>
       <div class="space-y-1">
-        <a
-          href="{% url 'dashboard:analytics' %}"
-          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:analytics' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
-        >
+        <a href="{% url 'dashboard:analytics' %}"
+          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:analytics' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}">
           <img
             src="{% if request.resolver_match.view_name == 'dashboard:analytics' %}{% static 'images/sidebar/analytics_highlighted.svg' %}{% else %}{% static 'images/sidebar/analytics.svg' %}{% endif %}"
-            alt="Analytics Icon"
-            class="w-5 h-5"
-          />
+            alt="Analytics Icon" class="w-5 h-5" />
           <span class="font-medium">Analytics</span>
         </a>
-        {% if perms.performance.view_performance %}
-        <a
-          href="{% url 'dashboard:performance' %}"
-          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:performance' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
-        >
+        {% if user|has_section_permission:'performance.view' %}
+        <a href="{% url 'dashboard:performance' %}"
+          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:performance' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}">
           <img
             src="{% if request.resolver_match.view_name == 'dashboard:performance' %}{% static 'images/sidebar/performance_dashboard_highlighted.svg' %}{% else %}{% static 'images/sidebar/performance_dashboard.svg' %}{% endif %}"
-            alt="Performance Icon"
-            class="w-5 h-5"
-          />
+            alt="Performance Icon" class="w-5 h-5" />
           <span class="font-medium">Performance</span>
         </a>
         {% endif %}
-        {% if perms.feedback.view_review %}
-        <a
-          href="{% url 'dashboard:feedback_inbox' %}"
-          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:feedback_inbox' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
-        >
+        {% if user|has_section_permission:'feedback.view' %}
+        <a href="{% url 'dashboard:feedback_inbox' %}"
+          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:feedback_inbox' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}">
           <img
             src="{% if request.resolver_match.view_name == 'dashboard:feedback_inbox' %}{% static 'images/sidebar/feedback.svg' %}{% else %}{% static 'images/sidebar/feedback.svg' %}{% endif %}"
-            alt="Feedback Icon"
-            class="w-5 h-5"
-          />
+            alt="Feedback Icon" class="w-5 h-5" />
           <span class="font-medium">Feedback</span>
         </a>
         {% endif %}
@@ -279,21 +180,15 @@
 
     <!-- My Tickets Section - Visible to all users -->
     <div>
-      <div
-        class="px-3 py-1 text-gray-400 text-xs font-semibold tracking-tight"
-      >
+      <div class="px-3 py-1 text-gray-400 text-xs font-semibold tracking-tight">
         My Tickets
       </div>
       <div class="space-y-1">
-        <a
-          href="{% url 'dashboard:my_tickets' %}"
-          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:my_tickets' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}"
-        >
+        <a href="{% url 'dashboard:my_tickets' %}"
+          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:my_tickets' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}">
           <img
             src="{% if request.resolver_match.view_name == 'dashboard:my_ticks' %}{% static 'images/sidebar/configure_requests_highlighted.svg' %}{% else %}{% static 'images/sidebar/configure_request.svg' %}{% endif %}"
-            alt="My Tickets Icon"
-            class="w-5 h-5"
-          />
+            alt="My Tickets Icon" class="w-5 h-5" />
           <span class="font-medium">My Tickets</span>
         </a>
       </div>
@@ -303,29 +198,29 @@
 
   <div class="p-4 border-t border-gray-200">
     <div class="flex items-center gap-3">
-        {% with full_name=request.user.get_full_name|default:request.user.username %}
-        <img
-            class="w-10 h-10 rounded-full object-cover flex-shrink-0"
-            src="{% if request.user and request.user.userprofile and request.user.userprofile.avatar_url %}{{ request.user.userprofile.avatar_url }}{% else %}https://ui-avatars.com/api/?name={{ full_name|urlencode }}&background=random{% endif %}"
-            alt="{{ full_name }}"
-            onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name='+encodeURIComponent('{{ full_name|escapejs }}')+'&background=random'"
-        />
-        {% endwith %}
+      {% with full_name=request.user.get_full_name|default:request.user.username %}
+      <img class="w-10 h-10 rounded-full object-cover flex-shrink-0"
+        src="{% if request.user and request.user.userprofile and request.user.userprofile.avatar_url %}{{ request.user.userprofile.avatar_url }}{% else %}https://ui-avatars.com/api/?name={{ full_name|urlencode }}&background=random{% endif %}"
+        alt="{{ full_name }}"
+        onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name='+encodeURIComponent('{{ full_name|escapejs }}')+'&background=random'" />
+      {% endwith %}
 
-        <div class="flex-1 min-w-0">
-            <p class="text-sm font-medium text-gray-900 truncate">
-                {{ request.user.get_full_name|default:request.user.username }}
-            </p>
-            <p class="text-xs text-gray-600 truncate">
-                {{ request.user.email }}
-            </p>
-        </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-medium text-gray-900 truncate">
+          {{ request.user.get_full_name|default:request.user.username }}
+        </p>
+        <p class="text-xs text-gray-600 truncate">
+          {{ request.user.email }}
+        </p>
+      </div>
 
-        <a href="{% url 'logout' %}" class="text-gray-500 hover:text-gray-900 flex-shrink-0" title="Logout">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6A2.25 2.25 0 005.25 5.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
-            </svg>
-        </a>
+      <a href="{% url 'logout' %}" class="text-gray-500 hover:text-gray-900 flex-shrink-0" title="Logout">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+          class="w-5 h-5">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6A2.25 2.25 0 005.25 5.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+        </svg>
+      </a>
     </div>
   </div>
 </div>

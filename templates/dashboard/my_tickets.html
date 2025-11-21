@@ -133,9 +133,9 @@
                 <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 text-left text-sm font-semibold text-gray-700">Task</div>
                 <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 text-left text-sm font-semibold text-gray-700">Priority</div>
                 <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 text-left text-sm font-semibold text-gray-700">Room/Location</div>
-                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 text-left text-sm font-semibold text-gray-700">Status</div>
-                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 text-left text-sm font-semibold text-gray-700">Due Date</div>
                 <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 text-left text-sm font-semibold text-gray-700">Actions</div>
+                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 text-left text-sm font-semibold text-gray-700">Due Date</div>
+                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 text-left text-sm font-semibold text-gray-700">Workflow</div>
             </div>
             <div>
                 {% for ticket in tickets %}
@@ -157,13 +157,9 @@
                         <p class="text-sm text-gray-500">{{ ticket.location.floor|default:'N/A' }}</p>
                     </div>
                     <div class="px-6 py-4 border-b border-gray-100">
-                        <span class="px-2 py-1 inline-flex text-xs font-medium rounded-full 
-                            {% if ticket.status == 'pending' %}bg-yellow-100 text-yellow-500
-                            {% elif ticket.status == 'in_progress' %}bg-blue-100 text-sky-600
-                            {% elif ticket.status == 'accepted' %}bg-blue-100 text-sky-600
-                            {% else %}bg-green-100 text-green-700{% endif %}">
-                            {{ ticket.get_status_display }}
-                        </span>
+                        <a href="{% url 'dashboard:ticket_detail' ticket.id %}" class="text-gray-600 hover:text-gray-900">
+                            <img src="{% static 'images/tickets/eye.svg' %}" alt="View" class="w-5 h-5">
+                        </a>
                     </div>
                     <div class="px-6 py-4 border-b border-gray-100">
                         <p class="text-sm font-medium {% if ticket.sla_breached %}text-red-500{% else %}text-black{% endif %}">
@@ -211,13 +207,9 @@
                 </div>
 
                 <div class="flex items-center gap-4 my-3 text-xs">
-                    <span class="px-2 py-1 font-normal rounded-full 
-                        {% if ticket.status == 'pending' %}bg-yellow-100 text-yellow-500
-                        {% elif ticket.status == 'in_progress' %}bg-blue-100 text-sky-600
-                        {% elif ticket.status == 'accepted' %}bg-blue-100 text-sky-600
-                        {% else %}bg-green-100 text-green-700{% endif %}">
-                        {{ ticket.get_status_display }}
-                    </span>
+                    <a href="{% url 'dashboard:ticket_detail' ticket.id %}" class="text-gray-600 hover:text-gray-900">
+                        <img src="{% static 'images/tickets/eye.svg' %}" alt="View" class="w-5 h-5">
+                    </a>
                     <span class="text-neutral-500">Due: {{ ticket.get_time_left }}</span>
                 </div>
 

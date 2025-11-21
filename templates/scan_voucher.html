@@ -1,21 +1,21 @@
 {% extends "dashboard/base_dashboard.html" %}
 {% block content %}
 
-    <div class="w-[1200px] mx-auto py-6">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-6">
         <!-- Header -->
-        <div class="bg-white  mb-6">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
             <h1 class="text-2xl font-semibold text-neutral-800">Breakfast Voucher — Scan</h1>
             <p class="text-gray-500 text-sm mt-1">Scan QR or add manually</p>
         </div>
-{% include 'partials/breakfast_tab.html' %}
-        <div class="flex gap-8">
+        {% include 'partials/breakfast_tab.html' %}
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Left Column -->
-            <div class="flex-1">
+            <div class="lg:col-span-2 space-y-6">
                 <!-- Scan Section -->
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-4">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                     <h2 class="text-lg font-medium text-neutral-800 mb-4">Scan</h2>
                     
-                    <div class="flex gap-4 items-end">
+                    <div class="flex flex-wrap gap-4 items-end">
                         <!-- Quantity -->
                         <!-- <div class="w-40">
                             <label class="text-sm font-medium text-gray-700 mb-2 block">Quantity</label>
@@ -202,7 +202,7 @@
             </div>
 
             <!-- Right Column - Recent Scans -->
-            <div class="w-96">
+            <div class="w-full lg:w-96">
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                     <h2 class="text-lg font-medium text-neutral-800 mb-4">Recent Scans</h2>
                     

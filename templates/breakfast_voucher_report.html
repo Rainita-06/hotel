@@ -2,8 +2,7 @@
 {% load static %}
 
 {% block content %}
-<div class="w-full max-w-7xl mx-auto p-6">
-    <!-- Header Section -->
+<div class="w-full max-w-7xl mx-auto p-6 pt-8">
     <div class="bg-white rounded-lg shadow-md p-6 mb-6">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
@@ -24,70 +23,56 @@
             </form>
         </div>
     </div>
-    <!-- Tab Navigation -->
     {% include 'partials/breakfast_tab.html' %}
-<!-- Statistics Boxes -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-    <!-- Today's Check-ins -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 pt-5">
     <div class="self-stretch h-32 p-6 bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200 inline-flex justify-center items-center">
         <div class="flex-1 h-20 flex justify-between items-center">
             <div class="relative w-32">
                  <div class="w-9 h-9 justify-start text-gray-900 text-3xl font-bold font-['Inter']">{{ daily_checkins }}</div>
                 <div class="w-28 h-4 justify-start text-gray-600 text-sm font-medium font-['Inter']">Today's Check-Ins</div>
-                <!-- <div class="absolute top-0 left-0 text-gray-600 text-sm font-medium">Today's Check-Ins</div> -->
-                <!-- <div class="absolute top-20 left-0 text-3xl font-bold text-gray-900">{{ daily_checkins }}</div> -->
-            </div>
+                </div>
             <div class="w-12 h-12 bg-blue-500/10 rounded-lg flex justify-center items-center">
                 <div class="w-4 h-4 bg-blue-500"></div>
             </div>
         </div>
     </div>
 
-    <!-- Today's Check-outs -->
     <div class="self-stretch h-32 p-6 bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200 inline-flex justify-center items-center">
         <div class="flex-1 h-20 flex justify-between items-center">
             <div class="relative w-32">
                  <div class="w-9 h-9 justify-start text-gray-900 text-3xl font-bold font-['Inter']">{{ daily_checkouts }}</div>
                 <div class="w-28 h-4 justify-start text-gray-600 text-sm font-medium font-['Inter']">Today's Check-Outs</div>
-                <!-- <div class="absolute top-0 left-0 text-gray-600 text-sm font-medium">Today's Check-Outs:{{ daily_checkouts }}</div> -->
-                <!-- <div class="absolute top-20 left-0 text-3xl font-bold text-gray-900"></div> -->
-            </div>
+                </div>
             <div class="w-12 h-12 bg-orange-500/10 rounded-lg flex justify-center items-center">
                 <div class="w-4 h-4 bg-orange-500"></div>
             </div>
         </div>
     </div>
 
-    <!-- Weekly Check-ins -->
     <div class="self-stretch h-32 p-6 bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200 inline-flex justify-center items-center">
         <div class="flex-1 h-20 flex justify-between items-center">
             <div class="relative w-32">
                 <div class="w-9 h-9 justify-start text-gray-900 text-3xl font-bold font-['Inter']">{{ weekly_checkins }}</div>
                 <div class="w-28 h-4 justify-start text-gray-600 text-sm font-medium font-['Inter']">Weekly Check-In</div>
-                <!-- <div class="absolute top-20 left-0 text-3xl font-bold text-gray-900">{{ weekly_checkins }}</div> -->
-            </div>
+                </div>
             <div class="w-12 h-12 bg-green-500/10 rounded-lg flex justify-center items-center">
                 <div class="w-4 h-4 bg-green-500"></div>
             </div>
         </div>
     </div>
 
-    <!-- Weekly Check-outs -->
     <div class="self-stretch h-32 p-6 bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200 inline-flex justify-center items-center">
         <div class="flex-1 h-20 flex justify-between items-center">
             <div class="relative w-32">
                 <div class="w-9 h-9 justify-start text-gray-900 text-3xl font-bold font-['Inter']">{{ weekly_checkouts }}</div>
                 <div class="w-28 h-4 justify-start text-gray-600 text-sm font-medium font-['Inter']">Weekly Check-Outs</div>
-                <!-- <div class="absolute top-0 left-0 text-gray-600 text-sm font-medium">Weekly Check-Outs</div> -->
-                <!-- <div class="absolute top-20 left-0 text-3xl font-bold text-gray-900">{{ weekly_checkouts }}</div> -->
-            </div>
+                </div>
             <div class="w-12 h-12 bg-red-500/10 rounded-lg flex justify-center items-center">
                 <div class="w-4 h-4 bg-red-500"></div>
             </div>
         </div>
     </div>
 </div>
-    <!-- Filter Section -->
     <div class="bg-white rounded-lg shadow-md p-6 mb-6">
         <h2 class="text-xl font-semibold text-gray-800 mb-4">Filter Vouchers</h2>
         <form method="get" class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -118,7 +103,6 @@
 
     
 
-    <!-- Table Section -->
     <div class="bg-white rounded-lg shadow-md overflow-hidden">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200" id="voucherTable">
@@ -173,7 +157,6 @@
     </div>
 </div>
 
-<!-- DataTables JS & CSS -->
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>

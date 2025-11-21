@@ -404,15 +404,12 @@ function openEditUserModal() {
   document.getElementById('editUserEmail').value = '{{ user.email|default:""|escapejs }}';
   document.getElementById('editUserUsername').value = '{{ user.username|escapejs }}';
   
-  // Set role based on user's current role
+  // Set role based on user's primary group (use first group name)
   const roleSelect = document.getElementById('editUserRole');
-  {% if user_role == "Admin" %}
-    roleSelect.value = 'admin';
-  {% elif user_role == "Staff" %}
-    roleSelect.value = 'staff';
-  {% else %}
-    roleSelect.value = 'user';
-  {% endif %}
+  const primaryGroupName = '{{ primary_group.name|default_if_none:""|escapejs }}';
+  if (roleSelect) {
+    roleSelect.value = primaryGroupName;
+  }
   
   // department select (if exists)
   const deptSelect = document.getElementById('editUserDepartment');
@@ -671,12 +668,14 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
         <div>
-          <label for="editUserRole" class="block text-sm font-medium text-gray-700 mb-2">Role</label>
-          <select id="editUserRole" class="w-full h-9 px-3 bg-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 text-sm">
-            <option value="user">User</option>
-            <option value="staff">Staff</option>
-            <option value="admin">Admin</option>
+          <label for="editUserRole" class="block text-sm font-medium text-gray-700 mb-2">Profile/Role</label>
+          <select id="editUserRole" name="role" class="w-full h-9 px-3 bg-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 text-sm">
+            <option value="">Select Profile</option>
+            {% for group in all_groups %}
+            <option value="{{ group.name }}"{% if primary_group and primary_group.name == group.name %} selected{% endif %}>{{ group.name }}</option>
+            {% endfor %}
           </select>
+          <p class="mt-1 text-xs text-gray-500">Select a profile/role to assign to this user</p>
         </div>
         <div>
           <label for="editUserProfilePicture" class="block text-sm font-medium text-gray-700 mb-2">Profile Picture</label>
