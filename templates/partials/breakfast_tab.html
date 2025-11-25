@@ -1,38 +1,40 @@
-<div class=" h-14 relative bg-white border-b border-gray-200">
-  <div class=" h-14 left-[24px] top-0 absolute flex gap-8">
-    <!-- Checkin Tab -->
-    <a href="{% url 'checkin_form' %}"
-       class="w-32 self-stretch text-center text-sm font-medium font-['Inter'] pt-5
-              {% if request.resolver_match.url_name == 'checkin_form' %}
-                text-sky-600 border-b-2 border-sky-600
-              {% else %}
-                text-gray-600 border-b-2 border-transparent
-              {% endif %}">
-      Checkin
-    </a>
+<div class="w-full bg-white border-t border-gray-200">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <nav class="flex items-start gap-8 border-b border-gray-200 -mb-px">
 
-  
+      <!-- Checkin -->
+      <a href="{% url 'checkin_form' %}"
+         class="py-4 px-1 inline-flex items-center gap-2 border-b-2 text-base font-medium
+         {% if request.resolver_match.url_name == 'checkin_form' %}
+           border-sky-600 text-sky-600
+         {% else %}
+           border-transparent text-gray-600 hover:text-gray-800
+         {% endif %}">
+        Checkin
+      </a>
 
-    <!-- Scan Tab -->
-    <a href="{% url 'scan_voucher' %}"
-       class="w-28 self-stretch text-center text-sm font-medium font-['Inter'] pt-5
-              {% if request.resolver_match.url_name == 'scan_voucher' %}
-                text-sky-600 border-b-2 border-sky-600
-              {% else %}
-                text-gray-600 border-b-2 border-transparent
-              {% endif %}">
-      Scan
-    </a>
+      <!-- Scan -->
+      <a href="{% url 'scan_voucher' %}"
+         class="py-4 px-1 inline-flex items-center gap-2 border-b-2 text-base font-medium
+         {% if request.resolver_match.url_name == 'scan_voucher' %}
+           border-sky-600 text-sky-600
+         {% else %}
+           border-transparent text-gray-600 hover:text-gray-800
+         {% endif %}">
+        Scan
+      </a>
 
-    <!-- Breakfast Report Tab -->
-    <a href="{% url 'breakfast_voucher_report' %}"
-       class="w-40 self-stretch text-center text-sm font-medium font-['Inter'] pt-5
-              {% if request.resolver_match.url_name == 'breakfast_voucher_report' %}
-                text-sky-600 border-b-2 border-sky-600
-              {% else %}
-                text-gray-600 border-b-2 border-transparent
-              {% endif %}">
-      Breakfast Report
-    </a>
+      <!-- Breakfast Report -->
+      <a href="{% url 'breakfast_voucher_report' %}"
+         class="py-4 px-1 inline-flex items-center gap-2 border-b-2 text-base font-medium
+         {% if request.resolver_match.url_name == 'breakfast_voucher_report' %}
+           border-sky-600 text-sky-600
+         {% else %}
+           border-transparent text-gray-600 hover:text-gray-800
+         {% endif %}">
+        Breakfast Report
+      </a>
+
+    </nav>
   </div>
 </div>

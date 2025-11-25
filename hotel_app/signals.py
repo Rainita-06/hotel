@@ -387,3 +387,78 @@ def service_request_pre_save(sender, instance, **kwargs):
             instance._pre_save_status = None
     except Exception:
         instance._pre_save_status = None
+
+from django.db.models.signals import post_migrate
+from django.dispatch import receiver
+from django.db import transaction
+from .models import Building, Floor, LocationFamily, LocationType, Location
+
+
+@receiver(post_migrate)
+def create_basic_location_data(sender, **kwargs):
+    if sender.name != "hotel_app":
+        return
+
+    print("🔥 Running basic location auto-setup...")
+
+    # ------------------------
+    # 1. BUILDING
+    # ------------------------
+    main_bld, _ = Building.objects.get_or_create(
+        name="Main Building",
+        defaults={"description": "Primary building for hotel"}
+    )
+
+    # ------------------------
+    # 2. FIX FLOOR DUPLICATES
+    # ------------------------
+    def fix_floor_duplicates(building, floor_number):
+        floors = Floor.objects.filter(building=building, floor_number=floor_number)
+
+        if floors.count() > 1:
+            print(f"⚠ Removing duplicates for Floor {floor_number}")
+            # keep the first, delete the rest
+            floors.exclude(floor_id=floors.first().floor_id).delete()
+
+        # now safe to get_or_create
+        floor, _ = Floor.objects.get_or_create(
+            building=building,
+            floor_number=floor_number,
+            defaults={"name": f"{floor_number} Floor"}
+        )
+        return floor
+
+    floor1 = fix_floor_duplicates(main_bld, 1)
+    floor2 = fix_floor_duplicates(main_bld, 2)
+
+    # ------------------------
+    # 3. LOCATION FAMILY
+    # ------------------------
+    guest_family, _ = LocationFamily.objects.get_or_create(name="Guest Room")
+    service_family, _ = LocationFamily.objects.get_or_create(name="Service Area")
+
+    # ------------------------
+    # 4. LOCATION TYPES
+    # ------------------------
+    deluxe, _ = LocationType.objects.get_or_create(name="Deluxe Room", family=guest_family)
+    lobby, _ = LocationType.objects.get_or_create(name="Lobby", family=service_family)
+
+    # ------------------------
+    # 5. LOCATIONS
+    # ------------------------
+    Location.objects.get_or_create(
+        name="Room 101",
+        room_no="101",
+        building=main_bld,
+        floor=floor2,
+        type=deluxe
+    )
+
+    Location.objects.get_or_create(
+        name="Main Lobby",
+        building=main_bld,
+        floor=floor1,
+        type=lobby
+    )
+
+    print("✅ Basic Location Data Setup Finished.")

@@ -48,10 +48,13 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework.authtoken',
-    'hotel_app',
+    # 'hotel_app',
     'django_filters',
     "django.contrib.humanize",
     "django_extensions",
+    'hotel_app.apps.HotelAppConfig'
+
+
 ]
 
 MIDDLEWARE = [
@@ -107,7 +110,7 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get('DB_NAME', 'hotel_data'),
+        'NAME': os.environ.get('DB_NAME', 'hotel'),
         'USER': os.environ.get('DB_USER', 'root'),
         'PASSWORD': os.environ.get('DB_PASSWORD', ''),
         'HOST': os.environ.get('DB_HOST', '127.0.0.1'),

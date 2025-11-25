@@ -73,19 +73,19 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <nav class="flex items-start gap-8 border-b border-gray-200 -mb-px">
         <a href="{% url 'dashboard:manage_users_all' %}"
-           class="py-4 px-1 inline-flex items-center gap-2 border-b-2 text-sm font-medium {% if active_tab|default:'all' == 'all' %}border-sky-600 text-sky-600{% else %}border-transparent text-gray-600 hover:text-gray-800{% endif %}">
+           class="py-4 px-1 inline-flex items-center gap-2 border-b-2 text-base font-medium {% if active_tab|default:'all' == 'all' %}border-sky-600 text-sky-600{% else %}border-transparent text-gray-600 hover:text-gray-800{% endif %}">
           All Users
         </a>
         <a href="{% url 'dashboard:manage_users_groups' %}"
-           class="py-4 px-1 inline-flex items-center gap-2 border-b-2 text-sm font-medium {% if active_tab == 'groups' %}border-sky-600 text-sky-600{% else %}border-transparent text-gray-600 hover:text-gray-800{% endif %}">
+           class="py-4 px-1 inline-flex items-center gap-2 border-b-2 text-base font-medium {% if active_tab == 'groups' %}border-sky-600 text-sky-600{% else %}border-transparent text-gray-600 hover:text-gray-800{% endif %}">
           Groups
         </a>
         <a href="{% url 'dashboard:manage_users_profiles' %}"
-           class="py-4 px-1 inline-flex items-center gap-2 border-b-2 text-sm font-medium {% if active_tab == 'profiles' %}border-sky-600 text-sky-600{% else %}border-transparent text-gray-600 hover:text-gray-800{% endif %}">
+           class="py-4 px-1 inline-flex items-center gap-2 border-b-2 text-base font-medium {% if active_tab == 'profiles' %}border-sky-600 text-sky-600{% else %}border-transparent text-gray-600 hover:text-gray-800{% endif %}">
           User Profiles
         </a>
         <a href="{% url 'dashboard:departments' %}"
-           class="py-4 px-1 inline-flex items-center gap-2 border-b-2 text-sm font-medium {% if active_tab == 'departments' %}border-sky-600 text-sky-600{% else %}border-transparent text-gray-600 hover:text-gray-800{% endif %}">
+           class="py-4 px-1 inline-flex items-center gap-2 border-b-2 text-base font-medium {% if active_tab == 'departments' %}border-sky-600 text-sky-600{% else %}border-transparent text-gray-600 hover:text-gray-800{% endif %}">
           Departments
         </a>
       </nav>
