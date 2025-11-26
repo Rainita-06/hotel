@@ -2266,8 +2266,9 @@ from django.db.models import Q
 #         return response
     
 #     return render(request, "gym_report.html", {"visits": visits})
-
+from datetime import datetime, time
 @login_required
+
 def gym_report(request):
     visits = GymVisit.objects.select_related("member", "visitor", "checked_by_user").order_by("-visit_at")
     
@@ -2275,8 +2276,13 @@ def gym_report(request):
     from_date = request.GET.get("from_date")
     to_date = request.GET.get("to_date")
     
-    if from_date and to_date:
-        visits = visits.filter(visit_at__date__range=[from_date, to_date])
+    if from_date:
+        start_dt = datetime.combine(datetime.strptime(from_date, "%Y-%m-%d"), time.min)
+        visits = visits.filter(visit_at__gte=start_dt)
+
+    if to_date:
+        end_dt = datetime.combine(datetime.strptime(to_date, "%Y-%m-%d"), time.max)
+        visits = visits.filter(visit_at__lte=end_dt)
 
     # Export to Excel
     if request.GET.get("export") == "1":

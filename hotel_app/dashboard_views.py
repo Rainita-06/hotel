@@ -4467,7 +4467,8 @@ def user_create(request):
                 email=email,
                 password=user_password,
             )
-            user.is_active = bool(is_active)
+            
+            user.is_active = True
             user.is_staff = is_staff
             user.is_superuser = is_superuser
             user.save()
