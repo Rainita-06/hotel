@@ -60,13 +60,83 @@ if ($LocalDB) {
     Write-Host "Waiting for services to start..." -ForegroundColor Yellow
     Start-Sleep -Seconds 10
     
+    # Wait for services to be fully ready
+    Write-Host "Waiting for services to be fully ready..." -ForegroundColor Yellow
+    Start-Sleep -Seconds 30
+
+    # Check if the container is running before proceeding
+    Write-Host "Checking container status..." -ForegroundColor Yellow
+    $containerStatus = docker-compose -f docker-compose.local-db.yml ps
+    Write-Host $containerStatus -ForegroundColor White
+
+    # Check if container is healthy
+    $containerHealth = docker inspect --format='{{.State.Running}}' hotel_web_local 2>$null
+    if ($containerHealth -ne "true") {
+        Write-Host "⚠ Warning: Container is not running properly. Check logs with: docker-compose -f docker-compose.local-db.yml logs" -ForegroundColor Yellow
+        Write-Host "Skipping data initialization steps due to container issues." -ForegroundColor Yellow
+    } else {
+        Write-Host "Container is running. Proceeding with data initialization..." -ForegroundColor Green
+    
+        # Create default admin user
+        Write-Host "Creating default admin user (admin:admin)..." -ForegroundColor Yellow
+        $adminResult = docker exec hotel_web_local python manage.py shell -c 'from django.contrib.auth.models import User; User.objects.filter(username="admin").exists() or User.objects.create_superuser("admin", "admin@example.com", "admin")'
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "✓ Default admin user created successfully" -ForegroundColor Green
+        } else {
+            Write-Host "⚠ Warning: Failed to create default admin user" -ForegroundColor Yellow
+        }
+
+        # Initialize roles and permissions
+        Write-Host "Initializing roles and permissions..." -ForegroundColor Yellow
+        $rolesResult = docker exec hotel_web_local python manage.py init_roles
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "✓ Roles and permissions initialized successfully" -ForegroundColor Green
+        } else {
+            Write-Host "⚠ Warning: Failed to initialize roles and permissions" -ForegroundColor Yellow
+        }
+
+        # Create test users
+        Write-Host "Creating test users..." -ForegroundColor Yellow
+        $usersResult = docker exec hotel_web_local python manage.py create_test_users
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "✓ Test users created successfully" -ForegroundColor Green
+        } else {
+            Write-Host "⚠ Warning: Failed to create test users" -ForegroundColor Yellow
+        }
+
+        # Initialize departments and user groups
+        Write-Host "Initializing departments and user groups..." -ForegroundColor Yellow
+        $departmentsResult = docker exec hotel_web_local python manage.py init_departments
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "✓ Departments and user groups initialized successfully" -ForegroundColor Green
+        } else {
+            Write-Host "⚠ Warning: Failed to initialize departments and user groups" -ForegroundColor Yellow
+        }
+
+        # Seed demo data
+        Write-Host "Seeding demo data..." -ForegroundColor Yellow
+        $demoDataResult = docker exec hotel_web_local python manage.py seed_demo_data --force
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "✓ Demo data seeded successfully" -ForegroundColor Green
+        } else {
+            Write-Host "⚠ Warning: Failed to seed demo data" -ForegroundColor Yellow
+        }
+
+        # Validate data population
+        Write-Host "Validating data population..." -ForegroundColor Yellow
+        $validationResult = docker exec hotel_web_local python manage.py shell -c 'from django.contrib.auth.models import User; from hotel_app.models import Department, UserGroup, ServiceRequest, Guest, Voucher; print("Users:", User.objects.count()); print("Departments:", Department.objects.count()); print("User Groups:", UserGroup.objects.count()); print("Service Requests:", ServiceRequest.objects.count()); print("Guests:", Guest.objects.count()); print("Vouchers:", Voucher.objects.count()); print("SUCCESS: Data validation completed")'
+        Write-Host "Data validation results:" -ForegroundColor Cyan
+        Write-Host $validationResult -ForegroundColor White
+    }
+    
     # Show status
     Write-Host "Deployment status:" -ForegroundColor Green
     docker-compose -f docker-compose.local-db.yml ps
     
     Write-Host "Deployment completed successfully!" -ForegroundColor Green
     Write-Host "Access the application at http://localhost:8000" -ForegroundColor Cyan
-    Write-Host "To create a superuser, run: docker exec -it hotel_web_local python manage.py createsuperuser" -ForegroundColor Cyan
+    Write-Host "Default admin credentials: admin / admin" -ForegroundColor Cyan
+    Write-Host "Test users created: test_admin, test_staff, test_user (all with password: testpassword123)" -ForegroundColor Cyan
     Write-Host "To view logs, run: docker-compose -f docker-compose.local-db.yml logs -f" -ForegroundColor Cyan
 }
 else {
@@ -104,7 +174,76 @@ else {
     
     # Wait for services to be healthy
     Write-Host "Waiting for services to be healthy..." -ForegroundColor Yellow
-    Start-Sleep -Seconds 15
+    Start-Sleep -Seconds 30
+    
+    # Wait for services to be fully ready
+    Write-Host "Waiting for services to be fully ready..." -ForegroundColor Yellow
+    Start-Sleep -Seconds 30
+
+    # Check if the container is running before proceeding
+    Write-Host "Checking container status..." -ForegroundColor Yellow
+    $containerStatus = docker-compose -f docker-compose.prod.yml ps
+    Write-Host $containerStatus -ForegroundColor White
+
+    # Check if container is healthy
+    $containerHealth = docker inspect --format='{{.State.Running}}' hotel_web 2>$null
+    if ($containerHealth -ne "true") {
+        Write-Host "⚠ Warning: Container is not running properly. Check logs with: docker-compose -f docker-compose.prod.yml logs" -ForegroundColor Yellow
+        Write-Host "Skipping data initialization steps due to container issues." -ForegroundColor Yellow
+    } else {
+        Write-Host "Container is running. Proceeding with data initialization..." -ForegroundColor Green
+    
+        # Create default admin user
+        Write-Host "Creating default admin user (admin:admin)..." -ForegroundColor Yellow
+        $adminResult = docker exec hotel_web python manage.py shell -c 'from django.contrib.auth.models import User; User.objects.filter(username="admin").exists() or User.objects.create_superuser("admin", "admin@example.com", "admin")'
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "✓ Default admin user created successfully" -ForegroundColor Green
+        } else {
+            Write-Host "⚠ Warning: Failed to create default admin user" -ForegroundColor Yellow
+        }
+
+        # Initialize roles and permissions
+        Write-Host "Initializing roles and permissions..." -ForegroundColor Yellow
+        $rolesResult = docker exec hotel_web python manage.py init_roles
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "✓ Roles and permissions initialized successfully" -ForegroundColor Green
+        } else {
+            Write-Host "⚠ Warning: Failed to initialize roles and permissions" -ForegroundColor Yellow
+        }
+
+        # Create test users
+        Write-Host "Creating test users..." -ForegroundColor Yellow
+        $usersResult = docker exec hotel_web python manage.py create_test_users
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "✓ Test users created successfully" -ForegroundColor Green
+        } else {
+            Write-Host "⚠ Warning: Failed to create test users" -ForegroundColor Yellow
+        }
+
+        # Initialize departments and user groups
+        Write-Host "Initializing departments and user groups..." -ForegroundColor Yellow
+        $departmentsResult = docker exec hotel_web python manage.py init_departments
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "✓ Departments and user groups initialized successfully" -ForegroundColor Green
+        } else {
+            Write-Host "⚠ Warning: Failed to initialize departments and user groups" -ForegroundColor Yellow
+        }
+
+        # Seed demo data
+        Write-Host "Seeding demo data..." -ForegroundColor Yellow
+        $demoDataResult = docker exec hotel_web python manage.py seed_demo_data --force
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "✓ Demo data seeded successfully" -ForegroundColor Green
+        } else {
+            Write-Host "⚠ Warning: Failed to seed demo data" -ForegroundColor Yellow
+        }
+
+        # Validate data population
+        Write-Host "Validating data population..." -ForegroundColor Yellow
+        $validationResult = docker exec hotel_web python manage.py shell -c 'from django.contrib.auth.models import User; from hotel_app.models import Department, UserGroup, ServiceRequest, Guest, Voucher; print("Users:", User.objects.count()); print("Departments:", Department.objects.count()); print("User Groups:", UserGroup.objects.count()); print("Service Requests:", ServiceRequest.objects.count()); print("Guests:", Guest.objects.count()); print("Vouchers:", Voucher.objects.count()); print("SUCCESS: Data validation completed")'
+        Write-Host "Data validation results:" -ForegroundColor Cyan
+        Write-Host $validationResult -ForegroundColor White
+    }
     
     # Show status
     Write-Host "Deployment status:" -ForegroundColor Green
@@ -112,6 +251,7 @@ else {
     
     Write-Host "Deployment completed successfully!" -ForegroundColor Green
     Write-Host "Access the application at http://localhost" -ForegroundColor Cyan
-    Write-Host "To create a superuser, run: docker exec -it hotel_web python manage.py createsuperuser" -ForegroundColor Cyan
+    Write-Host "Default admin credentials: admin / admin" -ForegroundColor Cyan
+    Write-Host "Test users created: test_admin, test_staff, test_user (all with password: testpassword123)" -ForegroundColor Cyan
     Write-Host "To view logs, run: docker-compose -f docker-compose.prod.yml logs -f" -ForegroundColor Cyan
 }

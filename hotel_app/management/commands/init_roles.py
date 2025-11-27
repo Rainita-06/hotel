@@ -7,8 +7,8 @@ from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from hotel_app.models import (
     Department, Location, RequestType, Checklist,
-    Complaint, BreakfastVoucher, Review, Guest,
-    Voucher, VoucherScan, ServiceRequest, UserProfile,
+    Complaint, Review, Guest,
+    Voucher, ServiceRequest, UserProfile,
     UserGroup, UserGroupMembership, Notification, GymMember,
     SLAConfiguration, DepartmentRequestSLA
 )

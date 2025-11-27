@@ -50,7 +50,7 @@ class Command(BaseCommand):
         building, _ = Building.objects.get_or_create(name='Demo Building')
         floor, _ = Floor.objects.get_or_create(building=building, floor_number=1)
         family, _ = LocationFamily.objects.get_or_create(name='Guest Room')
-        ltype, _ = LocationType.objects.get_or_create(name='Standard Room')
+        ltype, _ = LocationType.objects.get_or_create(name='Standard Room', defaults={'family': family})
         location, _ = Location.objects.get_or_create(building=building, floor=floor, room_no='101', defaults={
             'family': family, 'type': ltype, 'name': 'Demo Room 101', 'capacity': 2
         })
@@ -86,17 +86,18 @@ class Command(BaseCommand):
 
         # Voucher
         voucher, created = Voucher.objects.get_or_create(
-            guest=guest,
             booking=booking,
             defaults={
-                'voucher_type': 'breakfast',
                 'guest_name': guest.full_name,
-                'room_number': booking.room_number,
+                'room_no': booking.room_number,
                 'check_in_date': guest.checkin_date,
                 'check_out_date': guest.checkout_date,
                 'valid_dates': [(today + datetime.timedelta(days=i)).isoformat() for i in range(0, 3)],
                 'quantity': 1,
-                'status': 'active',
+                'adults': 1,
+                'kids': 0,
+                'phone_number': '+1234567890',
+                'country_code': '+1',
             }
         )
         if created or force:

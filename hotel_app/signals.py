@@ -424,7 +424,7 @@ def create_basic_location_data(sender, **kwargs):
         floor, _ = Floor.objects.get_or_create(
             building=building,
             floor_number=floor_number,
-            defaults={"name": f"{floor_number} Floor"}
+            defaults={"floor_name": f"{floor_number} Floor"}
         )
         return floor
 
