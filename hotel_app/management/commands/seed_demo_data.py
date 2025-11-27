@@ -46,6 +46,29 @@ class Command(BaseCommand):
             user.save()
         self.stdout.write(self.style.SUCCESS(f'User: {user.username}'))
 
+        # Create user profile for demo user if it doesn't exist
+        try:
+            from hotel_app.models import UserProfile
+            # Try to get an existing department or create a default one
+            profile_dept = dept  # Use the department we already created
+            
+            profile, profile_created = UserProfile.objects.get_or_create(
+                user=user,
+                defaults={
+                    'full_name': 'Demo User',
+                    'phone': '+1234567890',
+                    'title': 'Demo User',
+                    'department': profile_dept,
+                    'role': 'user'
+                }
+            )
+            if profile_created:
+                self.stdout.write(self.style.SUCCESS(f'Created profile for demo user: {user.username}'))
+            else:
+                self.stdout.write(self.style.SUCCESS(f'Found existing profile for demo user: {user.username}'))
+        except Exception as e:
+            self.stdout.write(self.style.WARNING(f'Could not create profile for demo user: {str(e)}'))
+
         # Create location hierarchy
         building, _ = Building.objects.get_or_create(name='Demo Building')
         floor, _ = Floor.objects.get_or_create(building=building, floor_number=1)

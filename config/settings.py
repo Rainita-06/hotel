@@ -48,7 +48,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework.authtoken',
-    # 'hotel_app',
     'django_filters',
     "django.contrib.humanize",
     "django_extensions",
@@ -95,12 +94,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+    "http://localhost",
+    "http://127.0.0.1",
+    "https://*.trycloudflare.com",
     "https://loose-palmer-automobiles-marks.trycloudflare.com"
 ]
 
-CSRF_TRUSTED_ORIGINS = [
-    "https://*.trycloudflare.com",
-]
 # settings.py
 SECURE_CONTENT_SECURITY_POLICY = "default-src 'self'; script-src 'self'; style-src 'self'"
 SECURE_CONTENT_TYPE_NOSNIFF = True

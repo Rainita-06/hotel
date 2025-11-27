@@ -51,7 +51,7 @@ services:
     container_name: hotel_nginx
     restart: always
     ports:
-      - "80:80"
+      - "8080:80"
     volumes:
       - static_volume:/app/staticfiles
       - media_volume:/app/media
