@@ -1,5 +1,6 @@
 import json
 import datetime
+import re
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
@@ -8,28 +9,41 @@ from django.http import JsonResponse
 from django.contrib.auth.models import User, Group
 from django.db.models import Count, Avg, Q
 from django.db.models.functions import TruncHour
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ImproperlyConfigured
 from django.utils import timezone
 from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse
-from django.views.decorators.http import require_http_methods
-from django.db import connection, transaction
+from django.views.decorators.http import require_http_methods, require_POST
+from django.db import connection, transaction, OperationalError, ProgrammingError
 from django.conf import settings
 from django.utils.text import slugify
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from django.contrib.auth import get_user_model
 import os
-
-import os
-
-import os
 import logging
+from django.core.serializers.json import DjangoJSONEncoder
 
 # Import all models from hotel_app
 from hotel_app.models import (
-    Department, Location, RequestType, Checklist,
-    Complaint, Review, Guest,
-    Voucher,  ServiceRequest, UserProfile, UserGroup, UserGroupMembership,
-    Notification, GymMember, SLAConfiguration, DepartmentRequestSLA  # Add SLAConfiguration and DepartmentRequestSLA models
+    Department,
+    Location,
+    RequestType,
+    Checklist,
+    Complaint,
+    Review,
+    Guest,
+    Voucher,
+    ServiceRequest,
+    UserProfile,
+    UserGroup,
+    UserGroupMembership,
+    Notification,
+    GymMember,
+    SLAConfiguration,
+    DepartmentRequestSLA,
+    TwilioSettings,
+    
+    UnmatchedRequest,
+    WhatsAppConversation,
 )
 
 # Import all forms from the local forms.py
@@ -42,7 +56,201 @@ from .forms import (
 # Import local utils and services
 from .utils import user_in_group, create_notification
 from hotel_app.whatsapp_service import WhatsAppService
+from hotel_app.whatsapp_workflow import workflow_handler
 from .rbac_services import get_accessible_sections, can_access_section
+from .section_permissions import require_section_permission, user_has_section_permission
+
+
+def _send_ticket_acknowledgement(ticket, *, guest=None, phone_number=None, conversation=None):
+    """
+    Notify the guest that a ticket has been created and capture acknowledgement delivery.
+
+    Args:
+        ticket (ServiceRequest): The ticket that was created.
+        guest (Guest | None): Optional guest record to infer contact details.
+        phone_number (str | None): Optional fallback phone number.
+        conversation (WhatsAppConversation | None): Existing conversation to reuse.
+
+    Returns:
+        bool: True if a notification was successfully sent or queued, False otherwise.
+    """
+    import logging
+
+    request_name = ticket.request_type.name if ticket.request_type else "your request"
+    team_name = ticket.department.name if ticket.department else "our team"
+    ack_message = (
+        f"We are working on your request. "
+        f"Ticket #{ticket.id} for {request_name} is now with the {team_name} team."
+    )
+
+    logger = logging.getLogger(__name__)
+
+    target_conversation = conversation
+    if not target_conversation and guest:
+        target_conversation = (
+            guest.whatsapp_conversations.order_by("-updated_at").first()
+        )
+
+    normalized_phone = None
+    if phone_number:
+        normalized_phone = workflow_handler.normalize_incoming_number(phone_number)
+
+    if not target_conversation and normalized_phone:
+        target_conversation = (
+            WhatsAppConversation.objects.filter(phone_number=normalized_phone)
+            .order_by("-updated_at")
+            .first()
+        )
+
+    if target_conversation:
+        try:
+            workflow_handler.send_outbound_messages(target_conversation, [ack_message])
+            return True
+        except Exception:
+            logger.exception("Failed to send ticket acknowledgement via conversation.")
+
+    destination_phone = normalized_phone
+    if not destination_phone and guest and guest.phone:
+        destination_phone = guest.phone
+
+    if destination_phone:
+        from hotel_app.twilio_service import twilio_service
+
+        try:
+            if twilio_service.is_configured():
+                result = twilio_service.send_text_message(destination_phone, ack_message)
+                return bool(result and result.get("success"))
+        except Exception:
+            logger.exception("Failed to send ticket acknowledgement via Twilio.")
+
+    return False
+
+
+# ---- Section Permission Mapping Helpers ----
+
+def _make_static_rule(section, action):
+    def rule(request, section=section, action=action):
+        return section, action
+    return rule
+
+def _make_method_rule(section, default_action='view', edit_methods=None):
+    edit_methods = edit_methods or {'POST', 'PUT', 'PATCH', 'DELETE'}
+    def rule(request, section=section, default_action=default_action, edit_methods=edit_methods):
+        action = 'edit' if request.method.upper() in edit_methods else default_action
+        return section, action
+    return rule
+
+def _make_custom_rule(func):
+    return func
+
+SECTION_PERMISSION_RULES = {}
+
+def _register_section_rules(names, section, action='view', rule_factory=None):
+    if rule_factory is None:
+        rule = _make_static_rule(section, action)
+    else:
+        rule = rule_factory
+    for name in names:
+        SECTION_PERMISSION_RULES[name] = rule
+
+def _check_section_permission(request, view_func):
+    resolver = SECTION_PERMISSION_RULES.get(view_func.__name__)
+    if not resolver:
+        return False
+    try:
+        section, action = resolver(request)
+    except Exception:
+        return False
+    if not section or not action:
+        return False
+    if action == 'edit':
+        return (
+            user_has_section_permission(request.user, section, 'add')
+            or user_has_section_permission(request.user, section, 'change')
+            or user_has_section_permission(request.user, section, 'delete')
+        )
+    return user_has_section_permission(request.user, section, action)
+
+# Section registration
+_register_section_rules(
+    ['dashboard_view', 'dashboard_main', 'dashboard2_view'],
+    'dashboard',
+    'view'
+)
+
+_register_section_rules(
+    ['dashboard_users', 'manage_users', 'manage_users_all', 'manage_users_groups',
+     'manage_users_profiles', 'manage_user_detail', 'dashboard_departments',
+     'dashboard_groups', 'manage_users_roles'],
+    'users',
+    'view'
+)
+
+SECTION_PERMISSION_RULES['manage_users_api_users'] = _make_method_rule('users')
+_register_section_rules(['manage_users_api_filters', 'api_group_permissions', 'api_group_members',
+                         'api_department_members'],
+                        'users', 'view')
+_register_section_rules(['manage_users_api_bulk_action', 'api_notify_all_groups',
+                         'api_notify_department', 'api_group_permissions_update',
+                         'api_bulk_permissions_update', 'api_reset_user_password',
+                         'manage_users_toggle_enabled', 'add_group_member',
+                         'remove_group_member', 'user_create', 'user_update',
+                         'user_delete', 'department_create', 'department_update',
+                         'department_delete', 'assign_department_lead', 'group_create',
+                         'group_update', 'group_delete'],
+                        'users', 'edit')
+
+_register_section_rules(['tickets', 'ticket_detail', 'my_tickets', 'get_ticket_suggestions_api'],
+                        'tickets', 'view')
+_register_section_rules(['create_ticket_api', 'assign_ticket_api', 'accept_ticket_api',
+                         'start_ticket_api', 'complete_ticket_api', 'close_ticket_api',
+                         'escalate_ticket_api', 'reject_ticket_api'],
+                        'tickets', 'edit')
+
+_register_section_rules(['configure_requests'],
+                        'requests', 'view')
+_register_section_rules(['configure_requests_api', 'configure_requests_api_fields',
+                         'configure_requests_api_bulk_action'],
+                        'requests', 'edit')
+
+_register_section_rules(['messaging_setup'],
+                        'messaging', 'view')
+_register_section_rules(['test_twilio_connection', 'send_test_twilio_message', 'save_twilio_setting'],
+                        'messaging', 'edit')
+
+_register_section_rules(['feedback_inbox', 'feedback_detail'],
+                        'feedback', 'view')
+
+_register_section_rules(['integrations'],
+                        'integrations', 'view')
+
+_register_section_rules(['sla_configuration'],
+                        'sla', 'view')
+_register_section_rules(['api_sla_configuration_update'],
+                        'sla', 'edit')
+
+_register_section_rules(['analytics_dashboard'],
+                        'analytics', 'view')
+
+_register_section_rules(['performance_dashboard'],
+                        'performance', 'view')
+
+_register_section_rules(['dashboard_locations', 'locations_list'],
+                        'locations', 'view')
+_register_section_rules(['location_delete'],
+                        'locations', 'edit')
+
+_register_section_rules(['dashboard_guests', 'guest_detail', 'dashboard_vouchers',
+                         'voucher_detail', 'voucher_analytics', 'guest_qr_codes'],
+                        'breakfast_voucher', 'view')
+_register_section_rules(['voucher_create', 'voucher_update', 'voucher_delete',
+                         'regenerate_voucher_qr', 'share_voucher_whatsapp',
+                         'regenerate_guest_qr', 'share_guest_qr_whatsapp',
+                         'get_guest_whatsapp_message'],
+                        'breakfast_voucher', 'edit')
+
+_register_section_rules(['gym', 'gym_report'],
+                        'gym', 'view')
 
 # Import export/import utilities
 from .export_import_utils import create_export_file, import_all_data, validate_import_data
@@ -179,7 +387,22 @@ def require_permission(group_names):
         def wrapper(request, *args, **kwargs):
             if request.user.is_superuser or any(user_in_group(request.user, group) for group in group_names):
                 return view_func(request, *args, **kwargs)
-            raise PermissionDenied("You don't have permission to access this page.")
+            if _check_section_permission(request, view_func):
+                return view_func(request, *args, **kwargs)
+            
+            # Render custom permission denied page instead of raising exception
+            from django.shortcuts import render
+            context = {
+                'section_name': 'access',
+                'permission_action': 'required_group',
+                'user': request.user,
+            }
+            return render(
+                request, 
+                'dashboard/permission_denied.html', 
+                context,
+                status=403
+            )
         return wrapper
     return decorator
 
@@ -188,21 +411,70 @@ def require_role(roles):
     """Decorator to require specific roles for a view."""
     if not isinstance(roles, (list, tuple)):
         roles = [roles]
+
+    # Build a normalized set of role/group names for comparison
+    normalized_roles = set()
+    role_aliases = {
+        'admin': ['admin', 'admins', 'administrator', 'superuser', 'Admins'],
+        'staff': ['staff', 'front desk', 'frontdesk', 'front desk team', 'Staff'],
+        'user': ['user', 'users', 'basic', 'Users'],
+    }
+
+    for role in roles:
+        if role is None:
+            continue
+        role_str = str(role).strip()
+        if not role_str:
+            continue
+        normalized_roles.add(role_str)
+        normalized_roles.add(role_str.lower())
+        aliases = role_aliases.get(role_str.lower(), [])
+        for alias in aliases:
+            normalized_roles.add(alias)
+            normalized_roles.add(alias.lower())
     
     def decorator(view_func):
         @login_required
         def wrapper(request, *args, **kwargs):
             # Check if user has the required role
             if hasattr(request.user, 'userprofile'):
-                user_role = request.user.userprofile.role
-                if user_role in roles or request.user.is_superuser:
+                user_role = (request.user.userprofile.role or '').strip()
+                if request.user.is_superuser:
                     return view_func(request, *args, **kwargs)
+                if user_role:
+                    if user_role in normalized_roles or user_role.lower() in normalized_roles:
+                        return view_func(request, *args, **kwargs)
             
-            # Fallback to group-based permissions for backward compatibility
-            if request.user.is_superuser or any(user_in_group(request.user, role) for role in roles):
+            # Check group membership directly
+            user_groups = getattr(request.user, 'groups', None)
+            if user_groups:
+                for group in user_groups.all():
+                    group_name = group.name
+                    if group_name in normalized_roles or group_name.lower() in normalized_roles:
+                        return view_func(request, *args, **kwargs)
+            
+            if _check_section_permission(request, view_func):
                 return view_func(request, *args, **kwargs)
                 
-            raise PermissionDenied("You don't have permission to access this page.")
+            # Fallback to explicit helper for backwards compatibility
+            if request.user.is_superuser or any(
+                user_in_group(request.user, role) for role in normalized_roles
+            ):
+                return view_func(request, *args, **kwargs)
+            
+            # Render custom permission denied page instead of raising exception
+            from django.shortcuts import render
+            context = {
+                'section_name': 'access',
+                'permission_action': 'required_role',
+                'user': request.user,
+            }
+            return render(
+                request, 
+                'dashboard/permission_denied.html', 
+                context,
+                status=403
+            )
         return wrapper
     return decorator
 
@@ -554,8 +826,9 @@ def dashboard2_view(request):
     # Vouchers
     try:
         vouchers_issued = Voucher.objects.count()
-        vouchers_redeemed = Voucher.objects.filter(status="redeemed").count()
-        vouchers_expired = Voucher.objects.filter(status="expired").count()
+        vouchers_redeemed = Voucher.objects.filter(redeemed=True).count()
+        # Treat vouchers expired if expiry_date < today
+        vouchers_expired = Voucher.objects.filter(expiry_date__lt=today).count()
     except Exception:
         vouchers_issued = vouchers_redeemed = vouchers_expired = 0
 
@@ -615,7 +888,7 @@ def dashboard2_view(request):
             'negative': [15, 10, 20, 15, 12, 10, 8],
         }
 
-    # Occupancy
+    # Occupancy (active guests today)
     try:
         # Prefer datetime fields if set, otherwise use date fields
         occupancy_qs = Guest.objects.filter(
@@ -629,6 +902,101 @@ def dashboard2_view(request):
         occupancy_rate = 0
 
     occupancy_data = {'occupied': occupancy_today, 'rate': round(occupancy_rate, 1)}
+
+    # Active tickets (Service Requests still open)
+    try:
+        active_tickets_count = ServiceRequest.objects.filter(status__in=['pending', 'accepted', 'in_progress']).count()
+    except Exception:
+        active_tickets_count = 0
+
+    # SLA breaches in last 24h
+    try:
+        now = timezone.now()
+        since_24h = now - datetime.timedelta(hours=24)
+        sla_breaches_24h = ServiceRequest.objects.filter(
+            updated_at__gte=since_24h
+        ).filter(
+            Q(sla_breached=True) | Q(response_sla_breached=True) | Q(resolution_sla_breached=True)
+        ).count()
+    except Exception:
+        sla_breaches_24h = 0
+
+    # Average response time (created_at -> accepted_at) over last 30 days
+    try:
+        from django.db.models import F, DurationField, ExpressionWrapper
+        since_30d = timezone.now() - datetime.timedelta(days=30)
+        qs_resp = ServiceRequest.objects.filter(
+            accepted_at__isnull=False, created_at__gte=since_30d
+        ).annotate(
+            resp_delta=ExpressionWrapper(F('accepted_at') - F('created_at'), output_field=DurationField())
+        )
+        avg_resp = qs_resp.aggregate(avg=Avg('resp_delta'))['avg']
+        if avg_resp:
+            total_minutes = int(avg_resp.total_seconds() // 60)
+            avg_response_display = f"{total_minutes}m" if total_minutes < 90 else f"{total_minutes // 60}h {total_minutes % 60}m"
+        else:
+            avg_response_display = "—"
+    except Exception:
+        avg_response_display = "—"
+
+    # Staff efficiency: % completed (last 30d) that met resolution SLA
+    try:
+        since_30d = timezone.now() - datetime.timedelta(days=30)
+        completed_qs = ServiceRequest.objects.filter(completed_at__gte=since_30d)
+        total_completed = completed_qs.count()
+        met_sla = completed_qs.filter(resolution_sla_breached=False).count() if total_completed else 0
+        staff_efficiency_pct = int(round((met_sla / total_completed) * 100)) if total_completed else 0
+    except Exception:
+        staff_efficiency_pct = 0
+
+    # Active GYM members (status Active and not expired)
+    try:
+        active_gym_members = GymMember.objects.filter(status="Active").exclude(expiry_date__lt=today).count()
+    except Exception:
+        active_gym_members = 0
+
+    # Trend data for charts (last 7 days)
+    try:
+        labels = []
+        tickets_series = []
+        feedback_series = []
+        for i in range(6, -1, -1):
+            day = today - datetime.timedelta(days=i)
+            labels.append(day.strftime('%a'))
+            tickets_series.append(ServiceRequest.objects.filter(created_at__date=day).count())
+            feedback_series.append(Review.objects.filter(created_at__date=day).count())
+        trend_labels_json = json.dumps(labels)
+        tickets_data_json = json.dumps(tickets_series)
+        feedback_data_json = json.dumps(feedback_series)
+        feedback_total = sum(feedback_series)
+        peak_day_tickets_val = max(tickets_series) if tickets_series else 0
+        peak_day_feedback_val = max(feedback_series) if feedback_series else 0
+    except Exception:
+        trend_labels_json = json.dumps(['Mon','Tue','Wed','Thu','Fri','Sat','Sun'])
+        tickets_data_json = json.dumps([0,0,0,0,0,0,0])
+        feedback_data_json = json.dumps([0,0,0,0,0,0,0])
+        feedback_total = 0
+        peak_day_tickets_val = 0
+        peak_day_feedback_val = 0
+
+    # Sentiment (last 30 days)
+    try:
+        since_30d = timezone.now() - datetime.timedelta(days=30)
+        reviews_30 = Review.objects.filter(created_at__gte=since_30d)
+        pos_count = reviews_30.filter(rating__gte=4).count()
+        neu_count = reviews_30.filter(rating=3).count()
+        neg_count = reviews_30.filter(rating__lte=2).count()
+        total_reviews = max(1, pos_count + neu_count + neg_count)
+        pos_pct = int(round(pos_count / total_reviews * 100))
+        neu_pct = int(round(neu_count / total_reviews * 100))
+        neg_pct = max(0, 100 - pos_pct - neu_pct)
+        overall_rating = round(average_review_rating or 0, 1)
+    except Exception:
+        pos_count = neu_count = neg_count = 0
+        pos_pct = 68
+        neu_pct = 22
+        neg_pct = 10
+        overall_rating = round(average_review_rating or 0, 1)
 
     # Fetch actual critical tickets (high priority service requests)
     try:
@@ -788,28 +1156,31 @@ def dashboard2_view(request):
     context = {
         'user_name': request.user.get_full_name() or request.user.username,
         # Stats data
-        'active_tickets': open_complaints,
+        'active_tickets': active_tickets_count,
         'avg_review_rating': round(average_review_rating, 1) if average_review_rating else 0,
-        'sla_breaches': 0,  # This would need to be calculated from actual SLA breaches
+        'sla_breaches': sla_breaches_24h,
         'vouchers_redeemed': vouchers_redeemed,
         'guest_satisfaction': round(average_review_rating * 20) if average_review_rating else 0,  # Convert 5-star to 100%
-        'avg_response_time': '12m',  # This would need to be calculated from actual response times
-        'staff_efficiency': 87,  # This would need to be calculated from actual metrics
-        'active_gym_members': 389,  # This would need to be fetched from actual data
+        'avg_response_time': avg_response_display,
+        'staff_efficiency': staff_efficiency_pct,
+        'active_gym_members': active_gym_members,
         'active_guests': occupancy_today,
-        # Chart data - simplified for dashboard2
-        'tickets_data': requests_values[:7] if len(requests_values) >= 7 else requests_values + [0] * (7 - len(requests_values)),
-        'feedback_data': feedback_data['positive'][:7] if len(feedback_data['positive']) >= 7 else feedback_data['positive'] + [0] * (7 - len(feedback_data['positive'])),
-        'peak_day_tickets': max(requests_values) if requests_values else 0,
-        'peak_day_feedback': max(feedback_data['positive']) if feedback_data['positive'] else 0,
-        'weekly_growth': 18,  # This would need to be calculated from actual data
+        # Trend chart data
+        'trend_labels': trend_labels_json,
+        'tickets_data': tickets_data_json,
+        'feedback_data': feedback_data_json,
+        'feedback_total': feedback_total,
+        'peak_day_tickets': peak_day_tickets_val,
+        'peak_day_feedback': peak_day_feedback_val,
+        'weekly_growth': 18,  # placeholder unless growth tracking is implemented
         # Sentiment data
-        'positive_reviews': sum(feedback_data['positive']),
-        'neutral_reviews': sum(feedback_data['neutral']),
-        'negative_reviews': sum(feedback_data['negative']),
-        'positive_count': sum(feedback_data['positive']),
-        'neutral_count': sum(feedback_data['neutral']),
-        'negative_count': sum(feedback_data['negative']),
+        'positive_reviews': pos_pct,
+        'neutral_reviews': neu_pct,
+        'negative_reviews': neg_pct,
+        'positive_count': pos_count,
+        'neutral_count': neu_count,
+        'negative_count': neg_count,
+        'overall_rating': overall_rating,
         # Department data - using real data where possible
         'departments': [
             {'name': 'Housekeeping', 'tickets': requests_values[0] if len(requests_values) > 0 else 15, 'color': 'sky-600'},
@@ -922,7 +1293,7 @@ def manage_users(request):
     return redirect('dashboard:manage_users_all')
 
 
-@require_permission([ADMINS_GROUP, STAFF_GROUP])
+@require_section_permission('messaging', 'view')
 def messaging_setup(request):
     """Messaging Setup main screen. Provides templates, stats and connection info.
 
@@ -969,18 +1340,38 @@ def messaging_setup(request):
     
     # Check Twilio configuration
     twilio_configured = False
+    twilio_account_sid = ''
+    twilio_auth_token = ''
+    twilio_whatsapp_from = ''
+    twilio_api_key_sid = ''
+    twilio_api_key_secret = ''
+    twilio_test_to_number = ''
+
     try:
         from hotel_app.twilio_service import twilio_service
         twilio_configured = twilio_service.is_configured()
+        twilio_account_sid = twilio_service.account_sid or ''
+        twilio_auth_token = twilio_service.auth_token or ''
+        twilio_api_key_sid = twilio_service.api_key_sid or ''
+        twilio_api_key_secret = twilio_service.api_key_secret or ''
+        twilio_whatsapp_from = twilio_service.whatsapp_from or ''
+        twilio_test_to_number = twilio_service.test_to_number or ''
     except Exception:
         pass
-    
-    # Get Twilio settings from environment
-    from django.conf import settings
-    twilio_account_sid = getattr(settings, 'TWILIO_ACCOUNT_SID', '')
-    twilio_auth_token = getattr(settings, 'TWILIO_AUTH_TOKEN', '')
-    twilio_whatsapp_from = getattr(settings, 'TWILIO_WHATSAPP_FROM', '')
-    twilio_test_to_number = getattr(settings, 'TWILIO_TEST_TO_NUMBER', '')
+
+    # Fall back to persisted settings if the service isn't initialised yet
+    if not any([twilio_account_sid, twilio_auth_token, twilio_api_key_sid, twilio_whatsapp_from, twilio_test_to_number]):
+        try:
+            twilio_settings_obj = TwilioSettings.objects.first()
+        except (OperationalError, ProgrammingError):
+            twilio_settings_obj = None
+        if twilio_settings_obj:
+            twilio_account_sid = twilio_settings_obj.account_sid or ''
+            twilio_auth_token = twilio_settings_obj.auth_token or ''
+            twilio_api_key_sid = twilio_settings_obj.api_key_sid or ''
+            twilio_api_key_secret = twilio_settings_obj.api_key_secret or ''
+            twilio_whatsapp_from = twilio_settings_obj.whatsapp_from or ''
+            twilio_test_to_number = twilio_settings_obj.test_to_number or ''
     
     context = {
         'templates': templates,
@@ -988,6 +1379,8 @@ def messaging_setup(request):
         'twilio_configured': twilio_configured,
         'twilio_account_sid': twilio_account_sid,
         'twilio_auth_token': twilio_auth_token,
+        'twilio_api_key_sid': twilio_api_key_sid,
+        'twilio_api_key_secret': twilio_api_key_secret,
         'twilio_whatsapp_from': twilio_whatsapp_from,
         'twilio_test_to_number': twilio_test_to_number,
     }
@@ -1053,6 +1446,7 @@ def manage_users_all(request):
         
 
 @login_required
+@require_permission([ADMINS_GROUP, STAFF_GROUP])
 def manage_users_api_users(request, user_id=None):
     """Return a JSON list of users for the Manage Users frontend poller.
 
@@ -1157,6 +1551,7 @@ def manage_users_api_users(request, user_id=None):
 
 
 @login_required
+@require_permission([ADMINS_GROUP, STAFF_GROUP])
 def manage_users_api_filters(request):
     """Return available roles and departments for the Manage Users filters.
 
@@ -1176,8 +1571,38 @@ def manage_users_api_filters(request):
     return JsonResponse({'roles': roles, 'departments': departments})
 
 
+# @require_http_methods(['POST'])
+# @login_required
+# @user_passes_test(lambda u: u.is_superuser or u.is_staff)
+# def manage_users_api_bulk_action(request):
+#     """Bulk action endpoint. Expects JSON body with 'action' and 'user_ids' list.
+#     Supported actions: enable, disable
+#     """
+#     try:
+#         body = json.loads(request.body.decode('utf-8'))
+#     except Exception:
+#         return HttpResponseBadRequest('invalid json')
+#     action = body.get('action')
+#     ids = body.get('user_ids') or []
+#     if action not in ('enable', 'disable'):
+#         return HttpResponseBadRequest('unsupported action')
+#     if not isinstance(ids, list):
+#         return HttpResponseBadRequest('user_ids must be list')
+#     users = User.objects.filter(id__in=ids).select_related('userprofile')
+#     changed = []
+#     for u in users:
+#         profile = getattr(u, 'userprofile', None)
+#         if not profile:
+#             continue
+#         new_val = True if action == 'enable' else False
+#         if profile.enabled != new_val:
+#             profile.enabled = new_val
+#             profile.save(update_fields=['enabled'])
+#             changed.append(u.id)
+#     return JsonResponse({'changed': changed, 'action': action})
 @require_http_methods(['POST'])
 @login_required
+@require_permission([ADMINS_GROUP, STAFF_GROUP])
 @user_passes_test(lambda u: u.is_superuser or u.is_staff)
 def manage_users_api_bulk_action(request):
     """Bulk action endpoint. Expects JSON body with 'action' and 'user_ids' list.
@@ -1187,26 +1612,40 @@ def manage_users_api_bulk_action(request):
         body = json.loads(request.body.decode('utf-8'))
     except Exception:
         return HttpResponseBadRequest('invalid json')
+
     action = body.get('action')
     ids = body.get('user_ids') or []
+
     if action not in ('enable', 'disable'):
         return HttpResponseBadRequest('unsupported action')
+
     if not isinstance(ids, list):
         return HttpResponseBadRequest('user_ids must be list')
+
     users = User.objects.filter(id__in=ids).select_related('userprofile')
     changed = []
+
+    new_val = True if action == 'enable' else False
+
     for u in users:
         profile = getattr(u, 'userprofile', None)
         if not profile:
             continue
-        new_val = True if action == 'enable' else False
-        if profile.enabled != new_val:
-            profile.enabled = new_val
-            profile.save(update_fields=['enabled'])
-            changed.append(u.id)
+        
+        # Update UserProfile.enabled
+        profile.enabled = new_val
+        profile.save(update_fields=['enabled'])
+
+        # Update Django auth_user.is_active ALSO
+        u.is_active = new_val
+        u.save(update_fields=['is_active'])
+
+        changed.append(u.id)
+
     return JsonResponse({'changed': changed, 'action': action})
 
 @login_required
+@require_permission([ADMINS_GROUP, STAFF_GROUP])
 def manage_users_groups(request):
     q = (request.GET.get('q') or '').strip()
 
@@ -1478,49 +1917,66 @@ def api_notify_department(request, dept_id):
 @login_required
 @require_permission([ADMINS_GROUP, STAFF_GROUP])
 def api_group_permissions(request, group_id):
-    """Return JSON list of permissions for a user group."""
+    """Return JSON list of section permissions for a user group."""
     try:
-        from django.contrib.auth.models import Group
+        from django.contrib.auth.models import Group, Permission
+        from django.contrib.contenttypes.models import ContentType
+        from hotel_app.models import Section
+        
         group = get_object_or_404(Group, pk=group_id)
         
-        # Define permissions based on group name (this is a simplified approach)
-        # In a real application, you would have a more sophisticated permission system
-        permissions = []
+        # Get all section permissions for this group
+        section_content_type = ContentType.objects.get_for_model(Section)
+        group_permissions = group.permissions.filter(content_type=section_content_type)
         
-        # Default permissions for all groups
-        base_permissions = [
-            "view_profile",
-            "update_profile",
-            "view_requests",
-            "update_requests"
-        ]
+        # Organize permissions by section
+        permissions_by_section = {}
+        sections = Section.objects.filter(is_active=True).order_by('name')
         
-        # Add specific permissions based on group name
-        if group.name == "Admins":
-            permissions = base_permissions + [
-                "manage_users",
-                "manage_groups",
-                "system_config",
-                "view_reports",
-                "manage_departments",
-                "full_access"
-            ]
-        elif group.name == "Staff":
-            permissions = base_permissions + [
-                "view_team_reports",
-                "manage_team",
-                "assign_requests",
-                "view_dept_data"
-            ]
-        elif group.name == "Users":
-            permissions = base_permissions
-        else:
-            permissions = base_permissions
+        for section in sections:
+            section_key = section.name
+            permissions_by_section[section_key] = {
+                'display_name': section.display_name,
+                'view': False,
+                'edit': False,
+                'raw': {
+                    'view': False,
+                    'add': False,
+                    'change': False,
+                    'delete': False,
+                }
+            }
+            
+            for action in ['view', 'add', 'change', 'delete']:
+                codename = section.get_permission_codename(action)
+                if group_permissions.filter(codename=codename).exists():
+                    permissions_by_section[section_key]['raw'][action] = True
+                    if action == 'view':
+                        permissions_by_section[section_key]['view'] = True
+            raw_perms = permissions_by_section[section_key]['raw']
+            if raw_perms['add'] or raw_perms['change'] or raw_perms['delete']:
+                permissions_by_section[section_key]['edit'] = True
+        
+        # Also return a flat list for backward compatibility
+        flat_permissions = []
+        for section_name, perms in permissions_by_section.items():
+            raw = perms.get('raw', {})
+            for action, enabled in raw.items():
+                if enabled:
+                    flat_permissions.append(f"{section_name}.{action}")
+        
+        return JsonResponse({
+            'permissions': flat_permissions,
+            'permissions_by_section': permissions_by_section,
+            'group_name': group.name,
+            'group_id': group.id,
+        })
             
     except Exception as e:
-        permissions = []
-    
-    return JsonResponse({'permissions': permissions})
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f'Error getting group permissions: {str(e)}', exc_info=True)
+        return JsonResponse({'error': str(e), 'permissions': []}, status=500)
 
 
 @login_required
@@ -1541,25 +1997,119 @@ def api_group_permissions_update(request, group_id):
         except json.JSONDecodeError:
             return JsonResponse({'error': 'Invalid JSON data'}, status=400)
         
-        # Get permissions from request
-        permissions = data.get('permissions', [])
+        # Get section permissions from request
+        from django.contrib.contenttypes.models import ContentType
+        from hotel_app.models import Section
         
-        # Get permission objects from codenames
+        raw_permissions_by_section = data.get('permissions_by_section', {}) or {}
+        flat_permissions = data.get('permissions', []) or []
+        
+        # Normalize payload to {'section': {'view': bool, 'edit': bool}}
+        def _normalize_permissions(payload):
+            normalized = {}
+            for section_name, perms in payload.items():
+                if not isinstance(perms, dict):
+                    continue
+                raw = perms.get('raw', {}) if isinstance(perms.get('raw'), dict) else {}
+                view_flag = perms.get('view')
+                edit_flag = perms.get('edit')
+                if view_flag is None:
+                    view_flag = (
+                        raw.get('view', False)
+                        or perms.get('view', False)
+                    )
+                if edit_flag is None:
+                    edit_flag = (
+                        perms.get('edit', False)
+                        or perms.get('add', False)
+                        or perms.get('change', False)
+                        or perms.get('delete', False)
+                        or raw.get('add', False)
+                        or raw.get('change', False)
+                        or raw.get('delete', False)
+                    )
+                normalized[section_name] = {
+                    'view': bool(view_flag),
+                    'edit': bool(edit_flag),
+                }
+            return normalized
+        
+        normalized_permissions = _normalize_permissions(raw_permissions_by_section)
+        
+        if flat_permissions:
+            for perm_string in flat_permissions:
+                try:
+                    section_name, action = perm_string.split('.')
+                except ValueError:
+                    continue
+                entry = normalized_permissions.setdefault(section_name, {'view': False, 'edit': False})
+                if action == 'view':
+                    entry['view'] = True
+                elif action in ('add', 'change', 'delete'):
+                    entry['edit'] = True
+        
+        # Get ContentType for Section model
+        section_content_type = ContentType.objects.get_for_model(Section)
+        
+        # Get all section permissions that should be assigned
         permission_objects = []
-        for codename in permissions:
-            try:
-                perm = Permission.objects.get(codename=codename)
-                permission_objects.append(perm)
-            except Permission.DoesNotExist:
-                # Skip permissions that don't exist
-                continue
+        sections = Section.objects.filter(is_active=True)
         
-        # Update group permissions
-        group.permissions.set(permission_objects)
+        for section in sections:
+            desired = normalized_permissions.get(section.name, {'view': False, 'edit': False})
+            desired_view = desired.get('view', False)
+            desired_edit = desired.get('edit', False)
+            for action in ['view']:
+                if desired_view:
+                    codename = section.get_permission_codename(action)
+                    try:
+                        perm = Permission.objects.get(
+                            codename=codename,
+                            content_type=section_content_type
+                        )
+                        permission_objects.append(perm)
+                    except Permission.DoesNotExist:
+                        continue
+            if desired_edit:
+                for action in ['add', 'change', 'delete']:
+                    codename = section.get_permission_codename(action)
+                    try:
+                        perm = Permission.objects.get(
+                            codename=codename,
+                            content_type=section_content_type
+                        )
+                        permission_objects.append(perm)
+                    except Permission.DoesNotExist:
+                        continue
         
-        return JsonResponse({'success': True, 'message': 'Permissions updated successfully'})
+        # Remove duplicates from permission_objects by using a dict keyed by ID
+        unique_perms_dict = {perm.id: perm for perm in permission_objects}
+        permission_objects = list(unique_perms_dict.values())
         
+        # Use transactions to ensure atomicity and prevent duplicates
+        from django.db import transaction
+        with transaction.atomic():
+            # Clear all existing section permissions first to avoid duplicates
+            # This ensures a clean state before adding new permissions
+            existing_section_perms = group.permissions.filter(content_type=section_content_type)
+            if existing_section_perms.exists():
+                # Convert to list to evaluate queryset before removal
+                perms_to_clear = list(existing_section_perms)
+                group.permissions.remove(*perms_to_clear)
+            
+            # Add the new section permissions (Django's add() handles duplicates gracefully, but we've cleared them)
+            if permission_objects:
+                group.permissions.add(*permission_objects)
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Permissions updated successfully',
+            'permissions_count': len(permission_objects)
+        })
     except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f'Error updating group permissions: {str(e)}', exc_info=True)
         return JsonResponse({'error': str(e)}, status=500)
 
 
@@ -1625,7 +2175,7 @@ from django.http import JsonResponse
 
 from hotel_app.models import User
 from .forms import GymMemberForm
-from .models import GymMember
+from .models import GymMember, TicketReview
 
 # Constants
 ADMINS_GROUP = 'Admins'
@@ -1809,6 +2359,55 @@ def clear_user_data(request):
 
 @login_required
 @require_permission([ADMINS_GROUP, STAFF_GROUP])
+@require_POST
+def save_twilio_setting(request):
+    """Persist a single Twilio credential field provided by the user."""
+    field = request.POST.get('field')
+    value = request.POST.get('value', '')
+
+    field_map = {
+        'account_sid': 'account_sid',
+        'auth_token': 'auth_token',
+        'api_key_sid': 'api_key_sid',
+        'api_key_secret': 'api_key_secret',
+        'whatsapp_from': 'whatsapp_from',
+        'test_to_number': 'test_to_number',
+    }
+
+    label_map = {
+        'account_sid': 'Account SID',
+        'auth_token': 'Auth Token',
+        'api_key_sid': 'API Key SID',
+        'api_key_secret': 'API Key Secret',
+        'whatsapp_from': 'WhatsApp From number',
+        'test_to_number': 'Test recipient number',
+    }
+
+    if field not in field_map:
+        return JsonResponse({'success': False, 'error': 'Invalid field'}, status=400)
+
+    try:
+        from hotel_app.twilio_service import twilio_service
+        twilio_service.update_credentials(
+            updated_by=request.user,
+            **{field_map[field]: value}
+        )
+    except ImproperlyConfigured as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Unable to save Twilio setting: {str(e)}'
+        }, status=500)
+
+    return JsonResponse({
+        'success': True,
+        'message': f'{label_map[field]} saved successfully.'
+    })
+
+
+@login_required
+@require_permission([ADMINS_GROUP, STAFF_GROUP])
 def test_twilio_connection(request):
     """Test Twilio connection with provided credentials"""
     if request.method != 'POST':
@@ -1817,83 +2416,70 @@ def test_twilio_connection(request):
     # Get credentials from request
     account_sid = request.POST.get('account_sid')
     auth_token = request.POST.get('auth_token')
+    api_key_sid = request.POST.get('api_key_sid')
+    api_key_secret = request.POST.get('api_key_secret')
     whatsapp_from = request.POST.get('whatsapp_from')
     test_to_number = request.POST.get('test_to_number')
     
     # Validate inputs
-    if not account_sid or not auth_token or not whatsapp_from:
-        return JsonResponse({'error': 'Missing required parameters'}, status=400)
+    has_auth_token = bool(auth_token)
+    has_api_key = bool(api_key_sid and api_key_secret)
+
+    if not account_sid or not whatsapp_from or (not has_auth_token and not has_api_key):
+        return JsonResponse({'error': 'Account SID, WhatsApp From, and either Auth Token or API Key credentials are required.'}, status=400)
     
     try:
-        # Test Twilio connection by creating a client and fetching account info
-        from twilio.rest import Client
         from twilio.base.exceptions import TwilioException
-        
-        client = Client(account_sid, auth_token)
-        
-        # Try to fetch account details to verify credentials
-        account = client.api.accounts(account_sid).fetch()
-        
-        # If we have a test number, try to send a test message using our improved service
-        if test_to_number:
-            try:
-                # Use our improved Twilio service
-                from hotel_app.twilio_service import TwilioService
-                
-                # Create a temporary service instance with the provided credentials
-                temp_service = TwilioService()
-                temp_service.account_sid = account_sid
-                temp_service.auth_token = auth_token
-                temp_service.whatsapp_from = whatsapp_from
-                temp_service.client = client
-                
-                # Send a simple test message
-                result = temp_service.send_text_message(
-                    to_number=test_to_number,
-                    body='Connection test successful from Hotel Management System'
-                )
-                
-                if result['success']:
-                    return JsonResponse({
-                        'success': True,
-                        'message': 'Twilio connection and message sending successful',
-                        'account_sid': account_sid,
-                        'message_sid': result['message_id']
-                    })
-                else:
-                    return JsonResponse({
-                        'success': True,
-                        'message': 'Twilio connection successful but message sending failed',
-                        'account_sid': account_sid,
-                        'warning': result['error']
-                    })
-            except TwilioException as e:
-                # If message sending fails, still return success for connection but with warning
-                return JsonResponse({
-                    'success': True,
-                    'message': 'Twilio connection successful but message sending failed',
-                    'account_sid': account_sid,
-                    'warning': str(e)
-                })
-            except Exception as e:
-                # Handle other exceptions
-                return JsonResponse({
-                    'success': True,
-                    'message': 'Twilio connection successful but message sending failed',
-                    'account_sid': account_sid,
-                    'warning': f'Unexpected error: {str(e)}'
-                })
+        from twilio.rest import Client
+        from hotel_app.twilio_service import twilio_service
+
+        if has_auth_token:
+            client = Client(account_sid, auth_token)
         else:
-            # If we get here, the credentials are valid
-            return JsonResponse({
-                'success': True,
-                'message': 'Twilio connection successful',
-                'account_sid': account_sid
-            })
+            client = Client(api_key_sid, api_key_secret, account_sid=account_sid)
+        client.api.accounts(account_sid).fetch()
+
+        # Persist credentials for the shared service
+        twilio_service.update_credentials(
+            account_sid=account_sid,
+            auth_token=auth_token,
+            api_key_sid=api_key_sid,
+            api_key_secret=api_key_secret,
+            whatsapp_from=whatsapp_from,
+            test_to_number=test_to_number,
+            updated_by=request.user
+        )
+
+        response_payload = {
+            'success': True,
+            'message': 'Twilio connection successful',
+            'account_sid': account_sid
+        }
+
+        if test_to_number:
+            result = twilio_service.send_text_message(
+                to_number=test_to_number,
+                body='Connection test successful from Hotel Management System'
+            )
+
+            if result['success']:
+                response_payload['message'] = 'Twilio connection and message sending successful'
+                response_payload['message_sid'] = result['message_id']
+            else:
+                response_payload['message'] = 'Twilio connection successful but message sending failed'
+                response_payload['warning'] = result['error']
+
+        return JsonResponse(response_payload)
+
     except TwilioException as e:
         return JsonResponse({
             'success': False,
             'error': f'Twilio connection failed: {str(e)}'
+        }, status=400)
+    except ImproperlyConfigured as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
         }, status=400)
     except Exception as e:
         return JsonResponse({
@@ -2087,9 +2673,230 @@ def tickets(request):
     paginator = Paginator(processed_tickets, 10)  # Show 10 tickets per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
+    matched_reviews = TicketReview.objects.filter(
+        is_matched__in=[True, 1],
+        moved_to_ticket__in=[False, 0]
+    ).select_related("matched_department", "matched_request_type").order_by('-created_at')
+
+    unmatched_reviews = TicketReview.objects.filter(
+        is_matched__in=[False, 0],
+        moved_to_ticket__in=[False, 0]
+    ).order_by('-created_at')
+    all_reviews = list(matched_reviews) + list(unmatched_reviews)
+    paginator = Paginator(all_reviews, 10)  # 10 reviews per page
+    page_number = request.GET.get('page')
+    page_ob = paginator.get_page(page_number)
     
+    # Get unmatched requests for admin review
+    from hotel_app.models import UnmatchedRequest, RequestType as RT
+    unmatched_requests_qs = UnmatchedRequest.objects.filter(
+        status=UnmatchedRequest.STATUS_PENDING
+    ).select_related(
+        'guest', 'conversation', 'request_type', 'department'
+    ).order_by('-received_at')[:50]  # Show last 50 pending unmatched requests
+    unmatched_requests = list(unmatched_requests_qs)
+
+    # Get all departments and request types for dropdowns
+    all_departments = Department.objects.all().order_by('name')
+    
+    # Build request types by department using DepartmentRequestSLA configurations
+    request_types_by_department = {}
+    sla_configs = DepartmentRequestSLA.objects.select_related('department', 'request_type').all()
+    
+    for config in sla_configs:
+        dept_id = str(config.department_id)
+        rt_id = config.request_type.request_type_id
+        entry = {
+            'id': rt_id,
+            'name': config.request_type.name,
+            'default_department_id': config.department_id,
+        }
+        
+        # Check if this request type is already added for this department
+        if dept_id not in request_types_by_department:
+            request_types_by_department[dept_id] = []
+        
+        # Avoid duplicates
+        if not any(rt['id'] == rt_id for rt in request_types_by_department[dept_id]):
+            request_types_by_department[dept_id].append(entry)
+    
+    request_types_by_department_json = json.dumps(request_types_by_department, cls=DjangoJSONEncoder)
+    
+    # Also get all request types for reference
+    all_request_types = list(
+        RT.objects.filter(active=True)
+        .select_related('default_department')
+        .order_by('name')
+    )
+    # JSON payload for all request types (fallback in UI when no department selected)
+    all_request_types_json = json.dumps(
+        [
+            {
+                'id': rt.request_type_id,
+                'name': rt.name,
+                'default_department_id': rt.default_department_id,
+            }
+            for rt in all_request_types
+        ],
+        cls=DjangoJSONEncoder
+    )
+
+    processed_unmatched_requests = []
+    for unmatched in unmatched_requests:
+        detected = None
+        try:
+            detected = workflow_handler._detect_request_type(unmatched.message_body or '')
+        except Exception:
+            detected = None
+
+        preselected_department_id = unmatched.department_id
+        preselected_request_type_id = getattr(unmatched.request_type, 'request_type_id', None)
+
+        matched_keywords = set(filter(None, (unmatched.keywords or [])))
+        suggested_request_type_name = None
+
+        if detected:
+            matched_keywords.update(detected.matched_keywords or [])
+            if not preselected_request_type_id:
+                preselected_request_type_id = detected.request_type.request_type_id
+            # Prefer SLA configuration mapping to choose department for this request type
+            if not preselected_department_id:
+                try:
+                    # Find first department that has SLA configured for this request type
+                    from hotel_app.models import DepartmentRequestSLA as DR
+                    sla_match = DR.objects.filter(request_type_id=preselected_request_type_id).order_by('department_id').first()
+                    if sla_match:
+                        preselected_department_id = sla_match.department_id
+                except Exception:
+                    preselected_department_id = preselected_department_id or None
+            # Fallback to request type's default department
+            if not preselected_department_id and detected.request_type.default_department_id:
+                preselected_department_id = detected.request_type.default_department_id
+            suggested_request_type_name = detected.request_type.name
+
+        matched_keywords = sorted({kw.lower() for kw in matched_keywords if kw})
+
+        auto_detected = False
+        if isinstance(unmatched.context, dict):
+            auto_detected = unmatched.context.get('auto_detected', False)
+        if detected and unmatched.request_type_id and detected.request_type.request_type_id == unmatched.request_type_id:
+            auto_detected = True
+        elif detected and not unmatched.request_type_id:
+            auto_detected = True
+
+        status_label = 'Unmatched'
+        status_class = 'bg-amber-100 text-amber-800'
+        status_hint = ''
+        match_state = 'unmatched'
+
+        if unmatched.request_type_id:
+            match_state = 'matched'
+            status_label = 'Matched'
+            status_class = 'bg-emerald-100 text-emerald-700'
+            status_hint = ''
+        elif detected:
+            match_state = 'matched'
+            status_label = 'Matched'
+            status_class = 'bg-emerald-100 text-emerald-700'
+            status_hint = ''
+            preselected_request_type_id = detected.request_type.request_type_id
+            # Prefer SLA configuration mapping
+            if not preselected_department_id:
+                try:
+                    from hotel_app.models import DepartmentRequestSLA as DR
+                    sla_match = DR.objects.filter(request_type_id=preselected_request_type_id).order_by('department_id').first()
+                    if sla_match:
+                        preselected_department_id = sla_match.department_id
+                except Exception:
+                    preselected_department_id = preselected_department_id or None
+            # Fallback to request type's default department
+            if not preselected_department_id and detected.request_type.default_department_id:
+                preselected_department_id = detected.request_type.default_department_id
+            suggested_request_type_name = detected.request_type.name
+
+        display_guest_name = (
+            unmatched.guest.full_name
+            if unmatched.guest and unmatched.guest.full_name
+            else unmatched.conversation.guest.full_name
+            if unmatched.conversation
+            and unmatched.conversation.guest
+            and unmatched.conversation.guest.full_name
+            else None
+        )
+
+        if (not display_guest_name or display_guest_name == 'Unknown') and unmatched.phone_number:
+            detected_guest = None
+            try:
+                detected_guest = workflow_handler.find_guest_by_number(unmatched.phone_number)
+            except Exception:
+                detected_guest = None
+            if detected_guest:
+                display_guest_name = (
+                    detected_guest.full_name
+                    or detected_guest.guest_id
+                    or display_guest_name
+                )
+                if unmatched.guest is None:
+                    unmatched.guest = detected_guest
+
+        if not display_guest_name:
+            context_name = ''
+            if isinstance(unmatched.context, dict):
+                context_name = unmatched.context.get('guest_name') or ''
+            display_guest_name = context_name.strip() or 'Unknown'
+
+        if display_guest_name == 'Unknown':
+            phone_digits = re.sub(r'\D', '', unmatched.phone_number or '')
+            if len(phone_digits) >= 6:
+                tail_digits = phone_digits[-10:] if len(phone_digits) >= 10 else phone_digits
+                guest_lookup = Guest.objects.filter(phone__icontains=tail_digits).order_by('-updated_at').first()
+                if guest_lookup:
+                    if guest_lookup.full_name:
+                        display_guest_name = guest_lookup.full_name
+                    elif guest_lookup.guest_id:
+                        display_guest_name = guest_lookup.guest_id
+                    if unmatched.guest is None:
+                        unmatched.guest = guest_lookup
+
+                if display_guest_name == 'Unknown':
+                    try:
+                        voucher = None
+                        if unmatched.conversation and getattr(unmatched.conversation, "voucher", None):
+                            voucher = unmatched.conversation.voucher
+                        if not voucher:
+                            voucher = workflow_handler.find_voucher_by_number(unmatched.phone_number or "")
+                    except Exception:
+                        voucher = None
+                    if voucher and voucher.guest_name:
+                        display_guest_name = voucher.guest_name.strip() or display_guest_name
+
+                if display_guest_name == 'Unknown' and phone_digits:
+                    display_guest_name = f"Guest {phone_digits[-4:]}"
+
+        unmatched.display_guest_name = display_guest_name
+        unmatched.preselected_department_id = preselected_department_id
+        unmatched.preselected_request_type_id = preselected_request_type_id
+        unmatched.status_label = status_label
+        unmatched.status_class = status_class
+        unmatched.status_hint = status_hint
+        unmatched.match_state = match_state
+        unmatched.auto_detected = auto_detected
+        unmatched.matched_keywords_display = matched_keywords
+        unmatched.suggested_request_type_name = suggested_request_type_name
+        default_priority = 'Medium'
+        if isinstance(unmatched.context, dict):
+            ctx_priority = unmatched.context.get('priority')
+            if isinstance(ctx_priority, str) and ctx_priority:
+                normalized_priority = ctx_priority.strip().title()
+                if normalized_priority in {'Critical', 'High', 'Medium', 'Low'}:
+                    default_priority = normalized_priority
+        unmatched.default_priority = default_priority
+
+        processed_unmatched_requests.append(unmatched)
+
     context = {
         'departments': departments_data,
+        'page_ob':page_ob,
         'tickets': page_obj,  # Pass the page_obj to the template
         'page_obj': page_obj,  # Pass it again as page_obj for clarity
         'total_tickets': tickets_queryset.count(),
@@ -2098,6 +2905,8 @@ def tickets(request):
         'priority_filter': priority_filter,
         'status_filter': status_filter,
         'search_query': search_query,
+        "matched_reviews": matched_reviews,
+        "unmatched_reviews": unmatched_reviews,
     }
     return render(request, 'dashboard/tickets.html', context)
 
@@ -2212,10 +3021,17 @@ def ticket_detail(request, ticket_id):
     
     status_data = status_mapping.get(service_request.status, {'label': 'Pending', 'color': 'yellow-400'})
     
-    # Get requester name
+    # Get requester/guest info
     requester_name = 'Unknown'
     if service_request.requester_user:
         requester_name = service_request.requester_user.get_full_name() or service_request.requester_user.username
+    guest_name = ''
+    guest_phone = ''
+    guest_room_number = ''
+    if getattr(service_request, 'guest', None):
+        guest_name = (service_request.guest.full_name or '').strip()
+        guest_phone = (service_request.guest.phone or '').strip()
+        guest_room_number = (service_request.guest.room_number or '').strip()
     
     # Get assignee name
     assignee_name = 'Unassigned'
@@ -2235,21 +3051,25 @@ def ticket_detail(request, ticket_id):
     
     # Get location info
     location_name = 'Unknown Location'
-    room_number = 'N/A'
+    room_number = service_request.room_no or 'N/A'
     floor = 'N/A'
     building = 'N/A'
     room_type = 'N/A'
+    guest_name = service_request.guest_name or requester_name
     
     if service_request.location:
-        location_name = service_request.location.name
-        room_number = getattr(service_request.location, 'room_no', 'N/A') or 'N/A'
+        location_name = getattr(service_request.location, 'name', 'Unknown Location')
+        room_number = getattr(service_request.location, 'room_no', room_number)
         if hasattr(service_request.location, 'floor') and service_request.location.floor:
-
             floor = f"{service_request.location.floor.floor_number} Floor"
             if service_request.location.floor.building:
                 building = service_request.location.floor.building.name
-        if service_request.location.type:
+        if hasattr(service_request.location, 'type') and service_request.location.type:
             room_type = service_request.location.type.name
+
+# ✅ If unmatched (Twilio message converted), guest_name & room_no still show
+    if not service_request.location and not service_request.guest_name:
+        guest_name = requester_name or "Unknown Guest"
     
     # Get department info - Use the actual department from the service request
     department_name = 'Unknown Department'
@@ -2390,7 +3210,11 @@ def ticket_detail(request, ticket_id):
         'request_type_name': request_type_name,
         'location_name': location_name,
         'room_number': room_number,
+        'guest_name': guest_name or requester_name,
+        'guest_phone': guest_phone,
+        'guest_room_number': guest_room_number or room_number,
         'floor': floor,
+        'guest_name':guest_name,
         'building': building,
         'room_type': room_type,
         'department_name': department_name,
@@ -3521,6 +4345,7 @@ def api_group_members(request, group_id):
     return JsonResponse({'members': members})
 
 @login_required
+@require_permission([ADMINS_GROUP, STAFF_GROUP])
 def manage_users_roles(request):
     ctx = dict(active_tab="roles",
                breadcrumb_title="Roles & Permissions",
@@ -3531,10 +4356,21 @@ def manage_users_roles(request):
     return render(request, 'dashboard/roles.html', ctx)
 
 @login_required
+@require_section_permission('users', 'view')
 def manage_users_profiles(request):
-    # Get the standard Django groups (Admins, Staff, Users)
+    """Manage user profiles (Groups) and their section permissions."""
     from django.contrib.auth.models import Group
-    groups = Group.objects.filter(name__in=['Admins', 'Staff', 'Users']).order_by('name')
+    from hotel_app.models import Section
+    from hotel_app.section_permissions import user_has_section_permission
+    
+    # Check if user can manage profiles
+    can_manage = (
+        request.user.is_superuser or
+        user_has_section_permission(request.user, 'users', 'change')
+    )
+    
+    # Get all Django groups (not just the three default ones)
+    groups = Group.objects.all().order_by('name')
     
     # Get user count for each group
     group_user_counts = {}
@@ -3542,20 +4378,16 @@ def manage_users_profiles(request):
         count = group.user_set.count()
         group_user_counts[group.name] = count
     
-    # Check user permissions to determine what they can see
-    user_permissions = []
-    if request.user.is_superuser:
-        # Superuser has all permissions
-        user_permissions = ['manage_users', 'manage_groups', 'system_config', 'view_reports', 'manage_departments', 'full_access']
-    elif request.user.groups.filter(name='Admins').exists():
-        # Admin permissions
-        user_permissions = ['manage_users', 'manage_groups', 'view_reports', 'manage_departments']
-    elif request.user.groups.filter(name='Staff').exists():
-        # Staff permissions
-        user_permissions = ['view_team_reports', 'manage_team', 'assign_requests', 'view_dept_data']
-    else:
-        # Basic user permissions
-        user_permissions = ['view_profile', 'update_profile']
+    # Get all sections for permission display
+    sections = Section.objects.filter(is_active=True).order_by('name')
+    
+    # Check user permissions to determine what they can see/do
+    user_permissions = {
+        'view': user_has_section_permission(request.user, 'users', 'view'),
+        'add': user_has_section_permission(request.user, 'users', 'add'),
+        'change': user_has_section_permission(request.user, 'users', 'change'),
+        'delete': user_has_section_permission(request.user, 'users', 'delete'),
+    }
     
     ctx = dict(
         active_tab="profiles",
@@ -3566,7 +4398,9 @@ def manage_users_profiles(request):
         primary_label="Create Profile",
         groups=groups,
         group_user_counts=group_user_counts,
-        user_permissions=user_permissions  # Pass user permissions to template
+        user_permissions=user_permissions,
+        can_manage=can_manage,
+        sections=sections,
     )
     return render(request, 'dashboard/user_profiles.html', ctx)
 
@@ -3633,7 +4467,8 @@ def user_create(request):
                 email=email,
                 password=user_password,
             )
-            user.is_active = bool(is_active)
+            
+            user.is_active = True
             user.is_staff = is_staff
             user.is_superuser = is_superuser
             user.save()
@@ -3879,31 +4714,43 @@ def user_update(request, user_id):
             profile.department = None
 
         # Handle role assignment to Django groups
+        # The role field now contains the Django Group name directly (e.g., "Managers", "Users", "Staff")
         if role:
             # First, remove user from all groups
             user.groups.clear()
             
-            # Then add to the appropriate group based on role
-            role_mapping = {
-                'admin': 'Admins',
-                'admins': 'Admins',
-                'administrator': 'Admins',
-                'superuser': 'Admins',
-                'staff': 'Staff',
-                'front desk': 'Staff',
-                'front desk team': 'Staff',
-                'user': 'Users',
-                'users': 'Users'
-            }
-            
-            group_name = role_mapping.get(role.lower(), 'Users')
+            # Try to find the group by name (role is now the group name)
             try:
-                group = Group.objects.get(name=group_name)
+                group = Group.objects.get(name=role)
                 user.groups.add(group)
             except Group.DoesNotExist:
-                # If the group doesn't exist, create it
-                group = Group.objects.create(name=group_name)
-                user.groups.add(group)
+                # If the group doesn't exist, try legacy role mapping for backward compatibility
+                role_mapping = {
+                    'admin': 'Admins',
+                    'admins': 'Admins',
+                    'administrator': 'Admins',
+                    'superuser': 'Admins',
+                    'staff': 'Staff',
+                    'front desk': 'Staff',
+                    'front desk team': 'Staff',
+                    'user': 'Users',
+                    'users': 'Users'
+                }
+
+                group_name = role_mapping.get(role.lower(), role)  # Use role as group name if not in mapping
+                try:
+                    group = Group.objects.get(name=group_name)
+                    user.groups.add(group)
+                except Group.DoesNotExist:
+                    # If the group still doesn't exist, create it
+                    group = Group.objects.create(name=group_name)
+                    user.groups.add(group)
+            # Update profile role to match group name
+            profile.role = user.groups.first().name if user.groups.exists() else ''
+        else:
+            # No role provided: clear groups and reset profile role
+            user.groups.clear()
+            profile.role = ''
 
         # Handle profile picture upload
         profile_picture = request.FILES.get('profile_picture') if hasattr(request, 'FILES') else None
@@ -3952,7 +4799,8 @@ def manage_user_detail(request, user_id):
     Context to template:
     - user: User instance
     - profile: UserProfile or None
-    - groups: Queryset of Group objects
+    - groups: Queryset of Group objects (user's current groups)
+    - all_groups: Queryset of all Django Groups (for role dropdown)
     - departments: Queryset of Department objects
     - avatar_url: str or None
     - requests_handled, messages_sent, avg_rating, response_rate
@@ -3960,6 +4808,12 @@ def manage_user_detail(request, user_id):
     user = get_object_or_404(User, pk=user_id)
     profile = getattr(user, 'userprofile', None)
     groups = user.groups.all()
+    primary_group = groups.first()
+
+    # Get all Django Groups for the role dropdown (these are the "profiles")
+    from django.contrib.auth.models import Group
+    all_groups = Group.objects.all().order_by('name')
+
     try:
         departments = Department.objects.all()
     except Exception:
@@ -3990,19 +4844,20 @@ def manage_user_detail(request, user_id):
     if profile and getattr(profile, 'avatar_url', None):
         avatar_url = profile.avatar_url
 
-    # Determine user role based on groups
-    user_role = "User"
-    if user.is_superuser:
+    # Determine user's current role/profile based on primary group
+    if primary_group:
+        user_role = primary_group.name
+    elif user.is_superuser:
         user_role = "Admin"
-    elif user.is_staff and groups.filter(name="Staff").exists():
-        user_role = "Staff"
-    elif groups.filter(name="Users").exists():
-        user_role = "User"
+    else:
+        user_role = ""
 
     context = {
         'user': user,
         'profile': profile,
         'groups': groups,
+        'primary_group': primary_group,
+        'all_groups': all_groups,  # All available groups/profiles for dropdown
         'departments': departments,
         'avatar_url': avatar_url,
         'requests_handled': requests_handled,
@@ -4034,19 +4889,47 @@ def user_delete(request, user_id):
     return redirect("dashboard:users")
 
 
+# @require_permission([ADMINS_GROUP])
+# def manage_users_toggle_enabled(request, user_id):
+#     """Toggle the 'enabled' flag on a user's UserProfile. Expects POST."""
+#     if request.method != 'POST':
+#         return JsonResponse({'error': 'POST required'}, status=405)
+#     user = get_object_or_404(User, pk=user_id)
+#     profile = getattr(user, 'userprofile', None)
+#     if not profile:
+#         return JsonResponse({'error': 'UserProfile missing'}, status=400)
+#     profile.enabled = not bool(profile.enabled)
+#     profile.save(update_fields=['enabled'])
+#     return JsonResponse({'id': user.pk, 'enabled': profile.enabled})
+
 @require_permission([ADMINS_GROUP])
 def manage_users_toggle_enabled(request, user_id):
-    """Toggle the 'enabled' flag on a user's UserProfile. Expects POST."""
+    """Toggle enabled and keep Django user.is_active in sync."""
     if request.method != 'POST':
         return JsonResponse({'error': 'POST required'}, status=405)
+
     user = get_object_or_404(User, pk=user_id)
     profile = getattr(user, 'userprofile', None)
+
     if not profile:
         return JsonResponse({'error': 'UserProfile missing'}, status=400)
-    profile.enabled = not bool(profile.enabled)
-    profile.save(update_fields=['enabled'])
-    return JsonResponse({'id': user.pk, 'enabled': profile.enabled})
 
+    # Toggle the value
+    new_val = not bool(profile.enabled)
+
+    # Update UserProfile.enabled
+    profile.enabled = new_val
+    profile.save(update_fields=['enabled'])
+
+    # Update Django auth_user.is_active
+    user.is_active = new_val
+    user.save(update_fields=['is_active'])
+
+    return JsonResponse({
+        'id': user.pk,
+        'enabled': profile.enabled,
+        'is_active': user.is_active
+    })
 
 # ---- Department Management ----
 @require_permission([ADMINS_GROUP, STAFF_GROUP])
@@ -4509,59 +5392,128 @@ def dashboard_groups(request):
     }
     return render(request, "dashboard/groups.html", context)
 
+@login_required
+@require_section_permission('users', 'add')
 @require_http_methods(['POST'])
 @csrf_protect
 def group_create(request):
     """
-    Create a user group. Department is matched by name if provided.
-    If department is provided, the group name will be formatted as "Department - Group Name".
+    Create a Django Group (for User Profiles) or UserGroup (for Groups tab).
+    Determines which type to create based on request parameter or context.
+    For User Profiles page, creates Django Group.
+    For Groups tab, creates UserGroup.
     """
     name = (request.POST.get("name") or "").strip()
     description = (request.POST.get("description") or "").strip()
     department_name = (request.POST.get("department") or "").strip()
+    group_type = request.POST.get("group_type", "django_group")  # "django_group" or "user_group"
 
     errors = {}
     if not name:
         errors["name"] = ["Group name is required."]
     
-    dept_obj = None
-    final_group_name = name
-    if department_name:
-        dept_obj = Department.objects.filter(name__iexact=department_name).first()
-        if not dept_obj:
-            errors["department"] = [f"Department '{department_name}' not found."]
-        else:
-            # Format group name as "Department - Group Name"
-            final_group_name = f"{dept_obj.name} - {name}"
-    
-    # Check if a group with the final name already exists
-    if UserGroup.objects.filter(name__iexact=final_group_name).exists():
-        errors["name"] = [f"Group '{final_group_name}' already exists."]
+    # Check if group already exists
+    if group_type == "django_group":
+        # Create Django Group (for User Profiles)
+        from django.contrib.auth.models import Group
+        from hotel_app.models import UserProfile
+        from hotel_app.signals import ROLE_TO_GROUP_MAPPING
+        
+        if Group.objects.filter(name=name).exists():
+            errors["name"] = [f"Group '{name}' already exists."]
+        
+        if errors:
+            return JsonResponse({"success": False, "errors": errors}, status=400)
+        
+        try:
+            # Create Django Group (for profiles, we don't need role - just a name)
+            # Django Groups are just permission containers, not tied to UserProfile roles
+            group = Group.objects.create(name=name)
+            
+            # Assign default permissions (Dashboard & My Tickets view)
+            try:
+                from django.contrib.contenttypes.models import ContentType
+                from django.contrib.auth.models import Permission
+                from hotel_app.models import Section
+                
+                section_content_type = ContentType.objects.get_for_model(Section)
+                default_sections = Section.objects.filter(name__in=['dashboard', 'my_tickets'])
+                for section in default_sections:
+                    codename = section.get_permission_codename('view')
+                    try:
+                        perm = Permission.objects.get(
+                            codename=codename,
+                            content_type=section_content_type
+                        )
+                        group.permissions.add(perm)
+                    except Permission.DoesNotExist:
+                        continue
+            except Exception:
+                # Ignore permission assignment errors but log for debugging
+                import logging
+                logging.getLogger(__name__).warning(
+                    "Unable to assign default dashboard/my_tickets permissions to group %s",
+                    name,
+                    exc_info=True
+                )
+            
+            # Note: For Django Groups (profiles), we don't assign users here
+            # Users are assigned to groups separately through the user management interface
+            # The role field is only relevant for UserGroups, not Django Groups
+            
+            response_data = {
+                "success": True,
+                "group": {
+                    "id": group.id,
+                    "name": group.name,
+                }
+            }
+            return JsonResponse(response_data)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f'Error creating group: {str(e)}', exc_info=True)
+            return JsonResponse({"success": False, "errors": {"non_field_errors": [str(e)]}}, status=500)
+    else:
+        # Create UserGroup (for Groups tab)
+        dept_obj = None
+        final_group_name = name
+        if department_name:
+            dept_obj = Department.objects.filter(name__iexact=department_name).first()
+            if not dept_obj:
+                errors["department"] = [f"Department '{department_name}' not found."]
+            else:
+                # Format group name as "Department - Group Name"
+                final_group_name = f"{dept_obj.name} - {name}"
 
-    if errors:
-        return JsonResponse({"success": False, "errors": errors}, status=400)
+        # Check if a group with the final name already exists
+        if UserGroup.objects.filter(name__iexact=final_group_name).exists():
+            errors["name"] = [f"Group '{final_group_name}' already exists."]
 
-    try:
-        grp = UserGroup.objects.create(
-            name=final_group_name,
-            description=description or None,
-            department=dept_obj
-        )
-    except Exception as e:
-        return JsonResponse({"success": False, "errors": {"non_field_errors": [str(e)]}}, status=500)
+        if errors:
+            return JsonResponse({"success": False, "errors": errors}, status=400)
 
-    # Return additional information about the group including department
-    response_data = {
-        "success": True, 
-        "group": {
-            "id": grp.id, 
-            "name": grp.name,
-            "description": grp.description,
-            "department_id": grp.department.id if grp.department else None,
-            "department_name": grp.department.name if grp.department else None
+        try:
+            grp = UserGroup.objects.create(
+                name=final_group_name,
+                description=description or None,
+                department=dept_obj
+            )
+        except Exception as e:
+            return JsonResponse({"success": False, "errors": {"non_field_errors": [str(e)]}}, status=500)
+
+        # Return additional information about the group including department
+        response_data = {
+            "success": True,
+            "group": {
+                "id": grp.id,
+                "name": grp.name,
+                "description": grp.description,
+                "department_id": grp.department.id if grp.department else None,
+                "department_name": grp.department.name if grp.department else None
+            }
         }
-    }
-    return JsonResponse(response_data)
+        return JsonResponse(response_data)
 
 @require_permission([ADMINS_GROUP])
 def group_update(request, group_id):
@@ -4995,12 +5947,26 @@ def create_ticket_api(request):
             data = json.loads(request.body.decode('utf-8'))
             
             # Extract data from request
-            guest_name = data.get('guest_name')
-            room_number = data.get('room_number')
+            guest_name = (data.get('guest_name') or '').strip()
+            room_number = (data.get('room_number') or '').strip()
             department_name = data.get('department')
             category = data.get('category')
             priority = data.get('priority')
             description = data.get('description')
+            guest_id = data.get('guest_id')
+
+            guest = None
+            if guest_id:
+                try:
+                    guest = Guest.objects.get(pk=guest_id)
+                except Guest.DoesNotExist:
+                    guest = None
+
+            if guest:
+                if not guest_name:
+                    guest_name = guest.full_name or guest.guest_id or ''
+                if (not room_number) and guest.room_number:
+                    room_number = guest.room_number
             
             # Validate required fields
             if not guest_name or not room_number or not department_name or not category or not priority:
@@ -5026,18 +5992,39 @@ def create_ticket_api(request):
             
             # Map priority to model values
             priority_mapping = {
+                'Critical': 'critical',
                 'High': 'high',
                 'Medium': 'normal',
                 'Normal': 'normal',
                 'Low': 'low',
             }
             model_priority = priority_mapping.get(priority, 'normal')
+
+            if guest is None:
+                guest_queryset = Guest.objects.all()
+                if room_number:
+                    guest_queryset = guest_queryset.filter(room_number__iexact=room_number)
+                if guest_name:
+                    guest = (
+                        guest_queryset.filter(full_name__iexact=guest_name)
+                        .order_by('-updated_at')
+                        .first()
+                    )
+                if guest is None:
+                    guest = guest_queryset.order_by('-updated_at').first()
+                if guest is None and guest_name:
+                    guest = (
+                        Guest.objects.filter(full_name__iexact=guest_name)
+                        .order_by('-updated_at')
+                        .first()
+                    )
             
             # Create service request
             service_request = ServiceRequest.objects.create(
                 request_type=request_type,
                 location=location,
                 requester_user=request.user,
+                guest=guest,
                 department=department,
                 priority=model_priority,
                 status='pending',
@@ -5046,11 +6033,17 @@ def create_ticket_api(request):
             
             # Notify department staff
             service_request.notify_department_staff()
+
+            guest_notified = _send_ticket_acknowledgement(
+                service_request,
+                guest=guest,
+            )
             
             return JsonResponse({
                 'success': True,
                 'message': 'Ticket created successfully',
-                'ticket_id': service_request.id
+                'ticket_id': service_request.id,
+                'guest_notified': guest_notified,
             })
             
         except Exception as e:
@@ -5914,10 +6907,186 @@ def get_ticket_suggestions_api(request):
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
+@login_required
+@require_permission([ADMINS_GROUP, STAFF_GROUP])
+def search_guests_api(request):
+    """Autocomplete endpoint for guest lookup by name or room number."""
+    if request.method != 'GET':
+        return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
+
+    query = (request.GET.get('q') or '').strip()
+    results = []
+    if query:
+        guests = (
+            Guest.objects.filter(
+                Q(full_name__icontains=query)
+                | Q(room_number__icontains=query)
+                | Q(guest_id__icontains=query)
+            )
+            .order_by('-updated_at')[:10]
+        )
+        for guest in guests:
+            results.append({
+                'id': guest.id,
+                'name': guest.full_name or guest.guest_id or f'Guest {guest.pk}',
+                'room_number': guest.room_number or '',
+                'guest_id': guest.guest_id or '',
+                'phone': guest.phone or '',
+            })
+
+    return JsonResponse({'success': True, 'results': results})
+
+
+@login_required
+@require_permission([ADMINS_GROUP, STAFF_GROUP])
+def resolve_unmatched_request_api(request, unmatched_id):
+    """API endpoint to resolve an unmatched request by creating a ticket and optionally adding keywords."""
+    if request.method == 'POST':
+        try:
+            from hotel_app.models import (
+                UnmatchedRequest, ServiceRequest, RequestType,
+                Department
+            )
+            import json
+
+            unmatched = get_object_or_404(
+                UnmatchedRequest,
+                pk=unmatched_id,
+                status=UnmatchedRequest.STATUS_PENDING,
+            )
+
+            data = json.loads(request.body.decode("utf-8"))
+            department_id = data.get("department_id")
+            request_type_id = data.get("request_type_id")
+            try:
+                department_id = int(department_id) if department_id is not None else None
+            except (TypeError, ValueError):
+                department_id = None
+            try:
+                request_type_id = int(request_type_id) if request_type_id is not None else None
+            except (TypeError, ValueError):
+                request_type_id = None
+            priority_label = str(data.get("priority", "Medium")).strip()
+            priority_label = priority_label.title() if priority_label else "Medium"
+
+            if not request_type_id:
+                return JsonResponse(
+                    {"success": False, "error": "Request type is required"},
+                    status=400,
+                )
+
+            try:
+                request_type = RequestType.objects.get(pk=request_type_id)
+            except RequestType.DoesNotExist:
+                return JsonResponse(
+                    {"success": False, "error": "Request type not found"},
+                    status=400,
+                )
+
+            department = None
+            if department_id:
+                try:
+                    department = Department.objects.get(pk=department_id)
+                except Department.DoesNotExist:
+                    return JsonResponse(
+                        {"success": False, "error": "Department not found"}, status=400
+                    )
+            elif request_type.default_department_id:
+                department = request_type.default_department
+            else:
+                return JsonResponse(
+                    {"success": False, "error": "Department is required"},
+                    status=400,
+                )
+
+            # Ensure unmatched is linked to a Guest (by phone) so guest name/room propagate to the ticket
+            if not unmatched.guest and unmatched.phone_number:
+                try:
+                    guest_lookup = workflow_handler.find_guest_by_number(unmatched.phone_number)
+                except Exception:
+                    guest_lookup = None
+                if guest_lookup:
+                    unmatched.guest = guest_lookup
+                    unmatched.save(update_fields=["guest"])
+
+            priority_mapping = {
+                "critical": "critical",
+                "high": "high",
+                "medium": "normal",
+                "normal": "normal",
+                "low": "low",
+            }
+            priority_value = priority_mapping.get(priority_label.lower(), "normal")
+
+            service_request = ServiceRequest.objects.create(
+                request_type=request_type,
+                guest=unmatched.guest,
+                department=department,
+                priority=priority_value,
+                status="pending",
+                source="whatsapp",
+                notes=f"Resolved from unmatched request:\n{unmatched.message_body or ''}".strip(),
+            )
+
+            unmatched.mark_resolved(user=request.user, ticket=service_request, save=True)
+            unmatched.department = department
+            unmatched.request_type = request_type
+            unmatched.save(update_fields=["department", "request_type"])
+
+            conversation = getattr(unmatched, "conversation", None)
+            guest_notified = _send_ticket_acknowledgement(
+                service_request,
+                guest=unmatched.guest,
+                phone_number=unmatched.phone_number,
+                conversation=conversation,
+            )
+
+            return JsonResponse(
+                {
+                    "success": True,
+                    "message": "Unmatched request resolved and ticket created successfully",
+                    "ticket_id": service_request.id,
+                    "guest_notified": guest_notified,
+                }
+            )
+
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f'Error resolving unmatched request: {str(e)}', exc_info=True)
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    
+    return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
+
+
+@login_required
+@require_permission([ADMINS_GROUP, STAFF_GROUP])
+def ignore_unmatched_request_api(request, unmatched_id):
+    """API endpoint to drop/ignore an unmatched request (e.g., duplicates)."""
+    if request.method == 'POST':
+        try:
+            from hotel_app.models import UnmatchedRequest
+            unmatched = get_object_or_404(
+                UnmatchedRequest,
+                pk=unmatched_id,
+                status=UnmatchedRequest.STATUS_PENDING,
+            )
+            unmatched.status = UnmatchedRequest.STATUS_IGNORED
+            unmatched.resolved_by = request.user
+            unmatched.resolved_at = timezone.now()
+            unmatched.save(update_fields=["status", "resolved_by", "resolved_at"])
+            return JsonResponse({"success": True, "message": "Unmatched request dropped"})
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f'Error ignoring unmatched request: {str(e)}', exc_info=True)
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
+
 
 # ---- Feedback View ----
 @login_required
-@user_passes_test(is_staff)
+@require_section_permission('feedback', 'view')
 def feedback_inbox(request):
     """Feedback inbox view showing all guest feedback."""
     from .models import Review, Guest
@@ -6055,7 +7224,7 @@ def feedback_inbox(request):
 
 
 @login_required
-@user_passes_test(is_staff)
+@require_section_permission('feedback', 'view')
 def feedback_detail(request, feedback_id):
     """Feedback detail view showing detailed information about a specific feedback."""
     from .models import Review, Guest
@@ -6181,12 +7350,32 @@ def create_ticket_api(request):
                 'Low': 'low',
             }
             model_priority = priority_mapping.get(priority, 'normal')
+
+            guest = None
+            guest_queryset = Guest.objects.all()
+            if room_number:
+                guest_queryset = guest_queryset.filter(room_number__iexact=room_number)
+            if guest_name:
+                guest = (
+                    guest_queryset.filter(full_name__iexact=guest_name)
+                    .order_by('-updated_at')
+                    .first()
+                )
+            if guest is None:
+                guest = guest_queryset.order_by('-updated_at').first()
+            if guest is None and guest_name:
+                guest = (
+                    Guest.objects.filter(full_name__iexact=guest_name)
+                    .order_by('-updated_at')
+                    .first()
+                )
             
             # Create service request (SLA times will be set automatically in the model's save method)
             service_request = ServiceRequest.objects.create(
                 request_type=request_type,
                 location=location,
                 requester_user=request.user,
+                guest=guest,
                 department=department,
                 priority=model_priority,
                 status='pending',
@@ -6195,11 +7384,17 @@ def create_ticket_api(request):
             
             # Notify department staff
             service_request.notify_department_staff()
+
+            guest_notified = _send_ticket_acknowledgement(
+                service_request,
+                guest=guest,
+            )
             
             return JsonResponse({
                 'success': True,
                 'message': 'Ticket created successfully',
-                'ticket_id': service_request.id
+                'ticket_id': service_request.id,
+                'guest_notified': guest_notified,
             })
             
         except Exception as e:
@@ -6704,6 +7899,8 @@ from django.contrib import messages
 
 from django.core.paginator import Paginator
 
+@login_required
+@require_section_permission('locations', 'view')
 def locations_list(request):
     locations = Location.objects.all().order_by('-location_id')
     families = LocationFamily.objects.all()
@@ -7511,4 +8708,59 @@ def building_edit(request, building_id):
         messages.success(request, "Building updated successfully!")
         return redirect("building_cards")
     return render(request, "building_form.html", {"building": building})
+
+
+@login_required
+def tickets_view(request):
+    """Dashboard showing ServiceRequest tickets + TicketReview (matched/unmatched)."""
+
+    # ---- ServiceRequest Tickets ----
+    search_query = request.GET.get("search", "")
+    department_filter = request.GET.get("department", "")
+    priority_filter = request.GET.get("priority", "")
+    status_filter = request.GET.get("status", "")
+
+    tickets = ServiceRequest.objects.all().order_by("-created_at")
+
+    if search_query:
+        tickets = tickets.filter(notes__icontains=search_query)
+    if department_filter:
+        tickets = tickets.filter(department__name__icontains=department_filter)
+    if priority_filter:
+        tickets = tickets.filter(priority__iexact=priority_filter.lower())
+    if status_filter:
+        tickets = tickets.filter(status__iexact=status_filter.lower())
+
+    paginator = Paginator(tickets, 10)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    # ---- TicketReview Data ----
+    matched_reviews = TicketReview.objects.filter(
+    is_matched__in=[True, 1],
+    moved_to_ticket__in=[False, 0]
+).select_related("matched_department", "matched_request_type")
+
+    unmatched_reviews = TicketReview.objects.filter(
+    is_matched__in=[False, 0],
+    moved_to_ticket__in=[False, 0]
+)
+
+
+    # ---- Context ----
+    context = {
+        "tickets": page_obj.object_list,
+        "page_obj": page_obj,
+        "departments": Department.objects.all(),
+        "request_types": RequestType.objects.filter(active=True),
+        "search_query": search_query,
+        "department_filter": department_filter,
+        "priority_filter": priority_filter,
+        "status_filter": status_filter,
+        "matched_reviews": matched_reviews,
+        "unmatched_reviews": unmatched_reviews,
+    }
+
+    return render(request, "dashboard/ticket_review.html", context)
+
 

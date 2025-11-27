@@ -88,9 +88,12 @@ urlpatterns = [
     path('api/groups/<int:group_id>/permissions/update/', dashboard_views.api_group_permissions_update, name='api_group_permissions_update'),
     path('api/groups/bulk-permissions/update/', dashboard_views.api_bulk_permissions_update, name='api_bulk_permissions_update'),
     path('manage-users/profiles/', dashboard_views.manage_users_profiles, name='manage_users_profiles'),
+    
     path('tickets/', dashboard_views.tickets, name='tickets'),
+     path("tickets/", dashboard_views.tickets_view, name="tickets_view"),
     path('my-tickets/', dashboard_views.my_tickets, name='my_tickets'),
     path('tickets/<int:ticket_id>/', dashboard_views.ticket_detail, name='ticket_detail'),
+    path('api/guests/search/', dashboard_views.search_guests_api, name='api_search_guests'),
     path('api/tickets/create/', dashboard_views.create_ticket_api, name='api_create_ticket'),
     path('api/tickets/<int:ticket_id>/assign/', dashboard_views.assign_ticket_api, name='api_assign_ticket'),
     # Removed claim_ticket_api as we're removing the claim functionality
@@ -119,8 +122,12 @@ urlpatterns = [
     
     # Ticket suggestions API
     path('api/tickets/suggestions/', dashboard_views.get_ticket_suggestions_api, name='api_ticket_suggestions'),
+    # Unmatched requests API
+    path('api/unmatched-requests/<int:unmatched_id>/resolve/', dashboard_views.resolve_unmatched_request_api, name='api_resolve_unmatched_request'),
+    path('api/unmatched-requests/<int:unmatched_id>/ignore/', dashboard_views.ignore_unmatched_request_api, name='api_ignore_unmatched_request'),
     
     # Twilio API
     path('api/twilio/test-connection/', dashboard_views.test_twilio_connection, name='api_twilio_test_connection'),
+    path('api/twilio/save-field/', dashboard_views.save_twilio_setting, name='api_twilio_save_field'),
     path('api/twilio/send-test-message/', dashboard_views.send_test_twilio_message, name='api_twilio_send_test_message'),
 ]

@@ -82,8 +82,10 @@ models_to_register = [
     models.Department, models.UserGroup, models.UserGroupMembership,
     models.Building, models.Floor, models.LocationFamily, models.LocationType,
     models.RequestFamily, models.WorkFamily, models.Workflow, models.WorkflowStep, models.WorkflowTransition,
-    models.Checklist, models.ChecklistItem, models.RequestType,
+    models.Checklist, models.ChecklistItem, models.RequestType, models.RequestKeyword,
     models.ServiceRequest, models.ServiceRequestStep, models.ServiceRequestChecklist,
+    models.WhatsAppConversation, models.WhatsAppMessage, models.UnmatchedRequest,
+    models.FeedbackQuestion, models.FeedbackSession, models.FeedbackResponse,
     models.Guest, models.GuestComment,
     models.GymMember, models.GymVisitor, models.GymVisit,
 ]
@@ -155,6 +157,14 @@ class UserProfileAdmin(admin.ModelAdmin):
     search_fields = ('full_name', 'user__username', 'phone')
     list_filter = ('department', 'title', 'role')
     fields = ('user', 'full_name', 'department', 'title', 'phone', 'role', 'enabled', 'avatar_url', 'timezone')
+
+
+@admin.register(models.Section)
+class SectionAdmin(admin.ModelAdmin):
+    list_display = ('name', 'display_name', 'is_active', 'created_at')
+    search_fields = ('name', 'display_name', 'description')
+    list_filter = ('is_active', 'created_at')
+    fields = ('name', 'display_name', 'description', 'is_active')
 
 
 # Register proxies and models if not already registered

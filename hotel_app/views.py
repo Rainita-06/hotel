@@ -14,6 +14,7 @@ from .twilio_service import twilio_service
 from django.contrib.auth import login
 
 from hotel_app.utils import  admin_required
+from hotel_app.section_permissions import require_section_permission
 def home(request):
     """
     Home page view
@@ -92,7 +93,7 @@ def signup_view(request):
 
 
 from rest_framework import viewsets, filters
-from .models import LocationFamily, Location,Building,Floor,LocationType
+from .models import LocationFamily, Location,Building,Floor,LocationType, Notification
 from .serializers import   BuildingSerializer, FloorSerializer, LocationFamilySerializer, LocationSerializer, LocationTypeSerializer
 class LocationFamilyViewSet(viewsets.ModelViewSet):
     queryset = LocationFamily.objects.all()
@@ -1544,6 +1545,7 @@ import io
 from django.core.files.base import ContentFile
 from django.urls import reverse
 @login_required
+@require_section_permission('breakfast_voucher', 'view')
 def create_voucher_checkin(request):
     if request.method == "POST":
         guest_name = request.POST.get("guest_name")
@@ -1628,6 +1630,8 @@ from .models import Voucher
 from django.utils import timezone
 # import pandas as pd
 
+@login_required
+@require_section_permission('breakfast_voucher', 'view')
 def breakfast_voucher_report(request):
     
     
@@ -1671,6 +1675,7 @@ from django.utils.timezone import now
 from .models import Voucher
 
 @login_required
+@require_section_permission('breakfast_voucher', 'change')
 def mark_checkout(request, voucher_id):
     """
     Mark a voucher as checked out (set today's date as checkout).
@@ -1769,6 +1774,7 @@ def validate_voucher(request):
 
  
 @login_required
+@require_section_permission('breakfast_voucher', 'view')
 def scan_voucher_page(request):
     return render(request, "scan_voucher.html")
 
@@ -2260,17 +2266,23 @@ from django.db.models import Q
 #         return response
     
 #     return render(request, "gym_report.html", {"visits": visits})
-
+from datetime import datetime, time
 @login_required
+
 def gym_report(request):
     visits = GymVisit.objects.select_related("member", "visitor", "checked_by_user").order_by("-visit_at")
-
+    
     # Date filter
     from_date = request.GET.get("from_date")
     to_date = request.GET.get("to_date")
     
-    if from_date and to_date:
-        visits = visits.filter(visit_at__date__range=[from_date, to_date])
+    if from_date:
+        start_dt = datetime.combine(datetime.strptime(from_date, "%Y-%m-%d"), time.min)
+        visits = visits.filter(visit_at__gte=start_dt)
+
+    if to_date:
+        end_dt = datetime.combine(datetime.strptime(to_date, "%Y-%m-%d"), time.max)
+        visits = visits.filter(visit_at__lte=end_dt)
 
     # Export to Excel
     if request.GET.get("export") == "1":
@@ -2557,3 +2569,1488 @@ def send_templated_whatsapp(request):
             'success': False,
             'error': f'Failed to send templated WhatsApp message: {str(e)}'
         }, status=500)
+
+
+# views.py
+import re
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import HttpResponse, JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils import timezone
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from twilio.twiml.messaging_response import MessagingResponse
+from .models import Voucher, RequestType, ServiceRequest, DepartmentRequestSLA, Department
+
+# --------------------------------------------------------------------------
+# 💬 TWILIO WHATSAPP WEBHOOK – Auto Ticket Creation
+# --------------------------------------------------------------------------
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse, JsonResponse
+from django.utils import timezone
+from twilio.twiml.messaging_response import MessagingResponse
+from .models import Voucher, RequestType, ServiceRequest, DepartmentRequestSLA
+import re
+
+# @csrf_exempt
+# def whatsapp_webhook(request):
+#     """
+#     ✅ WhatsApp integration (Twilio → Django):
+#     - Identify guest via phone number in Voucher
+#     - Detect request keyword (e.g., 'extra bed')
+#     - Auto-map Department via DepartmentRequestSLA
+#     - Create ServiceRequest ticket
+#     - Fallback → new request for manual review
+#     """
+#     if request.method != "POST":
+#         return JsonResponse({"error": "Invalid request"}, status=400)
+
+#     # Step 1️⃣ Get incoming message
+#     from_number = request.POST.get("From", "")
+#     body = request.POST.get("Body", "").strip().lower()
+#     resp = MessagingResponse()
+
+#     print(f"📞 Incoming from Twilio: {from_number}")
+#     print(f"📩 Message Body: {body}")
+
+#     # Step 2️⃣ Normalize phone number
+#     phone_digits = re.sub(r"\D", "", from_number)
+#     phone_last10 = phone_digits[-10:] if len(phone_digits) > 10 else phone_digits
+#     print(f"📱 Normalized phone: {phone_digits} (last10: {phone_last10})")
+
+#     # Step 3️⃣ Try to identify the guest via Voucher
+#     voucher = (
+#         Voucher.objects.filter(phone_number__icontains=phone_digits)
+#         .order_by("-created_at")
+#         .first()
+#         or Voucher.objects.filter(phone_number__icontains=phone_last10)
+#         .order_by("-created_at")
+#         .first()
+#         or Voucher.objects.filter(phone_number__icontains=phone_digits.replace("91", ""))
+#         .order_by("-created_at")
+#         .first()
+#     )
+
+#     if not voucher:
+#         print("⚠️ Guest not found for phone:", phone_digits)
+#         resp.message("⚠️ Sorry! Your number is not registered in our system.")
+#         return HttpResponse(str(resp))
+
+#     # Step 4️⃣ Collect guest info
+#     guest_name = voucher.guest_name or "Guest"
+#     room_no = voucher.room_no or "N/A"
+#     check_in = voucher.check_in_date or "N/A"
+#     check_out = voucher.check_out_date or "N/A"
+#     package = "Breakfast Included" if voucher.include_breakfast else "Room Only"
+
+#     guest_info = (
+#         f"🧾 Guest Details:\n"
+#         f"Name: {guest_name}\n"
+#         f"Phone: {voucher.country_code}-{voucher.phone_number}\n"
+#         f"Room: {room_no}\n"
+#         f"Check-in: {check_in}\n"
+#         f"Check-out: {check_out}\n"
+#         f"Package: {package}\n"
+#     )
+
+#     # Step 5️⃣ Try to detect RequestType keyword
+#     request_types = RequestType.objects.filter(active=True)
+#     matched_request_type = None
+#     for rt in request_types:
+#         if re.search(rf"\b{re.escape(rt.name.lower())}\b", body):
+#             matched_request_type = rt
+#             break
+
+#     # Step 6️⃣ Auto-assign Department via DepartmentRequestSLA or WorkFamily
+#     department = None
+#     if matched_request_type:
+#         dept_sla = DepartmentRequestSLA.objects.filter(request_type=matched_request_type).first()
+#         if dept_sla:
+#             department = dept_sla.department
+#         elif hasattr(matched_request_type, "work_family") and matched_request_type.work_family:
+#             if hasattr(matched_request_type.work_family, "department"):
+#                 department = matched_request_type.work_family.department
+
+#     # Step 7️⃣ Create ServiceRequest
+#     if matched_request_type:
+#         ticket = ServiceRequest.objects.create(
+#             request_type=matched_request_type,
+#             requester_user=None,
+#             department=department,
+#             priority="normal",
+#             status="pending",
+#             notes=f"{body}\n\n{guest_info}",
+#             created_at=timezone.now(),
+#         )
+
+#         dept_name = department.name if department else "respective"
+#         resp.message(
+#             f"✅ Hello {guest_name}!\n"
+#             f"Your request for *{matched_request_type.name}* has been logged.\n"
+#             f"Room: {room_no}\n"
+#             f"Ticket ID: #{ticket.pk}\n"
+#             f"Our {dept_name} team will assist you shortly."
+#         )
+#         print(f"🎫 Auto-ticket created: {ticket.pk} → {matched_request_type.name}")
+
+#     else:
+#         # Step 8️⃣ Unmatched request → manual review
+#         ticket = ServiceRequest.objects.create(
+#             request_type=None,
+#             requester_user=None,
+#             priority="normal",
+#             status="pending",
+#             notes=f"{body}\n\n{guest_info}",
+#             created_at=timezone.now(),
+#         )
+
+#         resp.message(
+#             f"📝 Hello {guest_name}!\n"
+#             f"Your message has been received.\n"
+#             f"Ticket ID: #{ticket.pk}\n"
+#             f"Our team will review and assign it shortly."
+#         )
+#         print(f"🕓 Unclassified ticket created: {ticket.pk}")
+
+#     return HttpResponse(str(resp))
+# from django.db.models import Q
+# from django.core.paginator import Paginator
+
+# @login_required
+# def tickets_view(request):
+#     """
+#     ✅ Combined Tickets View:
+#     - Displays all tickets (classified + unmatched)
+#     - Shows unmatched ones under “Tickets Awaiting Review”
+#     """
+#     tickets = ServiceRequest.objects.all().order_by("-created_at")
+
+#     # Filters (optional)
+#     department_filter = request.GET.get("department")
+#     priority_filter = request.GET.get("priority")
+#     status_filter = request.GET.get("status")
+#     search_query = request.GET.get("search")
+
+#     if department_filter:
+#         tickets = tickets.filter(department__name__icontains=department_filter)
+#     if priority_filter:
+#         tickets = tickets.filter(priority__iexact=priority_filter)
+#     if status_filter:
+#         tickets = tickets.filter(status__iexact=status_filter)
+#     if search_query:
+#         tickets = tickets.filter(
+#             Q(id__icontains=search_query)
+#             | Q(request_type__name__icontains=search_query)
+#             | Q(notes__icontains=search_query)
+#             | Q(department__name__icontains=search_query)
+#         )
+
+#     paginator = Paginator(tickets, 10)
+#     page_number = request.GET.get("page")
+#     page_obj = paginator.get_page(page_number)
+
+#     # Unmatched tickets → request_type=None
+#     unclassified_tickets = ServiceRequest.objects.filter(request_type__isnull=True).order_by("-created_at")
+
+#     context = {
+#         "tickets": page_obj,  # main table
+#         "page_obj": page_obj,
+#         "unclassified_tickets": unclassified_tickets,  # 👈 this makes your HTML table show unmatched tickets
+#         "departments": Department.objects.all(),
+#         "request_types": RequestType.objects.filter(active=True),
+#         "department_filter": department_filter,
+#         "priority_filter": priority_filter,
+#         "status_filter": status_filter,
+#         "search_query": search_query,
+#     }
+
+#     return render(request, "dashboard/tickets.html", context)
+
+
+# # --------------------------------------------------------------------------
+# # 🧾 MANUAL REVIEW – For Unmatched Requests
+# # --------------------------------------------------------------------------
+# @login_required
+# def review_tickets(request):
+#     """
+#     ✅ Shows all unclassified tickets (no request_type).
+#     Allows staff to assign RequestType & Department manually.
+#     """
+#     unclassified_tickets = ServiceRequest.objects.filter(request_type__isnull=True).order_by("-created_at")
+#     request_types = RequestType.objects.filter(active=True)
+#     departments = Department.objects.all()
+
+#     return render(request, "tickets.html", {
+#         "unclassified_tickets": unclassified_tickets,
+#         "request_types": request_types,
+#         "departments": departments,
+#     })
+
+
+# @login_required
+# def submit_ticket_review(request, ticket_id):
+#     """
+#     ✅ Submit manual review form to classify a ticket.
+#     """
+#     ticket = get_object_or_404(ServiceRequest, pk=ticket_id)
+
+#     if request.method == "POST":
+#         req_type_id = request.POST.get("request_type")
+#         dept_id = request.POST.get("department")
+
+#         if req_type_id:
+#             ticket.request_type_id = req_type_id
+#         if dept_id:
+#             ticket.department_id = dept_id
+
+#         ticket.status = "pending"
+#         ticket.save()
+
+#         messages.success(request, f"Ticket #{ticket.pk} successfully classified and assigned!")
+#         return redirect("tickets_view")
+
+#     request_types = RequestType.objects.filter(active=True)
+#     departments = Department.objects.all()
+#     return render(request, "ticket_detail.html", {
+#         "ticket": ticket,
+#         "request_types": request_types,
+#         "departments": departments,
+#     })
+
+
+# # --------------------------------------------------------------------------
+# # 📊 DASHBOARD DATA – For Admin Summary
+# # --------------------------------------------------------------------------
+# @login_required
+# def dashboard_view(request):
+#     """
+#     ✅ Dashboard summary view.
+#     Shows ticket counts & unclassified tickets.
+#     """
+#     total_tickets = ServiceRequest.objects.count()
+#     pending_tickets = ServiceRequest.objects.filter(status="pending").count()
+#     unclassified_tickets = ServiceRequest.objects.filter(request_type__isnull=True).count()
+
+#     context = {
+#         "total_tickets": total_tickets,
+#         "pending_tickets": pending_tickets,
+#         "unclassified_tickets": unclassified_tickets,
+#     }
+#     return render(request, "dashboard.html", context)
+
+# --------------------------------------------------------------------------
+# 📱 WHATSAPP WEBHOOK HANDLER (AUTO + UNMATCHED REQUESTS)
+# # --------------------------------------------------------------------------
+# @csrf_exempt
+# def whatsapp_webhook(request):
+#     """
+#     ✅ WhatsApp integration (Twilio → Django):
+#     - Identify guest via Voucher.phone_number
+#     - Detect request keyword (e.g., 'extra bed')
+#     - Auto-map Department via DepartmentRequestSLA
+#     - Create ServiceRequest
+#     - Fallback → New request for manual review
+#     """
+#     if request.method != "POST":
+#         return JsonResponse({"error": "Invalid request"}, status=400)
+
+#     from_number = request.POST.get("From", "")
+#     body = request.POST.get("Body", "").strip().lower()
+#     resp = MessagingResponse()
+
+#     print(f"📞 Incoming: {from_number}")
+#     print(f"📩 Body: {body}")
+
+#     # Normalize phone
+#     phone_digits = re.sub(r"\D", "", from_number)
+#     phone_last10 = phone_digits[-10:]
+#     print(f"📱 Normalized phone: {phone_digits} (last10: {phone_last10})")
+
+#     # Match voucher
+#     voucher = (
+#         Voucher.objects.filter(phone_number__icontains=phone_digits).first()
+#         or Voucher.objects.filter(phone_number__icontains=phone_last10).first()
+#         or Voucher.objects.filter(phone_number__icontains=phone_digits.replace("91", "")).first()
+#     )
+
+#     if not voucher:
+#         resp.message("⚠️ Sorry! Your number is not registered in our system.")
+#         return HttpResponse(str(resp))
+
+#     # Guest details
+#     guest_name = voucher.guest_name or "Guest"
+#     room_no = voucher.room_no or "N/A"
+#     guest_info = (
+#         f"🧾 Guest Details:\n"
+#         f"Name: {guest_name}\n"
+#         f"Phone: {voucher.country_code}-{voucher.phone_number}\n"
+#         f"Room: {room_no}\n"
+#         f"Check-in: {voucher.check_in_date}\n"
+#         f"Check-out: {voucher.check_out_date}\n"
+#         f"Package: {'Breakfast Included' if voucher.include_breakfast else 'Room Only'}\n"
+#     )
+
+#     # Detect RequestType
+#     matched_request_type = None
+#     for rt in RequestType.objects.filter(active=True):
+#         if re.search(rf"\b{re.escape(rt.name.lower())}\b", body):
+#             matched_request_type = rt
+#             break
+
+#     # Map department
+#     department = None
+#     if matched_request_type:
+#         dept_sla = DepartmentRequestSLA.objects.filter(request_type=matched_request_type).first()
+#         if dept_sla:
+#             department = dept_sla.department
+#         elif hasattr(matched_request_type, "work_family") and matched_request_type.work_family:
+#             if hasattr(matched_request_type.work_family, "department"):
+#                 department = matched_request_type.work_family.department
+
+#     # Create ServiceRequest
+#     if matched_request_type:
+#         ticket = ServiceRequest.objects.create(
+#             request_type=matched_request_type,
+#             requester_user=None,
+#             department=department,
+#             priority="normal",
+#             status="pending",
+#             notes=f"{body}\n\n{guest_info}",
+#             created_at=timezone.now(),
+#         )
+
+#         dept_name = department.name if department else "respective"
+#         resp.message(
+#             f"✅ Hello {guest_name}!\n"
+#             f"Your request for *{matched_request_type.name}* has been logged.\n"
+#             f"Room: {room_no}\n"
+#             f"Ticket ID: #{ticket.pk}\n"
+#             f"Our {dept_name} team will assist you shortly."
+#         )
+#     else:
+#         ticket = ServiceRequest.objects.create(
+#             request_type=None,
+#             requester_user=None,
+#             priority="normal",
+#             status="pending",
+#             notes=f"{body}\n\n{guest_info}",
+#             created_at=timezone.now(),
+#         )
+
+#         resp.message(
+#             f"📝 Hello {guest_name}!\n"
+#             f"Your message has been received.\n"
+#             f"Ticket ID: #{ticket.pk}\n"
+#             f"Our team will review and assign it shortly."
+#         )
+
+#     return HttpResponse(str(resp))
+
+
+# # --------------------------------------------------------------------------
+# # 🎟️ TICKETS VIEW – Classified + Unclassified Separation
+# # --------------------------------------------------------------------------
+# @login_required
+# def tickets_view(request):
+#     """
+#     ✅ Dashboard View:
+#     - Shows all classified tickets in main table
+#     - Shows unmatched WhatsApp tickets below (awaiting review)
+#     """
+#     # Classified tickets (main)
+#     tickets = ServiceRequest.objects.filter(request_type__isnull=False).order_by("-created_at")
+
+#     # Filters
+#     department_filter = request.GET.get("department")
+#     priority_filter = request.GET.get("priority")
+#     status_filter = request.GET.get("status")
+#     search_query = request.GET.get("search")
+
+#     if department_filter:
+#         tickets = tickets.filter(department__name__icontains=department_filter)
+#     if priority_filter:
+#         tickets = tickets.filter(priority__iexact=priority_filter)
+#     if status_filter:
+#         tickets = tickets.filter(status__iexact=status_filter)
+#     if search_query:
+#         tickets = tickets.filter(
+#             Q(id__icontains=search_query)
+#             | Q(request_type__name__icontains=search_query)
+#             | Q(notes__icontains=search_query)
+#             | Q(department__name__icontains=search_query)
+#         )
+
+#     paginator = Paginator(tickets, 10)
+#     page_number = request.GET.get("page")
+#     page_obj = paginator.get_page(page_number)
+
+#     # Unmatched WhatsApp tickets
+#     unclassified_tickets = ServiceRequest.objects.filter(
+#         request_type__isnull=True
+#     ).order_by("-created_at")
+
+#     context = {
+#         "tickets": page_obj,
+#         "page_obj": page_obj,
+#         "unclassified_tickets": unclassified_tickets,
+#         "departments": Department.objects.all(),
+#         "request_types": RequestType.objects.filter(active=True),
+#         "department_filter": department_filter,
+#         "priority_filter": priority_filter,
+#         "status_filter": status_filter,
+#         "search_query": search_query,
+#     }
+#     return render(request, "dashboard/tickets.html", context)
+
+
+# # --------------------------------------------------------------------------
+# # 🧾 MANUAL CLASSIFICATION (REVIEW & SUBMIT)
+# # --------------------------------------------------------------------------
+# @login_required
+# def submit_ticket_review(request, ticket_id):
+#     """
+#     ✅ When admin classifies unclassified ticket:
+#        - Assigns RequestType & Department
+#        - Moves ticket from 'Awaiting Review' → 'All Tickets'
+#     """
+#     ticket = get_object_or_404(ServiceRequest, pk=ticket_id)
+
+#     if request.method == "POST":
+#         req_type_id = request.POST.get("request_type")
+#         dept_id = request.POST.get("department")
+
+#         if req_type_id:
+#             ticket.request_type_id = req_type_id
+#         if dept_id:
+#             ticket.department_id = dept_id
+
+#         ticket.status = "pending"
+#         ticket.save()
+
+#         messages.success(request, f"✅ Ticket #{ticket.pk} successfully classified!")
+#         return redirect("tickets_view")
+
+#     return redirect("tickets_view")
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse, HttpResponse
+from django.utils import timezone
+from twilio.twiml.messaging_response import MessagingResponse
+import re
+from .models import ServiceRequest, RequestType, Department, Voucher, DepartmentRequestSLA
+
+# # -----------------------------
+# # WhatsApp Webhook
+# # -----------------------------
+# @csrf_exempt
+# def whatsapp_webhook(request):
+#     if request.method != "POST":
+#         return JsonResponse({"error": "Invalid request"}, status=400)
+
+#     from_number = request.POST.get("From", "")
+#     body = request.POST.get("Body", "").strip()
+#     resp = MessagingResponse()
+
+#     # Normalize phone
+#     phone_digits = re.sub(r"\D", "", from_number)
+#     phone_last10 = phone_digits[-10:]
+
+#     voucher = (
+#         Voucher.objects.filter(phone_number__icontains=phone_digits).first()
+#         or Voucher.objects.filter(phone_number__icontains=phone_last10).first()
+#     )
+
+#     guest_name = voucher.guest_name if voucher else "Guest"
+#     room_no = voucher.room_no if voucher else "N/A"
+
+#     # Auto-detect RequestType (optional)
+#     matched_request_type = None
+#     for rt in RequestType.objects.filter(active=True):
+#         if re.search(rf"\b{re.escape(rt.name.lower())}\b", body.lower()):
+#             matched_request_type = rt
+#             break
+
+#     # Map department if request type matched
+#     department = None
+#     if matched_request_type:
+#         try:
+#             dept_sla = DepartmentRequestSLA.objects.filter(request_type=matched_request_type).first()
+#             if dept_sla:
+#                 department = dept_sla.department
+#         except DepartmentRequestSLA.DoesNotExist:
+#             pass
+
+#     # Determine priority default
+#     priority = 'normal'
+
+#     # Create ServiceRequest
+#     ticket = ServiceRequest.objects.create(
+#         request_type=matched_request_type,
+#         department=department,
+#         priority=priority,
+#         guest_name=guest_name,
+#         room_no=room_no,
+#         phone_number=from_number,
+#         notes=body,
+#         created_at=timezone.now(),
+#         body=body,
+#     )
+
+#     if matched_request_type:
+#         resp.message(
+#             f"✅ Hello {guest_name}!\n"
+#             f"Your request for *{matched_request_type.name}* has been logged.\n"
+#             f"Room: {room_no}\n"
+#             f"Ticket ID: #{ticket.pk}\n"
+#             f"Our team will assist you shortly."
+#         )
+#     else:
+#         resp.message(
+#             f"📝 Hello {guest_name}!\n"
+#             f"Your message has been received.\n"
+#             f"Ticket ID: #{ticket.pk}\n"
+#             f"Our team will review and assign it shortly."
+#         )
+
+#     return HttpResponse(str(resp))
+
+
+# # -----------------------------
+# # Dashboard view
+# # -----------------------------
+# @login_required
+# def tickets_view(request):
+#     classified_tickets = ServiceRequest.objects.filter(request_type__isnull=False).order_by("-created_at")
+#     unclassified_tickets = ServiceRequest.objects.filter(request_type__isnull=True).order_by("-created_at")
+
+#     context = {
+#         "classified_tickets": classified_tickets,
+#         "unclassified_tickets": unclassified_tickets,
+#         "request_types": RequestType.objects.filter(active=True),
+#         "departments": Department.objects.all(),
+#         "priorities": ['critical', 'high', 'normal', 'low'],
+#     }
+#     return render(request, "dashboard/tickets.html", context)
+
+
+# # -----------------------------
+# # Review & Submit
+# # -----------------------------
+# @login_required
+# def submit_ticket_review(request, ticket_id):
+#     ticket = get_object_or_404(ServiceRequest, pk=ticket_id)
+
+#     if request.method == "POST":
+#         req_type_id = request.POST.get("request_type")
+#         dept_id = request.POST.get("department")
+#         priority = request.POST.get("priority")
+
+#         if req_type_id:
+#             ticket.request_type_id = req_type_id
+#         if dept_id:
+#             ticket.department_id = dept_id
+#         if priority:
+#             ticket.priority = priority
+
+#         ticket.status = 'pending'
+#         ticket.save()
+
+#         messages.success(request, f"✅ Ticket #{ticket.pk} classified successfully!")
+#         return redirect("tickets_view")
+
+#     return redirect("tickets_view")
+import re
+from django.http import JsonResponse, HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from twilio.twiml.messaging_response import MessagingResponse
+from django.utils import timezone
+from .models import Voucher, RequestType, DepartmentRequestSLA, TicketReview
+
+
+# @csrf_exempt
+# def whatsapp_webhook(request):
+#     if request.method != "POST":
+#         return JsonResponse({"error": "Invalid request"}, status=400)
+
+#     from_number = request.POST.get("From", "")
+#     body = request.POST.get("Body", "").strip()
+#     resp = MessagingResponse()
+
+#     # Normalize phone number
+#     phone_digits = re.sub(r"\D", "", from_number)
+#     phone_last10 = phone_digits[-10:]
+
+#     # Find guest (via voucher)
+#     voucher = (
+#         Voucher.objects.filter(phone_number__icontains=phone_digits).first()
+#         or Voucher.objects.filter(phone_number__icontains=phone_last10).first()
+#     )
+
+#     guest_name = voucher.guest_name if voucher else "Guest"
+#     room_no = voucher.room_no if voucher else "N/A"
+
+#     # ---- Auto-match Request Type ----
+#     matched_request_type = None
+#     confidence = 0.0
+
+#     for rt in RequestType.objects.filter(active=True):
+#         if re.search(rf"\b{re.escape(rt.name.lower())}\b", body.lower()):
+#             matched_request_type = rt
+#             confidence = 0.95
+#             break
+
+#     # ---- Get Department if request type matched ----
+#     department = None
+#     if matched_request_type:
+#         dept_sla = DepartmentRequestSLA.objects.filter(request_type=matched_request_type).first()
+#         if dept_sla:
+#             department = dept_sla.department
+
+#     # ---- Default priority ----
+#     priority = 'normal'
+
+#     # ---- Create TicketReview (instead of ServiceRequest) ----
+#     review = TicketReview.objects.create(
+#         voucher=voucher,
+#         guest_name=guest_name,
+#         room_no=room_no,
+#         phone_number=from_number,
+#         request_text=body,
+#         matched_request_type=matched_request_type,
+#         matched_department=department,
+#         match_confidence=confidence,
+#         is_matched=bool(matched_request_type),
+#         priority=priority,
+#     )
+
+#     # ---- WhatsApp response ----
+#     if matched_request_type:
+#         resp.message(
+#             f"✅ Hello {guest_name}!\n"
+#             f"Your request for *{matched_request_type.name}* has been received.\n"
+#             f"Room: {room_no}\n"
+#             f"Reference ID: #{review.pk}\n"
+#             f"Our team will review and process it shortly."
+#         )
+#     else:
+#         resp.message(
+#             f"📝 Hello {guest_name}!\n"
+#             f"Your message has been received.\n"
+#             f"Reference ID: #{review.pk}\n"
+#             f"Our team will review and assign it shortly."
+#         )
+
+#     return HttpResponse(str(resp))
+# from django.contrib.auth.decorators import login_required
+# from django.shortcuts import render
+# from django.core.paginator import Paginator
+# from .models import ServiceRequest, Department, RequestType, TicketReview
+
+
+# @login_required
+# def tickets_view(request):
+#     """Unified dashboard for both ServiceRequest tickets and TicketReview reviews"""
+
+#     # Filters for ServiceRequest
+#     search_query = request.GET.get("search", "")
+#     department_filter = request.GET.get("department", "")
+#     priority_filter = request.GET.get("priority", "")
+#     status_filter = request.GET.get("status", "")
+
+#     tickets = ServiceRequest.objects.all().order_by("-created_at")
+
+#     # Apply filters
+#     if search_query:
+#         tickets = tickets.filter(notes__icontains=search_query)
+#     if department_filter:
+#         tickets = tickets.filter(department__name__icontains=department_filter)
+#     if priority_filter:
+#         tickets = tickets.filter(priority__iexact=priority_filter.lower())
+#     if status_filter:
+#         tickets = tickets.filter(status__iexact=status_filter.lower())
+
+#     paginator = Paginator(tickets, 10)
+#     page_number = request.GET.get("page")
+#     page_obj = paginator.get_page(page_number)
+
+#     # 🔹 TicketReview data for review sections
+#     matched_reviews = TicketReview.objects.filter(is_matched=True, moved_to_ticket=False)
+#     unmatched_reviews = TicketReview.objects.filter(is_matched=False, moved_to_ticket=False)
+
+#     # Context for rendering the dashboard
+#     context = {
+#         # For ServiceRequest tickets
+#         "tickets": page_obj.object_list,
+#         "page_obj": page_obj,
+#         "departments": Department.objects.all(),
+#         "search_query": search_query,
+#         "department_filter": department_filter,
+#         "priority_filter": priority_filter,
+#         "status_filter": status_filter,
+
+#         # For TicketReview (review dashboard)
+#         "matched_reviews": matched_reviews,
+#         "unmatched_reviews": unmatched_reviews,
+#         "request_types": RequestType.objects.filter(active=True),
+#     }
+
+#     return render(request, "dashboard/tickets.html", context)
+
+# from django.contrib.auth.decorators import login_required
+# from django.shortcuts import render
+# from .models import TicketReview, RequestType, Department
+
+
+# @login_required
+# def ticket_review_dashboard(request):
+#     matched = TicketReview.objects.filter(is_matched=True, moved_to_ticket=False)
+#     unmatched = TicketReview.objects.filter(is_matched=False, moved_to_ticket=False)
+
+#     context = {
+#         "matched_reviews": matched,
+#         "unmatched_reviews": unmatched,
+#         "request_types": RequestType.objects.filter(active=True),
+#         "departments": Department.objects.all(),
+#         "priorities": ['critical', 'high', 'normal', 'low'],
+#     }
+#     return render(request, "dashboard/tickets.html", context)
+
+# from django.shortcuts import get_object_or_404, redirect
+# from django.contrib import messages
+# from django.utils import timezone
+# from .models import TicketReview, ServiceRequest
+
+
+# @login_required
+# def submit_ticket_review(request, review_id):
+#     review = get_object_or_404(TicketReview, pk=review_id)
+
+#     if request.method == "POST":
+#         req_type_id = request.POST.get("request_type")
+#         dept_id = request.POST.get("department")
+#         priority = request.POST.get("priority", "normal")
+
+#         # Update review details
+#         if req_type_id:
+#             review.matched_request_type_id = req_type_id
+#         if dept_id:
+#             review.matched_department_id = dept_id
+#         review.priority = priority
+#         review.review_status = "approved"
+#         review.reviewed_by = request.user
+#         review.reviewed_at = timezone.now()
+
+#         # Create the final ServiceRequest
+#         ticket = ServiceRequest.objects.create(
+#             request_type=review.matched_request_type,
+#             department=review.matched_department,
+#             priority=review.priority,
+#             notes=review.request_text,
+#             status='pending',
+#             created_at=timezone.now(),
+#         )
+
+#         # Mark as moved
+#         review.moved_to_ticket = True
+#         review.save()
+
+#         messages.success(request, f"✅ Ticket #{ticket.pk} created successfully from review #{review.pk}")
+#         return redirect("ticket_review_dashboard")
+
+#     return redirect("ticket_review_dashboard")
+import re
+from django.utils import timezone
+from django.http import JsonResponse, HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.core.paginator import Paginator
+from twilio.twiml.messaging_response import MessagingResponse
+from .models import (
+    ServiceRequest,
+    RequestType,
+    Department,
+    Voucher,
+    DepartmentRequestSLA,
+    TicketReview,
+)
+
+
+# -----------------------------------------------------------
+# ✅ TWILIO WHATSAPP WEBHOOK — Creates TicketReview
+# -----------------------------------------------------------
+@csrf_exempt
+def whatsapp_webhook(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "Invalid request"}, status=400)
+
+    from_number = request.POST.get("From", "")
+    body = request.POST.get("Body", "").strip()
+    resp = MessagingResponse()
+
+    # Normalize phone number
+    phone_digits = re.sub(r"\D", "", from_number)
+    phone_last10 = phone_digits[-10:]
+
+    # Find guest (via voucher)
+    voucher = (
+        Voucher.objects.filter(phone_number__icontains=phone_digits).first()
+        or Voucher.objects.filter(phone_number__icontains=phone_last10).first()
+    )
+    if not voucher:
+        print("⚠️ Guest not found for phone:", phone_digits)
+        resp.message("⚠️ Sorry! Your number is not registered in our system.")
+        return HttpResponse(str(resp))
+    guest_name = voucher.guest_name if voucher else "Guest"
+    room_no = voucher.room_no if voucher else "N/A"
+
+    # ---- Auto-match Request Type ----
+    matched_request_type = None
+    confidence = 0.0
+
+    for rt in RequestType.objects.filter(active=True):
+        if re.search(rf"\b{re.escape(rt.name.lower())}\b", body.lower()):
+            matched_request_type = rt
+            confidence = 0.95
+            break
+
+    # ---- Get Department if request type matched ----
+    department = None
+    if matched_request_type:
+        dept_sla = DepartmentRequestSLA.objects.filter(request_type=matched_request_type).first()
+        if dept_sla:
+            department = dept_sla.department
+
+    # ---- Default priority ----
+    priority = 'normal'
+
+    # ---- Create TicketReview ----
+    review = TicketReview.objects.create(
+        voucher=voucher,
+        guest_name=guest_name,
+        room_no=room_no,
+        phone_number=from_number,
+        request_text=body,
+        matched_request_type=matched_request_type,
+        matched_department=department,
+        match_confidence=confidence,
+        is_matched=bool(matched_request_type),
+        priority=priority,
+    )
+
+    # ---- WhatsApp Response ----
+    if matched_request_type:
+        resp.message(
+            f"✅ Hello {guest_name}!\n"
+            f"Your request for *{matched_request_type.name}* has been received.\n"
+            f"Room: {room_no}\n"
+            f"Reference ID: #{review.pk}\n"
+            f"Our team will review and process it shortly."
+        )
+    else:
+        resp.message(
+            f"📝 Hello {guest_name}!\n"
+            f"Your message has been received.\n"
+            f"Reference ID: #{review.pk}\n"
+            f"Our team will review and assign it shortly."
+        )
+
+    return HttpResponse(str(resp))
+
+
+# -----------------------------------------------------------
+# ✅ UNIFIED DASHBOARD VIEW (Tickets + TicketReview)
+# -----------------------------------------------------------
+@login_required
+def tickets_view(request):
+    """Dashboard showing ServiceRequest tickets + TicketReview (matched/unmatched)."""
+
+    # ---- ServiceRequest Tickets ----
+    search_query = request.GET.get("search", "")
+    department_filter = request.GET.get("department", "")
+    priority_filter = request.GET.get("priority", "")
+    status_filter = request.GET.get("status", "")
+
+    tickets = ServiceRequest.objects.all().order_by("-created_at")
+
+    if search_query:
+        tickets = tickets.filter(notes__icontains=search_query)
+    if department_filter:
+        tickets = tickets.filter(department__name__icontains=department_filter)
+    if priority_filter:
+        tickets = tickets.filter(priority__iexact=priority_filter.lower())
+    if status_filter:
+        tickets = tickets.filter(status__iexact=status_filter.lower())
+
+    paginator = Paginator(tickets, 10)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    # ---- TicketReview Data ----
+    matched_reviews = TicketReview.objects.filter(
+    is_matched__in=[True, 1],
+    moved_to_ticket__in=[False, 0]
+).select_related("matched_department", "matched_request_type")
+
+    unmatched_reviews = TicketReview.objects.filter(
+    is_matched__in=[False, 0],
+    moved_to_ticket__in=[False, 0]
+)
+
+
+    # ---- Context ----
+    context = {
+        "tickets": page_obj.object_list,
+        "page_obj": page_obj,
+        "departments": Department.objects.all(),
+        "request_types": RequestType.objects.filter(active=True),
+        "search_query": search_query,
+        "department_filter": department_filter,
+        "priority_filter": priority_filter,
+        "status_filter": status_filter,
+        "matched_reviews": matched_reviews,
+        "unmatched_reviews": unmatched_reviews,
+        
+    }
+
+    return render(request, "dashboard/ticket_review.html", context)
+
+
+
+# -----------------------------------------------------------
+# ✅ APPROVE / SUBMIT REVIEW — Moves to ServiceRequest
+# -----------------------------------------------------------
+# @login_required
+# def submit_ticket_review(request, review_id):
+#     review = get_object_or_404(TicketReview, pk=review_id)
+
+#     if request.method == "POST":
+#         req_type_id = request.POST.get("request_type")
+#         dept_id = request.POST.get("department")
+#         priority = request.POST.get("priority", "normal")
+
+#         # Update review fields
+#         if req_type_id:
+#             review.matched_request_type_id = req_type_id
+#         if dept_id:
+#             review.matched_department_id = dept_id
+#         review.priority = priority
+#         review.review_status = "approved"
+#         review.reviewed_by = request.user
+#         review.reviewed_at = timezone.now()
+
+#         # Create a new ServiceRequest
+#         ticket = ServiceRequest.objects.create(
+#             request_type=review.matched_request_type,
+#             department=review.matched_department,
+#             priority=review.priority,
+#             notes=review.request_text,
+#             status="pending",
+#             created_at=timezone.now(),
+#         )
+
+#         # Mark review as moved
+#         review.moved_to_ticket = True
+#         review.save()
+
+#         messages.success(request, f"✅ Ticket #{ticket.pk} created successfully from review #{review.pk}")
+#         return redirect("tickets_view")
+
+#     return redirect("tickets_view")
+# @login_required
+# def submit_ticket_review(request, review_id):
+#     review = get_object_or_404(TicketReview, pk=review_id)
+
+#     if request.method == "POST":
+#         req_type_id = request.POST.get("request_type")
+#         dept_id = request.POST.get("department")
+#         priority = request.POST.get("priority", "normal")
+
+#         # ✅ Assign or create default RequestType if missing
+#         if req_type_id:
+#             review.matched_request_type_id = req_type_id
+#         elif not review.matched_request_type:
+#             default_type, _ = RequestType.objects.get_or_create(
+#                 name="Uncategorized", defaults={"active": True}
+#             )
+#             review.matched_request_type = default_type
+
+#         # ✅ Assign or create default Department if missing
+#         if dept_id:
+#             review.matched_department_id = dept_id
+#         elif not review.matched_department:
+#             default_dept, _ = Department.objects.get_or_create(
+#                 name="General"
+#             )
+#             review.matched_department = default_dept
+
+#         # ✅ Update review metadata
+#         review.priority = priority
+#         review.review_status = "approved"
+#         review.reviewed_by = request.user
+#         review.reviewed_at = timezone.now()
+#         review.moved_to_ticket = True
+#         review.save()
+
+#         # ✅ Create ServiceRequest safely
+#         ticket = ServiceRequest.objects.create(
+#             request_type=review.matched_request_type,
+#             department=review.matched_department,
+#             priority=review.priority,
+#             guest_name=review.guest_name,
+#             room_no=review.room_no,
+#             notes=review.request_text or "",
+#             status="pending",
+#             created_at=timezone.now(),
+            
+#         )
+#         print("📩 POST DATA:", request.POST.dict())
+#         messages.success(
+#             request,
+#             f"✅ Ticket #{ticket.pk} created successfully from review #{review.pk} ({review.matched_request_type.name})"
+#         )
+#         return redirect("tickets_view")
+
+#     return redirect("tickets_view")
+
+@login_required
+def submit_ticket_review(request, review_id):
+    review = get_object_or_404(TicketReview, pk=review_id)
+
+    if request.method == "POST":
+        # print("========= DEBUG START =========")
+        # print("📩 RAW POST DATA:", request.POST.dict())
+
+        req_type_id = request.POST.get("request_type")
+        dept_id = request.POST.get("department")
+        priority = request.POST.get("priority", "normal")
+
+        # print(f"👉 Received req_type_id = {req_type_id!r}")
+        # print(f"👉 Received dept_id (raw) = {dept_id!r}")
+
+        # Convert empty string to None
+        if dept_id == "" or dept_id is None:
+            # print("⚠️ dept_id is empty string or None → setting to None")
+            dept_id = None
+
+        # Convert req_type empty string also
+        if req_type_id == "" or req_type_id is None:
+            # print("⚠️ req_type_id is empty → setting to None")
+            req_type_id = None
+
+        # =========================================================
+        # ✅ REQUEST TYPE FIX + DEBUG
+        # =========================================================
+        if req_type_id:
+            try:
+                review.matched_request_type = RequestType.objects.get(pk=int(req_type_id))
+                print(f"✅ Request Type selected → {review.matched_request_type.name}")
+            except Exception as e:
+                print("❌ Error loading RequestType:", e)
+                default_type, _ = RequestType.objects.get_or_create(
+                    name="Uncategorized", defaults={"active": True}
+                )
+                review.matched_request_type = default_type
+                print("➡️ Falling back to default RequestType: Uncategorized")
+        else:
+            if not review.matched_request_type:
+                default_type, _ = RequestType.objects.get_or_create(
+                    name="Uncategorized", defaults={"active": True}
+                )
+                review.matched_request_type = default_type
+                print("➡️ No request type previously → using Uncategorized")
+            # else:
+                # print(f"🟦 Keeping previous request type: {review.matched_request_type.name}")
+
+        # =========================================================
+        # ✅ DEPARTMENT FIX + DEBUG
+        # =========================================================
+        if dept_id:
+            try:
+                review.matched_department = Department.objects.get(pk=int(dept_id))
+                print(f"✅ Department selected → {review.matched_department.name}")
+            except Exception as e:
+                print("❌ Error loading Department:", e)
+                default_dept, _ = Department.objects.get_or_create(name="General")
+                review.matched_department = default_dept
+                print("➡️ Falling back to default Department: General")
+        else:
+            if not review.matched_department:
+                default_dept, _ = Department.objects.get_or_create(name="General")
+                review.matched_department = default_dept
+                print("➡️ No department selected → using General")
+            # else:
+                # print(f"🟦 Keeping previous department: {review.matched_department.name}")
+
+        # =========================================================
+        # UPDATE REVIEW METADATA
+        # =========================================================
+        review.priority = priority
+        review.review_status = "approved"
+        review.reviewed_by = request.user
+        review.reviewed_at = timezone.now()
+        review.moved_to_ticket = True
+        review.save()
+
+        # print("📌 Final Saved RequestType:", review.matched_request_type.name)
+        # print("📌 Final Saved Department:", review.matched_department.name)
+        # print("========= DEBUG END =========")
+        unread_count = Notification.objects.filter(
+      recipient=request.user,
+    is_read=False
+).count()
+        # =========================================================
+        # CREATE SERVICE REQUEST
+        # =========================================================
+        ticket = ServiceRequest.objects.create(
+            request_type=review.matched_request_type,
+            department=review.matched_department,
+            priority=review.priority,
+            guest_name=review.guest_name,
+            room_no=review.room_no,
+            notes=review.request_text or "",
+            status="pending",
+            created_at=timezone.now(),
+            # unread_count=unread_count,
+        )
+        ticket.notify_department_staff()
+        
+
+        messages.success(
+            request,
+            f"Ticket #{ticket.pk} created successfully from review #{review.pk}"
+        )
+        return redirect("tickets_view")
+
+    return redirect("tickets_view")
+
+
+# # --------------------------------------------------------------------------
+# # 📊 DASHBOARD SUMMARY
+# # --------------------------------------------------------------------------
+# @login_required
+# def dashboard_view(request):
+#     total_tickets = ServiceRequest.objects.count()
+#     pending_tickets = ServiceRequest.objects.filter(status="pending").count()
+#     unclassified_tickets = ServiceRequest.objects.filter(request_type__isnull=True).count()
+
+#     return render(request, "dashboard.html", {
+#         "total_tickets": total_tickets,
+#         "pending_tickets": pending_tickets,
+#         "unclassified_tickets": unclassified_tickets,
+#     })
+
+import re
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.db.models import Q
+from django.utils import timezone
+from django.core.paginator import Paginator
+from django.views.decorators.csrf import csrf_exempt
+from twilio.twiml.messaging_response import MessagingResponse
+
+# from .models import ReviewQueue
+from .models import (
+    Voucher, RequestType, DepartmentRequestSLA, ServiceRequest, Department
+)
+
+# --------------------------------------------------------------------------
+# 📱 WHATSAPP WEBHOOK HANDLER → REVIEW QUEUE
+# --------------------------------------------------------------------------
+# @csrf_exempt
+# def whatsapp_webhook(request):
+#     if request.method != "POST":
+#         return JsonResponse({"error": "Invalid request"}, status=400)
+
+#     from_number = request.POST.get("From", "")
+#     body = request.POST.get("Body", "").strip().lower()
+#     resp = MessagingResponse()
+
+#     phone_digits = re.sub(r"\D", "", from_number)
+#     phone_last10 = phone_digits[-10:] if len(phone_digits) > 10 else phone_digits
+#     print(f"📞 Incoming WhatsApp: {from_number} ({phone_last10})")
+
+#     voucher = (
+#         Voucher.objects.filter(phone_number__icontains=phone_digits).first()
+#         or Voucher.objects.filter(phone_number__icontains=phone_last10).first()
+#         or Voucher.objects.filter(phone_number__icontains=phone_digits.replace("91", "")).first()
+#     )
+
+#     if not voucher:
+#         resp.message("⚠️ Sorry! Your number is not registered in our system.")
+#         return HttpResponse(str(resp))
+
+#     # Save to review queue
+#     ReviewQueue.objects.create(
+#         guest_name=voucher.guest_name,
+#         phone_number=f"{voucher.country_code}{voucher.phone_number}",
+#         room_no=voucher.room_no,
+#         message_body=body,
+#         check_in_date=voucher.check_in_date,
+#         check_out_date=voucher.check_out_date,
+#         include_breakfast=voucher.include_breakfast,
+#     )
+
+#     resp.message(
+#         f"📝 Hello {voucher.guest_name}!\n"
+#         f"Your message has been received.\n"
+#         f"Our team will review and assign it shortly."
+#     )
+#     print("✅ Message saved to ReviewQueue")
+#     return HttpResponse(str(resp))
+
+
+# # --------------------------------------------------------------------------
+# # 🎟️ ADMIN REVIEW DASHBOARD
+# # --------------------------------------------------------------------------
+# @login_required
+# def review_queue_view(request):
+#     """
+#     Shows all WhatsApp messages awaiting admin classification.
+#     """
+#     reviews = ReviewQueue.objects.filter(reviewed=False).order_by("-created_at")
+#     return render(request, "dashboard/review_queue.html", {
+#         "reviews": reviews,
+#         "departments": Department.objects.all(),
+#         "request_types": RequestType.objects.filter(active=True),
+#     })
+
+
+# # --------------------------------------------------------------------------
+# # 🧾 REVIEW → SUBMIT TO SERVICE REQUESTS
+# # --------------------------------------------------------------------------
+# @login_required
+# def submit_review(request, review_id):
+#     review = get_object_or_404(ReviewQueue, pk=review_id)
+
+#     if request.method == "POST":
+#         req_type_id = request.POST.get("request_type")
+#         dept_id = request.POST.get("department")
+#         priority = request.POST.get("priority", "normal")
+
+#         request_type = RequestType.objects.filter(id=req_type_id).first()
+#         department = Department.objects.filter(id=dept_id).first()
+
+#         ticket = ServiceRequest.objects.create(
+#             request_type=request_type,
+#             department=department,
+#             requester_user=None,
+#             priority=priority,
+#             status="pending",
+#             notes=f"{review.message_body}\n\nGuest: {review.guest_name}\nRoom: {review.room_no}",
+#             created_at=timezone.now(),
+#         )
+
+#         review.reviewed = True
+#         review.save()
+
+#         messages.success(request, f"✅ Review #{review.id} converted to Ticket #{ticket.id}")
+#         return redirect("review_queue_view")
+
+#     return redirect("review_queue_view")
+
+
+# from twilio.twiml.messaging_response import MessagingResponse
+# from django.http import HttpResponse, JsonResponse
+# from django.views.decorators.csrf import csrf_exempt
+# from django.utils import timezone
+# import re
+
+# @csrf_exempt
+# def whatsapp_webhook(request):
+#     if request.method != "POST":
+#         return JsonResponse({"error": "Invalid request"}, status=400)
+
+#     from_number = request.POST.get("From", "")
+#     body = request.POST.get("Body", "").strip()
+#     resp = MessagingResponse()
+
+#     # Normalize phone
+#     phone_digits = re.sub(r"\D", "", from_number)
+#     phone_last10 = phone_digits[-10:]
+
+#     # Match voucher
+#     voucher = (
+#         Voucher.objects.filter(phone_number__icontains=phone_digits).first()
+#         or Voucher.objects.filter(phone_number__icontains=phone_last10).first()
+#         or Voucher.objects.filter(phone_number__icontains=phone_digits.replace("91", "")).first()
+#     )
+
+#     guest_name = voucher.guest_name if voucher else "Guest"
+#     room_no = voucher.room_no if voucher else "N/A"
+
+#     # Save everything to UnclassifiedTicket
+#     unclassified_ticket = UnclassifiedTicket.objects.create(
+#         voucher=voucher,
+#         guest_name=guest_name,
+#         room_no=room_no,
+#         phone_number=from_number,
+#         body=body
+#     )
+
+#     resp.message(
+#         f"📝 Hello {guest_name}!\n"
+#         f"Your message has been received.\n"
+#         f"Ticket ID: #{unclassified_ticket.pk}\n"
+#         f"Our team will review and assign it shortly."
+#     )
+
+#     return HttpResponse(str(resp))
+# from django.shortcuts import render, get_object_or_404, redirect
+# from django.contrib import messages
+# from django.contrib.auth.decorators import login_required
+# from .models import UnclassifiedTicket, ServiceRequest, RequestType, Department
+
+# @login_required
+# def review_unclassified_tickets(request):
+#     """
+#     Show unclassified tickets for admin review
+#     """
+#     tickets = UnclassifiedTicket.objects.filter(reviewed=False).order_by("-created_at")
+#     context = {
+#         "tickets": tickets,
+#         "request_types": RequestType.objects.filter(active=True),
+#         "departments": Department.objects.all(),
+#     }
+#     return render(request, "dashboard/tickets.html", context)
+
+
+# @login_required
+# def submit_ticket_review(request, ticket_id):
+#     """
+#     After review, move ticket to ServiceRequest
+#     """
+#     unclassified_ticket = get_object_or_404(UnclassifiedTicket, pk=ticket_id)
+
+#     if request.method == "POST":
+#         req_type_id = request.POST.get("request_type")
+#         dept_id = request.POST.get("department")
+
+#         request_type = RequestType.objects.get(pk=req_type_id) if req_type_id else None
+#         department = Department.objects.get(pk=dept_id) if dept_id else None
+
+#         # Create ServiceRequest
+#         ticket = ServiceRequest.objects.create(
+#             request_type=request_type,
+#             requester_user=None,
+#             department=department,
+#             priority="normal",
+#             status="pending",
+#             notes=f"{unclassified_ticket.body}\n\nGuest: {unclassified_ticket.guest_name}, Room: {unclassified_ticket.room_no}",
+#             created_at=timezone.now(),
+#         )
+
+#         # Mark unclassified ticket as reviewed
+#         unclassified_ticket.reviewed = True
+#         unclassified_ticket.save()
+
+#         messages.success(request, f"✅ Ticket #{ticket.pk} successfully classified and moved!")
+#         return redirect("review_unclassified_tickets")
+
+#     return redirect("review_unclassified_tickets")
+# from twilio.twiml.messaging_response import MessagingResponse
+# from django.http import HttpResponse, JsonResponse
+# from django.views.decorators.csrf import csrf_exempt
+# from django.utils import timezone
+# from django.shortcuts import render, get_object_or_404, redirect
+# from django.contrib import messages
+# from django.contrib.auth.decorators import login_required
+# import re
+
+# from .models import UnclassifiedTicket, ServiceRequest, RequestType, Department, Voucher
+
+# # -----------------------------
+# # Twilio WhatsApp webhook
+# # -----------------------------
+# @csrf_exempt
+# def whatsapp_webhook(request):
+#     if request.method != "POST":
+#         return JsonResponse({"error": "Invalid request"}, status=400)
+
+#     from_number = request.POST.get("From", "")
+#     body = request.POST.get("Body", "").strip()
+#     resp = MessagingResponse()
+
+#     # Normalize phone
+#     phone_digits = re.sub(r"\D", "", from_number)
+#     phone_last10 = phone_digits[-10:]
+
+#     # Match voucher
+#     voucher = (
+#         Voucher.objects.filter(phone_number__icontains=phone_digits).first()
+#         or Voucher.objects.filter(phone_number__icontains=phone_last10).first()
+#         or Voucher.objects.filter(phone_number__icontains=phone_digits.replace("91", "")).first()
+#     )
+
+#     guest_name = voucher.guest_name if voucher else "Guest"
+#     room_no = voucher.room_no if voucher else "N/A"
+
+#     # Save unclassified ticket
+#     unclassified_ticket = UnclassifiedTicket.objects.create(
+#         voucher=voucher,
+#         guest_name=guest_name,
+#         room_no=room_no,
+#         phone_number=from_number,
+#         body=body
+#     )
+
+#     resp.message(
+#         f"📝 Hello {guest_name}!\n"
+#         f"Your message has been received.\n"
+#         f"Ticket ID: #{unclassified_ticket.pk}\n"
+#         f"Our team will review and assign it shortly."
+#     )
+
+#     return HttpResponse(str(resp))
+
+# # -----------------------------
+# # Show unclassified tickets
+# # -----------------------------
+# @login_required
+# def review_unclassified_tickets(request):
+#     tickets = UnclassifiedTicket.objects.filter(reviewed=False).order_by("-created_at")
+#     context = {
+#         "tickets": tickets,
+#         "request_types": RequestType.objects.filter(active=True),
+#         "departments": Department.objects.all(),
+#     }
+#     return render(request, "dashboard/tickets.html", context)
+
+# # -----------------------------
+# # Submit ticket review
+# # -----------------------------
+# @login_required
+# def submit_ticket_review(request, ticket_id):
+#     unclassified_ticket = get_object_or_404(UnclassifiedTicket, pk=ticket_id)
+
+#     if request.method == "POST":
+#         req_type_id = request.POST.get("request_type")
+#         dept_id = request.POST.get("department")
+#         priority = request.POST.get("priority", "normal")
+
+#         request_type = RequestType.objects.get(pk=req_type_id) if req_type_id else None
+#         department = Department.objects.get(pk=dept_id) if dept_id else None
+
+#         # Create ServiceRequest
+#         ticket = ServiceRequest.objects.create(
+#             request_type=request_type,
+#             department=department,
+#             priority=priority,
+#             status="pending",
+#             notes=f"{unclassified_ticket.body}\n\nGuest: {unclassified_ticket.guest_name}, Room: {unclassified_ticket.room_no}",
+#             created_at=timezone.now(),
+#         )
+
+#         # Mark as reviewed
+#         unclassified_ticket.reviewed = True
+#         unclassified_ticket.save()
+
+#         messages.success(request, f"✅ Ticket #{ticket.pk} successfully classified and moved!")
+#         return redirect("review_unclassified_tickets")
+
+#     return redirect("review_unclassified_tickets")
+

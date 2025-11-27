@@ -1,37 +1,40 @@
-<div class=" h-14 relative bg-white border-b border-gray-200">
-  <div class=" h-14 left-[24px] top-0 absolute flex gap-8">
-    <!-- Checkin Tab -->
-    <a href="{% url 'member_list' %}"
-       class="w-32 self-stretch text-center text-sm font-medium font-['Inter'] 
-              {% if request.resolver_match.url_name == 'member_list' %}
-                text-sky-600 border-b-2 border-sky-600
-              {% else %}
-                text-gray-600 border-b-2 border-transparent
-              {% endif %}">
-      Data Member
-    </a>
-<a href="{% url 'gym_report' %}"
-       class="w-32 self-stretch text-center text-sm font-medium font-['Inter'] 
-              {% if request.resolver_match.url_name == 'gym_report' %}
-                text-sky-600 border-b-2 border-sky-600
-              {% else %}
-                text-gray-600 border-b-2 border-transparent
-              {% endif %}">
-      Gym Report
-    </a>
-  
+<div class="w-full bg-white border-b border-gray-200">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <nav class="flex items-start gap-8 border-b border-gray-200 -mb-px">
 
-    
+      <!-- Data Member -->
+      <a href="{% url 'member_list' %}"
+         class="py-4 px-1 inline-flex items-center border-b-2 text-base font-medium
+         {% if request.resolver_match.url_name == 'member_list' %}
+           border-sky-600 text-sky-600
+         {% else %}
+           border-transparent text-gray-600 hover:text-gray-800
+         {% endif %}">
+        Data Member
+      </a>
 
-    <!-- Breakfast Report Tab -->
-    <a href="{% url 'data_checker' %}"
-       class="w-40 self-stretch text-center text-sm font-medium font-['Inter']
-              {% if request.resolver_match.url_name == 'data_checker' %}
-                text-sky-600 border-b-2 border-sky-600
-              {% else %}
-                text-gray-600 border-b-2 border-transparent
-              {% endif %}">
-      Scan and Data checker
-    </a>
+      <!-- Gym Report -->
+      <a href="{% url 'gym_report' %}"
+         class="py-4 px-1 inline-flex items-center border-b-2 text-base font-medium
+         {% if request.resolver_match.url_name == 'gym_report' %}
+           border-sky-600 text-sky-600
+         {% else %}
+           border-transparent text-gray-600 hover:text-gray-800
+         {% endif %}">
+        Gym Report
+      </a>
+
+      <!-- Scan and Data Checker -->
+      <a href="{% url 'data_checker' %}"
+         class="py-4 px-1 inline-flex items-center border-b-2 text-base font-medium
+         {% if request.resolver_match.url_name == 'data_checker' %}
+           border-sky-600 text-sky-600
+         {% else %}
+           border-transparent text-gray-600 hover:text-gray-800
+         {% endif %}">
+        Scan and Data Checker
+      </a>
+
+    </nav>
   </div>
 </div>

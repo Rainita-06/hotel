@@ -3,32 +3,201 @@ Twilio WhatsApp Service for Hotel Messaging System
 """
 
 import logging
-import os
 import re
-from twilio.rest import Client
+from typing import Optional
+
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
+from django.db import OperationalError, ProgrammingError
+from twilio.rest import Client
 
 logger = logging.getLogger(__name__)
 
+
 class TwilioService:
     """Twilio WhatsApp integration service"""
-    
+
     def __init__(self):
-        # Try to get from Django settings first, then from environment variables
-        self.account_sid = getattr(settings, 'TWILIO_ACCOUNT_SID', None) or os.environ.get('TWILIO_ACCOUNT_SID')
-        self.auth_token = getattr(settings, 'TWILIO_AUTH_TOKEN', None) or os.environ.get('TWILIO_AUTH_TOKEN')
-        self.whatsapp_from = getattr(settings, 'TWILIO_WHATSAPP_FROM', None) or os.environ.get('TWILIO_WHATSAPP_FROM')
-        
-        # Only initialize client if all credentials are available
-        if self.account_sid and self.auth_token and self.whatsapp_from:
+        self.account_sid: Optional[str] = None
+        self.auth_token: Optional[str] = None
+        self.api_key_sid: Optional[str] = None
+        self.api_key_secret: Optional[str] = None
+        self.whatsapp_from: Optional[str] = None
+        self.test_to_number: Optional[str] = None
+        self.client: Optional[Client] = None
+
+        self._load_credentials()
+
+    @staticmethod
+    def _clean(value):
+        if value is None:
+            return None
+        if isinstance(value, str):
+            value = value.strip()
+            return value or None
+        return value
+
+    def _load_credentials(self):
+        """Initialise credentials from persisted Twilio settings or fall back to Django settings."""
+        settings_obj = self._get_db_settings()
+
+        if settings_obj:
+            self.account_sid = self._clean(getattr(settings_obj, 'account_sid', None))
+            self.auth_token = self._clean(getattr(settings_obj, 'auth_token', None))
+            self.api_key_sid = self._clean(getattr(settings_obj, 'api_key_sid', None))
+            self.api_key_secret = self._clean(getattr(settings_obj, 'api_key_secret', None))
+            self.whatsapp_from = self._clean(getattr(settings_obj, 'whatsapp_from', None))
+            self.test_to_number = self._clean(getattr(settings_obj, 'test_to_number', None))
+        else:
+            # Fallback for legacy configuration that used environment variables / settings
+            self.account_sid = self._clean(getattr(settings, 'TWILIO_ACCOUNT_SID', None))
+            self.auth_token = self._clean(getattr(settings, 'TWILIO_AUTH_TOKEN', None))
+            self.api_key_sid = self._clean(getattr(settings, 'TWILIO_API_KEY_SID', None))
+            self.api_key_secret = self._clean(getattr(settings, 'TWILIO_API_KEY_SECRET', None))
+            self.whatsapp_from = self._clean(getattr(settings, 'TWILIO_WHATSAPP_FROM', None))
+            self.test_to_number = self._clean(getattr(settings, 'TWILIO_TEST_TO_NUMBER', None))
+
+        setattr(settings, 'TWILIO_ACCOUNT_SID', self.account_sid or '')
+        setattr(settings, 'TWILIO_AUTH_TOKEN', self.auth_token or '')
+        setattr(settings, 'TWILIO_API_KEY_SID', self.api_key_sid or '')
+        setattr(settings, 'TWILIO_API_KEY_SECRET', self.api_key_secret or '')
+        setattr(settings, 'TWILIO_WHATSAPP_FROM', self.whatsapp_from or '')
+        setattr(settings, 'TWILIO_TEST_TO_NUMBER', self.test_to_number or '')
+
+        self._initialize_client()
+
+    @staticmethod
+    def _get_db_settings():
+        try:
+            from hotel_app.models import TwilioSettings
+        except Exception:
+            return None
+
+        try:
+            return TwilioSettings.objects.first()
+        except (OperationalError, ProgrammingError):
+            return None
+
+    def _initialize_client(self):
+        """Initialise the Twilio client with the current credentials."""
+        if self.account_sid and self.auth_token:
             try:
                 self.client = Client(self.account_sid, self.auth_token)
-            except Exception as e:
-                logger.error(f"Failed to initialize Twilio client: {str(e)}")
+            except Exception as exc:  # Twilio raises generic Exception on auth issues
+                logger.error("Failed to initialize Twilio client: %s", exc)
                 self.client = None
+                return exc
+        elif self.account_sid and self.api_key_sid and self.api_key_secret:
+            try:
+                self.client = Client(self.api_key_sid, self.api_key_secret, account_sid=self.account_sid)
+            except Exception as exc:
+                logger.error("Failed to initialize Twilio client with API key: %s", exc)
+                self.client = None
+                return exc
         else:
             self.client = None
+        return None
+
+    def _ensure_client(self):
+        """Ensure a Twilio client instance exists before making API calls."""
+        if self.client:
+            return self.client
+
+        error = self._initialize_client()
+        if error:
+            logger.error("Unable to create Twilio client with stored credentials: %s", error)
+        return self.client
+
+    def update_credentials(
+        self,
+        account_sid=None,
+        auth_token=None,
+        api_key_sid=None,
+        api_key_secret=None,
+        whatsapp_from=None,
+        test_to_number=None,
+        updated_by=None,
+    ):
+        """
+        Update credentials at runtime and refresh the Twilio client.
+
+        Args:
+            account_sid (str | None): Twilio account SID.
+            auth_token (str | None): Twilio auth token.
+            api_key_sid (str | None): Twilio API Key SID.
+            api_key_secret (str | None): Twilio API Key Secret.
+            whatsapp_from (str | None): Default WhatsApp sender number.
+            test_to_number (str | None): Optional default test recipient.
+            updated_by (User | None): User performing the update (for auditing).
+        """
+        updates = {}
+        requires_client_refresh = False
+
+        if account_sid is not None:
+            self.account_sid = self._clean(account_sid)
+            setattr(settings, 'TWILIO_ACCOUNT_SID', self.account_sid or '')
+            updates['account_sid'] = self.account_sid or ''
+            requires_client_refresh = True
+
+        if auth_token is not None:
+            self.auth_token = self._clean(auth_token)
+            setattr(settings, 'TWILIO_AUTH_TOKEN', self.auth_token or '')
+            updates['auth_token'] = self.auth_token or ''
+            requires_client_refresh = True
+
+        if api_key_sid is not None:
+            self.api_key_sid = self._clean(api_key_sid)
+            setattr(settings, 'TWILIO_API_KEY_SID', self.api_key_sid or '')
+            updates['api_key_sid'] = self.api_key_sid or ''
+            requires_client_refresh = True
+
+        if api_key_secret is not None:
+            self.api_key_secret = self._clean(api_key_secret)
+            setattr(settings, 'TWILIO_API_KEY_SECRET', self.api_key_secret or '')
+            updates['api_key_secret'] = self.api_key_secret or ''
+            requires_client_refresh = True
+
+        if whatsapp_from is not None:
+            self.whatsapp_from = self._clean(whatsapp_from)
+            setattr(settings, 'TWILIO_WHATSAPP_FROM', self.whatsapp_from or '')
+            updates['whatsapp_from'] = self.whatsapp_from or ''
+
+        if test_to_number is not None:
+            self.test_to_number = self._clean(test_to_number)
+            setattr(settings, 'TWILIO_TEST_TO_NUMBER', self.test_to_number or '')
+            updates['test_to_number'] = self.test_to_number or ''
+
+        if updates or updated_by is not None:
+            self._persist_credentials(updates, updated_by)
+
+        if not requires_client_refresh:
+            return
+
+        error = self._initialize_client()
+        if error:
+            raise ImproperlyConfigured(f"Failed to initialize Twilio client: {error}")
+
+    def _persist_credentials(self, updates, updated_by=None):
+        if not updates and updated_by is None:
+            return
+
+        try:
+            from hotel_app.models import TwilioSettings
+        except Exception:
+            return
+
+        try:
+            settings_obj, _ = TwilioSettings.objects.get_or_create(pk=1)
+            for field, value in updates.items():
+                setattr(settings_obj, field, value)
+            update_fields = list(updates.keys())
+            if updated_by is not None:
+                settings_obj.updated_by = updated_by
+                update_fields.append('updated_by')
+            update_fields.append('updated_at')
+            settings_obj.save(update_fields=update_fields)
+        except (OperationalError, ProgrammingError) as exc:
+            logger.warning("Unable to persist Twilio credentials: %s", exc)
     
     def _format_whatsapp_number(self, number):
         """
@@ -89,7 +258,7 @@ class TwilioService:
         try:
             # Format the numbers
             formatted_to = self._format_whatsapp_number(to_number)
-            
+
             # Handle the from number
             if self.whatsapp_from:
                 # Remove 'whatsapp:' prefix if present and re-add it
@@ -97,7 +266,7 @@ class TwilioService:
                 formatted_from = self._format_whatsapp_number(from_number)
             else:
                 formatted_from = self.whatsapp_from
-            
+
             # Prepare message parameters
             message_params = {
                 'from_': formatted_from,
@@ -113,25 +282,25 @@ class TwilioService:
                 message_params['body'] = body
             else:
                 raise ValueError("Either body or content_sid must be provided")
-            
-            # Send the message
-            if self.client:
-                message = self.client.messages.create(**message_params)
-                
-                logger.info(f"WhatsApp message sent successfully to {formatted_to}. SID: {message.sid}")
-                return {
-                    'success': True,
-                    'message_id': message.sid,
-                    'status': message.status,
-                    'to': message.to,
-                    'from': message.from_
-                }
-            else:
+
+            client = self._ensure_client()
+            if not client:
                 return {
                     'success': False,
                     'error': 'Twilio client is not initialized'
                 }
-            
+
+            message = client.messages.create(**message_params)
+
+            logger.info(f"WhatsApp message sent successfully to {formatted_to}. SID: {message.sid}")
+            return {
+                'success': True,
+                'message_id': message.sid,
+                'status': message.status,
+                'to': message.to,
+                'from': message.from_
+            }
+
         except Exception as e:
             logger.error(f"Failed to send WhatsApp message to {to_number}: {str(e)}")
             return {
@@ -170,6 +339,80 @@ class TwilioService:
         """
         return self.send_whatsapp_message(to_number=to_number, body=body)
     
+    def send_button_message(self, to_number, body_text, buttons, fallback_text=None):
+        """
+        Send an interactive button message. Falls back to plain text if interactive
+        messages are not supported or fail.
+        """
+        if not buttons:
+            return self.send_text_message(to_number, fallback_text or body_text)
+        
+        formatted_to = self._format_whatsapp_number(to_number)
+        if self.whatsapp_from:
+            from_number = (
+                self.whatsapp_from.replace('whatsapp:', '')
+                if self.whatsapp_from.startswith('whatsapp:')
+                else self.whatsapp_from
+            )
+            formatted_from = self._format_whatsapp_number(from_number)
+        else:
+            formatted_from = self.whatsapp_from
+        
+        interactive_buttons = []
+        for idx, button in enumerate(buttons):
+            reply_id = str(
+                button.get("payload")
+                or button.get("id")
+                or f"option_{idx + 1}"
+            )
+            title = button.get("title") or f"Option {idx + 1}"
+            interactive_buttons.append(
+                {
+                    "type": "reply",
+                    "reply": {
+                        "id": reply_id[:128],
+                        "title": title[:24],
+                    },
+                }
+            )
+        
+        interactive_payload = {
+            "type": "button",
+            "body": {"text": body_text},
+            "action": {"buttons": interactive_buttons},
+        }
+        
+        try:
+            client = self._ensure_client()
+            if client and self.is_configured():
+                message = client.messages.create(
+                    from_=formatted_from,
+                    to=formatted_to,
+                    interactive=interactive_payload,
+                    body=fallback_text or body_text,
+                )
+                logger.info(
+                    "Interactive WhatsApp message sent to %s (SID: %s)",
+                    formatted_to,
+                    message.sid,
+                )
+                return {
+                    "success": True,
+                    "message_id": message.sid,
+                    "status": message.status,
+                    "to": message.to,
+                    "from": message.from_,
+                }
+        except Exception as exc:
+            logger.error(
+                "Failed to send interactive WhatsApp message to %s: %s",
+                formatted_to,
+                exc,
+            )
+            return {"success": False, "error": str(exc)}
+        
+        return self._mock_send_buttons(formatted_to, body_text, interactive_buttons)
+    
     def is_configured(self):
         """
         Check if Twilio service is properly configured
@@ -177,7 +420,31 @@ class TwilioService:
         Returns:
             bool: True if properly configured, False otherwise
         """
-        return bool(self.account_sid and self.auth_token and self.whatsapp_from and self.client)
+        credentials_ready = bool(
+            (self.account_sid and self.auth_token)
+            or (self.account_sid and self.api_key_sid and self.api_key_secret)
+        )
+        return bool(credentials_ready and self.whatsapp_from)
+
+    def _mock_send_buttons(self, to_number, body_text, buttons):
+        """Mock interactive button sending for development environments."""
+        import uuid
+        titles = [
+            btn.get("reply", {}).get("title")
+            for btn in buttons
+        ]
+        logger.info(
+            "MOCK: Sending button message to %s: %s -> %s",
+            to_number,
+            body_text,
+            titles,
+        )
+        return {
+            "success": True,
+            "message_id": str(uuid.uuid4()),
+            "type": "interactive",
+            "to": to_number,
+        }
 
 # Global service instance (will be initialized even if not configured)
 twilio_service = TwilioService()

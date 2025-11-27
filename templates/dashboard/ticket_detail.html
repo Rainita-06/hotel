@@ -44,12 +44,12 @@
 
             <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 lg:p-6">
                 <div class="hidden lg:flex items-start gap-4">
-                    <img class="w-10 h-10 rounded-full" src="{{ ticket.requester_user.userprofile.avatar_url|default:'/static/images/tickets/default_avatar.png' }}" alt="Requester Avatar" onerror="this.src='/static/images/tickets/default_avatar.png'"/>
+                    <img class="w-10 h-10 rounded-full" src="{{ ticket.requester_user.userprofile.avatar_url|default:'/static/images/tickets/default_avatar.png' }}" alt="Requester Avatar" "/>
                     <div class="w-full">
                         <div class="flex justify-between items-start">
                             <div>
-                                <p class="text-base font-semibold text-gray-900">{{ requester_name }}</p>
-                                <p class="text-sm text-gray-500">Guest • Room {{ room_number }} • VIP Member</p>
+                                <p class="text-base font-semibold text-gray-900">{{guest_name|default:requester_name}}</p>
+                                <p class="text-sm text-gray-500">  Guest: {{ guest_name|default:"Unknown" }} • Room {{ room_number|default:"N/A" }}</p>
                             </div>
                             <p class="text-sm text-gray-500 flex-shrink-0">{{ created_time }}</p>
                         </div>
@@ -240,6 +240,8 @@
                 <h3 class="text-base font-semibold text-gray-900 mb-4">Ticket & Room Details</h3>
                 <div class="space-y-3 text-sm">
                     <div class="flex justify-between"><span class="text-gray-600">Room Number:</span> <span class="font-medium text-gray-900">{{ room_number }}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-600">Guest:</span> <span class="font-medium text-gray-900">{{ guest_name }}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-600">Guest Phone:</span> <span class="font-medium text-gray-900">{{ guest_phone|default:'-' }}</span></div>
                     <div class="flex justify-between"><span class="text-gray-600">Floor:</span> <span class="font-medium text-gray-900">{{ floor }}</span></div>
                     <div class="flex justify-between"><span class="text-gray-600">Room Type:</span> <span class="font-medium text-gray-900">{{ room_type }}</span></div>
                     <div class="flex justify-between"><span class="text-gray-600">Department:</span> <span class="font-medium text-gray-900">{{ department_name }}</span></div>
