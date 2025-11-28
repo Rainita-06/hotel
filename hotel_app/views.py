@@ -1525,7 +1525,7 @@ from django.core.files.base import ContentFile
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from .models import Voucher
-import datetime
+# import datetime
 
 def _parse_yyyy_mm_dd(s: str):
     """Return date object or None. Accepts '', None, or 'YYYY-MM-DD'."""
@@ -1535,7 +1535,7 @@ def _parse_yyyy_mm_dd(s: str):
     if not s:
         return None
     try:
-        return datetime.datetime.strptime(s, "%Y-%m-%d").date()
+        return datetime.strptime(s, "%Y-%m-%d").date()
     except ValueError:
         # If you prefer to show an error instead, return an error message here.
         return None
@@ -2016,8 +2016,8 @@ def add_member(request):
         # Save actual PNG file to ImageField
         file_name = f"member_{member.member_id}.png"
         member.qr_code_image.save(file_name, ContentFile(buffer.getvalue()), save=True)
-        qr_image_path = member.qr_code_image.path  # local file path
-        os.startfile(qr_image_path)
+        # qr_image_path = member.qr_code_image.path  # local file path
+        # os.startfile(qr_image_path)
         qr_absolute_url = request.build_absolute_uri(member.qr_code_image.url)
 
         # Landing link (optional future view)
