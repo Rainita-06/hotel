@@ -21,7 +21,7 @@ if ($LocalDB) {
         Copy-Item ".env.production" ".env.local"
         Write-Host "Please update the .env.local file with your local database configuration and run this script again with -LocalDB flag." -ForegroundColor Yellow
         Write-Host "Required updates:" -ForegroundColor Yellow
-        Write-Host "1. Update DB_NAME, DB_USER,Human and DB_PASSWORD with your local database details" -ForegroundColor Yellow
+        Write-Host "1. Update DB_NAME, DB_USER, and DB_PASSWORD with your local database details" -ForegroundColor Yellow
         Write-Host "2. Set DB_HOST=host.docker.internal to connect to your local database" -ForegroundColor Yellow
         exit 1
     }
@@ -88,29 +88,42 @@ else {
     # Wait a bit more for containers to be fully ready
     Start-Sleep -Seconds 15
     
-    # Create default admin user
-    Write-Host "Creating default admin user (admin:admin)..." -ForegroundColor Yellow
-    docker exec hotel_web python manage.py shell -c 'from django.contrib.auth.models import User; from hotel_app.models import UserProfile, Department; user, created = User.objects.get_or_create(username="admin", defaults={"email": "admin@example.com"}); user.set_password("admin"); user.is_superuser = True; user.is_staff = True; user.save(); print("Admin user created/updated:", user.username); dept = Department.objects.first(); profile, profile_created = UserProfile.objects.get_or_create(user=user, defaults={"full_name": "Administrator", "phone": "+1234567890", "title": "System Administrator", "department": dept, "role": "admin"}) if dept else UserProfile.objects.get_or_create(user=user, defaults={"full_name": "Administrator", "phone": "+1234567890", "title": "System Administrator", "role": "admin"}); print("Admin profile created/updated:", profile.full_name)'
-    
-    # Initialize sections and permissions (Admins, Staff, Users groups)
-    Write-Host "Initializing sections and permissions..." -ForegroundColor Yellow
+    # STEP 1: Initialize sections and permissions FIRST (creates groups)
+    Write-Host "Step 1: Initializing sections and permissions..." -ForegroundColor Yellow
     docker exec hotel_web python manage.py init_sections
     
-    # Create test users
-    Write-Host "Creating test users..." -ForegroundColor Yellow
-    docker exec hotel_web python manage.py create_test_users
-    
-    # Initialize departments and user groups
-    Write-Host "Initializing departments and user groups..." -ForegroundColor Yellow
+    # STEP 2: Initialize departments
+    Write-Host "Step 2: Initializing departments..." -ForegroundColor Yellow
     docker exec hotel_web python manage.py init_departments
     
+    # STEP 3: Create admin user and add to Admins group
+    Write-Host "Step 3: Creating default admin user (admin:admin)..." -ForegroundColor Yellow
+    docker exec hotel_web python manage.py shell -c "from django.contrib.auth.models import User, Group; from hotel_app.models import UserProfile, Department; user, created = User.objects.get_or_create(username='admin', defaults={'email': 'admin@example.com'}); user.set_password('admin'); user.is_superuser = True; user.is_staff = True; user.save(); user.groups.clear(); admin_group = Group.objects.get(name='Admins'); user.groups.add(admin_group); print('Admin user created/updated and added to Admins group:', user.username); dept = Department.objects.first(); profile, p_created = UserProfile.objects.get_or_create(user=user, defaults={'full_name': 'Administrator', 'phone': '+1234567890', 'title': 'System Administrator', 'department': dept, 'role': 'admin'}); print('Admin profile:', profile.full_name)"
+    
+    # STEP 4: Create test users
+    Write-Host "Step 4: Creating test users..." -ForegroundColor Yellow
+    docker exec hotel_web python manage.py create_test_users
+    
+    Write-Host "" -ForegroundColor Green
+    Write-Host "========================================" -ForegroundColor Green
     Write-Host "Deployment completed successfully!" -ForegroundColor Green
-    Write-Host "Access the application at http://localhost:8080" -ForegroundColor Cyan
-    Write-Host "Default admin credentials: admin / admin" -ForegroundColor Cyan
-    Write-Host "Test users created: test_admin, test_staff, test_user (all with password: testpassword123)" -ForegroundColor Cyan
+    Write-Host "========================================" -ForegroundColor Green
     Write-Host "" -ForegroundColor Cyan
+    Write-Host "Access the application at http://localhost:8080" -ForegroundColor Cyan
+    Write-Host "" -ForegroundColor Yellow
+    Write-Host "Available Credentials:" -ForegroundColor Yellow
+    Write-Host "  Superuser Admin:" -ForegroundColor White
+    Write-Host "    Username: admin" -ForegroundColor Green
+    Write-Host "    Password: admin" -ForegroundColor Green
+    Write-Host "" -ForegroundColor White
+    Write-Host "  Test Users:" -ForegroundColor White
+    Write-Host "    Admin:  test_admin  / testpassword123" -ForegroundColor Green
+    Write-Host "    Staff:  test_staff  / testpassword123" -ForegroundColor Green
+    Write-Host "    User:   test_user   / testpassword123" -ForegroundColor Green
+    Write-Host "" -ForegroundColor Yellow
     Write-Host "Permissions configured:" -ForegroundColor Yellow
     Write-Host "  - Admins: Full access to all sections" -ForegroundColor Green
     Write-Host "  - Staff: View access to all sections except Users" -ForegroundColor Green
     Write-Host "  - Users: Access only to My Tickets section" -ForegroundColor Green
+    Write-Host "" -ForegroundColor Cyan
 }

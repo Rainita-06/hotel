@@ -546,7 +546,7 @@ class ServiceRequest(models.Model):
         ('rejected', 'Rejected'),
     ]
     # NOTE: guest_name field does not exist in database - use guest.full_name to access guest name via FK
-    # guest_name = models.CharField(max_length=100, blank=True, null=True)
+    guest_name = models.CharField(max_length=100, blank=True, null=True)
     room_no = models.CharField(max_length=50, blank=True, null=True)
     phone_number = models.CharField(max_length=50, blank=True, null=True)
     body = models.TextField(blank=True, null=True) 
@@ -1975,6 +1975,56 @@ class Voucher(models.Model):
         return format_html('<span style="color:green;font-weight:bold;">Active</span>')
 
     is_used_display.short_description = "Voucher Status"
+
+    def generate_qr_code(self, size='xxlarge'):
+        """Generate QR code image and save to file system"""
+        from .utils import generate_qr_code
+        import io
+        from django.core.files.base import ContentFile
+        
+        try:
+            # Generate QR data
+            qr_data = f"Voucher: {self.voucher_code}\nGuest: {self.guest_name}\nRoom: {self.room_no}\nValid until: {self.check_out_date}"
+            
+            # Generate QR code as base64
+            qr_base64 = generate_qr_code(qr_data, size=size)
+            
+            # Also save as image file
+            import qrcode
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                box_size=10,
+                border=4,
+            )
+            qr.add_data(qr_data)
+            qr.make(fit=True)
+            
+            # Size mapping
+            size_map = {
+                'small': (100, 100),
+                'medium': (200, 200),
+                'large': (300, 300),
+                'xlarge': (400, 400),
+                'xxlarge': (500, 500)
+            }
+            size_px = size_map.get(size, size_map['medium'])
+            
+            img = qr.make_image(fill_color="black", back_color="white")
+            img = img.resize(size_px)
+            
+            # Save to ImageField
+            buffer = io.BytesIO()
+            img.save(buffer, format="PNG")
+            filename = f"voucher_{self.voucher_code}_{size}.png"
+            self.qr_code_image.save(filename, ContentFile(buffer.getvalue()), save=True)
+            
+            return True
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f'Failed to generate QR code for voucher {self.voucher_code}: {str(e)}')
+            return False
 
 
 
