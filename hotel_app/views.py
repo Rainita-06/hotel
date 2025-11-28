@@ -2016,8 +2016,8 @@ def add_member(request):
         # Save actual PNG file to ImageField
         file_name = f"member_{member.member_id}.png"
         member.qr_code_image.save(file_name, ContentFile(buffer.getvalue()), save=True)
-        qr_image_path = member.qr_code_image.path  # local file path
-        os.startfile(qr_image_path)
+        # qr_image_path = member.qr_code_image.path  # local file path
+        # os.startfile(qr_image_path)
         qr_absolute_url = request.build_absolute_uri(member.qr_code_image.url)
 
         # Landing link (optional future view)

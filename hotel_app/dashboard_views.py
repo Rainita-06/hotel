@@ -6378,13 +6378,13 @@ def dashboard_vouchers(request):
     return render(request, "dashboard/vouchers.html", context)
 
 @require_permission([ADMINS_GROUP])
-def voucher_create(request):
-    if request.method == "POST":
-        form = VoucherForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Voucher created successfully.")
-    return redirect("dashboard:vouchers")
+# def voucher_create(request):
+#     if request.method == "POST":
+#         form = VoucherForm(request.POST)
+#         if form.is_valid():
+#             form.save()
+#             messages.success(request, "Voucher created successfully.")
+#     return redirect("dashboard:vouchers")
 
 @require_permission([ADMINS_GROUP])
 def voucher_update(request, voucher_id):
