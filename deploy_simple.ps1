@@ -21,7 +21,7 @@ if ($LocalDB) {
         Copy-Item ".env.production" ".env.local"
         Write-Host "Please update the .env.local file with your local database configuration and run this script again with -LocalDB flag." -ForegroundColor Yellow
         Write-Host "Required updates:" -ForegroundColor Yellow
-        Write-Host "1. Update DB_NAME, DB_USER, and DB_PASSWORD with your local database details" -ForegroundColor Yellow
+        Write-Host "1. Update DB_NAME, DB_USER,Human and DB_PASSWORD with your local database details" -ForegroundColor Yellow
         Write-Host "2. Set DB_HOST=host.docker.internal to connect to your local database" -ForegroundColor Yellow
         exit 1
     }
@@ -92,9 +92,9 @@ else {
     Write-Host "Creating default admin user (admin:admin)..." -ForegroundColor Yellow
     docker exec hotel_web python manage.py shell -c 'from django.contrib.auth.models import User; from hotel_app.models import UserProfile, Department; user, created = User.objects.get_or_create(username="admin", defaults={"email": "admin@example.com"}); user.set_password("admin"); user.is_superuser = True; user.is_staff = True; user.save(); print("Admin user created/updated:", user.username); dept = Department.objects.first(); profile, profile_created = UserProfile.objects.get_or_create(user=user, defaults={"full_name": "Administrator", "phone": "+1234567890", "title": "System Administrator", "department": dept, "role": "admin"}) if dept else UserProfile.objects.get_or_create(user=user, defaults={"full_name": "Administrator", "phone": "+1234567890", "title": "System Administrator", "role": "admin"}); print("Admin profile created/updated:", profile.full_name)'
     
-    # Initialize roles and permissions
-    Write-Host "Initializing roles and permissions..." -ForegroundColor Yellow
-    docker exec hotel_web python manage.py init_roles
+    # Initialize sections and permissions (Admins, Staff, Users groups)
+    Write-Host "Initializing sections and permissions..." -ForegroundColor Yellow
+    docker exec hotel_web python manage.py init_sections
     
     # Create test users
     Write-Host "Creating test users..." -ForegroundColor Yellow
@@ -108,4 +108,9 @@ else {
     Write-Host "Access the application at http://localhost:8080" -ForegroundColor Cyan
     Write-Host "Default admin credentials: admin / admin" -ForegroundColor Cyan
     Write-Host "Test users created: test_admin, test_staff, test_user (all with password: testpassword123)" -ForegroundColor Cyan
+    Write-Host "" -ForegroundColor Cyan
+    Write-Host "Permissions configured:" -ForegroundColor Yellow
+    Write-Host "  - Admins: Full access to all sections" -ForegroundColor Green
+    Write-Host "  - Staff: View access to all sections except Users" -ForegroundColor Green
+    Write-Host "  - Users: Access only to My Tickets section" -ForegroundColor Green
 }

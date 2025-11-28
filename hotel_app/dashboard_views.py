@@ -575,6 +575,14 @@ def dashboard_view(request):
     - total_departments: count of Department objects
     - open_complaints: count of Complaint objects with pending/open status
     """
+    # Check if user has dashboard permission, redirect to My Tickets if not
+    from hotel_app.section_permissions import user_has_section_permission
+    from django.shortcuts import redirect
+    
+    if not user_has_section_permission(request.user, 'dashboard', 'view'):
+        # Redirect to My Tickets if user doesn't have dashboard permission
+        return redirect('dashboard:my_tickets')
+    
     today = timezone.localdate()
 
     # Live counts (defensive)
@@ -3055,7 +3063,11 @@ def ticket_detail(request, ticket_id):
     floor = 'N/A'
     building = 'N/A'
     room_type = 'N/A'
-    guest_name = service_request.guest_name or requester_name
+    # Use guest relationship if available, otherwise use requester_name
+    if not guest_name and service_request.guest:
+        guest_name = service_request.guest.full_name or requester_name
+    elif not guest_name:
+        guest_name = requester_name
     
     if service_request.location:
         location_name = getattr(service_request.location, 'name', 'Unknown Location')
@@ -3067,8 +3079,9 @@ def ticket_detail(request, ticket_id):
         if hasattr(service_request.location, 'type') and service_request.location.type:
             room_type = service_request.location.type.name
 
-# ✅ If unmatched (Twilio message converted), guest_name & room_no still show
-    if not service_request.location and not service_request.guest_name:
+    # ✅ If unmatched (Twilio message converted), guest_name & room_no still show
+    # Check if we still don't have a guest name from the guest relationship
+    if not service_request.location and not guest_name:
         guest_name = requester_name or "Unknown Guest"
     
     # Get department info - Use the actual department from the service request

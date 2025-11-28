@@ -15,11 +15,15 @@
   </div>
 
   <nav class="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
+    {% load section_permissions %}
+    
+    <!-- Overview Section -->
     <div>
       <div class="px-3 py-1 text-gray-400 text-xs font-semibold tracking-tight">
         Overview
       </div>
-
+      
+      {% if user|has_section_permission:'dashboard.view' %}
       <a href="{% url 'dashboard:main' %}"
         class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:main' %} text-sky-600 bg-sky-100 {% else %} text-gray-600 hover:bg-gray-100 {% endif %}">
         <img
@@ -27,11 +31,11 @@
           alt="Dashboard Icon" class="w-5 h-5" />
         <span class="font-medium">Dashboard</span>
       </a>
+      {% endif %}
     </div>
 
-    <!-- Management Section - Visible based on user permissions -->
-    {% load section_permissions %}
-    {% if user|has_section_permission:'dashboard.view' %}
+    <!-- Management Section - Show if user has ANY management permission -->
+    {% if user|has_section_permission:'users.view' or user|has_section_permission:'locations.view' or user|has_section_permission:'breakfast_voucher.view' or user|has_section_permission:'tickets.view' or user|has_section_permission:'requests.view' or user|has_section_permission:'sla.view' or user|has_section_permission:'messaging.view' or user|has_section_permission:'gym.view' or user|has_section_permission:'integrations.view' %}
     <div>
       <div class="px-3 py-1 text-gray-400 text-xs font-semibold tracking-tight">
         Management
