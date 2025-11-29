@@ -176,7 +176,7 @@ class LocationTypeViewSet(viewsets.ModelViewSet):
 #             "check_in_date": voucher.check_in_date,
 #             "check_out_date": voucher.check_out_date,
 #             "include_breakfast": voucher.include_breakfast,
-#             "qr_code_url": request.build_absolute_uri(voucher.qr_code_image.url) if voucher.qr_code_image else None
+#             "qr_code_url": (voucher.qr_code_image.url) if voucher.qr_code_image else None
 #         })
 #     except Voucher.DoesNotExist:
 #         return Response({"valid": False, "message": "Voucher not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -1505,7 +1505,7 @@ from .models import Voucher
 
 # ---------- Helper to build absolute URL ----------
 def full_url(request, path):
-    return request.build_absolute_uri(path)
+    return (path)
 
 # ---------- Reception check-in: create voucher + QR ----------
 import qrcode
@@ -1577,10 +1577,10 @@ def create_voucher_checkin(request):
 
         # Generate landing URL using voucher_code
         voucher_page_url = reverse("voucher_landing", args=[voucher.voucher_code])
-        landing_url = request.build_absolute_uri(voucher_page_url)
+        landing_url = (voucher_page_url)
 
         # Generate scan URL for QR
-        scan_url = request.build_absolute_uri(reverse("scan_voucher", args=[voucher.voucher_code]))
+        scan_url = (reverse("scan_voucher", args=[voucher.voucher_code]))
 
         # Generate QR code
         qr_content = voucher.voucher_code  # you can customize
@@ -1600,14 +1600,15 @@ def create_voucher_checkin(request):
         # qr_image_path = voucher.qr_code_image.path  # local file path
         # os.startfile(qr_image_path)
         # Absolute URL for QR sharing
-        qr_absolute_url = request.build_absolute_uri(voucher.qr_code_image.url)
-
+        qr_absolute_url = (voucher.qr_code_image.url)
+        qr=f"{SITE_BASE_URL}{voucher.qr_code_image.url}"
         return render(request, "voucher_success.html", {
             "voucher": voucher,
             "qr_absolute_url": qr_absolute_url,
             "include_breakfast": include_breakfast,
             "scan_url": scan_url,
             "landing_url": landing_url,
+            "qr":qr,
         })
 
     return render(request, "checkin_form.html")
@@ -1619,7 +1620,7 @@ def voucher_landing(request, voucher_code):
     voucher = get_object_or_404(Voucher, voucher_code=voucher_code)
     return render(request, "voucher_landing.html", {
         "voucher": voucher,
-        "qr_absolute_url": request.build_absolute_uri(voucher.qr_code_image.url),
+        "qr_absolute_url": (voucher.qr_code_image.url),
     })
   
 
@@ -1921,7 +1922,7 @@ class VoucherViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["get"], url_path="share")
     def share_whatsapp(self, request, pk=None):
         voucher = get_object_or_404(Voucher, id=pk)
-        message = f"Hello {voucher.guest_name}, your voucher code is {voucher.voucher_code}. QR: {request.build_absolute_uri(voucher.qr_code_image.url)}"
+        message = f"Hello {voucher.guest_name}, your voucher code is {voucher.voucher_code}. QR: {(voucher.qr_code_image.url)}"
         whatsapp_url = f"https://wa.me/{voucher.country_code}{voucher.phone_number}?text={message}"
         return Response({"whatsapp_url": whatsapp_url})
 
@@ -1934,6 +1935,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse
 from .models import GymMember
 from io import BytesIO
+from config.settings import SITE_BASE_URL
 
 
 # Generate unique code
@@ -2018,14 +2020,15 @@ def add_member(request):
         member.qr_code_image.save(file_name, ContentFile(buffer.getvalue()), save=True)
         # qr_image_path = member.qr_code_image.path  # local file path
         # os.startfile(qr_image_path)
-        qr_absolute_url = request.build_absolute_uri(member.qr_code_image.url)
-
+        qr_absolute_url = (member.qr_code_image.url)
+        qr=f"{SITE_BASE_URL}{member.qr_code_image.url}"
         # Landing link (optional future view)
-        landing_url = request.build_absolute_uri(reverse("member_detail", args=[member.member_id]))
+        landing_url = (reverse("member_detail", args=[member.member_id]))
         return render(request, "gym_success.html", {
             "member": member,
             "qr_absolute_url": qr_absolute_url,
             "landing_url": landing_url,
+            "qr":qr,
         })
         return redirect("member_list")
 
@@ -2040,7 +2043,7 @@ def member_list(request):
     search = request.GET.get("search")
     for m in members:
         if m.qr_code_image:
-            m.qr_code_full_url = request.build_absolute_uri(m.qr_code_image.url)
+            m.qr_code_full_url = (m.qr_code_image.url)
         else:
             m.qr_code_full_url = None
     if search:
@@ -2051,6 +2054,7 @@ def member_list(request):
     paginator = Paginator(members, entries_per_page)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
+    qr=f"{SITE_BASE_URL}{m.qr_code_image.url}"
     if request.GET.get("export") == "1":
         df = pd.DataFrame(members.values())
         for col in df.select_dtypes(include=["datetimetz"]).columns:
@@ -2062,7 +2066,7 @@ def member_list(request):
         df.to_excel(response, index=False)
         return response
 
-    return render(request, "member_list.html", {"members": members,"page_obj":page_obj,"entries":entries_per_page,"search":search})
+    return render(request, "member_list.html", {"members": members,"page_obj":page_obj,"entries":entries_per_page,"search":search,"qr":qr})
 
 
     
@@ -2190,7 +2194,7 @@ def edit_member(request, member_id):
         # Save actual PNG file to ImageField
             file_name = f"member_{member.member_id}.png"
             member.qr_code_image.save(file_name, ContentFile(buffer.getvalue()), save=True)
-            member.qr_code_full_url = request.build_absolute_uri(member.qr_code_image.url)
+            member.qr_code_full_url = (member.qr_code_image.url)
 
             
 
@@ -2205,10 +2209,10 @@ def edit_member(request, member_id):
         # qr_image_path = member.qr_code_image.path  # local file path
         # os.startfile(qr_image_path)
         messages.success(request, f"{member.full_name} ✅ Member updated successfully.")
-        qr_absolute_url = request.build_absolute_uri(member.qr_code_image.url)
+        qr_absolute_url = (member.qr_code_image.url)
 
         # Landing link (optional future view)
-        landing_url = request.build_absolute_uri(reverse("member_detail", args=[member.member_id]))
+        landing_url = (reverse("member_detail", args=[member.member_id]))
         return render(request, "gym_success.html", {
             "member": member,
             "qr_absolute_url": qr_absolute_url,
