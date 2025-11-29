@@ -1,6 +1,9 @@
 import os
+from django.conf import settings
 from django.shortcuts import render, redirect
 from django.contrib import messages
+
+from config.settings import SITE_BASE_URL
 """
 Example views showing how to use the Twilio service
 """
@@ -1601,7 +1604,10 @@ def create_voucher_checkin(request):
         # os.startfile(qr_image_path)
         # Absolute URL for QR sharing
         qr_absolute_url = (voucher.qr_code_image.url)
-        qr=f"{SITE_BASE_URL}{voucher.qr_code_image.url}"
+        qr = (
+    f"{request.scheme}://{request.get_host()}{voucher.qr_code_image.url}"
+    if ":" in request.get_host()  # host contains port → docker/live
+    else f"{settings.SITE_BASE_URL}{voucher.qr_code_image.url}")
         return render(request, "voucher_success.html", {
             "voucher": voucher,
             "qr_absolute_url": qr_absolute_url,
@@ -1935,7 +1941,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse
 from .models import GymMember
 from io import BytesIO
-from config.settings import SITE_BASE_URL
+# from config.settings import SITE_BASE_URL
 
 
 # Generate unique code
@@ -2021,7 +2027,13 @@ def add_member(request):
         # qr_image_path = member.qr_code_image.path  # local file path
         # os.startfile(qr_image_path)
         qr_absolute_url = (member.qr_code_image.url)
-        qr=f"{SITE_BASE_URL}{member.qr_code_image.url}"
+        qr = (
+    f"{request.scheme}://{request.get_host()}{member.qr_code_image.url}"
+    if ":" in request.get_host()  # host contains port → docker/live
+    else f"{settings.SITE_BASE_URL}{member.qr_code_image.url}"
+)
+
+
         # Landing link (optional future view)
         landing_url = (reverse("member_detail", args=[member.member_id]))
         return render(request, "gym_success.html", {
@@ -2054,7 +2066,13 @@ def member_list(request):
     paginator = Paginator(members, entries_per_page)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    qr=f"{SITE_BASE_URL}{m.qr_code_image.url}"
+    qr = (
+    f"{request.scheme}://{request.get_host()}{m.qr_code_image.url}"
+    if ":" in request.get_host()  # host contains port → docker/live
+    else f"{SITE_BASE_URL}{m.qr_code_image.url}"
+)
+
+
     if request.GET.get("export") == "1":
         df = pd.DataFrame(members.values())
         for col in df.select_dtypes(include=["datetimetz"]).columns:
