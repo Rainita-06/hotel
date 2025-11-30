@@ -15,10 +15,10 @@ if ($LocalDB) {
         exit 1
     }       
     
-    # Check if .env.local file exists, if not copy from .env.production
+    # Check if .env.local file exists, if not copy from .env.example
     if (-Not (Test-Path ".env.local")) {
-        Write-Host "Creating .env.local file from .env.production template..." -ForegroundColor Yellow
-        Copy-Item ".env.production" ".env.local"
+        Write-Host "Creating .env.local file from .env.example template..." -ForegroundColor Yellow
+        Copy-Item ".env.example" ".env.local"
         Write-Host "Please update the .env.local file with your local database configuration and run this script again with -LocalDB flag." -ForegroundColor Yellow
         Write-Host "Required updates:" -ForegroundColor Yellow
         Write-Host "1. Update DB_NAME, DB_USER, and DB_PASSWORD with your local database details" -ForegroundColor Yellow
@@ -64,10 +64,10 @@ else {
         exit 1
     }
     
-    # Check if .env file exists, if not copy from .env.production
+    # Check if .env file exists, if not copy from .env.example
     if (-Not (Test-Path ".env")) {
-        Write-Host "Creating .env file from .env.production template..." -ForegroundColor Yellow
-        Copy-Item ".env.production" ".env"
+        Write-Host "Creating .env file from .env.example template..." -ForegroundColor Yellow
+        Copy-Item ".env.example" ".env"
         Write-Host "Please update the .env file with your configuration and run this script again." -ForegroundColor Yellow
         exit 1
     }
