@@ -82,6 +82,28 @@ else {
     Write-Host "Waiting for services to start..." -ForegroundColor Yellow
     Start-Sleep -Seconds 30
     
+    # Additional wait to ensure database is fully initialized
+    Write-Host "Ensuring database is fully initialized..." -ForegroundColor Yellow
+    Start-Sleep -Seconds 15
+    
+    # Check if database is accessible
+    Write-Host "Checking database connectivity..." -ForegroundColor Yellow
+    $dbCheck = docker exec hotel_web python manage.py shell -c "from django.db import connection; from django.core.management.color import no_style; import sys; try: cursor = connection.cursor(); cursor.execute('SELECT 1'); print('Database connection successful'); sys.exit(0); except Exception as e: print(f'Database connection failed: {e}'); sys.exit(1)"
+    
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Database connection failed. Retrying after additional wait..." -ForegroundColor Yellow
+        Start-Sleep -Seconds 30
+        $dbCheck = docker exec hotel_web python manage.py shell -c "from django.db import connection; from django.core.management.color import no_style; import sys; try: cursor = connection.cursor(); cursor.execute('SELECT 1'); print('Database connection successful'); sys.exit(0); except Exception as e: print(f'Database connection failed: {e}'); sys.exit(1)"
+        
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "Database connection still failing. Please check the logs." -ForegroundColor Red
+            docker logs hotel_db
+            exit 1
+        }
+    }
+    
+    Write-Host "Database connection verified successfully." -ForegroundColor Green
+    
     # Initialize data
     Write-Host "Initializing data..." -ForegroundColor Yellow
     

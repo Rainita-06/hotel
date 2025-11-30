@@ -6,12 +6,14 @@ services:
     container_name: hotel_db
     restart: always
     environment:
-      MYSQL_DATABASE: ${DB_NAME:-temp}
+      MYSQL_DATABASE: ${DB_NAME:-hotel}
       MYSQL_USER: ${DB_USER:-hotel_user}
       MYSQL_PASSWORD: ${DB_PASSWORD:-hotel_password}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
     volumes:
       - db_data:/var/lib/mysql
+      # Add initialization script to grant proper permissions
+      - ./mysql-init:/docker-entrypoint-initdb.d
     networks:
       - hotel_network
     healthcheck:
@@ -30,7 +32,7 @@ services:
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-django-insecure-hx$$rau=sf86q@*-bu01+yzla%!b_*8g*pfddb3_mezm_h5ff(u}
       - DJANGO_DEBUG=${DJANGO_DEBUG:-False}
       - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,0.0.0.0}
-      - DB_NAME=${DB_NAME:-temp}
+      - DB_NAME=${DB_NAME:-hotel}
       - DB_USER=${DB_USER:-hotel_user}
       - DB_PASSWORD=${DB_PASSWORD:-hotel_password}
       - DB_HOST=db
