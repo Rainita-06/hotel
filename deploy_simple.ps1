@@ -2,7 +2,7 @@
 # This script bypasses PowerShell profile issues and focuses on core deployment functionality
 
 param(
-    [Parameter(Mandatory=$false)]
+    [Parameter(Mandatory = $false)]
     [switch]$LocalDB
 )
 
@@ -48,7 +48,8 @@ else {
     try {
         $dockerVersion = docker --version
         Write-Host "Docker is installed: $dockerVersion" -ForegroundColor Green
-    } catch {
+    }
+    catch {
         Write-Host "Docker is not installed. Please install Docker Desktop first." -ForegroundColor Red
         exit 1
     }
@@ -57,7 +58,8 @@ else {
     try {
         $composeVersion = docker-compose --version
         Write-Host "Docker Compose is installed: $composeVersion" -ForegroundColor Green
-    } catch {
+    }
+    catch {
         Write-Host "Docker Compose is not installed. Please install Docker Desktop first." -ForegroundColor Red
         exit 1
     }
@@ -88,12 +90,12 @@ else {
     
     # Check if database is accessible
     Write-Host "Checking database connectivity..." -ForegroundColor Yellow
-    $dbCheck = docker exec hotel_web python manage.py shell -c "from django.db import connection; from django.core.management.color import no_style; import sys; try: cursor = connection.cursor(); cursor.execute('SELECT 1'); print('Database connection successful'); sys.exit(0); except Exception as e: print(f'Database connection failed: {e}'); sys.exit(1)"
+    $dbCheck = docker exec hotel_web python manage.py shell -c "from django.db import connection; connection.ensure_connection(); print('Database connection successful')"
     
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Database connection failed. Retrying after additional wait..." -ForegroundColor Yellow
         Start-Sleep -Seconds 30
-        $dbCheck = docker exec hotel_web python manage.py shell -c "from django.db import connection; from django.core.management.color import no_style; import sys; try: cursor = connection.cursor(); cursor.execute('SELECT 1'); print('Database connection successful'); sys.exit(0); except Exception as e: print(f'Database connection failed: {e}'); sys.exit(1)"
+        $dbCheck = docker exec hotel_web python manage.py shell -c "from django.db import connection; connection.ensure_connection(); print('Database connection successful')"
         
         if ($LASTEXITCODE -ne 0) {
             Write-Host "Database connection still failing. Please check the logs." -ForegroundColor Red
