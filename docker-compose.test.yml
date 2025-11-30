@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: hotel_db_test
+    restart: always
+    environment:
+      MYSQL_DATABASE: hotel
+      MYSQL_USER: hotel_user
+      MYSQL_PASSWORD: hotel_password
+      MYSQL_ROOT_PASSWORD: rootpassword
+    volumes:
+      - db_data_test:/var/lib/mysql
+    networks:
+      - hotel_network_test
+
+volumes:
+  db_data_test:
+
+networks:
+  hotel_network_test:
+    driver: bridge
