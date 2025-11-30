@@ -135,7 +135,7 @@
         <div class="w-full h-12 px-8 inline-flex justify-center items-start gap-4 mt-4">
           <!-- WhatsApp -->
          {% with base="Hi "|add:member.full_name %}
-  {% with message=base|add:", here is your Gym QR Code: "|add:qr_absolute_url %}
+  {% with message=base|add:", here is your Gym QR Code: "|add:qr %}
     <a href="https://wa.me/{{ member.phone|cut:'+'|cut:' ' }}?text={{ message|urlencode }}"
        target="_blank"
        class="w-56 h-12 px-6 py-3 bg-green-500 rounded-xl flex justify-start items-center gap-2 hover:bg-green-600 transition-colors">

@@ -546,7 +546,7 @@ class ServiceRequest(models.Model):
         ('rejected', 'Rejected'),
     ]
     # NOTE: guest_name field does not exist in database - use guest.full_name to access guest name via FK
-    # guest_name = models.CharField(max_length=100, blank=True, null=True)
+    guest_name = models.CharField(max_length=100, blank=True, null=True)
     room_no = models.CharField(max_length=50, blank=True, null=True)
     phone_number = models.CharField(max_length=50, blank=True, null=True)
     body = models.TextField(blank=True, null=True) 
