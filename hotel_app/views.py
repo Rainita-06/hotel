@@ -2066,11 +2066,7 @@ def member_list(request):
     paginator = Paginator(members, entries_per_page)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    qr = (
-    f"{request.scheme}://{request.get_host()}{m.qr_code_image.url}"
-    if ":" in request.get_host()  # host contains port → docker/live
-    else f"{SITE_BASE_URL}{m.qr_code_image.url}"
-)
+
 
 
     if request.GET.get("export") == "1":
@@ -2084,7 +2080,7 @@ def member_list(request):
         df.to_excel(response, index=False)
         return response
 
-    return render(request, "member_list.html", {"members": members,"page_obj":page_obj,"entries":entries_per_page,"search":search,"qr":qr})
+    return render(request, "member_list.html", {"members": members,"page_obj":page_obj,"entries":entries_per_page,"search":search})
 
 
     
