@@ -831,4 +831,5 @@ class Migration(migrations.Migration):
             model_name='booking',
             index=models.Index(fields=['room_number'], name='hotel_app_b_room_nu_68840a_idx'),
         ),
+        
     ]

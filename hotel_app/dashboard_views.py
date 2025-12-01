@@ -3034,7 +3034,6 @@ def ticket_detail(request, ticket_id):
     if service_request.requester_user:
         requester_name = service_request.requester_user.get_full_name() or service_request.requester_user.username
     guest_name = ''
-    guest_name = service_request.guest_name or '' 
     guest_phone = ''
     guest_room_number = ''
     if getattr(service_request, 'guest', None):
