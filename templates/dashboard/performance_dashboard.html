@@ -2,14 +2,13 @@
 {% load static %}
 
 {% block content %}
-<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <div class="bg-gray-50 min-h-screen">
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
     <div class="space-y-6">
 
-      <header data-aos="fade-down" class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+      <header class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 class="text-2xl font-bold text-gray-900">Performance Dashboard</h1>
@@ -26,7 +25,7 @@
         </div>
       </header>
 
-      <div data-aos="fade-down" data-aos-delay="100" class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+      <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
         <div class="flex flex-col md:flex-row justify-between items-center gap-4">
           <div class="flex flex-wrap items-center gap-4">
             <select class="border-gray-300 rounded-lg">
@@ -48,7 +47,7 @@
       </div>
 
       <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div data-aos="fade-up" data-aos-delay="200" class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex justify-between items-start">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex justify-between items-start">
           <div>
             <p class="text-sm font-medium text-gray-600">Overall Completion Rate</p>
             <p class="text-3xl font-bold text-gray-900 mt-1">{{ completion_rate }}%</p>
@@ -61,7 +60,7 @@
             <svg class="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
           </div>
         </div>
-        <div data-aos="fade-up" data-aos-delay="300" class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex justify-between items-start">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex justify-between items-start">
           <div>
             <p class="text-sm font-medium text-gray-600">SLA Breaches</p>
             <p class="text-3xl font-bold text-gray-900 mt-1">{{ sla_breaches }}</p>
@@ -74,7 +73,7 @@
              <svg class="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
           </div>
         </div>
-        <div data-aos="fade-up" data-aos-delay="400" class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex justify-between items-start">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex justify-between items-start">
           <div>
             <p class="text-sm font-medium text-gray-600">Avg Response Time</p>
             <p class="text-3xl font-bold text-gray-900 mt-1">{{ avg_response_time }}m</p>
@@ -87,7 +86,7 @@
              <svg class="h-6 w-6 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           </div>
         </div>
-        <div data-aos="fade-up" data-aos-delay="500" class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex justify-between items-start">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex justify-between items-start">
           <div>
             <p class="text-sm font-medium text-gray-600">Active Staff</p>
             <p class="text-3xl font-bold text-gray-900 mt-1">{{ active_staff }}</p>
@@ -103,13 +102,13 @@
       </section>
 
       <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div data-aos="fade-up" data-aos-delay="300" class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <h3 class="text-lg font-semibold text-gray-900 mb-4">Completion Rates by Department</h3>
           <div class="h-80">
             <canvas id="completionRateChart"></canvas>
           </div>
         </div>
-        <div data-aos="fade-up" data-aos-delay="400" class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <h3 class="text-lg font-semibold text-gray-900 mb-4">SLA Breach Trends</h3>
           <div class="h-80">
             <canvas id="slaTrendChart"></canvas>
@@ -118,7 +117,7 @@
       </section>
       
       <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div data-aos="fade-up" data-aos-delay="500" class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <div class="flex justify-between items-center">
              <h3 class="text-lg font-semibold text-gray-900">Top Performers</h3>
              <span class="text-sm text-gray-500">This Week</span>
@@ -156,7 +155,7 @@
             {% endfor %}
           </div>
         </div>
-        <div data-aos="fade-up" data-aos-delay="600" class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <div class="flex justify-between items-center">
              <h3 class="text-lg font-semibold text-gray-900">Department Rankings</h3>
              <span class="text-sm text-gray-500">This Week</span>
@@ -196,7 +195,7 @@
         </div>
       </section>
 
-      <section data-aos="fade-up" data-aos-delay="700" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <section class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="p-6 flex justify-between items-center">
             <h3 class="text-lg font-semibold text-gray-900">Staff Performance Details</h3>
             <div class="flex items-center gap-4">
@@ -250,16 +249,8 @@
   </main>
 </div>
 
-<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-
 <script>
   document.addEventListener('DOMContentLoaded', function () {
-    // 3. Initialize AOS
-    AOS.init({
-      duration: 800, // values from 0 to 3000, with step 50ms
-      once: true, // whether animation should happen only once - while scrolling down
-    });
-
     // === Bar Chart: Completion Rates by Department ===
     const completionRateCtx = document.getElementById('completionRateChart').getContext('2d');
     const completionRateChart = new Chart(completionRateCtx, {

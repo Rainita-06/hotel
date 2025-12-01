@@ -111,7 +111,7 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get('DB_NAME', 'hotel'),
+        'NAME': os.environ.get('DB_NAME', 'hotel2'),
         'USER': os.environ.get('DB_USER', 'root'),
         'PASSWORD': os.environ.get('DB_PASSWORD', 'root'),
         'HOST': os.environ.get('DB_HOST', '127.0.0.1'),
