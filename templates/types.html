@@ -1,28 +1,13 @@
 {% extends "dashboard/base_dashboard.html" %}
 {% load static %}
 {% block content %}
-<div class="w-full flex flex-col items-center py-8 space-y-6">
-<!-- <div class="w-full h-full relative bg-gray-50 border-gray-200"> -->
-<div class="w-[1184px] h-24 relative bg-white border-b border-gray-200">
-    <div class="w-[1136px] h-14 left-[24px] top-[16px] absolute bg-black/0 border-gray-200 inline-flex justify-between items-center">
-        <div class="w-96 h-14 relative bg-black/0 border-gray-200">
-            <div class="w-96 h-8 left-0 top-0 absolute bg-black/0 border-gray-200 inline-flex justify-start items-center gap-3">
-                <!-- <div class="w-3.5 h-6 relative bg-black/0 border-gray-200"> -->
-                    <!-- <div class="w-3.5 h-5 left-0 top-[2px] absolute bg-black/0 border-gray-200"> -->
-                        <!-- <div class="w-3.5 h-4 left-0 top-[2px] absolute inline-flex justify-center items-center"> -->
-                            <!-- <div class="w-3.5 h-4 relative bg-black/0 border-gray-200 overflow-hidden"> -->
-                                <!-- <div class="w-3.5 h-3 left-0 top-[2px] absolute bg-gray-400"></div> -->
-                            <!-- </div> -->
-                        <!-- </div> -->
-                    <!-- </div> -->
-                <!-- </div> -->
-                <div class="w-auto h-8 relative bg-black/0 border-gray-200">
-                    <div class="justify-start text-gray-900 text-2xl font-bold font-['Inter']truncate whitespace-nowrap overflow-hidden">Location Types</div>
-                </div>
-            </div>
-            <div class="w-96 h-5 left-0 top-[36px] absolute bg-black/0 border-gray-200">
-                <div class="w-96 h-5 left-0 top-[1px] absolute justify-start text-gray-600 text-sm font-normal font-['Inter'] truncate">Manage location families and types for service requests</div>
-            </div>
+<div class="w-full flex flex-col items-center py-8 ">
+    
+    <!-- Header Section (W-1184px) -->
+    <div class="w-[1184px] h-20 bg-white border-b border-gray-200 flex items-center px-6">
+        <div class="flex-grow">
+            <h1 class="text-gray-900 text-2xl font-bold">Location Types</h1>
+            <p class="text-gray-600 text-sm font-normal mt-1">Manage location families and types for service requests</p>
         </div>
         <div class="w-80 h-10 bg-black/0 border-gray-200 flex justify-start items-center gap-4">
             <div class="w-64 h-10 relative bg-black/0 border-gray-200">
@@ -59,23 +44,24 @@
             </div>
         </div>
     </div>
-</div>
+<!-- </div> -->
 <!-- sub tab -->
 {% include "partials/location_tab.html" %}
 
 
 
-<div class="w-[1184px] min-h-screen relative bg-black/0 border-gray-200 ">
-    <div class="w-[1136px] h-[634px] left-[24px] top-[24px] relative/0 border-gray-200">
-        <div class="w-[1136px] h-12 left-0 top-0 absolute bg-black/0 border-gray-200 inline-flex rounded-lg bg-white justify-between items-center">
-            <div class="w-96 h-12 relative bg-black/0 border-gray-200 ">
-                <div class="w-96 h-7 left-0 top-0 absolute bg-black/0 border-gray-200">
-                    <div class="w-44 h-7 left-0 top-[2px] absolute justify-start text-gray-900 text-xl font-semibold font-['Inter']">Location Types</div>
-                </div>
-                <div class="w-96 h-5 left-0 top-[32px] absolute bg-black/0 border-gray-200">
-                    <div class="w-auto h-5 left-0 top-[1px] absolute justify-start text-gray-600 text-sm font-normal font-['Inter'] truncate">Group related location types together for better organization</div>
-                </div>
-            </div><div class="flex items-center gap-4">
+ <div class="w-[1184px] mx-auto py-8 space-y-6">
+      <!-- <div class="w-[1136px] left-[24px] top-[24px] relative"> -->
+
+        <!-- Section Header -->
+        <div class="flex justify-between items-center mb-2  bg-white py-4">
+          <div>
+            <div class="text-gray-900 text-xl font-semibold font-['Inter'] px-6">Location Types</div>
+            <div class="text-gray-600 text-sm font-normal font-['Inter'] px-6">
+              Group related location types together for better organization
+            </div>
+          </div>
+            <div class="flex items-center gap-4">
           <form method="POST" action="{% url 'bulk_import_types' %}" enctype="multipart/form-data">
         {% csrf_token %}
         <label class="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white text-base font-medium px-3 py-2 rounded-lg cursor-pointer transition">
@@ -97,7 +83,7 @@
         </div>
         </div>
 
-        <div class="w-[1136px] mt-24 grid grid-cols-3 gap-6">
+        <div class="w-[1184px] mt-24 grid grid-cols-3 gap-6">
  {% for t in types %}
     <div class="w-96 h-64 bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200 relative types-card" data-name="{{ t.name|lower }}">
         

@@ -1,10 +1,15 @@
 {% extends "dashboard/base_dashboard.html" %}
 {% load static %}
 {% block content %}
-
-<div class="w-full bg-gray-50">
-    <!-- Header Section -->
-    <div class="w-full max-w-7xl mx-auto px-6 py-4 bg-white border-b border-gray-200">
+<div class="w-[1184px]  mx-auto py-8 ">
+    <!-- Header -->
+    <div class="w-[1184px] h-20 bg-white border-b border-gray-200  px-6">
+        <h1 class="text-2xl font-semibold text-neutral-800 ">Member GYM – Report</h1>
+        <p class="text-gray-500 text-sm mt-1 ">Register new gym members and manage membership details.</p>
+    </div>
+<!-- <div class="w-full bg-gray-50">
+    
+    <div class="w-[1184px] h-20 bg-white border-b border-gray-200 flex items-center px-6">
         <div class="flex justify-between items-start">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900">Member GYM – Report</h1>
@@ -12,14 +17,14 @@
             </div>
             <div class="w-56 h-10"></div>
         </div>
-    </div>
-
+    </div> -->
+{% include 'partials/gym_tab.html' %}
     <!-- Main Content Container -->
     <div class="w-full max-w-7xl mx-auto px-6 py-8">
-        {% include 'partials/gym_tab.html' %}
+        
         <!-- Report Title Section -->
         <div class="mb-8">
-            <h2 class="text-3xl font-bold text-gray-900 mb-2">Report</h2>
+            <h2 class="text-2xl font-semibold text-neutral-800 mb-1">Report</h2>
             <p class="text-base text-gray-600">Track member visits, usage times, and activity history.</p>
         </div>
 

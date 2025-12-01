@@ -11,22 +11,14 @@
   transition: all 0.5s ease;
 }
 </style>
-
-<div class="w-full flex flex-col items-center py-8 space-y-6">
-
-    <!-- Header Section -->
-    <div class="w-[1184px] h-20 relative bg-white border-b border-gray-200">
-        <div class="w-full h-12 left-[24px] top-[16px] inline-flex justify-between items-center">
-            <div class="w-96 h-12 relative">
-                <div class="w-96 h-8 left-0 top-0 absolute">
-                    <div class="w-28 h-8 left-0 top-[1px] absolute justify-start text-gray-900 text-2xl font-bold font-['Inter']">Floors</div>
-                </div>
-                <div class="w-96 h-5 left-0 top-[32px] absolute">
-                    <div class="w-96 h-5 left-0 top-[1px] absolute justify-start text-gray-600 text-sm font-normal font-['Inter']">
-                        Manage property locations, buildings, floors, and areas
-                    </div>
-                </div>
-            </div>
+<div class="w-full flex flex-col items-center py-8 ">
+    
+    <!-- Header Section (W-1184px) -->
+    <div class="w-[1184px] h-20 bg-white border-b border-gray-200 flex items-center px-6">
+        <div class="flex-grow">
+            <h1 class="text-gray-900 text-2xl font-bold">Floors</h1>
+            <p class="text-gray-600 text-sm font-normal mt-1">Manage property locations, buildings, floors, and areas</p>
+        </div>
             <div class="w-80 h-10 flex justify-start items-center gap-4">
                 <div class="w-64 h-10 relative">
                     <form method="GET" class="w-64 h-10 left-0 top-0 absolute bg-white rounded-lg outline outline-1 outline-offset-[-1px] outline-gray-200">
@@ -44,10 +36,10 @@
                 </div>
             </div>
         </div>
-    </div>
+    <!-- </div> -->
 
     {% include "partials/location_tab.html" %}
-
+<div class="py-8">  
     <!-- Floor Management Table -->
     <div class="w-[1184px] h-full relative bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200">
 
@@ -101,7 +93,7 @@
 
             </div>
         </div>
-
+   
         <!-- Table Structure -->
         <div class="w-full relative bg-black/0 border-gray-200 overflow-x-auto">
 

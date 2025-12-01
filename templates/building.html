@@ -2,34 +2,17 @@
 {% load static %}
 
 {% block content %}
-<div class="w-full flex flex-col items-center py-8 space-y-6">
-<div class="w-[1184px] h-28 relative bg-white border-b border-gray-200">
-    <div class="w-[1136px] h-20 left-[24px] top-[16px] absolute bg-black/0 border-gray-200 inline-flex justify-between items-center">
-        <div class="w-80 h-20 relative bg-black/0 border-gray-200">
-            <div class="w-80 h-5 left-0 top-0 absolute bg-black/0 border-gray-200 inline-flex justify-start items-center gap-2">
-                <div class="w-11 h-5 relative bg-black/0 border-gray-200">
-                    <div class="w-11 h-5 left-0 top-[1px] absolute justify-start text-gray-400 text-sm font-normal font-['Inter']">Admin</div>
-                </div>
-                <div class="w-2 h-4 relative bg-black/0 border-gray-200">
-                    <div class="w-2 h-3 left-0 top-[1.50px] absolute inline-flex justify-center items-center">
-                        <img src="{% static 'icon/arrow.svg'%}" class="w-2 h-3 relative bg-black/0 border-gray-200 overflow-hidden">
-                            <!-- <div class="w-1.5 h-2.5 left-[1.50px] top-[0.75px] absolute bg-gray-400">></div> -->
-                        <!-- </div> -->
-                    </div>
-                </div>
-                <div class="w-28 h-5 relative bg-black/0 border-gray-200">
-                    <div class="w-28 h-5 left-0 top-[1px] absolute justify-start text-gray-600 text-sm font-normal font-['Inter'] truncate">Buildings </div>
-                </div>
-            </div>
-            <div class="w-80 h-8 left-0 top-[24px] absolute bg-black/0 border-gray-200">
-                <div class="w-52 h-8 left-0 top-[1px] absolute justify-start text-gray-900 text-2xl font-bold font-['Inter'] ">Buildings </div>
-            </div>
-            <div class="w-80 h-5 left-0 top-[56px] absolute bg-black/0 border-gray-200">
-                <div class="w-80 h-5 left-0 top-[1px] absolute justify-start text-gray-600 text-sm font-normal font-['Inter'] truncate">Manage your property structure and floor layouts</div>
-            </div>
+<div class="w-full flex flex-col items-center py-8 ">
+    
+    <!-- Header Section (W-1184px) -->
+    <div class="w-[1184px] h-20 bg-white border-b border-gray-200 flex items-center px-6">
+        <div class="flex-grow">
+            <h1 class="text-gray-900 text-2xl font-bold">Buildings</h1>
+            <p class="text-gray-600 text-sm font-normal mt-1">Manage your property structure and floor layouts</p>
         </div>
         <div class="w-95 h-10 bg-black/0 border-gray-200 flex justify-start items-center gap-4">
-            <div class="flex items-center gap-4"><form method="POST" action="{% url 'bulk_import_buildings' %}" enctype="multipart/form-data">
+            <div class="flex items-center gap-4">
+                <form method="POST" action="{% url 'bulk_import_buildings' %}" enctype="multipart/form-data">
         {% csrf_token %}
         <label class="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white text-base font-medium px-3 py-2 rounded-lg cursor-pointer transition">
             <img src="{% static 'icon/import.svg' %}" class="w-4 h-4" alt="Import">
@@ -68,7 +51,7 @@
             </div>
         </div>
     </div>
-</div>
+<!-- </div>  -->
 
 {% include "partials/location_tab.html" %}
 

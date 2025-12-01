@@ -2,24 +2,13 @@
 {% load static %}
 
 {% block content %}
-<div class="w-full flex flex-col items-center py-8 space-y-6">
-
-  <div class="w-[1184px] h-full relative bg-gray-50 border-gray-200">
-
-    <!-- Header Section -->
-    <div class="w-[1184px] h-24 relative bg-white border-b border-gray-200">
-      <div class="w-[1136px] h-14 left-[24px] top-[16px] absolute flex justify-between items-center">
-        
-        <!-- Title and Subtitle -->
-        <div class="w-96 relative">
-          <div class="flex items-center gap-3">
-            <div class="w-auto">
-              <div class="text-gray-900 text-2xl font-bold font-['Inter'] truncate">Location Families</div>
-            </div>
-          </div>
-          <div class="mt-1 text-gray-600 text-sm font-normal font-['Inter'] truncate">
-            Manage location families and types for service requests
-          </div>
+<div class="w-full flex flex-col items-center py-8 ">
+    
+    <!-- Header Section (W-1184px) -->
+    <div class="w-[1184px] h-20 bg-white border-b border-gray-200 flex items-center px-6">
+        <div class="flex-grow">
+            <h1 class="text-gray-900 text-2xl font-bold">Location Families</h1>
+            <p class="text-gray-600 text-sm font-normal mt-1">Manage location families and types for service requests</p>
         </div>
 
         <!-- Search and Icons -->
@@ -43,20 +32,20 @@
           <div class="w-7 h-10 relative rounded-lg"></div>
         </div>
       </div>
-    </div>
+    <!-- </div> -->
 
     <!-- Sub Tab -->
     {% include "partials/location_tab.html" %}
 
     <!-- Location Families Section -->
-    <div class="w-[1184px] min-h-screen relative ">
-      <div class="w-[1136px] left-[24px] top-[24px] relative">
+    <div class="w-[1184px] mx-auto py-8 space-y-6">
+      <!-- <div class="w-[1136px] left-[24px] top-[24px] relative"> -->
 
         <!-- Section Header -->
-        <div class="flex justify-between items-center mb-6 rounded-lg bg-white">
+        <div class="flex justify-between items-center mb-2  bg-white py-4">
           <div>
-            <div class="text-gray-900 text-xl font-semibold font-['Inter']">Location Families</div>
-            <div class="text-gray-600 text-sm font-normal font-['Inter']">
+            <div class="text-gray-900 text-xl font-semibold font-['Inter'] px-6">Location Families</div>
+            <div class="text-gray-600 text-sm font-normal font-['Inter'] px-6">
               Group related location types together for better organization
             </div>
           </div><div class="flex items-center gap-4">

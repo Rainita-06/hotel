@@ -2,13 +2,13 @@
 {% load static %}
 
 {% block content %}
-<div id="main-content" class="flex flex-col items-center w-full">
+<div id="main-content" class="flex flex-col items-center w-full py-8">
     <!-- Header Section -->
-    <div class="w-[1184px] h-20 px-6 py-4 bg-white border-b border-gray-200 flex justify-center items-center">
+    <div class="w-[1184px] h-20 px-6  bg-white border-b border-gray-200 ">
         <div class="w-[1067px] h-12 flex justify-between items-center">
            
-            <div class="flex flex-col justify-center items-start gap-1">
-                <div class="text-gray-900 text-2xl font-bold font-['Inter']">Data Member</div>
+            <div class="flex flex-col justify-center items-start ">
+                <div class="text-2xl font-semibold text-neutral-800 ">Data Member</div>
                 <div class="text-gray-600 text-sm font-normal font-['Inter']">Manage and view gym member details with QR-based identification.</div>
             </div>
 
@@ -30,10 +30,10 @@
             </div>
         </div>
     </div>
-
+{% include 'partials/gym_tab.html' %}<div class="py-8"></div>
     <!-- Main Content -->
     <div class="w-[1136px] p-6 bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200 flex flex-col gap-6">
-        <!-- Search & Entries -->{% include 'partials/gym_tab.html' %}
+        <!-- Search & Entries -->
         <div class="flex justify-between items-center">
             <form method="get" class="flex items-center gap-2">
                 <div class="text-gray-700 text-sm font-medium">Show</div>

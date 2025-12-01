@@ -396,82 +396,172 @@ from django.core.files import File
 from django.conf import settings
 import os
 
+# @receiver(post_migrate)
+# def create_basic_location_data(sender, **kwargs):
+#     if sender.name != "hotel_app":
+#         return
+
+#     print("🔥 Running basic location auto-setup...")
+
+#     # ------------------------
+#     # 1. BUILDING
+#     # ------------------------
+#     image_path = os.path.join(settings.MEDIA_ROOT, 'building_images/0911835b756e25e2aa10ac7329e7a6a3b6094cdb_1nJe526_NL7Ilw8.png')
+
+#     with open(image_path, 'rb') as f:
+#         main_bld, created = Building.objects.get_or_create(
+#         name="Main Building",
+#         defaults={
+#             "description": "Primary building for hotel",
+#             "image": File(f, name=os.path.basename(image_path))
+#         }
+#     )
+
+#     if created:
+#         print("Building created with default image")
+#     else:
+#         print("Building already exists")
+
+#     # ------------------------
+#     # 2. FIX FLOOR DUPLICATES
+#     # ------------------------
+#     def fix_floor_duplicates(building, floor_number):
+#         floors = Floor.objects.filter(building=building, floor_number=floor_number)
+
+#         if floors.count() > 1:
+#             print(f"⚠ Removing duplicates for Floor {floor_number}")
+#             # keep the first, delete the rest
+#             floors.exclude(floor_id=floors.first().floor_id).delete()
+
+#         # now safe to get_or_create
+#         floor, _ = Floor.objects.get_or_create(
+#             building=building,
+#             floor_number=floor_number,
+#             defaults={"floor_name": f"{floor_number} Floor"}
+#         )
+#         return floor
+
+#     floor1 = fix_floor_duplicates(main_bld, 1)
+#     floor2 = fix_floor_duplicates(main_bld, 2)
+
+#     # ------------------------
+#     # 3. LOCATION FAMILY
+#     # ------------------------
+#     guest_family, _ = LocationFamily.objects.get_or_create(name="Guest Room")
+#     service_family, _ = LocationFamily.objects.get_or_create(name="Service Area")
+
+#     # ------------------------
+#     # 4. LOCATION TYPES
+#     # ------------------------
+#     deluxe, _ = LocationType.objects.get_or_create(name="Deluxe Room", family=guest_family)
+#     lobby, _ = LocationType.objects.get_or_create(name="Lobby", family=service_family)
+
+#     # ------------------------
+#     # 5. LOCATIONS
+#     # ------------------------
+#     Location.objects.get_or_create(
+#         name="Room 101",
+#         room_no="101",
+#         building=main_bld,
+#         floor=floor2,
+#         type=deluxe
+#     )
+
+#     Location.objects.get_or_create(
+#         name="Main Lobby",
+#         building=main_bld,
+#         floor=floor1,
+#         type=lobby
+#     )
+
+#     print("✅ Basic Location Data Setup Finished.")
+
 @receiver(post_migrate)
 def create_basic_location_data(sender, **kwargs):
     if sender.name != "hotel_app":
         return
 
-    print("🔥 Running basic location auto-setup...")
+    print("\n🔥 Auto-generating Base Location Set (6X Format)...\n")
 
-    # ------------------------
-    # 1. BUILDING
-    # ------------------------
-    image_path = os.path.join(settings.MEDIA_ROOT, 'building_images/0911835b756e25e2aa10ac7329e7a6a3b6094cdb_1nJe526_NL7Ilw8.png')
+    import random
 
-    with open(image_path, 'rb') as f:
-        main_bld, created = Building.objects.get_or_create(
-        name="Main Building",
-        defaults={
-            "description": "Primary building for hotel",
-            "image": File(f, name=os.path.basename(image_path))
-        }
-    )
+    # =============================
+    # 1️⃣ Six Buildings (With images)
+    # =============================
+    building_names = [
+        ("Main Building", "Primary building"),
+        ("Royal Residency", "Luxury stay"),
+        ("Garden Block", "Nature view rooms"),
+        ("Sky Tower", "Top view suites"),
+        ("Heritage Wing", "Classic architecture"),
+        ("Elite Chamber", "VIP exclusive block")
+    ]
 
-    if created:
-        print("Building created with default image")
-    else:
-        print("Building already exists")
+    building_images = [
+        "building_images/2b9c88205102f941344e61aa6a509042560dc060_2zNqRp3.png",
+        "building_images/03d11e0485adfe2e423f79eecb7313719eb62ce2_CT6SS0w.png",
+        "building_images/0911835b756e25e2aa10ac7329e7a6a3b6094cdb_JRUef5K.png",
+        "building_images/2b9c88205102f941344e61aa6a509042560dc060_2zNqRp3.png",
+        "building_images/03d11e0485adfe2e423f79eecb7313719eb62ce2_CT6SS0w.png",
+        "building_images/0911835b756e25e2aa10ac7329e7a6a3b6094cdb_JRUef5K.png",
+    ]
 
-    # ------------------------
-    # 2. FIX FLOOR DUPLICATES
-    # ------------------------
-    def fix_floor_duplicates(building, floor_number):
-        floors = Floor.objects.filter(building=building, floor_number=floor_number)
+    buildings = []
+    for i,(name,desc) in enumerate(building_names):
 
-        if floors.count() > 1:
-            print(f"⚠ Removing duplicates for Floor {floor_number}")
-            # keep the first, delete the rest
-            floors.exclude(floor_id=floors.first().floor_id).delete()
+        img = os.path.join(settings.MEDIA_ROOT, building_images[i])
 
-        # now safe to get_or_create
-        floor, _ = Floor.objects.get_or_create(
-            building=building,
-            floor_number=floor_number,
-            defaults={"floor_name": f"{floor_number} Floor"}
+        with open(img,'rb') as f:
+            b,created = Building.objects.get_or_create(
+                name=name,
+                defaults={"description": desc,"image":File(f,name=os.path.basename(img))}
+            )
+
+        print(f"🏢 {name} → {'CREATED' if created else 'Already Exists'}")
+        buildings.append(b)
+
+    # =============================
+    # 2️⃣ Six Floors (1 per building)
+    # =============================
+    floors = []
+    for idx,b in enumerate(buildings,start=1):
+        floor,_=Floor.objects.get_or_create(
+            building=b,
+            floor_number=idx,
+            defaults={"floor_name":f"Floor {idx}"}
         )
-        return floor
+        floors.append(floor)
+    print("🏢 Floors Created: 6")
 
-    floor1 = fix_floor_duplicates(main_bld, 1)
-    floor2 = fix_floor_duplicates(main_bld, 2)
+    # =============================
+    # 3️⃣ Six Location Families
+    # =============================
+    family_names = ["Guest Room","Service Area","Executive","Premium","Dining","General Utility"]
+    families=[LocationFamily.objects.get_or_create(name=n)[0] for n in family_names]
+    print("👨‍👩‍👦 Families created: 6")
 
-    # ------------------------
-    # 3. LOCATION FAMILY
-    # ------------------------
-    guest_family, _ = LocationFamily.objects.get_or_create(name="Guest Room")
-    service_family, _ = LocationFamily.objects.get_or_create(name="Service Area")
+    # =============================
+    # 4️⃣ Six Location Types
+    # =============================
+    type_names = ["Deluxe Room","Suite Room","Lobby","Dining Hall","Executive Suite","Conference Hall"]
+    types=[LocationType.objects.get_or_create(name=t,family=families[i])[0] for i,t in enumerate(type_names)]
+    print("🏷 Types created: 6")
 
-    # ------------------------
-    # 4. LOCATION TYPES
-    # ------------------------
-    deluxe, _ = LocationType.objects.get_or_create(name="Deluxe Room", family=guest_family)
-    lobby, _ = LocationType.objects.get_or_create(name="Lobby", family=service_family)
+    # =============================
+    # 5️⃣ Six Locations (One for each building)
+    # =============================
+    for i, b in enumerate(buildings):
 
-    # ------------------------
-    # 5. LOCATIONS
-    # ------------------------
-    Location.objects.get_or_create(
-        name="Room 101",
-        room_no="101",
-        building=main_bld,
-        floor=floor2,
-        type=deluxe
+     Location.objects.get_or_create(
+        name=f"{101+i}",
+        
+        building=b,
+        floor=floors[i],
+        type=types[i],
+        family=types[i].family,      # <<< 🔥 FAMILY FIXED HERE
+        defaults={}
     )
 
-    Location.objects.get_or_create(
-        name="Main Lobby",
-        building=main_bld,
-        floor=floor1,
-        type=lobby
-    )
+    print("📍 Locations Created: 6")
 
-    print("✅ Basic Location Data Setup Finished.")
+    print("\n✔ SUCCESS → 6 Buildings | 6 Floors | 6 Families | 6 Types | 6 Locations Ready!\n")
