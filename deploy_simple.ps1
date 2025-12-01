@@ -112,6 +112,18 @@ else {
     # Wait a bit more for containers to be fully ready
     Start-Sleep -Seconds 15
     
+    # CRITICAL: Run database migrations FIRST
+    Write-Host "Running database migrations..." -ForegroundColor Yellow
+    docker exec hotel_web python manage.py migrate
+    
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Migration failed. Please check the logs." -ForegroundColor Red
+        docker logs hotel_web
+        exit 1
+    }
+    
+    Write-Host "Migrations completed successfully." -ForegroundColor Green
+    
     # STEP 1: Initialize sections and permissions FIRST (creates groups)
     Write-Host "Step 1: Initializing sections and permissions..." -ForegroundColor Yellow
     docker exec hotel_web python manage.py init_sections
