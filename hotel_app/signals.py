@@ -392,7 +392,9 @@ from django.db.models.signals import post_migrate
 from django.dispatch import receiver
 from django.db import transaction
 from .models import Building, Floor, LocationFamily, LocationType, Location
-
+from django.core.files import File
+from django.conf import settings
+import os
 
 @receiver(post_migrate)
 def create_basic_location_data(sender, **kwargs):
@@ -404,10 +406,21 @@ def create_basic_location_data(sender, **kwargs):
     # ------------------------
     # 1. BUILDING
     # ------------------------
-    main_bld, _ = Building.objects.get_or_create(
+    image_path = os.path.join(settings.MEDIA_ROOT, 'building_images/0911835b756e25e2aa10ac7329e7a6a3b6094cdb_1nJe526_NL7Ilw8.png')
+
+    with open(image_path, 'rb') as f:
+        main_bld, created = Building.objects.get_or_create(
         name="Main Building",
-        defaults={"description": "Primary building for hotel"}
+        defaults={
+            "description": "Primary building for hotel",
+            "image": File(f, name=os.path.basename(image_path))
+        }
     )
+
+    if created:
+        print("Building created with default image")
+    else:
+        print("Building already exists")
 
     # ------------------------
     # 2. FIX FLOOR DUPLICATES
