@@ -9,7 +9,7 @@
                     <svg class="h-3.5 w-3.5 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
                     </svg>
-                    <span>12% vs last week</span>
+                    <span>{% if active_tickets_change_direction == 'up' %}+{% endif %}{{ active_tickets_change|default:"0" }}% vs last week</span>
                 </div>
             </div>
             <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
@@ -39,7 +39,7 @@
                     <svg class="h-3.5 w-3.5 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
                     </svg>
-                    <span>0.3 vs last month</span>
+                    <span>{% if avg_review_rating_change_direction == 'up' %}+{% endif %}{{ avg_review_rating_change|default:"0" }} vs last month</span>
                 </div>
             </div>
             <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
@@ -60,7 +60,7 @@
                     <svg class="h-3.5 w-3.5 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
                     </svg>
-                    <span>2 more than yesterday</span>
+                    <span>{% if sla_breaches_change_direction == 'up' %}+{% endif %}{{ sla_breaches_change|default:"0" }} more than yesterday</span>
                 </div>
             </div>
             <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
@@ -81,7 +81,7 @@
                     <svg class="h-3.5 w-3.5 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
                     </svg>
-                    <span>15% vs last week</span>
+                    <span>{% if vouchers_redeemed_change_direction == 'up' %}+{% endif %}{{ vouchers_redeemed_change|default:"0" }}% vs last week</span>
                 </div>
             </div>
             <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
