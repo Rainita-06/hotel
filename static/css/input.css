@@ -1,3 +1,7 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* This one line loads the entire framework */
+@import "tailwindcss";
+
+/* This tells Tailwind where to look for your HTML classes */
+/* Since this file is in static/css, we go back two folders (../../) to find templates */
+@source "../../templates";
+@source "../../**/templates";

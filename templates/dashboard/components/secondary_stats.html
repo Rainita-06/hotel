@@ -5,11 +5,17 @@
             <div>
                 <p class="text-sm font-medium text-gray-600 leading-tight">Guest<br>Satisfaction</p>
                 <p class="text-2xl font-bold text-green-500 mt-2">{{ guest_satisfaction }}%</p>
-                <div class="flex items-center text-xs text-green-500 mt-1 font-normal">
+                <div class="flex items-center text-xs {% if guest_satisfaction_change_direction == 'up' %}text-green-500{% else %}text-red-500{% endif %} mt-1 font-normal">
                     <svg class="h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        {% if guest_satisfaction_change_direction == 'up' %}
                         <path fill-rule="evenodd" d="M10 17a.75.75 0 01-.75-.75V5.612L6.22 8.78a.75.75 0 01-1.06-1.06l4.25-4.25a.75.75 0 011.06 0l4.25 4.25a.75.75 0 01-1.06 1.06L10.75 5.612V16.25A.75.75 0 0110 17z" clip-rule="evenodd" />
+                        {% else %}
+                        <path fill-rule="evenodd" d="M10 3a.75.75 0 01.75.75v10.638l3.03-3.03a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0l-4.25-4.25a.75.75 0 111.06-1.06l3.03 3.03V3.75A.75.75 0 0110 3z" clip-rule="evenodd" />
+                        {% endif %}
                     </svg>
-                    <span>+2% this month</span>
+                    <span>
+                        {% if guest_satisfaction_change_direction == 'up' %}+{% endif %}{{ guest_satisfaction_change }}% this month
+                    </span>
                 </div>
             </div>
             <div class="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -26,11 +32,17 @@
             <div>
                 <p class="text-sm font-medium text-gray-600 leading-tight">Avg Response<br>Time</p>
                 <p class="text-2xl font-bold text-teal-500 mt-2">{{ avg_response_time }}</p>
-                <div class="flex items-center text-xs text-green-500 mt-1 font-normal">
+                <div class="flex items-center text-xs {% if avg_response_time_change_direction == 'down' %}text-green-500{% else %}text-red-500{% endif %} mt-1 font-normal">
                     <svg class="h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        {% if avg_response_time_change_direction == 'down' %}
                         <path fill-rule="evenodd" d="M10 3a.75.75 0 01.75.75v10.638l3.03-3.03a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0l-4.25-4.25a.75.75 0 111.06-1.06l3.03 3.03V3.75A.75.75 0 0110 3z" clip-rule="evenodd" />
+                        {% else %}
+                        <path fill-rule="evenodd" d="M10 17a.75.75 0 01-.75-.75V5.612L6.22 8.78a.75.75 0 01-1.06-1.06l4.25-4.25a.75.75 0 011.06 0l4.25 4.25a.75.75 0 01-1.06 1.06L10.75 5.612V16.25A.75.75 0 0110 17z" clip-rule="evenodd" />
+                        {% endif %}
                     </svg>
-                    <span>-3m improved</span>
+                    <span>
+                        {% if avg_response_time_change_direction == 'down' %}-{% else %}+{% endif %}{{ avg_response_time_change }}m {% if avg_response_time_change_direction == 'down' %}improved{% else %}slower{% endif %}
+                    </span>
                 </div>
             </div>
             <div class="w-10 h-10 bg-teal-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -47,11 +59,17 @@
             <div>
                 <p class="text-sm font-medium text-gray-600">Staff Efficiency</p>
                 <p class="text-2xl font-bold text-fuchsia-700 mt-2">{{ staff_efficiency }}%</p>
-                <div class="flex items-center text-xs text-green-500 mt-1 font-normal">
+                <div class="flex items-center text-xs {% if staff_efficiency_change_direction == 'up' %}text-green-500{% else %}text-red-500{% endif %} mt-1 font-normal">
                     <svg class="h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        {% if staff_efficiency_change_direction == 'up' %}
                         <path fill-rule="evenodd" d="M10 17a.75.75 0 01-.75-.75V5.612L6.22 8.78a.75.75 0 01-1.06-1.06l4.25-4.25a.75.75 0 011.06 0l4.25 4.25a.75.75 0 01-1.06 1.06L10.75 5.612V16.25A.75.75 0 0110 17z" clip-rule="evenodd" />
+                        {% else %}
+                        <path fill-rule="evenodd" d="M10 3a.75.75 0 01.75.75v10.638l3.03-3.03a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0l-4.25-4.25a.75.75 0 111.06-1.06l3.03 3.03V3.75A.75.75 0 0110 3z" clip-rule="evenodd" />
+                        {% endif %}
                     </svg>
-                    <span>+5% this week</span>
+                    <span>
+                        {% if staff_efficiency_change_direction == 'up' %}+{% endif %}{{ staff_efficiency_change }}% this week
+                    </span>
                 </div>
             </div>
             <div class="w-10 h-10 bg-fuchsia-700/10 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -68,11 +86,17 @@
             <div>
                 <p class="text-sm font-medium text-gray-600 leading-tight">Active GYM<br>Members</p>
                 <p class="text-2xl font-bold text-yellow-400 mt-2">{{ active_gym_members }}</p>
-                <div class="flex items-center text-xs text-green-500 mt-1 font-normal">
+                <div class="flex items-center text-xs {% if gym_members_change_direction == 'up' %}text-green-500{% else %}text-red-500{% endif %} mt-1 font-normal">
                     <svg class="h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        {% if gym_members_change_direction == 'up' %}
                         <path fill-rule="evenodd" d="M10 17a.75.75 0 01-.75-.75V5.612L6.22 8.78a.75.75 0 01-1.06-1.06l4.25-4.25a.75.75 0 011.06 0l4.25 4.25a.75.75 0 01-1.06 1.06L10.75 5.612V16.25A.75.75 0 0110 17z" clip-rule="evenodd" />
+                        {% else %}
+                        <path fill-rule="evenodd" d="M10 3a.75.75 0 01.75.75v10.638l3.03-3.03a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0l-4.25-4.25a.75.75 0 111.06-1.06l3.03 3.03V3.75A.75.75 0 0110 3z" clip-rule="evenodd" />
+                        {% endif %}
                     </svg>
-                    <span>+5% growth</span>
+                    <span>
+                        {% if gym_members_change_direction == 'up' %}+{% endif %}{{ gym_members_change|floatformat:"0" }}% growth
+                    </span>
                 </div>
             </div>
             <div class="w-10 h-10 bg-yellow-400/10 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -89,11 +113,17 @@
             <div>
                 <p class="text-sm font-medium text-gray-600">Active Guests</p>
                 <p class="text-2xl font-bold text-sky-600 mt-2">{{ active_guests }}</p>
-                <div class="flex items-center text-xs text-green-500 mt-1 font-normal">
+                <div class="flex items-center text-xs {% if active_guests_change_direction == 'up' %}text-green-500{% else %}text-red-500{% endif %} mt-1 font-normal">
                     <svg class="h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        {% if active_guests_change_direction == 'up' %}
                         <path fill-rule="evenodd" d="M10 17a.75.75 0 01-.75-.75V5.612L6.22 8.78a.75.75 0 01-1.06-1.06l4.25-4.25a.75.75 0 011.06 0l4.25 4.25a.75.75 0 01-1.06 1.06L10.75 5.612V16.25A.75.75 0 0110 17z" clip-rule="evenodd" />
+                        {% else %}
+                        <path fill-rule="evenodd" d="M10 3a.75.75 0 01.75.75v10.638l3.03-3.03a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0l-4.25-4.25a.75.75 0 111.06-1.06l3.03 3.03V3.75A.75.75 0 0110 3z" clip-rule="evenodd" />
+                        {% endif %}
                     </svg>
-                    <span>+23 check-ins</span>
+                    <span>
+                        {% if active_guests_change_direction == 'up' %}+{% endif %}{{ active_guests_change }} check-ins
+                    </span>
                 </div>
             </div>
             <div class="w-10 h-10 bg-sky-600/10 rounded-lg flex items-center justify-center flex-shrink-0">

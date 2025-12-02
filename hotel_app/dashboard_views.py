@@ -890,8 +890,8 @@ def dashboard2_view(request):
             vouchers_redeemed_change = 0 if last_week_vouchers_redeemed == 0 else 100  # Handle division by zero
         vouchers_redeemed_change_direction = "up" if vouchers_redeemed_change > 0 else "down" if vouchers_redeemed_change < 0 else "none"
     except Exception:
-        vouchers_redeemed_change = 15  # Default value from template
-        vouchers_redeemed_change_direction = "up"  # Default direction
+        vouchers_redeemed_change = 0
+        vouchers_redeemed_change_direction = "none"
 
     # Reviews
     try:
@@ -914,8 +914,8 @@ def dashboard2_view(request):
         except Exception:
             requests_values = [1 for _ in requests_labels]
     except Exception:
-        requests_labels = ['Housekeeping', 'Maintenance', 'Concierge', 'F&B', 'IT Support', 'Other']
-        requests_values = [95, 75, 45, 35, 25, 15]
+        requests_labels = []
+        requests_values = []
 
     requests_data = {
         'labels': requests_labels,
@@ -943,10 +943,10 @@ def dashboard2_view(request):
         }
     except Exception:
         feedback_data = {
-            'labels': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-            'positive': [70, 80, 75, 90, 85, 95, 100],
-            'neutral': [20, 25, 30, 25, 35, 30, 25],
-            'negative': [15, 10, 20, 15, 12, 10, 8],
+            'labels': [],
+            'positive': [],
+            'neutral': [],
+            'negative': [],
         }
 
     # Occupancy (active guests today)
@@ -984,8 +984,8 @@ def dashboard2_view(request):
             active_tickets_change = 0 if active_tickets_count == 0 else 100  # Handle division by zero
         active_tickets_change_direction = "up" if active_tickets_change > 0 else "down" if active_tickets_change < 0 else "none"
     except Exception:
-        active_tickets_change = 12  # Default value from template
-        active_tickets_change_direction = "up"  # Default direction
+        active_tickets_change = 0
+        active_tickets_change_direction = "none"
 
     # SLA breaches in last 24h
     try:
@@ -1017,8 +1017,8 @@ def dashboard2_view(request):
         sla_breaches_change = today_sla_breaches - yesterday_sla_breaches
         sla_breaches_change_direction = "up" if sla_breaches_change > 0 else "down" if sla_breaches_change < 0 else "none"
     except Exception:
-        sla_breaches_change = 2  # Default value from template
-        sla_breaches_change_direction = "up"  # Default direction
+        sla_breaches_change = 0
+        sla_breaches_change_direction = "none"
 
     # Average response time (created_at -> accepted_at) over last 30 days
     try:
@@ -1071,9 +1071,9 @@ def dashboard2_view(request):
         peak_day_tickets_val = max(tickets_series) if tickets_series else 0
         peak_day_feedback_val = max(feedback_series) if feedback_series else 0
     except Exception:
-        trend_labels_json = json.dumps(['Mon','Tue','Wed','Thu','Fri','Sat','Sun'])
-        tickets_data_json = json.dumps([0,0,0,0,0,0,0])
-        feedback_data_json = json.dumps([0,0,0,0,0,0,0])
+        trend_labels_json = json.dumps([])
+        tickets_data_json = json.dumps([])
+        feedback_data_json = json.dumps([])
         feedback_total = 0
         peak_day_tickets_val = 0
         peak_day_feedback_val = 0
@@ -1085,17 +1085,145 @@ def dashboard2_view(request):
         pos_count = reviews_30.filter(rating__gte=4).count()
         neu_count = reviews_30.filter(rating=3).count()
         neg_count = reviews_30.filter(rating__lte=2).count()
-        total_reviews = max(1, pos_count + neu_count + neg_count)
-        pos_pct = int(round(pos_count / total_reviews * 100))
-        neu_pct = int(round(neu_count / total_reviews * 100))
-        neg_pct = max(0, 100 - pos_pct - neu_pct)
+        total_reviews = pos_count + neu_count + neg_count
+        if total_reviews > 0:
+            pos_pct = int(round(pos_count / total_reviews * 100))
+            neu_pct = int(round(neu_count / total_reviews * 100))
+            neg_pct = max(0, 100 - pos_pct - neu_pct)
+        else:
+            pos_pct = neu_pct = neg_pct = 0
         overall_rating = round(average_review_rating or 0, 1)
     except Exception:
         pos_count = neu_count = neg_count = 0
-        pos_pct = 68
-        neu_pct = 22
-        neg_pct = 10
-        overall_rating = round(average_review_rating or 0, 1)
+        pos_pct = 0
+        neu_pct = 0
+        neg_pct = 0
+        overall_rating = 0
+    
+    # Guest Satisfaction change (+2% this month)
+    try:
+        # Calculate date for one month ago
+        month_ago = today - datetime.timedelta(days=30)
+        
+        # Get average rating for last month
+        last_month_avg_rating = Review.objects.filter(
+            created_at__date__gte=month_ago,
+            created_at__date__lt=today
+        ).aggregate(avg=Avg("rating"))["avg"] or 0
+        
+        # Get average rating for the month before that
+        two_months_ago = month_ago - datetime.timedelta(days=30)
+        prev_month_avg_rating = Review.objects.filter(
+            created_at__date__gte=two_months_ago,
+            created_at__date__lt=month_ago
+        ).aggregate(avg=Avg("rating"))["avg"] or 0
+        
+        # Calculate change in satisfaction percentage
+        last_month_satisfaction = round(last_month_avg_rating * 20) if last_month_avg_rating else 0
+        prev_month_satisfaction = round(prev_month_avg_rating * 20) if prev_month_avg_rating else 0
+        guest_satisfaction_change = last_month_satisfaction - prev_month_satisfaction
+        guest_satisfaction_change_direction = "up" if guest_satisfaction_change > 0 else "down" if guest_satisfaction_change < 0 else "none"
+    except Exception:
+        guest_satisfaction_change = 0
+        guest_satisfaction_change_direction = "none"
+    
+    # Avg Response Time change (-3m improved)
+    try:
+        # Calculate response time for last 30 days
+        since_30d = timezone.now() - datetime.timedelta(days=30)
+        qs_resp_30d = ServiceRequest.objects.filter(
+            accepted_at__isnull=False, created_at__gte=since_30d
+        ).annotate(
+            resp_delta=ExpressionWrapper(F('accepted_at') - F('created_at'), output_field=DurationField())
+        )
+        avg_resp_30d = qs_resp_30d.aggregate(avg=Avg('resp_delta'))['avg']
+        current_response_time_minutes = int(avg_resp_30d.total_seconds() // 60) if avg_resp_30d else 0
+        
+        # Calculate response time for previous 30 days
+        prev_since_30d = since_30d - datetime.timedelta(days=30)
+        qs_resp_prev = ServiceRequest.objects.filter(
+            accepted_at__isnull=False, 
+            created_at__gte=prev_since_30d,
+            created_at__lt=since_30d
+        ).annotate(
+            resp_delta=ExpressionWrapper(F('accepted_at') - F('created_at'), output_field=DurationField())
+        )
+        avg_resp_prev = qs_resp_prev.aggregate(avg=Avg('resp_delta'))['avg']
+        prev_response_time_minutes = int(avg_resp_prev.total_seconds() // 60) if avg_resp_prev else 0
+        
+        # Calculate improvement (negative means improved)
+        avg_response_time_change = prev_response_time_minutes - current_response_time_minutes
+        avg_response_time_change_direction = "down" if avg_response_time_change > 0 else "up" if avg_response_time_change < 0 else "none"
+    except Exception:
+        avg_response_time_change = 0
+        avg_response_time_change_direction = "none"
+    
+    # Staff Efficiency change (+5% this week)
+    try:
+        # Calculate staff efficiency for last week
+        since_7d = timezone.now() - datetime.timedelta(days=7)
+        completed_qs_7d = ServiceRequest.objects.filter(completed_at__gte=since_7d)
+        total_completed_7d = completed_qs_7d.count()
+        met_sla_7d = completed_qs_7d.filter(resolution_sla_breached=False).count() if total_completed_7d else 0
+        current_staff_efficiency = int(round((met_sla_7d / total_completed_7d * 100))) if total_completed_7d else 0
+        
+        # Calculate staff efficiency for previous week
+        prev_since_7d = since_7d - datetime.timedelta(days=7)
+        completed_qs_prev = ServiceRequest.objects.filter(
+            completed_at__gte=prev_since_7d,
+            completed_at__lt=since_7d
+        )
+        total_completed_prev = completed_qs_prev.count()
+        met_sla_prev = completed_qs_prev.filter(resolution_sla_breached=False).count() if total_completed_prev else 0
+        prev_staff_efficiency = int(round((met_sla_prev / total_completed_prev * 100))) if total_completed_prev else 0
+        
+        # Calculate change
+        staff_efficiency_change = current_staff_efficiency - prev_staff_efficiency
+        staff_efficiency_change_direction = "up" if staff_efficiency_change > 0 else "down" if staff_efficiency_change < 0 else "none"
+    except Exception:
+        staff_efficiency_change = 0
+        staff_efficiency_change_direction = "none"
+    
+    # Active GYM Members change (+5% growth)
+    try:
+        # Calculate current active GYM members
+        current_gym_members = GymMember.objects.filter(status="Active").exclude(expiry_date__lt=today).count()
+        
+        # Calculate active GYM members from last week
+        week_ago = today - datetime.timedelta(days=7)
+        last_week_gym_members = GymMember.objects.filter(status="Active").exclude(expiry_date__lt=week_ago).count()
+        
+        # Calculate percentage change
+        if last_week_gym_members > 0:
+            gym_members_change = round(((current_gym_members - last_week_gym_members) / last_week_gym_members * 100), 1)
+        else:
+            gym_members_change = 0 if current_gym_members == 0 else 100  # Handle division by zero
+        gym_members_change_direction = "up" if gym_members_change > 0 else "down" if gym_members_change < 0 else "none"
+    except Exception:
+        gym_members_change = 0
+        gym_members_change_direction = "none"
+    
+    # Active Guests change (+23 check-ins)
+    try:
+        # Calculate current active guests
+        current_active_guests = Guest.objects.filter(
+            Q(checkin_date__lte=today, checkout_date__gte=today) |
+            Q(checkin_datetime__date__lte=today, checkout_datetime__date__gte=today)
+        ).count()
+        
+        # Calculate active guests from yesterday
+        yesterday = today - datetime.timedelta(days=1)
+        yesterday_active_guests = Guest.objects.filter(
+            Q(checkin_date__lte=yesterday, checkout_date__gte=yesterday) |
+            Q(checkin_datetime__date__lte=yesterday, checkout_datetime__date__gte=yesterday)
+        ).count()
+        
+        # Calculate change in absolute numbers
+        active_guests_change = current_active_guests - yesterday_active_guests
+        active_guests_change_direction = "up" if active_guests_change > 0 else "down" if active_guests_change < 0 else "none"
+    except Exception:
+        active_guests_change = 0
+        active_guests_change_direction = "none"
 
     # Fetch actual critical tickets (high priority service requests)
     try:
@@ -1143,57 +1271,8 @@ def dashboard2_view(request):
                 'status': ticket.status,
             })
     except Exception as e:
-        # Fallback to dummy data if there's an error
-        critical_tickets_data = [
-            {
-                'id': 2847,
-                'title': 'Room AC not working',
-                'room': '304',
-                'department': 'Maintenance',
-                'guest': 'John Smith',
-                'reported': '2 hours ago',
-                'priority': 'HIGH',
-                'time_left': '2h left',
-                'color': 'red-500',
-                'progress': 80
-            },
-            {
-                'id': 2846,
-                'title': 'Extra towels needed',
-                'room': '218',
-                'department': 'Housekeeping',
-                'guest': 'Sarah Johnson',
-                'reported': '45 minutes ago',
-                'priority': 'MED',
-                'time_left': '6h left',
-                'color': 'yellow-400',
-                'progress': 25
-            },
-            {
-                'id': 2845,
-                'title': 'Restaurant reservation',
-                'room': '',
-                'department': 'Guest Services',
-                'guest': 'Michael Brown',
-                'reported': '20 minutes ago',
-                'priority': 'NORM',
-                'time_left': '18h left',
-                'color': 'sky-600',
-                'progress': 10
-            },
-            {
-                'id': 2844,
-                'title': 'WiFi password reset',
-                'room': '156',
-                'department': 'IT Support',
-                'guest': 'Emily Davis',
-                'reported': 'Resolved: 15 minutes ago',
-                'priority': 'RESOLVED',
-                'time_left': 'Completed',
-                'color': 'green-500',
-                'progress': 100
-            }
-        ]
+        # Fallback to empty list if there's an error
+        critical_tickets_data = []
 
     # Fetch actual guest feedback (recent reviews)
     try:
@@ -1220,36 +1299,8 @@ def dashboard2_view(request):
                 'sentiment': sentiment,
             })
     except Exception as e:
-        # Fallback to dummy data if there's an error
-        feedback_data_list = [
-            {
-                'rating': 5,
-                'location': 'Room 405',
-                'time': '2 min ago',
-                'comment': 'Amazing service and spotless room! The staff went above and beyond.',
-                'guest': 'Amanda Wilson',
-                'sentiment': 'Positive',
-                'color': 'green-500'
-            },
-            {
-                'rating': 3,
-                'location': 'Restaurant',
-                'time': '15 min ago',
-                'comment': 'Food quality was good but service was slower than expected.',
-                'guest': 'Robert Chen',
-                'sentiment': 'Neutral',
-                'color': 'yellow-400'
-            },
-            {
-                'rating': 2,
-                'location': 'Room 201',
-                'time': '1 hour ago',
-                'comment': 'Room was not properly cleaned upon arrival. Bathroom had issues.',
-                'guest': 'Lisa Martinez',
-                'sentiment': 'Negative',
-                'color': 'red-500'
-            }
-        ]
+        # Fallback to empty list if there's an error
+        feedback_data_list = []
 
     # Map the data to dashboard2 template variables
     context = {
@@ -1264,7 +1315,7 @@ def dashboard2_view(request):
         'staff_efficiency': staff_efficiency_pct,
         'active_gym_members': active_gym_members,
         'active_guests': occupancy_today,
-        # Dynamic comparison data for stats cards
+        # Dynamic comparison data for primary stats cards
         'active_tickets_change': abs(active_tickets_change) if 'active_tickets_change' in locals() else 12,
         'active_tickets_change_direction': active_tickets_change_direction if 'active_tickets_change_direction' in locals() else "up",
         'avg_review_rating_change': abs(avg_review_rating_change) if 'avg_review_rating_change' in locals() else 0.3,
@@ -1273,6 +1324,17 @@ def dashboard2_view(request):
         'sla_breaches_change_direction': sla_breaches_change_direction if 'sla_breaches_change_direction' in locals() else "up",
         'vouchers_redeemed_change': abs(vouchers_redeemed_change) if 'vouchers_redeemed_change' in locals() else 15,
         'vouchers_redeemed_change_direction': vouchers_redeemed_change_direction if 'vouchers_redeemed_change_direction' in locals() else "up",
+        # Dynamic comparison data for secondary stats cards
+        'guest_satisfaction_change': abs(guest_satisfaction_change) if 'guest_satisfaction_change' in locals() else 2,
+        'guest_satisfaction_change_direction': guest_satisfaction_change_direction if 'guest_satisfaction_change_direction' in locals() else "up",
+        'avg_response_time_change': abs(avg_response_time_change) if 'avg_response_time_change' in locals() else 3,
+        'avg_response_time_change_direction': avg_response_time_change_direction if 'avg_response_time_change_direction' in locals() else "down",
+        'staff_efficiency_change': abs(staff_efficiency_change) if 'staff_efficiency_change' in locals() else 5,
+        'staff_efficiency_change_direction': staff_efficiency_change_direction if 'staff_efficiency_change_direction' in locals() else "up",
+        'gym_members_change': abs(gym_members_change) if 'gym_members_change' in locals() else 5,
+        'gym_members_change_direction': gym_members_change_direction if 'gym_members_change_direction' in locals() else "up",
+        'active_guests_change': abs(active_guests_change) if 'active_guests_change' in locals() else 23,
+        'active_guests_change_direction': active_guests_change_direction if 'active_guests_change_direction' in locals() else "up",
         # Trend chart data
         'trend_labels': trend_labels_json,
         'tickets_data': tickets_data_json,
@@ -1280,7 +1342,7 @@ def dashboard2_view(request):
         'feedback_total': feedback_total,
         'peak_day_tickets': peak_day_tickets_val,
         'peak_day_feedback': peak_day_feedback_val,
-        'weekly_growth': 18,  # placeholder unless growth tracking is implemented
+        'weekly_growth': 0,  # TODO: implement actual growth tracking
         # Sentiment data
         'positive_reviews': pos_pct,
         'neutral_reviews': neu_pct,
@@ -1509,6 +1571,69 @@ def dashboard_users(request):
         "users": users,
         "departments": departments,
         "groups": groups,
+    }
+    return render(request, "dashboard/users.html", context)
+
+
+@login_required
+@require_role(['admin', 'staff'])
+def dashboard(request):
+    # Provide users queryset and related data to the template so the users table
+    # can render real data server-side and be used by the client-side poller.
+    users_qs = User.objects.all().select_related('userprofile').prefetch_related('groups')
+    total_users = users_qs.count()
+    # Build role counts for the UI (best-effort)
+    role_names = ['Staff', 'Manager', 'Concierge', 'Maintenance', 'Housekeeping', 'Super Admin']
+    role_counts = {}
+    for role in role_names:
+        role_counts[role] = users_qs.filter(userprofile__role=role).count()
+
+    # Build feedback data for the UI (best-effort)
+    feedback_data_list = []
+    for feedback in GuestFeedback.objects.all().select_related('user'):
+        feedback_data_list.append({
+            'user': feedback.user.username,
+            'rating': feedback.rating,
+            'comment': feedback.comment,
+            'created_at': feedback.created_at,
+        })
+
+    context = {
+        'total_users': total_users,
+        'role_counts': role_counts,
+        'guest_feedback': feedback_data_list
+    }
+    
+    return render(request, 'dashboard/dashboard.html', context)
+
+
+@login_required
+@require_role(['admin', 'staff'])
+def manage_users(request):
+    # Provide users queryset and related data to the template so the users table
+    # can render real data server-side and be used by the client-side poller.
+    users_qs = User.objects.all().select_related('userprofile').prefetch_related('groups')
+    total_users = users_qs.count()
+    # Build role counts for the UI (best-effort)
+    role_names = ['Staff', 'Manager', 'Concierge', 'Maintenance', 'Housekeeping', 'Super Admin']
+    role_counts = {}
+    for role in role_names:
+        role_counts[role] = users_qs.filter(userprofile__role=role).count()
+
+    # Build feedback data for the UI (best-effort)
+    feedback_data_list = []
+    for feedback in GuestFeedback.objects.all().select_related('user'):
+        feedback_data_list.append({
+            'user': feedback.user.username,
+            'rating': feedback.rating,
+            'comment': feedback.comment,
+            'created_at': feedback.created_at,
+        })
+
+    context = {
+        'total_users': total_users,
+        'role_counts': role_counts,
+        'guest_feedback': feedback_data_list
     }
     return render(request, "dashboard/users.html", context)
 
@@ -7612,7 +7737,8 @@ def accept_ticket_api(request, ticket_id):
 @login_required
 def integrations(request):
     """View for the integrations page."""
-    return render(request, 'dashboard/dashboard.html', context)
+    context = {}
+    return render(request, 'dashboard/integrations.html', context)
 
 
 @login_required
@@ -7624,7 +7750,7 @@ def manage_users(request):
     import datetime
     from django.utils import timezone
 
-    return render(request, "dashboard/integrations.html")
+    return render(request, "dashboard/users.html")
 
 
 @login_required

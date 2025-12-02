@@ -19,9 +19,9 @@
       <!-- Provide data via data- attributes; if your template doesn't inject values, JS below will fallback to defaults -->
       <canvas
         id="performanceTrendChart"
-        data-labels='{{ trend_labels }}'
-        data-tickets='{{ tickets_data }}'
-        data-feedback='{{ feedback_data }}'
+        data-labels='{{ trend_labels|safe }}'
+        data-tickets='{{ tickets_data|safe }}'
+        data-feedback='{{ feedback_data|safe }}'
       ></canvas>
     </div>
 
@@ -131,9 +131,9 @@
       }
     };
 
-    const labels = parseArray(trendEl, 'data-labels', ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]);
-    const tickets = parseArray(trendEl, 'data-tickets', [23, 15, 21, 18, 12, 19, 17]);
-    const feedback = parseArray(trendEl, 'data-feedback', [22, 16, 18, 23, 17, 20, 19]);
+    const labels = parseArray(trendEl, 'data-labels', []);
+    const tickets = parseArray(trendEl, 'data-tickets', []);
+    const feedback = parseArray(trendEl, 'data-feedback', []);
 
     const tctx = trendEl.getContext('2d');
 
@@ -210,15 +210,15 @@
 
     // Donut: Guest Sentiment Analysis (with center text)
     const donutEl = document.getElementById('sentimentChart');
-    const pos = parseFloat(donutEl.getAttribute('data-positive')) || 68;
-    const neu = parseFloat(donutEl.getAttribute('data-neutral')) || 22;
-    const neg = parseFloat(donutEl.getAttribute('data-negative')) || 10;
-    const center = donutEl.getAttribute('data-center') || '4.8';
+    const pos = parseFloat(donutEl.getAttribute('data-positive')) || 0;
+    const neu = parseFloat(donutEl.getAttribute('data-neutral')) || 0;
+    const neg = parseFloat(donutEl.getAttribute('data-negative')) || 0;
+    const center = donutEl.getAttribute('data-center') || '0.0';
 
     const total = pos + neu + neg;
     const normalized = total === 100
       ? [pos, neu, neg]
-      : (total > 0 ? [pos / total * 100, neu / total * 100, neg / total * 100] : [68, 22, 10]);
+      : (total > 0 ? [pos / total * 100, neu / total * 100, neg / total * 100] : [33.33, 33.33, 33.34]);
 
     const centerText = {
       id: 'centerText',

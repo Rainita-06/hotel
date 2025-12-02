@@ -6,10 +6,20 @@
                 <p class="text-blue-100 text-sm font-medium">Active Tickets</p>
                 <p class="text-3xl font-bold">{{ active_tickets }}</p>
                 <div class="flex items-center text-blue-100 text-sm font-normal mt-1">
-                    <svg class="h-3.5 w-3.5 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                    </svg>
-                    <span>12% vs last week</span>
+                    {% if active_tickets_change_direction != 'none' %}
+                        {% if active_tickets_change_direction == 'up' %}
+                            <svg class="h-3.5 w-3.5 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        {% else %}
+                            <svg class="h-3.5 w-3.5 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 3a.75.75 0 01.75.75v10.638l3.03-3.03a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0l-4.25-4.25a.75.75 0 111.06-1.06l3.03 3.03V3.75A.75.75 0 0110 3z" clip-rule="evenodd" />
+                            </svg>
+                        {% endif %}
+                        <span>{{ active_tickets_change }}% vs last week</span>
+                    {% else %}
+                        <span>No change vs last week</span>
+                    {% endif %}
                 </div>
             </div>
             <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
@@ -36,10 +46,20 @@
                     </div>
                 </div>
                 <div class="flex items-center text-teal-100 text-sm font-normal mt-1">
-                    <svg class="h-3.5 w-3.5 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                    </svg>
-                    <span>0.3 vs last month</span>
+                    {% if avg_review_rating_change_direction != 'none' %}
+                        {% if avg_review_rating_change_direction == 'up' %}
+                            <svg class="h-3.5 w-3.5 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        {% else %}
+                            <svg class="h-3.5 w-3.5 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 3a.75.75 0 01.75.75v10.638l3.03-3.03a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0l-4.25-4.25a.75.75 0 111.06-1.06l3.03 3.03V3.75A.75.75 0 0110 3z" clip-rule="evenodd" />
+                            </svg>
+                        {% endif %}
+                        <span>{{ avg_review_rating_change }} vs last month</span>
+                    {% else %}
+                        <span>No change vs last month</span>
+                    {% endif %}
                 </div>
             </div>
             <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
@@ -57,10 +77,20 @@
                 <p class="text-red-100 text-sm font-medium">SLA Breaches (24h)</p>
                 <p class="text-3xl font-bold">{{ sla_breaches }}</p>
                 <div class="flex items-center text-red-100 text-sm font-normal mt-1">
-                    <svg class="h-3.5 w-3.5 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                    </svg>
-                    <span>2 more than yesterday</span>
+                    {% if sla_breaches_change_direction != 'none' %}
+                        {% if sla_breaches_change_direction == 'up' %}
+                            <svg class="h-3.5 w-3.5 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        {% else %}
+                            <svg class="h-3.5 w-3.5 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 3a.75.75 0 01.75.75v10.638l3.03-3.03a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0l-4.25-4.25a.75.75 0 111.06-1.06l3.03 3.03V3.75A.75.75 0 0110 3z" clip-rule="evenodd" />
+                            </svg>
+                        {% endif %}
+                        <span>{{ sla_breaches_change }} more than yesterday</span>
+                    {% else %}
+                        <span>No change vs yesterday</span>
+                    {% endif %}
                 </div>
             </div>
             <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
@@ -78,10 +108,20 @@
                 <p class="text-purple-100 text-sm font-medium">Vouchers Redeemed</p>
                 <p class="text-3xl font-bold">{{ vouchers_redeemed }}</p>
                 <div class="flex items-center text-purple-100 text-sm font-normal mt-1">
-                    <svg class="h-3.5 w-3.5 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                    </svg>
-                    <span>15% vs last week</span>
+                    {% if vouchers_redeemed_change_direction != 'none' %}
+                        {% if vouchers_redeemed_change_direction == 'up' %}
+                            <svg class="h-3.5 w-3.5 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        {% else %}
+                            <svg class="h-3.5 w-3.5 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 3a.75.75 0 01.75.75v10.638l3.03-3.03a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0l-4.25-4.25a.75.75 0 111.06-1.06l3.03 3.03V3.75A.75.75 0 0110 3z" clip-rule="evenodd" />
+                            </svg>
+                        {% endif %}
+                        <span>{{ vouchers_redeemed_change }}% vs last week</span>
+                    {% else %}
+                        <span>No change vs last week</span>
+                    {% endif %}
                 </div>
             </div>
             <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
