@@ -1,4 +1,4 @@
-﻿import json
+﻿﻿﻿import json
 import datetime
 import re
 from django.shortcuts import render, redirect, get_object_or_404
@@ -1338,6 +1338,7 @@ def dashboard2_view(request):
         # Trend chart data
         'trend_labels': trend_labels_json,
         'tickets_data': tickets_data_json,
+        'tickets_data': tickets_data_json,
         'feedback_data': feedback_data_json,
         'feedback_total': feedback_total,
         'peak_day_tickets': peak_day_tickets_val,
@@ -1351,15 +1352,8 @@ def dashboard2_view(request):
         'neutral_count': neu_count,
         'negative_count': neg_count,
         'overall_rating': overall_rating,
-        # Department data - using real data where possible
-        'departments': [
-            {'name': 'Housekeeping', 'tickets': requests_values[0] if len(requests_values) > 0 else 15, 'color': 'sky-600'},
-            {'name': 'Maintenance', 'tickets': requests_values[1] if len(requests_values) > 1 else 12, 'color': 'yellow-400'},
-            {'name': 'Guest Services', 'tickets': requests_values[2] if len(requests_values) > 2 else 8, 'color': 'teal-500'},
-            {'name': 'Restaurant', 'tickets': requests_values[3] if len(requests_values) > 3 else 6, 'color': 'green-500'},
-            {'name': 'Front Desk', 'tickets': requests_values[4] if len(requests_values) > 4 else 4, 'color': 'fuchsia-700'},
-            {'name': 'Concierge', 'tickets': requests_values[5] if len(requests_values) > 5 else 2, 'color': 'red-500'},
-        ],
+        # Department data - using real data where possible, only show departments with actual data
+        'departments': [],
         # Critical tickets - now using actual data
         'critical_tickets': critical_tickets_data,
         # Guest feedback - now using actual data
