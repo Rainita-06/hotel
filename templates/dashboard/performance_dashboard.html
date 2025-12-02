@@ -1,5 +1,6 @@
 {% extends "dashboard/base_dashboard.html" %}
 {% load static %}
+{% load custom_tags %}
 
 {% block content %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -51,9 +52,15 @@
           <div>
             <p class="text-sm font-medium text-gray-600">Overall Completion Rate</p>
             <p class="text-3xl font-bold text-gray-900 mt-1">{{ completion_rate }}%</p>
-            <p class="text-sm text-green-500 mt-2 flex items-center gap-1">
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 17a.75.75 0 01-.75-.75V5.612L6.22 8.78a.75.75 0 11-1.06-1.06l4.25-4.25a.75.75 0 011.06 0l4.25 4.25a.75.75 0 11-1.06 1.06L10.75 5.612V16.25A.75.75 0 0110 17z" clip-rule="evenodd" /></svg>
-              +3.2% vs last week
+            <p class="text-sm {% if completion_rate_change_direction == 'up' %}text-green-500{% else %}text-red-500{% endif %} mt-2 flex items-center gap-1">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                {% if completion_rate_change_direction == 'up' %}
+                <path fill-rule="evenodd" d="M10 17a.75.75 0 01-.75-.75V5.612L6.22 8.78a.75.75 0 11-1.06-1.06l4.25-4.25a.75.75 0 011.06 0l4.25 4.25a.75.75 0 11-1.06 1.06L10.75 5.612V16.25A.75.75 0 0110 17z" clip-rule="evenodd" />
+                {% else %}
+                <path fill-rule="evenodd" d="M10 3a.75.75 0 01.75.75v10.638l3.03-3.17a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.22 11.28a.75.75 0 111.06-1.06l3.03 3.17V3.75A.75.75 0 0110 3z" clip-rule="evenodd" />
+                {% endif %}
+              </svg>
+              {% if completion_rate_change_direction == 'up' %}+{% endif %}{{ completion_rate_change }}% vs last week
             </p>
           </div>
           <div class="bg-green-100 p-3 rounded-lg">
@@ -64,9 +71,15 @@
           <div>
             <p class="text-sm font-medium text-gray-600">SLA Breaches</p>
             <p class="text-3xl font-bold text-gray-900 mt-1">{{ sla_breaches }}</p>
-            <p class="text-sm text-red-500 mt-2 flex items-center gap-1">
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 3a.75.75 0 01.75.75v10.638l3.03-3.17a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.22 11.28a.75.75 0 111.06-1.06l3.03 3.17V3.75A.75.75 0 0110 3z" clip-rule="evenodd" /></svg>
-              +4 vs yesterday
+            <p class="text-sm {% if sla_breaches_change_direction == 'up' %}text-red-500{% else %}text-green-500{% endif %} mt-2 flex items-center gap-1">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                {% if sla_breaches_change_direction == 'up' %}
+                <path fill-rule="evenodd" d="M10 3a.75.75 0 01.75.75v10.638l3.03-3.17a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.22 11.28a.75.75 0 111.06-1.06l3.03 3.17V3.75A.75.75 0 0110 3z" clip-rule="evenodd" />
+                {% else %}
+                <path fill-rule="evenodd" d="M10 17a.75.75 0 01-.75-.75V5.612L6.22 8.78a.75.75 0 11-1.06-1.06l4.25-4.25a.75.75 0 011.06 0l4.25 4.25a.75.75 0 11-1.06 1.06L10.75 5.612V16.25A.75.75 0 0110 17z" clip-rule="evenodd" />
+                {% endif %}
+              </svg>
+              {% if sla_breaches_change_direction == 'up' %}+{% endif %}{{ sla_breaches_change }} vs yesterday
             </p>
           </div>
           <div class="bg-red-100 p-3 rounded-lg">
@@ -77,9 +90,15 @@
           <div>
             <p class="text-sm font-medium text-gray-600">Avg Response Time</p>
             <p class="text-3xl font-bold text-gray-900 mt-1">{{ avg_response_time }}m</p>
-            <p class="text-sm text-green-500 mt-2 flex items-center gap-1">
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 17a.75.75 0 01-.75-.75V5.612L6.22 8.78a.75.75 0 11-1.06-1.06l4.25-4.25a.75.75 0 011.06 0l4.25 4.25a.75.75 0 11-1.06 1.06L10.75 5.612V16.25A.75.75 0 0110 17z" clip-rule="evenodd" /></svg>
-              -2m vs last week
+            <p class="text-sm {% if response_time_change_direction == 'up' %}text-red-500{% else %}text-green-500{% endif %} mt-2 flex items-center gap-1">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                {% if response_time_change_direction == 'up' %}
+                <path fill-rule="evenodd" d="M10 3a.75.75 0 01.75.75v10.638l3.03-3.17a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.22 11.28a.75.75 0 111.06-1.06l3.03 3.17V3.75A.75.75 0 0110 3z" clip-rule="evenodd" />
+                {% else %}
+                <path fill-rule="evenodd" d="M10 17a.75.75 0 01-.75-.75V5.612L6.22 8.78a.75.75 0 11-1.06-1.06l4.25-4.25a.75.75 0 011.06 0l4.25 4.25a.75.75 0 11-1.06 1.06L10.75 5.612V16.25A.75.75 0 0110 17z" clip-rule="evenodd" />
+                {% endif %}
+              </svg>
+              {% if response_time_change_direction == 'up' %}+{% endif %}{% if response_time_change_direction == 'down' %}-{% endif %}{{ response_time_change|abs_value }}m vs last week
             </p>
           </div>
           <div class="bg-teal-100 p-3 rounded-lg">
@@ -90,9 +109,21 @@
           <div>
             <p class="text-sm font-medium text-gray-600">Active Staff</p>
             <p class="text-3xl font-bold text-gray-900 mt-1">{{ active_staff }}</p>
-            <p class="text-sm text-gray-500 mt-2 flex items-center gap-1">
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 3.75a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 3.75zM5.25 5.25a.75.75 0 000 1.5h1.5a.75.75 0 000-1.5h-1.5zM15 6.75a.75.75 0 01-.75-.75v-1.5a.75.75 0 011.5 0v1.5a.75.75 0 01-.75.75zM6.75 15a.75.75 0 00-1.5 0v1.5a.75.75 0 001.5 0v-1.5zM13.25 15a.75.75 0 011.5 0v1.5a.75.75 0 01-1.5 0v-1.5zM10 15.75a.75.75 0 00-1.5 0v1.5a.75.75 0 001.5 0v-1.5zM3.75 10a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 01-.75-.75zM13.25 10a.75.75 0 000 1.5h1.5a.75.75 0 000-1.5h-1.5z" /></svg>
+            <p class="text-sm {% if active_staff_change_direction == 'up' %}text-green-500{% elif active_staff_change_direction == 'down' %}text-red-500{% else %}text-gray-500{% endif %} mt-2 flex items-center gap-1">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                {% if active_staff_change_direction == 'up' %}
+                <path fill-rule="evenodd" d="M10 17a.75.75 0 01-.75-.75V5.612L6.22 8.78a.75.75 0 11-1.06-1.06l4.25-4.25a.75.75 0 011.06 0l4.25 4.25a.75.75 0 11-1.06 1.06L10.75 5.612V16.25A.75.75 0 0110 17z" clip-rule="evenodd" />
+                {% elif active_staff_change_direction == 'down' %}
+                <path fill-rule="evenodd" d="M10 3a.75.75 0 01.75.75v10.638l3.03-3.17a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.22 11.28a.75.75 0 111.06-1.06l3.03 3.17V3.75A.75.75 0 0110 3z" clip-rule="evenodd" />
+                {% else %}
+                <path d="M10 3.75a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 3.75zM5.25 5.25a.75.75 0 000 1.5h1.5a.75.75 0 000-1.5h-1.5zM15 6.75a.75.75 0 01-.75-.75v-1.5a.75.75 0 011.5 0v1.5a.75.75 0 01-.75.75zM6.75 15a.75.75 0 00-1.5 0v1.5a.75.75 0 001.5 0v-1.5zM13.25 15a.75.75 0 011.5 0v1.5a.75.75 0 01-1.5 0v-1.5zM10 15.75a.75.75 0 00-1.5 0v1.5a.75.75 0 001.5 0v-1.5zM3.75 10a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 01-.75-.75zM13.25 10a.75.75 0 000 1.5h1.5a.75.75 0 000-1.5h-1.5z" />
+                {% endif %}
+              </svg>
+              {% if active_staff_change_direction == 'none' %}
               No change
+              {% else %}
+              {% if active_staff_change_direction == 'up' %}+{% endif %}{{ active_staff_change }} vs last week
+              {% endif %}
             </p>
           </div>
           <div class="bg-sky-100 p-3 rounded-lg">

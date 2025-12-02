@@ -7527,16 +7527,37 @@ def performance_dashboard(request):
     # Calculate date ranges
     today = timezone.now().date()
     week_ago = today - datetime.timedelta(days=7)
+    yesterday = today - datetime.timedelta(days=1)
+    last_week_start = week_ago - datetime.timedelta(days=7)
     
     # Overall Completion Rate
     total_requests = ServiceRequest.objects.count()
     completed_requests = ServiceRequest.objects.filter(status='completed').count()
     completion_rate = round((completed_requests / total_requests * 100), 1) if total_requests > 0 else 0
     
+    # Previous week completion rate for comparison
+    prev_week_total = ServiceRequest.objects.filter(created_at__date__gte=last_week_start, created_at__date__lt=week_ago).count()
+    prev_week_completed = ServiceRequest.objects.filter(status='completed', created_at__date__gte=last_week_start, created_at__date__lt=week_ago).count()
+    prev_completion_rate = round((prev_week_completed / prev_week_total * 100), 1) if prev_week_total > 0 else 0
+    
+    # Calculate completion rate change
+    completion_rate_change = round(completion_rate - prev_completion_rate, 1)
+    completion_rate_change_direction = "up" if completion_rate_change >= 0 else "down"
+    
     # SLA Breaches
     sla_breaches = ServiceRequest.objects.filter(
         Q(response_sla_breached=True) | Q(resolution_sla_breached=True)
     ).count()
+    
+    # Yesterday's SLA breaches for comparison
+    yesterday_sla_breaches = ServiceRequest.objects.filter(
+        Q(response_sla_breached=True) | Q(resolution_sla_breached=True),
+        created_at__date=yesterday
+    ).count()
+    
+    # Calculate SLA breaches change
+    sla_breaches_change = sla_breaches - yesterday_sla_breaches
+    sla_breaches_change_direction = "up" if sla_breaches_change >= 0 else "down"
     
     # Average Response Time (in minutes)
     avg_response_time = 0
@@ -7550,8 +7571,32 @@ def performance_dashboard(request):
             total_response_time += (req.started_at - req.accepted_at)
         avg_response_time = round(total_response_time.total_seconds() / 60 / responded_requests.count())
     
+    # Previous week average response time for comparison
+    prev_week_responded = ServiceRequest.objects.filter(
+        started_at__isnull=False,
+        created_at__date__gte=last_week_start,
+        created_at__date__lt=week_ago
+    ).exclude(accepted_at__isnull=True)
+    
+    prev_avg_response_time = 0
+    if prev_week_responded.exists():
+        prev_total_response_time = datetime.timedelta()
+        for req in prev_week_responded:
+            prev_total_response_time += (req.started_at - req.accepted_at)
+        prev_avg_response_time = round(prev_total_response_time.total_seconds() / 60 / prev_week_responded.count())
+    
+    # Calculate response time change
+    response_time_change = round(avg_response_time - prev_avg_response_time, 1)
+    response_time_change_direction = "up" if response_time_change >= 0 else "down"
+    
     # Active Staff
     active_staff = User.objects.filter(is_active=True).count()
+    
+    # Previous week active staff for comparison
+    # For simplicity, we'll assume this doesn't change much, but in a real app you might track this
+    prev_active_staff = active_staff  # Placeholder - in a real app you'd calculate this
+    active_staff_change = active_staff - prev_active_staff
+    active_staff_change_direction = "up" if active_staff_change > 0 else "down" if active_staff_change < 0 else "none"
     
     # Completion Rates by Department
     departments = Department.objects.all()
@@ -7659,9 +7704,17 @@ def performance_dashboard(request):
     context = {
         # Stats cards
         'completion_rate': completion_rate,
+        'completion_rate_change': abs(completion_rate_change),
+        'completion_rate_change_direction': completion_rate_change_direction,
         'sla_breaches': sla_breaches,
+        'sla_breaches_change': abs(sla_breaches_change),
+        'sla_breaches_change_direction': sla_breaches_change_direction,
         'avg_response_time': avg_response_time,
+        'response_time_change': abs(response_time_change),
+        'response_time_change_direction': response_time_change_direction,
         'active_staff': active_staff,
+        'active_staff_change': abs(active_staff_change),
+        'active_staff_change_direction': active_staff_change_direction,
         
         # Charts
         'department_labels': department_labels,
