@@ -1,0 +1,160 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-2xl w-full space-y-8">
+    <!-- Main Card -->
+    <div class="bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100">
+      <!-- Icon Header -->
+      <div class="bg-gradient-to-r from-orange-50 to-red-50 px-8 py-10 text-center">
+        <div class="flex justify-center mb-4">
+          <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-lg">
+            <svg class="w-14 h-14 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" 
+                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+              </path>
+            </svg>
+          </div>
+        </div>
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Access Restricted</h1>
+        <p class="text-lg text-gray-600">Your account requires permissions to access the system</p>
+      </div>
+
+      <!-- Content -->
+      <div class="px-8 py-8">
+        <div class="space-y-6">
+          <!-- Welcome Message -->
+          <div class="bg-blue-50 border-l-4 border-blue-500 rounded-r-lg p-5">
+            <div class="flex items-start">
+              <svg class="w-6 h-6 text-blue-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" 
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" 
+                      clip-rule="evenodd">
+                </path>
+              </svg>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-blue-800">
+                  Welcome, <span class="font-semibold">{{ user.username }}</span>!
+                </p>
+                <p class="mt-2 text-sm text-blue-700">
+                  Your account has been created successfully, but you don't have any roles or permissions assigned yet.
+                  Please contact your system administrator to request access.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Account Status -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Current Role Card -->
+            <div class="bg-gray-50 rounded-lg p-5 border border-gray-200">
+              <div class="flex items-center mb-3">
+                <svg class="w-5 h-5 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z">
+                  </path>
+                </svg>
+                <h3 class="text-sm font-semibold text-gray-700">Current Role</h3>
+              </div>
+              <p class="text-lg font-medium">
+                {% if user_role and user_role|length > 0 %}
+                  <span class="text-green-600">{{ user_role }}</span>
+                {% else %}
+                  <span class="text-orange-600">No Role Assigned</span>
+                {% endif %}
+              </p>
+            </div>
+
+            <!-- Groups Card -->
+            <div class="bg-gray-50 rounded-lg p-5 border border-gray-200">
+              <div class="flex items-center mb-3">
+                <svg class="w-5 h-5 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z">
+                  </path>
+                </svg>
+                <h3 class="text-sm font-semibold text-gray-700">Groups</h3>
+              </div>
+              <p class="text-lg font-medium">
+                {% if user_groups %}
+                  <span class="text-green-600">{{ user_groups|length }} Group{{ user_groups|length|pluralize }}</span>
+                {% else %}
+                  <span class="text-orange-600">No Groups</span>
+                {% endif %}
+              </p>
+            </div>
+          </div>
+
+          <!-- What You Need Section -->
+          <div class="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg p-6 border border-purple-100">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <svg class="w-6 h-6 text-purple-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z">
+                </path>
+              </svg>
+              What You Need to Access the System
+            </h3>
+            <ul class="space-y-3 text-gray-700">
+              <li class="flex items-start">
+                <span class="inline-block w-2 h-2 bg-purple-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                <span><strong class="font-medium">A Role:</strong> Such as Admin, Staff, Manager, etc.</span>
+              </li>
+              <li class="flex items-start">
+                <span class="inline-block w-2 h-2 bg-purple-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                <span><strong class="font-medium">Group Membership:</strong> Assignment to a user group with appropriate permissions</span>
+              </li>
+              <li class="flex items-start">
+                <span class="inline-block w-2 h-2 bg-purple-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                <span><strong class="font-medium">Permissions:</strong> Specific access rights to various sections of the system</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Contact Administrator Section -->
+          <div class="border-t border-gray-200 pt-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-3">Need Access?</h3>
+            <p class="text-gray-600 mb-4">
+              Contact your system administrator to request the necessary permissions. They will assign you a role and add you to the appropriate groups based on your job responsibilities.
+            </p>
+            
+            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <p class="text-sm font-medium text-gray-700 mb-2">Contact Information:</p>
+              <div class="flex items-center text-sm text-gray-600">
+                <svg class="w-4 h-4 mr-2 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path>
+                  <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path>
+                </svg>
+                <a href="mailto:admin@yourhotel.com" class="text-blue-600 hover:text-blue-700 font-medium">
+                  admin@yourhotel.com
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Logout Button -->
+        <div class="mt-8 flex justify-center">
+          <a href="{% url 'logout' %}" 
+             class="inline-flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
+              </path>
+            </svg>
+            Logout
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Additional Help -->
+    <div class="text-center">
+      <p class="text-sm text-gray-500">
+        For technical support, please contact the IT Help Desk
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,4 +1,4 @@
-import json
+﻿import json
 import datetime
 import re
 from django.shortcuts import render, redirect, get_object_or_404
@@ -9068,4 +9068,41 @@ def tickets_view(request):
 
     return render(request, "dashboard/ticket_review.html", context)
 
+
+# ---- No Access View for Users Without Roles ----
+@login_required
+def no_access_view(request):
+    """
+    View for users who don't have any role or permissions assigned.
+    This page informs them they need access rights from an administrator.
+    """
+    # Get user information
+    user = request.user
+    user_role = None
+    user_groups = []
+    has_any_permission = False
+    
+    # Check user profile for role
+    if hasattr(user, 'userprofile'):
+        user_role = user.userprofile.role
+    
+    # Check user groups
+    user_groups = list(user.groups.all().values_list('name', flat=True))
+    
+    # Check if user has any permissions
+    has_any_permission = (
+        user.is_superuser or
+        user.groups.exists() or
+        user.user_permissions.exists() or
+        (user_role and user_role.strip())
+    )
+    
+    context = {
+        'user': user,
+        'user_role': user_role,
+        'user_groups': user_groups,
+        'has_any_permission': has_any_permission,
+    }
+    
+    return render(request, 'dashboard/no_access.html', context)
 

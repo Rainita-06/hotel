@@ -66,26 +66,24 @@ class Command(BaseCommand):
                 admins_group.permissions.add(permission)
                 admins_perms += 1
                 
-                # STAFF: Get VIEW permission for all sections EXCEPT 'users'
-                # No add/change/delete for staff
-                if section.name != 'users' and action == 'view':
-                    staff_group.permissions.add(permission)
-                    staff_perms += 1
-                
-                # USERS: Only get VIEW permission for 'my_tickets' section
-                # No dashboard, no other sections
-                if section.name == 'my_tickets' and action == 'view':
+                # USERS: Get ALL permissions for all sections EXCEPT 'users'
+                if section.name != 'users':
                     users_group.permissions.add(permission)
                     users_perms += 1
+                
+                # STAFF: Only get permissions for 'my_tickets' section
+                if section.name == 'my_tickets':
+                    staff_group.permissions.add(permission)
+                    staff_perms += 1
         
         self.stdout.write(self.style.SUCCESS(f'\n✅ Admins group: {admins_perms} permissions (full access)'))
-        self.stdout.write(self.style.SUCCESS(f'✅ Staff group: {staff_perms} permissions (view all except users)'))
-        self.stdout.write(self.style.SUCCESS(f'✅ Users group: {users_perms} permissions (only my tickets)'))
+        self.stdout.write(self.style.SUCCESS(f'✅ Users group: {users_perms} permissions (all except users)'))
+        self.stdout.write(self.style.SUCCESS(f'✅ Staff group: {staff_perms} permissions (only my tickets)'))
         
         self.stdout.write(self.style.SUCCESS('\n🎉 Section initialization complete!'))
         self.stdout.write(self.style.WARNING(
             '\nPermission Summary:\n'
             '  - Admins: Full access to everything\n'
-            '  - Staff: View access to all sections except Users\n'
-            '  - Users: Only access to My Tickets section'
+            '  - Users: Access to all sections except Users\n'
+            '  - Staff: Only access to My Tickets section'
         ))

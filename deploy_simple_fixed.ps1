@@ -159,7 +159,7 @@ else {
     Write-Host "" -ForegroundColor Yellow
     Write-Host "Permissions configured:" -ForegroundColor Yellow
     Write-Host "  - Admins: Full access to all sections" -ForegroundColor Green
-    Write-Host "  - Staff: View access to all sections except Users" -ForegroundColor Green
-    Write-Host "  - Users: Access only to My Tickets section" -ForegroundColor Green
+    Write-Host "  - Users: Access to all sections except Users" -ForegroundColor Green
+    Write-Host "  - Staff: Access only to My Tickets section" -ForegroundColor Green
     Write-Host "" -ForegroundColor Cyan
 }

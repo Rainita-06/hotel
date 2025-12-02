@@ -6,6 +6,7 @@ app_name = 'dashboard'
 
 urlpatterns = [
     path('', dashboard_views.dashboard_view, name='main'),
+    path('no-access/', dashboard_views.no_access_view, name='no_access'),
     path('users/', dashboard_views.dashboard_users, name='users'),
     path('manage-users/departments/', dashboard_views.dashboard_departments, name='departments'),
     path('groups/', dashboard_views.dashboard_groups, name='groups'),

@@ -63,6 +63,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'hotel_app.middleware_permissions.UserPermissionCheckMiddleware',  # Check user permissions
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'hotel_app.middleware.NoCacheMiddleware',  # Prevent browser caching of authenticated pages
