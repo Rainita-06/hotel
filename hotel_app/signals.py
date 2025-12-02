@@ -476,91 +476,266 @@ import os
 
 #     print("✅ Basic Location Data Setup Finished.")
 
+# import os
+# import requests
+# from django.core.files.base import ContentFile
+# from django.db.models.signals import post_migrate
+# from django.dispatch import receiver
+
+# @receiver(post_migrate)
+# def create_basic_location_data(sender, **kwargs):
+#     if sender.name != "hotel_app":
+#         return
+
+#     print("\n🔥 Auto-generating Base Location Set (6X Format)...\n")
+
+#     # 1️⃣ Building details
+#     building_names = [
+#         ("Main Building", "Primary building"),
+#         ("Royal Residency", "Luxury stay"),
+#         ("Garden Block", "Nature view rooms"),
+#         ("Sky Tower", "Top view suites"),
+#         ("Heritage Wing", "Classic architecture"),
+#         ("Elite Chamber", "VIP exclusive block"),
+#     ]
+
+#     # 2️⃣ CDN dummy images (these will be downloaded into ImageField)
+#     cdn_images = [
+#         "https://images.pexels.com/photos/261102/pexels-photo-261102.jpeg",
+#     "https://images.pexels.com/photos/258154/pexels-photo-258154.jpeg",
+#     "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
+#     "https://images.pexels.com/photos/271619/pexels-photo-271619.jpeg",
+#     "https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg",
+#     "https://images.pexels.com/photos/240112/pexels-photo-240112.jpeg"
+#     ]
+
+#     # 3️⃣ Buildings
+#     buildings = []
+#     for i, (name, desc) in enumerate(building_names):
+
+#         building, created = Building.objects.get_or_create(
+#             name=name,
+#             defaults={"description": desc}
+#         )
+
+#         if created:
+#             try:
+#                 print(f"📡 Downloading image for {name} ...")
+
+#                 response = requests.get(cdn_images[i])
+#                 response.raise_for_status()
+
+#                 image_name = f"{name.replace(' ', '_').lower()}.jpg"
+#                 building.image.save(image_name, ContentFile(response.content), save=True)
+
+#             except Exception as e:
+#                 print(f"⚠ Image download failed for {name}: {e}")
+
+#         print(f"🏢 {name} → {'CREATED' if created else 'Already Exists'}")
+#         buildings.append(building)
+
+#     print("✔ Buildings created with CDN images!")
+
+#     # 🔥 Your remaining floors, families, types, locations logic continues here...
+
+
+#     # =============================
+#     # 2️⃣ Six Floors (1 per building)
+#     # =============================
+#     floors = []
+
+#     for idx, b in enumerate(buildings, start=1):
+
+#     # Remove duplicates cleanly
+#         Floor.objects.filter(building=b, floor_number=idx).delete()
+
+#     # Create fresh floor safely
+#         floor = Floor.objects.create(
+#         building=b,
+#         floor_number=idx,
+#         floor_name=f"Floor {idx}"
+#     )
+
+#         floors.append(floor)
+
+#     print("🏢 Floors Created: 6 (Cleaned duplicates)")
+
+#     # =============================
+#     # 3️⃣ Six Location Families
+#     # =============================
+#     family_names = ["Guest Room","Service Area","Executive","Premium","Dining","General Utility"]
+#     families=[LocationFamily.objects.get_or_create(name=n)[0] for n in family_names]
+#     print("👨‍👩‍👦 Families created: 6")
+
+#     # =============================
+#     # 4️⃣ Six Location Types
+#     # =============================
+#     type_names = ["Deluxe Room","Suite Room","Lobby","Dining Hall","Executive Suite","Conference Hall"]
+#     types=[LocationType.objects.get_or_create(name=t,family=families[i])[0] for i,t in enumerate(type_names)]
+#     print("🏷 Types created: 6")
+
+#     # =============================
+#     # 5️⃣ Six Locations (One for each building)
+#     # =============================
+#     for i, b in enumerate(buildings):
+
+#      Location.objects.get_or_create(
+#         name=f"{101+i}",
+        
+#         building=b,
+#         floor=floors[i],
+#         type=types[i],
+#         family=types[i].family,      # <<< 🔥 FAMILY FIXED HERE
+#         defaults={}
+#     )
+
+#     print("📍 Locations Created: 6")
+
+#     print("\n✔ SUCCESS → 6 Buildings | 6 Floors | 6 Families | 6 Types | 6 Locations Ready!\n")
+import os
+import requests
+from django.core.files.base import ContentFile
+from django.db.models.signals import post_migrate
+from django.dispatch import receiver
+
+from .models import Building, Floor, LocationFamily, LocationType, Location
+
+import os
+import random
+import requests
+from django.core.files.base import ContentFile
+from django.db.models.signals import post_migrate
+from django.dispatch import receiver
+from .models import Building, Floor, LocationFamily, LocationType, Location
+
+
+# -----------------------------------------------------
+# GLOBAL HOTEL IMAGES (361×192)
+# -----------------------------------------------------
+BUILDING_IMAGE_URLS = [
+    "https://images.pexels.com/photos/261146/pexels-photo-261146.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+    "https://images.pexels.com/photos/258154/pexels-photo-258154.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+    "https://images.pexels.com/photos/271689/pexels-photo-271689.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+    "https://images.pexels.com/photos/3586960/pexels-photo-3586960.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+    "https://images.pexels.com/photos/261102/pexels-photo-261102.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+    "https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+]
+
+
+# -----------------------------------------------------
+# FUNCTION → Assign random hotel image
+# -----------------------------------------------------
+def assign_random_image(building_obj):
+    try:
+        url = random.choice(BUILDING_IMAGE_URLS)
+        filename = url.split("/")[-1].split("?")[0]
+
+        response = requests.get(url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
+        if response.status_code == 200:
+            building_obj.image.save(
+                filename,
+                ContentFile(response.content),
+                save=True
+            )
+            print(f"✔ Auto-image assigned → {building_obj.name}")
+        else:
+            print(f"✖ Failed to download: {url}")
+
+    except Exception as e:
+        print(f"✖ Image assign error: {e}")
+
+
+# -----------------------------------------------------
+# MAIN POST-MIGRATE SIGNAL
+# -----------------------------------------------------
 @receiver(post_migrate)
 def create_basic_location_data(sender, **kwargs):
+
     if sender.name != "hotel_app":
         return
 
-    print("\n🔥 Auto-generating Base Location Set (6X Format)...\n")
+    print("\n🔥 Auto-generating Base Location Set (6X Format)…\n")
 
-    import random
-
-    # =============================
-    # 1️⃣ Six Buildings (With images)
-    # =============================
+    # -----------------------------------------------------
+    # 1️⃣ BUILDINGS (Created Only Once)
+    # -----------------------------------------------------
     building_names = [
         ("Main Building", "Primary building"),
         ("Royal Residency", "Luxury stay"),
         ("Garden Block", "Nature view rooms"),
         ("Sky Tower", "Top view suites"),
         ("Heritage Wing", "Classic architecture"),
-        ("Elite Chamber", "VIP exclusive block")
-    ]
-
-    building_images = [
-        "building_images/2b9c88205102f941344e61aa6a509042560dc060_2zNqRp3.png",
-        "building_images/03d11e0485adfe2e423f79eecb7313719eb62ce2_CT6SS0w.png",
-        "building_images/0911835b756e25e2aa10ac7329e7a6a3b6094cdb_JRUef5K.png",
-        "building_images/2b9c88205102f941344e61aa6a509042560dc060_2zNqRp3.png",
-        "building_images/03d11e0485adfe2e423f79eecb7313719eb62ce2_CT6SS0w.png",
-        "building_images/0911835b756e25e2aa10ac7329e7a6a3b6094cdb_JRUef5K.png",
+        ("Elite Chamber", "VIP exclusive block"),
     ]
 
     buildings = []
-    for i,(name,desc) in enumerate(building_names):
 
-        img = os.path.join(settings.MEDIA_ROOT, building_images[i])
+    for name, desc in building_names:
+        building, created = Building.objects.get_or_create(
+            name=name,
+            defaults={"description": desc}
+        )
 
-        with open(img,'rb') as f:
-            b,created = Building.objects.get_or_create(
-                name=name,
-                defaults={"description": desc,"image":File(f,name=os.path.basename(img))}
-            )
+        if created:
+            print(f"🏢 {name} → CREATED")
+        else:
+            print(f"🏢 {name} → Already Exists")
 
-        print(f"🏢 {name} → {'CREATED' if created else 'Already Exists'}")
-        buildings.append(b)
+        # Assign image ONLY if empty
+        if not building.image:
+            print(f"📸 Assigning image → {name}")
+            assign_random_image(building)
 
-    # =============================
-    # 2️⃣ Six Floors (1 per building)
-    # =============================
+        buildings.append(building)
+
+    print("\n✔ Buildings ready (with images)\n")
+
+    # -----------------------------------------------------
+    # 2️⃣ FLOORS (1 per building)
+    # -----------------------------------------------------
     floors = []
-    for idx,b in enumerate(buildings,start=1):
-        floor,_=Floor.objects.get_or_create(
+    for idx, b in enumerate(buildings, start=1):
+
+        Floor.objects.filter(building=b, floor_number=idx).delete()
+
+        floor = Floor.objects.create(
             building=b,
             floor_number=idx,
-            defaults={"floor_name":f"Floor {idx}"}
+            floor_name=f"Floor {idx}"
         )
+
         floors.append(floor)
+
     print("🏢 Floors Created: 6")
 
-    # =============================
-    # 3️⃣ Six Location Families
-    # =============================
-    family_names = ["Guest Room","Service Area","Executive","Premium","Dining","General Utility"]
-    families=[LocationFamily.objects.get_or_create(name=n)[0] for n in family_names]
+    # -----------------------------------------------------
+    # 3️⃣ FAMILIES
+    # -----------------------------------------------------
+    family_names = ["Guest Room", "Service Area", "Executive", "Premium", "Dining", "General Utility"]
+    families = [LocationFamily.objects.get_or_create(name=n)[0] for n in family_names]
+
     print("👨‍👩‍👦 Families created: 6")
 
-    # =============================
-    # 4️⃣ Six Location Types
-    # =============================
-    type_names = ["Deluxe Room","Suite Room","Lobby","Dining Hall","Executive Suite","Conference Hall"]
-    types=[LocationType.objects.get_or_create(name=t,family=families[i])[0] for i,t in enumerate(type_names)]
+    # -----------------------------------------------------
+    # 4️⃣ TYPES
+    # -----------------------------------------------------
+    type_names = ["Deluxe Room", "Suite Room", "Lobby", "Dining Hall", "Executive Suite", "Conference Hall"]
+    types = [LocationType.objects.get_or_create(name=t, family=families[i])[0] for i, t in enumerate(type_names)]
+
     print("🏷 Types created: 6")
 
-    # =============================
-    # 5️⃣ Six Locations (One for each building)
-    # =============================
+    # -----------------------------------------------------
+    # 5️⃣ LOCATIONS (Auto Create)
+    # -----------------------------------------------------
     for i, b in enumerate(buildings):
-
-     Location.objects.get_or_create(
-        name=f"{101+i}",
-        
-        building=b,
-        floor=floors[i],
-        type=types[i],
-        family=types[i].family,      # <<< 🔥 FAMILY FIXED HERE
-        defaults={}
-    )
+        Location.objects.get_or_create(
+            name=f"{101+i}",
+            building=b,
+            floor=floors[i],
+            type=types[i],
+            family=types[i].family,
+            defaults={}
+        )
 
     print("📍 Locations Created: 6")
 
