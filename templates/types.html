@@ -54,7 +54,7 @@
       <!-- <div class="w-[1136px] left-[24px] top-[24px] relative"> -->
 
         <!-- Section Header -->
-        <div class="flex justify-between items-center mb-2  bg-white py-4">
+        <div class="flex justify-start gap-120 items-center mb-2  bg-white py-4">
           <div>
             <div class="text-gray-900 text-xl font-semibold font-['Inter'] px-6">Location Types</div>
             <div class="text-gray-600 text-sm font-normal font-['Inter'] px-6">
@@ -83,9 +83,9 @@
         </div>
         </div>
 
-        <div class="w-[1184px] mt-24 grid grid-cols-3 gap-6">
+        <div class="w-[1184px] mt-12 grid grid-cols-3 gap-6">
  {% for t in types %}
-    <div class="w-96 h-64 bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200 relative types-card" data-name="{{ t.name|lower }}">
+    <div class="w-96 h-64 bg-white bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow  outline outline-1 outline-offset-[-1px] outline-gray-200 relative types-card" data-name="{{ t.name|lower }}">
         
         <div class="w-80 h-10 left-[25px] top-[25px] relative bg-black/0 border-gray-200 inline-flex justify-between items-center">
             <div class="w-40 h-10 bg-black/0 border-gray-200 flex justify-start items-center gap-3">

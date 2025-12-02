@@ -241,7 +241,7 @@
                 <div class="space-y-3 text-sm">
                     <div class="flex justify-between"><span class="text-gray-600">Room Number:</span> <span class="font-medium text-gray-900">{{ room_number }}</span></div>
                     <div class="flex justify-between"><span class="text-gray-600">Guest:</span> <span class="font-medium text-gray-900">{{ guest_name }}</span></div>
-                    <div class="flex justify-between"><span class="text-gray-600">Guest Phone:</span> <span class="font-medium text-gray-900">{{ guest_phone|default:'-' }}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-600">Guest Phone:</span> <span class="font-medium text-gray-900">{{ guest_phone|default:'-' }}{{phone_number|default:'' }}</span></div>
                     <div class="flex justify-between"><span class="text-gray-600">Floor:</span> <span class="font-medium text-gray-900">{{ floor }}</span></div>
                     <div class="flex justify-between"><span class="text-gray-600">Room Type:</span> <span class="font-medium text-gray-900">{{ room_type }}</span></div>
                     <div class="flex justify-between"><span class="text-gray-600">Department:</span> <span class="font-medium text-gray-900">{{ department_name }}</span></div>

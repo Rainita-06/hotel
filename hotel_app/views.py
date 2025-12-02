@@ -3728,6 +3728,7 @@ def submit_ticket_review(request, review_id):
             priority=review.priority,
             guest_name=review.guest_name,
             room_no=review.room_no,
+            phone_number=review.phone_number,
             notes=review.request_text or "",
             status="pending",
             created_at=timezone.now(),

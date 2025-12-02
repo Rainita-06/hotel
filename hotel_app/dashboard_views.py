@@ -3252,7 +3252,11 @@ def ticket_detail(request, ticket_id):
     requester_name = 'Unknown'
     if service_request.requester_user:
         requester_name = service_request.requester_user.get_full_name() or service_request.requester_user.username
-    guest_name = ''
+    
+    guest_name = service_request.guest_name or ''
+    phone_number = service_request.phone_number if hasattr(service_request, 'phone_number') else ''
+    
+
     guest_phone = ''
     guest_room_number = ''
     if getattr(service_request, 'guest', None):
@@ -3447,6 +3451,7 @@ def ticket_detail(request, ticket_id):
         'guest_room_number': guest_room_number or room_number,
         'floor': floor,
         'guest_name':guest_name,
+        "phone_number":phone_number,
         'building': building,
         'room_type': room_type,
         'department_name': department_name,

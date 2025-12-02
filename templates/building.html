@@ -61,7 +61,7 @@
 <div class="w-[1184px] mx-auto bg-black/0 border-gray-200 py-8">
     <div class="grid grid-cols-3 gap-6">
         {% for b in buildings %}
-        <div class="building-card w-96 h-96 relative bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200 overflow-hidden" data-name="{{ b.name|lower }}">
+        <div class="building-card w-96 h-96 relative bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow outline outline-1 outline-offset-[-1px] outline-gray-200 overflow-hidden" data-name="{{ b.name|lower }}">
             <div class="w-96 h-48 left-[1px] top-[1px] absolute bg-gradient-to-r from-sky-600/10 to-teal-500/10 border-gray-200">
                <form id="imageForm{{b.building_id}}" action="{% url 'upload_building_image' b.building_id %}" method="POST" enctype="multipart/form-data">
                     {% csrf_token %}
