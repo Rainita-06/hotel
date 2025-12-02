@@ -10,7 +10,7 @@
             <h1 class="text-gray-900 text-2xl font-bold">Buildings</h1>
             <p class="text-gray-600 text-sm font-normal mt-1">Manage your property structure and floor layouts</p>
         </div>
-        <div class="w-95 h-10 bg-black/0 border-gray-200 flex justify-start items-center gap-4">
+        <div class="flex items-center gap-4 flex-wrap max-w-[500px]">
             <div class="flex items-center gap-4">
                 <form method="POST" action="{% url 'bulk_import_buildings' %}" enctype="multipart/form-data">
         {% csrf_token %}
