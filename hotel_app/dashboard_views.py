@@ -1,4 +1,4 @@
-﻿﻿﻿import json
+﻿import json
 import datetime
 import re
 from django.shortcuts import render, redirect, get_object_or_404
