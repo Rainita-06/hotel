@@ -1034,9 +1034,9 @@ def dashboard2_view(request):
             total_minutes = int(avg_resp.total_seconds() // 60)
             avg_response_display = f"{total_minutes}m" if total_minutes < 90 else f"{total_minutes // 60}h {total_minutes % 60}m"
         else:
-            avg_response_display = "—"
+            avg_response_display = "0%"
     except Exception:
-        avg_response_display = "—"
+        avg_response_display = "0%"
 
     # Staff efficiency: % completed (last 30d) that met resolution SLA
     try:
