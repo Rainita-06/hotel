@@ -3,7 +3,7 @@
     <div class="p-6 bg-white rounded-xl shadow-md border border-gray-200">
         <div class="flex justify-between items-start">
             <div>
-                <p class="text-sm font-medium text-gray-600 leading-tight">Guest<br>Satisfaction</p>
+                <p class="text-sm font-medium text-gray-600 leading-tight h-10 flex items-center">Guest<br>Satisfaction</p>
                 <p class="text-2xl font-bold text-green-500 mt-2">{{ guest_satisfaction }}%</p>
                 <div class="flex items-center text-xs {% if guest_satisfaction_change_direction == 'up' %}text-green-500{% else %}text-red-500{% endif %} mt-1 font-normal">
                     <svg class="h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -30,7 +30,7 @@
     <div class="p-6 bg-white rounded-xl shadow-md border border-gray-200">
         <div class="flex justify-between items-start">
             <div>
-                <p class="text-sm font-medium text-gray-600 leading-tight">Avg Response<br>Time</p>
+                <p class="text-sm font-medium text-gray-600 leading-tight h-10 flex items-center">Avg Response<br>Time</p>
                 <p class="text-2xl font-bold text-teal-500 mt-2">{{ avg_response_time }}</p>
                 <div class="flex items-center text-xs {% if avg_response_time_change_direction == 'down' %}text-green-500{% else %}text-red-500{% endif %} mt-1 font-normal">
                     <svg class="h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -57,7 +57,7 @@
     <div class="p-6 bg-white rounded-xl shadow-md border border-gray-200">
         <div class="flex justify-between items-start">
             <div>
-                <p class="text-sm font-medium text-gray-600">Staff Efficiency</p>
+                <p class="text-sm font-medium text-gray-600 leading-tight h-10 flex items-center">Staff Efficiency</p>
                 <p class="text-2xl font-bold text-fuchsia-700 mt-2">{{ staff_efficiency }}%</p>
                 <div class="flex items-center text-xs {% if staff_efficiency_change_direction == 'up' %}text-green-500{% else %}text-red-500{% endif %} mt-1 font-normal">
                     <svg class="h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -84,7 +84,7 @@
     <div class="p-6 bg-white rounded-xl shadow-md border border-gray-200">
         <div class="flex justify-between items-start">
             <div>
-                <p class="text-sm font-medium text-gray-600 leading-tight">Active GYM<br>Members</p>
+                <p class="text-sm font-medium text-gray-600 leading-tight h-10 flex items-center">Active GYM<br>Members</p>
                 <p class="text-2xl font-bold text-yellow-400 mt-2">{{ active_gym_members }}</p>
                 <div class="flex items-center text-xs {% if gym_members_change_direction == 'up' %}text-green-500{% else %}text-red-500{% endif %} mt-1 font-normal">
                     <svg class="h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -111,7 +111,7 @@
     <div class="p-6 bg-white rounded-xl shadow-md border border-gray-200">
         <div class="flex justify-between items-start">
             <div>
-                <p class="text-sm font-medium text-gray-600">Active Guests</p>
+                <p class="text-sm font-medium text-gray-600 leading-tight h-10 flex items-center">Active Guests</p>
                 <p class="text-2xl font-bold text-sky-600 mt-2">{{ active_guests }}</p>
                 <div class="flex items-center text-xs {% if active_guests_change_direction == 'up' %}text-green-500{% else %}text-red-500{% endif %} mt-1 font-normal">
                     <svg class="h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">

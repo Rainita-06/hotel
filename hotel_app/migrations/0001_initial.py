@@ -329,7 +329,7 @@ class Migration(migrations.Migration):
             name='ServiceRequest',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('guest_name', models.CharField(blank=True, max_length=100, null=True)),
+                # ('guest_name', models.CharField(blank=True, max_length=100, null=True)),
                 ('room_no', models.CharField(blank=True, max_length=50, null=True)),
                 ('phone_number', models.CharField(blank=True, max_length=50, null=True)),
                 ('body', models.TextField(blank=True, null=True)),
