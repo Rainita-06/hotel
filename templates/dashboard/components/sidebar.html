@@ -173,7 +173,7 @@
         <a href="{% url 'dashboard:feedback_inbox' %}"
           class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:feedback_inbox' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}">
           <img
-            src="{% if request.resolver_match.view_name == 'dashboard:feedback_inbox' %}{% static 'images/sidebar/feedback.svg' %}{% else %}{% static 'images/sidebar/feedback.svg' %}{% endif %}"
+            src="{% if request.resolver_match.view_name == 'dashboard:feedback_inbox' %}{% static 'images/sidebar/feedback_highlighted.svg' %}{% else %}{% static 'images/sidebar/feedback.svg' %}{% endif %}"
             alt="Feedback Icon" class="w-5 h-5" />
           <span class="font-medium">Feedback</span>
         </a>
