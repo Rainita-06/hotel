@@ -625,24 +625,34 @@ BUILDING_IMAGE_URLS = [
 # -----------------------------------------------------
 # FUNCTION → Assign random hotel image
 # -----------------------------------------------------
+from django.conf import settings
+
 def assign_random_image(building_obj):
     try:
         url = random.choice(BUILDING_IMAGE_URLS)
         filename = url.split("/")[-1].split("?")[0]
 
+        # Ensure folder exists: MEDIA_ROOT/building_images
+        folder_path = os.path.join(settings.MEDIA_ROOT, "building_images")
+        os.makedirs(folder_path, exist_ok=True)
+
         response = requests.get(url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
         if response.status_code == 200:
+
+            # Save inside building_images/
             building_obj.image.save(
-                filename,
+                f"building_images/{filename}",   # <--- REQUIRED FOR CORRECT PATH
                 ContentFile(response.content),
                 save=True
             )
-            print(f"✔ Auto-image assigned → {building_obj.name}")
+
+            print(f"Auto-image assigned → {building_obj.name}")
         else:
-            print(f"✖ Failed to download: {url}")
+            print(f"Failed to download: {url}")
 
     except Exception as e:
-        print(f"✖ Image assign error: {e}")
+        print(f"Image assign error: {e}")
+
 
 
 # -----------------------------------------------------
@@ -654,7 +664,7 @@ def create_basic_location_data(sender, **kwargs):
     if sender.name != "hotel_app":
         return
 
-    print("\n🔥 Auto-generating Base Location Set (6X Format)…\n")
+    print("\n Auto-generating Base Location Set (6X Format)…\n")
 
     # -----------------------------------------------------
     # 1️⃣ BUILDINGS (Created Only Once)
@@ -677,9 +687,9 @@ def create_basic_location_data(sender, **kwargs):
         )
 
         if created:
-            print(f"🏢 {name} → CREATED")
+            print(f" {name} → CREATED")
         else:
-            print(f"🏢 {name} → Already Exists")
+            print(f" {name} → Already Exists")
 
         # Assign image ONLY if empty
         if not building.image:
@@ -688,7 +698,7 @@ def create_basic_location_data(sender, **kwargs):
 
         buildings.append(building)
 
-    print("\n✔ Buildings ready (with images)\n")
+    print("\n Buildings ready (with images)\n")
 
     # -----------------------------------------------------
     # 2️⃣ FLOORS (1 per building)
@@ -706,7 +716,7 @@ def create_basic_location_data(sender, **kwargs):
 
         floors.append(floor)
 
-    print("🏢 Floors Created: 6")
+    print("Floors Created: 6")
 
     # -----------------------------------------------------
     # 3️⃣ FAMILIES
@@ -714,7 +724,7 @@ def create_basic_location_data(sender, **kwargs):
     family_names = ["Guest Room", "Service Area", "Executive", "Premium", "Dining", "General Utility"]
     families = [LocationFamily.objects.get_or_create(name=n)[0] for n in family_names]
 
-    print("👨‍👩‍👦 Families created: 6")
+    print(" Families created: 6")
 
     # -----------------------------------------------------
     # 4️⃣ TYPES
@@ -722,7 +732,7 @@ def create_basic_location_data(sender, **kwargs):
     type_names = ["Deluxe Room", "Suite Room", "Lobby", "Dining Hall", "Executive Suite", "Conference Hall"]
     types = [LocationType.objects.get_or_create(name=t, family=families[i])[0] for i, t in enumerate(type_names)]
 
-    print("🏷 Types created: 6")
+    print(" Types created: 6")
 
     # -----------------------------------------------------
     # 5️⃣ LOCATIONS (Auto Create)
@@ -737,6 +747,6 @@ def create_basic_location_data(sender, **kwargs):
             defaults={}
         )
 
-    print("📍 Locations Created: 6")
+    print(" Locations Created: 6")
 
-    print("\n✔ SUCCESS → 6 Buildings | 6 Floors | 6 Families | 6 Types | 6 Locations Ready!\n")
+    print("\n SUCCESS → 6 Buildings | 6 Floors | 6 Families | 6 Types | 6 Locations Ready!\n")
