@@ -238,4 +238,3 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.WARNING(f"⚠ Failed to create unmatched TicketReview #{i+1}: {e}"))
 
         self.stdout.write(self.style.SUCCESS("\n🎉 Done. ServiceRequest and TicketReview sample data created."))
-
