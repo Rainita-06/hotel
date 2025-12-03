@@ -235,16 +235,9 @@
         // Show the modal
         modal.style.display = 'block';
         
-        // Create and add modal backdrop
+        // Create and add modal backdrop with blur effect
         const backdrop = document.createElement('div');
-        backdrop.className = 'modal-backdrop fade show';
-        backdrop.style.position = 'fixed';
-        backdrop.style.top = '0';
-        backdrop.style.left = '0';
-        backdrop.style.width = '100%';
-        backdrop.style.height = '100%';
-        backdrop.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-        backdrop.style.zIndex = '1040';
+        backdrop.className = 'modal-backdrop fade show fixed inset-0 bg-black/20 backdrop-blur-sm z-[1040]';
         document.body.appendChild(backdrop);
       }
     }

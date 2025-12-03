@@ -100,9 +100,6 @@
                     {% if priority_filter %}<input autocomplete="off" type="hidden" name="priority" value="{{ priority_filter }}">{% endif %}
                     {% if status_filter %}<input autocomplete="off" type="hidden" name="status" value="{{ status_filter }}">{% endif %}
                 </form>
-                <!-- <button class="p-2 rounded-lg hover:bg-gray-100">
-                    <img src="{% static 'images/tickets/notification.svg' %}" alt="Notifications" class="w-6 h-6" />
-                </button> -->
                 <button class="p-2 rounded-lg hover:bg-gray-100">
                     <img src="{% static 'images/tickets/help.svg' %}" alt="Help" class="w-6 h-6" />
                 </button>
@@ -229,7 +226,6 @@
                     </select>
                 </form>
                 <div class="flex gap-2">
-                    <!-- SLA Button Removed -->
                     <button class="h-10 w-40 rounded-lg border border-sky-600 text-sky-600 flex items-center justify-center gap-2 hover:bg-sky-50 transition-colors">
                         <img src="{% static 'images/tickets/export.svg' %}" alt="Export Icon"/>
                         <span>Export</span>
@@ -314,7 +310,7 @@
                                     <img src="{% static 'images/tickets/eye.svg' %}" alt="View" class="w-5 h-5">
                                 </a>
                             </td>
-                           
+                            
                         </tr>
                         {% empty %}
                         <tr>
@@ -357,8 +353,9 @@
     </div>
     <div class="py-6">
     {% include "dashboard/ticket_review.html" %}</div>
-    <div id="createTicketModal" class="hidden fixed inset-0 z-[1000] items-center justify-center p-4 backdrop-blur-sm bg-black bg-opacity-30 transition-opacity duration-300 opacity-0" onclick="closeCreateTicketModal()">
-        <div id="modalContent" class="w-full max-w-2xl rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[95vh]" onclick="event.stopPropagation()">
+    
+    <div id="createTicketModal" class="hidden fixed inset-0 z-[1000] items-center justify-center p-4 backdrop-blur-md bg-black/30 transition-opacity duration-300 opacity-0" onclick="closeCreateTicketModal()">
+    <div id="modalContent" class="w-full max-w-2xl rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[95vh]" onclick="event.stopPropagation()">
             <div class="flex justify-between items-center p-6 border-b border-gray-200 flex-shrink-0">
                 <h2 class="text-xl font-semibold text-gray-900">Create New Ticket</h2>
                 <button id="closeCreateTicketModal" class="rounded-full p-1 text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Close">
@@ -394,10 +391,8 @@
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <img src="{% static 'images/tickets/category.svg' %}" alt="Category Icon" class="h-5 w-5 text-gray-400" />
                         </div>
-                        <!-- Suggestions dropdown -->
                         <div id="requestTypeSuggestions" class="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md hidden max-h-60 overflow-auto">
-                            <!-- Suggestions will be populated here dynamically -->
-                        </div>
+                            </div>
                     </div>
                 </div>
                 <div>
@@ -418,9 +413,6 @@
         </div>
     </div>
 
-    <!-- SLA Modal Removed -->
-    
-    <!-- Unmatched Requests Review Table -->
     {% if unmatched_requests %}
     <div class="mt-6 w-full bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-on-load">
         <div class="flex justify-between items-center mb-4">
@@ -1256,7 +1248,8 @@ document.addEventListener('DOMContentLoaded', function() {
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCookie('csrftoken')
-            }
+            },
+            body: JSON.stringify(data)
         })
         .then(response => response.json())
         .then(data => {

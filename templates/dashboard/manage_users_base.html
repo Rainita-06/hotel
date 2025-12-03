@@ -35,7 +35,6 @@
           </div>
         </div>
 
-        <!-- Export/Import Dropdown -->
         <div class="relative inline-block text-left z-20" id="exportImportDropdown">
           <button type="button" id="exportImportButton"
                   class="inline-flex items-center gap-2 h-10 px-3 rounded-lg bg-gray-100 text-gray-700 text-base font-medium font-['Inter'] hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors">
@@ -44,7 +43,7 @@
             </svg>
             Export/Import
           </button>
-          
+           
           <div id="exportImportMenu" class="hidden origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
             <div class="py-1" role="none">
               <button id="exportDataButton" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900" role="menuitem">
@@ -104,9 +103,9 @@
     {% endif %}
   </div>
 </main>
-<!-- Global modals -->
+
 <div id="createGroupModal" role="dialog" aria-modal="true" aria-labelledby="createGroupTitle"
-     class="fixed inset-0 z-[1000] hidden items-center justify-center p-4 backdrop-blur-sm bg-black bg-opacity-30 transition-opacity duration-300 opacity-0"
+     class="fixed inset-0 z-[1000] hidden items-center justify-center p-4 backdrop-blur-md bg-black/30 transition-opacity duration-300 opacity-0"
      onclick="closeModal('createGroupModal')">
   <div data-modal-content class="w-full max-w-md rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[95vh]"
        onclick="event.stopPropagation()">
@@ -161,9 +160,8 @@
   </div>
 </div>
 
-<!-- Import Data Modal -->
 <div id="importDataModal" role="dialog" aria-modal="true" aria-labelledby="importDataTitle"
-     class="fixed inset-0 z-[1000] hidden items-center justify-center p-4 backdrop-blur-sm bg-black bg-opacity-30 transition-opacity duration-300 opacity-0"
+     class="fixed inset-0 z-[1000] hidden items-center justify-center p-4 backdrop-blur-md bg-black/30 transition-opacity duration-300 opacity-0"
      onclick="closeModal('importDataModal')">
   <div data-modal-content class="w-full max-w-md rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[95vh]"
        onclick="event.stopPropagation()">
@@ -189,9 +187,8 @@
   </div>
 </div>
 
-<!-- Clear Data Confirmation Modal -->
 <div id="clearDataModal" role="dialog" aria-modal="true" aria-labelledby="clearDataTitle"
-     class="fixed inset-0 z-[1000] hidden items-center justify-center p-4 backdrop-blur-sm bg-black bg-opacity-30 transition-opacity duration-300 opacity-0"
+     class="fixed inset-0 z-[1000] hidden items-center justify-center p-4 backdrop-blur-md bg-black/30 transition-opacity duration-300 opacity-0"
      onclick="closeModal('clearDataModal')">
   <div data-modal-content class="w-full max-w-md rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[95vh]"
        onclick="event.stopPropagation()">
@@ -223,7 +220,7 @@
 </div>
 
 <div id="inviteUserModal" role="dialog" aria-modal="true" aria-labelledby="inviteUserTitle"
-     class="fixed inset-0 z-[1000] hidden items-center justify-center p-4 backdrop-blur-sm bg-black bg-opacity-30 transition-opacity duration-300 opacity-0"
+     class="fixed inset-0 z-[1000] hidden items-center justify-center p-4 backdrop-blur-md bg-black/30 transition-opacity duration-300 opacity-0"
      onclick="closeModal('inviteUserModal')">
   <div data-modal-content class="w-full max-w-md rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[95vh]"
        onclick="event.stopPropagation()">
@@ -282,7 +279,7 @@
 </div>
 
 <div id="addDepartmentModal" role="dialog" aria-modal="true" aria-labelledby="addDepartmentTitle"
-     class="fixed inset-0 z-[1000] hidden items-center justify-center p-4 backdrop-blur-sm bg-black bg-opacity-30 transition-opacity duration-300 opacity-0"
+     class="fixed inset-0 z-[1000] hidden items-center justify-center p-4 backdrop-blur-md bg-black/30 transition-opacity duration-300 opacity-0"
      onclick="closeModal('addDepartmentModal')">
     <div data-modal-content class="w-full max-w-lg rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[95vh]"
          onclick="event.stopPropagation()">
@@ -339,11 +336,9 @@
   <span id="toastMessage"></span>
 </div>
 
-<!-- User Profiles modals MUST be inside a block to render -->
 {% if active_tab == 'profiles' %}
-<!-- Edit Permissions Modal -->
 <div id="editPermissionsModal" role="dialog" aria-modal="true" aria-labelledby="editPermissionsTitle"
-     class="fixed inset-0 z-[1000] hidden items-center justify-center p-4 backdrop-blur-sm bg-black bg-opacity-30 transition-opacity duration-300 opacity-0" onclick="closeModal('editPermissionsModal')">
+     class="fixed inset-0 z-[1000] hidden items-center justify-center p-4 backdrop-blur-md bg-black/30 transition-opacity duration-300 opacity-0" onclick="closeModal('editPermissionsModal')">
   <div data-modal-content class="w-full max-w-5xl rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[95vh]" onclick="event.stopPropagation()">
     <div class="flex items-start justify-between p-5 border-b flex-shrink-0">
       <h3 id="editPermissionsTitle" class="text-lg font-semibold text-gray-900">Edit Permissions</h3>
@@ -358,7 +353,6 @@
         <p class="text-sm text-gray-600">Select section permissions for this profile</p>
       </div>
 
-      <!-- Section-based permissions table -->
       <div class="overflow-x-auto border border-gray-200 rounded-lg">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
@@ -384,9 +378,8 @@
   </div>
 </div>
 
-<!-- Bulk Edit Permissions Modal -->
 <div id="bulkEditPermissionsModal" role="dialog" aria-modal="true" aria-labelledby="bulkEditPermissionsTitle"
-     class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0" onclick="closeModal('bulkEditPermissionsModal')">
+     class="fixed inset-0 z-[1000] hidden items-center justify-center p-4 backdrop-blur-md bg-black/30 transition-opacity duration-300 opacity-0" onclick="closeModal('bulkEditPermissionsModal')">
   <div data-modal-content class="w-full max-w-4xl rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[90vh]" onclick="event.stopPropagation()">
     <div class="flex items-start justify-between p-5 border-b flex-shrink-0">
       <h3 id="bulkEditPermissionsTitle" class="modal-title text-lg font-semibold text-gray-900">Bulk Edit Permissions</h3>
@@ -411,9 +404,7 @@
         </div>
       </div>
 
-      <!-- Same permission tables as single-edit, using .permission-toggle checkboxes -->
       <div class="space-y-6">
-        <!-- Core, Admin, Staff tables identical to above (omitted here for brevity) -->
         <div>
           <h5 class="text-sm font-medium text-gray-900 mb-2">Core Permissions</h5>
           <div class="overflow-x-auto">
@@ -642,14 +633,14 @@
         // Build table rows from section permissions
         tbody.innerHTML = '';
         const sections = data.permissions_by_section;
-        
+         
         // Sort sections by display name for better UX
         const sortedSections = Object.entries(sections).sort((a, b) => {
           const nameA = a[1].display_name || a[0];
           const nameB = b[1].display_name || b[0];
           return nameA.localeCompare(nameB);
         });
-        
+         
         for (const [sectionName, perms] of sortedSections) {
           const tr = document.createElement('tr');
           tr.className = 'hover:bg-gray-50';
@@ -707,10 +698,10 @@
     // Collect section permissions - include all sections, checked and unchecked
     const form = document.getElementById('editPermissionsForm');
     const allCheckboxes = form.querySelectorAll('.section-permission-toggle');
-    
+     
     // Build permissions_by_section object for all sections
     const permissions_by_section = {};
-    
+     
     // Initialize sections with view/edit set to false
     allCheckboxes.forEach(cb => {
       const section = cb.dataset.section;
@@ -721,7 +712,7 @@
         };
       }
     });
-    
+     
     // Set checked permissions to true
     allCheckboxes.forEach(cb => {
       if (cb.checked) {
@@ -748,12 +739,12 @@
         // If response is not JSON, create a data object with error
         data = { error: `HTTP error! status: ${response.status}` };
       }
-      
+       
       if (!response.ok) {
         const errorMsg = data.error || data.message || `HTTP error! status: ${response.status}`;
         throw new Error(errorMsg);
       }
-      
+       
       return data;
     })
     .then(data => {
@@ -865,7 +856,7 @@
     try {
       const tab = String(window.manageUsersActiveTab || 'all').trim().toLowerCase();
       console.log('openPrimaryAction: tab =', tab, 'manageUsersActiveTab =', window.manageUsersActiveTab);
-      
+       
       if (tab === 'profiles') {
         // For profiles tab, create a new Django Group (role/profile)
         // Reset form first
@@ -875,7 +866,7 @@
           return;
         }
         form.reset();
-        
+         
         // Update modal title and submit button text
         const modalTitle = document.getElementById('createGroupTitle');
         const submitBtn = document.getElementById('createGroupSubmit');
@@ -887,7 +878,7 @@
         const errorEl = document.getElementById('createGroupError');
         const roleDiv = document.getElementById('createGroupRoleDiv');
         const usersDiv = document.getElementById('createGroupUsersDiv');
-        
+         
         if (modalTitle) modalTitle.textContent = 'Create Profile';
         if (submitBtn) submitBtn.textContent = 'Create Profile';
         if (nameLabel) nameLabel.textContent = 'Profile Name';
@@ -908,7 +899,7 @@
           errorEl.classList.add('hidden');
           errorEl.textContent = '';
         }
-        
+         
         // Show the modal
         console.log('About to call showModal for createGroupModal');
         const modal = document.getElementById('createGroupModal');
@@ -937,13 +928,13 @@
         }
         return;
       }
-      
+       
       if (tab === 'groups') {
         // For groups tab, update modal title and submit button text
         // Reset form first
         const form = document.getElementById('createGroupForm');
         if (form) form.reset();
-        
+         
         const modalTitle = document.getElementById('createGroupTitle');
         const submitBtn = document.getElementById('createGroupSubmit');
         const nameLabel = document.querySelector('label[for="createGroupName"]');
@@ -952,7 +943,7 @@
         const descDiv = document.getElementById('createGroupDescriptionDiv');
         const deptDiv = document.getElementById('createGroupDepartmentDiv');
         const errorEl = document.getElementById('createGroupError');
-        
+         
         if (modalTitle) modalTitle.textContent = 'Create Group';
         if (submitBtn) submitBtn.textContent = 'Create Group';
         if (nameLabel) nameLabel.textContent = 'Group Name';
@@ -975,7 +966,7 @@
           errorEl.classList.add('hidden');
           errorEl.textContent = '';
         }
-        
+         
         const modal = document.getElementById('createGroupModal');
         if (modal && typeof showModal === 'function') {
           showModal('createGroupModal');
@@ -1002,7 +993,7 @@
         }
         return;
       }
-      
+       
       // Default: open invite user modal
       if (typeof openInviteUserModal === 'function') {
         openInviteUserModal();
@@ -1058,11 +1049,11 @@
     } else {
       console.error('primaryActionBtn not found in DOM');
     }
-    
+     
     // Attach form submission handlers
     const createGroupForm = document.getElementById('createGroupForm');
     const createGroupSubmitBtn = document.getElementById('createGroupSubmit');
-    
+     
     if (createGroupForm && createGroupSubmitBtn) {
       // Attach submit handler to form
       createGroupForm.addEventListener('submit', function(e) {
@@ -1075,7 +1066,7 @@
           alert('Error: submitCreateGroup function not found. Please refresh the page.');
         }
       });
-      
+       
       // Also attach click handler to submit button as backup
       createGroupSubmitBtn.addEventListener('click', function(e) {
         e.preventDefault();
@@ -1087,12 +1078,12 @@
           form.dispatchEvent(submitEvent);
         }
       });
-      
+       
       console.log('createGroupForm submit handler attached successfully');
     } else {
       console.error('createGroupForm or createGroupSubmitBtn not found in DOM', {createGroupForm: !!createGroupForm, createGroupSubmitBtn: !!createGroupSubmitBtn});
     }
-    
+     
     document.getElementById('inviteUserForm')?.addEventListener('submit', (e) => submitInviteUser(e));
     document.getElementById('editPermissionsForm')?.addEventListener('submit', (e) => handleEditPermissionsSubmit(e));
     document.getElementById('bulkEditPermissionsForm')?.addEventListener('submit', (e) => handleBulkEditPermissionsSubmit(e));
@@ -1176,7 +1167,7 @@
     try {
       const tab = String(window.manageUsersActiveTab || 'all').trim().toLowerCase();
       console.log('openPrimaryAction: tab =', tab, 'manageUsersActiveTab =', window.manageUsersActiveTab);
-      
+       
       if (tab === 'profiles') {
         // For profiles tab, create a new Django Group (role/profile)
         // Reset form first
@@ -1186,7 +1177,7 @@
           return;
         }
         form.reset();
-        
+         
         // Update modal title and submit button text
         const modalTitle = document.getElementById('createGroupTitle');
         const submitBtn = document.getElementById('createGroupSubmit');
@@ -1198,7 +1189,7 @@
         const errorEl = document.getElementById('createGroupError');
         const roleDiv = document.getElementById('createGroupRoleDiv');
         const usersDiv = document.getElementById('createGroupUsersDiv');
-        
+         
         if (modalTitle) modalTitle.textContent = 'Create Profile';
         if (submitBtn) submitBtn.textContent = 'Create Profile';
         if (nameLabel) nameLabel.textContent = 'Profile Name';
@@ -1219,19 +1210,19 @@
           errorEl.classList.add('hidden');
           errorEl.textContent = '';
         }
-        
+         
         // Show the modal
         console.log('Calling showModal for createGroupModal');
         showModal('createGroupModal');
         return;
       }
-      
+       
       if (tab === 'groups') {
       // For groups tab, update modal title and submit button text
       // Reset form first
       const form = document.getElementById('createGroupForm');
       if (form) form.reset();
-      
+       
       const modalTitle = document.getElementById('createGroupTitle');
       const submitBtn = document.getElementById('createGroupSubmit');
       const nameLabel = document.querySelector('label[for="createGroupName"]');
@@ -1240,7 +1231,7 @@
       const descDiv = document.getElementById('createGroupDescriptionDiv');
       const deptDiv = document.getElementById('createGroupDepartmentDiv');
       const errorEl = document.getElementById('createGroupError');
-      
+       
       if (modalTitle) modalTitle.textContent = 'Create Group';
       if (submitBtn) submitBtn.textContent = 'Create Group';
       if (nameLabel) nameLabel.textContent = 'Group Name';
@@ -1263,7 +1254,7 @@
         errorEl.classList.add('hidden');
         errorEl.textContent = '';
       }
-      
+       
       showModal('createGroupModal');
       return;
     }
@@ -1276,7 +1267,7 @@
       }
       return;
     }
-    
+     
     // Default: open invite user modal
     openInviteUserModal();
     } catch (error) {
@@ -1308,14 +1299,14 @@
         if (roleSelect) {
           // Clear existing options
           roleSelect.innerHTML = '<option value="">Select Role</option>';
-          
+           
           // Add our predefined roles
           const roles = [
             { value: 'admin', text: 'Admin' },
             { value: 'staff', text: 'Staff' },
             { value: 'user', text: 'User' }
           ];
-          
+           
           roles.forEach(role => {
             const option = document.createElement('option');
             option.value = role.value;
@@ -1338,7 +1329,7 @@
       console.error('createGroupError element not found');
       return;
     }
-    
+     
     const formData = new FormData(form);
     const name = formData.get('name')?.trim();
 
@@ -1348,7 +1339,7 @@
       btn.disabled = false;
       return;
     }
-    
+     
     console.log('Form data:', {
       name: name,
       group_type: formData.get('group_type'),
@@ -1358,7 +1349,7 @@
     // Determine group type based on active tab
     const tab = String(window.manageUsersActiveTab || 'all').trim().toLowerCase();
     console.log('Active tab:', tab);
-    
+     
     if (tab === 'profiles') {
       // For profiles tab, create Django Group (only needs name)
       formData.append('group_type', 'django_group');
@@ -1372,7 +1363,7 @@
     btn.disabled = true;
     btn.textContent = 'Creating...';
     errorEl.classList.add('hidden');
-    
+     
     console.log('Submitting form to:', '{% url "dashboard:group_create" %}');
     console.log('FormData contents:', Array.from(formData.entries()));
 
@@ -1390,9 +1381,9 @@
         console.error('Error parsing JSON:', e);
         return { error: 'Failed to parse server response' };
       });
-      
+       
       console.log('Response payload:', payload);
-      
+       
       if (!response.ok) {
         let errorMsg = 'Failed to create profile.';
         if (payload.errors) {
@@ -1496,18 +1487,18 @@
     // Export/Import dropdown
     const exportImportButton = document.getElementById('exportImportButton');
     const exportImportMenu = document.getElementById('exportImportMenu');
-    
+     
     if (exportImportButton && exportImportMenu) {
       exportImportButton.addEventListener('click', function(e) {
         e.stopPropagation();
         exportImportMenu.classList.toggle('hidden');
-        
+         
         // Ensure the dropdown is visible and properly positioned
         if (!exportImportMenu.classList.contains('hidden')) {
           // Get button position
           const buttonRect = exportImportButton.getBoundingClientRect();
           const menuRect = exportImportMenu.getBoundingClientRect();
-          
+           
           // Check if menu would go off the right edge of the screen
           if (buttonRect.right + menuRect.width > window.innerWidth) {
             // Position menu to the left of the button
@@ -1520,14 +1511,14 @@
           }
         }
       });
-      
+       
       // Close dropdown when clicking outside
       document.addEventListener('click', function() {
         if (exportImportMenu) {
           exportImportMenu.classList.add('hidden');
         }
       });
-      
+       
       // Prevent menu from closing when clicking inside
       if (exportImportMenu) {
         exportImportMenu.addEventListener('click', function(e) {
@@ -1535,7 +1526,7 @@
         });
       }
     }
-    
+     
     // Export button - exports all data as Excel
     const exportDataButton = document.getElementById('exportDataButton');
     if (exportDataButton) {
@@ -1547,7 +1538,7 @@
         window.location.href = '{% url "dashboard:export_user_data" %}?format=xlsx';
       });
     }
-    
+     
     // Import button
     const importDataButton = document.getElementById('importDataButton');
     if (importDataButton) {
@@ -1558,7 +1549,7 @@
         openImportDataModal();
       });
     }
-    
+     
     // Clear data button
     const clearDataButton = document.getElementById('clearDataButton');
     if (clearDataButton) {
@@ -1569,7 +1560,7 @@
         openClearDataModal();
       });
     }
-    
+     
     // Import form submission
     const importDataForm = document.getElementById('importDataForm');
     if (importDataForm) {
@@ -1578,7 +1569,7 @@
         submitImportData(e);
       });
     }
-    
+     
     // Clear data confirmation
     const clearDataConfirm = document.getElementById('clearDataConfirm');
     if (clearDataConfirm) {
@@ -1587,24 +1578,24 @@
       });
     }
   });
-  
+   
   function openImportDataModal() {
     const form = document.getElementById('importDataForm');
     if (form) form.reset();
-    
+     
     const errorEl = document.getElementById('importDataError');
     if (errorEl) errorEl.classList.add('hidden');
-    
+     
     showModal('importDataModal');
   }
-  
+   
   function openClearDataModal() {
     const errorEl = document.getElementById('clearDataError');
     if (errorEl) errorEl.classList.add('hidden');
-    
+     
     showModal('clearDataModal');
   }
-  
+   
   function submitImportData(e) {
     e.preventDefault();
     const btn = document.getElementById('importDataSubmit');
@@ -1669,11 +1660,11 @@
       btn.textContent = 'Import Data';
     });
   }
-  
+   
   function submitClearData() {
     const btn = document.getElementById('clearDataConfirm');
     const errorEl = document.getElementById('clearDataError');
-    
+     
     btn.disabled = true;
     btn.textContent = 'Clearing...';
     errorEl.classList.add('hidden');
@@ -1710,6 +1701,6 @@
       btn.textContent = 'Clear All Data';
     });
   }
-  
+   
 </script>
 {% endblock extra_js %}

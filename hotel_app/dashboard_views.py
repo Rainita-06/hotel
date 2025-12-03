@@ -4607,7 +4607,8 @@ def manage_users_profiles(request):
     )
     
     # Get all Django groups (not just the three default ones)
-    groups = Group.objects.all().order_by('name')
+    # Exclude groups named 'admin' or 'admins' (case-insensitive)
+    groups = Group.objects.exclude(name__iexact='admin').exclude(name__iexact='admins').order_by('name')
     
     # Get user count for each group
     group_user_counts = {}
