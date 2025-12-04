@@ -3,16 +3,19 @@
 {% block content %}
 
 <div class="min-h-screen bg-gray-50 flex justify-center items-start py-8 px-4 sm:px-6 lg:px-8">
-  
-  <!-- Responsive Container (max-width controls overall size) -->
+  <!-- Responsive Container -->
   <div class="w-full max-w-5xl bg-white rounded-xl shadow-lg border border-gray-200">
     
     <!-- Header -->
     <div class="w-full h-auto min-h-20 px-4 py-4 sm:px-6 bg-white border-b border-gray-200">
-      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 class="text-gray-900 text-xl sm:text-2xl font-bold font-['Inter'] leading-tight">Guest Check-In & Breakfast Voucher</h1>
-          <p class="text-gray-600 text-sm font-normal font-['Inter'] mt-1">Register guests and generate breakfast voucher with QR code</p>
+          <h1 class="text-gray-900 text-xl sm:text-2xl font-bold font-['Inter'] leading-tight">
+            Guest Check-In & Breakfast Voucher
+          </h1>
+          <p class="text-gray-600 text-sm font-normal font-['Inter'] mt-1">
+            Register guests and generate breakfast voucher with QR code
+          </p>
         </div>
       </div>
     </div>
@@ -24,68 +27,123 @@
       <form method="POST" autocomplete="off">
         {% csrf_token %}
         
-        <!-- Main Form Grid: 1 column on mobile, 2 columns on medium+ -->
+        <!-- Main Form Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
           
           <!-- Left Column -->
           <div class="space-y-6">
-            
             <!-- Guest Name -->
             <div>
-              <label class="block text-gray-900 text-sm font-medium font-['Inter'] mb-2">Guest Name</label>
-              <input type="text" name="guest_name" required 
-                     class="w-full h-12 px-4 bg-white rounded-lg border border-gray-200 text-gray-900 text-base font-normal leading-normal focus:ring-blue-500 focus:border-blue-500"
-                     placeholder="Enter guest full name">
+              <label class="block text-gray-900 text-sm font-medium font-['Inter'] mb-2">
+                Guest Name
+              </label>
+              <input
+                type="text"
+                name="guest_name"
+                required
+                class="w-full h-12 px-4 bg-white rounded-lg border border-gray-200 text-gray-900 text-base font-normal leading-normal focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Enter guest full name"
+              >
             </div>
 
             <!-- Phone Number with Country Code -->
             <div>
-              <label class="block text-gray-900 text-sm font-medium font-['Inter'] mb-2">Phone Number</label>
+              <label class="block text-gray-900 text-sm font-medium font-['Inter'] mb-2">
+                Phone Number
+              </label>
               <div class="flex h-12">
-                <!-- Country Code Dropdown (Adjusted width for responsiveness) -->
+                <!-- Country Code Dropdown -->
                 <div class="relative">
-                  <select name="country_code" id="countryCode" 
-                          class="w-24 sm:w-32 bg-gray-50 rounded-tl-lg rounded-bl-lg border border-gray-200 text-black text-sm font-normal pl-3 pr-8 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 h-full cursor-pointer">
+                  <select
+                    name="country_code"
+                    id="countryCode"
+                    class="w-24 sm:w-32 bg-gray-50 rounded-tl-lg rounded-bl-lg border border-gray-200 text-black text-sm font-normal pl-3 pr-8 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 h-full cursor-pointer"
+                  >
                     <!-- Options populated by JavaScript -->
                   </select>
                   <!-- Dropdown Arrow -->
-                  <svg class="w-4 h-4 absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                  <svg
+                    class="w-4 h-4 absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none text-gray-700"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 9l-7 7-7-7"
+                    />
                   </svg>
                 </div>
                 <!-- Phone Number Input -->
-                <input type="tel" name="phone_number" required
-                       class="flex-1 bg-white rounded-tr-lg rounded-br-lg border border-gray-200 px-4 text-gray-900 text-base font-normal leading-normal focus:ring-blue-500 focus:border-blue-500"
-                       placeholder="Enter phone number">
+                <input
+                  type="tel"
+                  name="phone_number"
+                  required
+                  class="flex-1 bg-white rounded-tr-lg rounded-br-lg border border-gray-200 px-4 text-gray-900 text-base font-normal leading-normal focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter phone number"
+                >
               </div>
             </div>
 
             <!-- Adults -->
             <div>
-              <label class="block text-gray-900 text-sm font-medium font-['Inter'] mb-2">Adults</label>
-              <input type="number" name="adults" min="1" value="1"
-                     class="w-full h-12 px-4 bg-white rounded-lg border border-gray-200 text-gray-900 text-base font-normal leading-normal focus:ring-blue-500 focus:border-blue-500">
+              <label class="block text-gray-900 text-sm font-medium font-['Inter'] mb-2">
+                Adults
+              </label>
+              <input
+                type="number"
+                name="adults"
+                min="1"
+                value="1"
+                class="w-full h-12 px-4 bg-white rounded-lg border border-gray-200 text-gray-900 text-base font-normal leading-normal focus:ring-blue-500 focus:border-blue-500"
+              >
             </div>
 
             <!-- Check-in Date -->
             <div>
-              <label class="block text-gray-900 text-sm font-medium font-['Inter'] mb-2">Check-in Date</label>
+              <label class="block text-gray-900 text-sm font-medium font-['Inter'] mb-2">
+                Check-in Date
+              </label>
               <div class="relative">
-                <input type="date" name="check_in_date"
-                       class="w-full h-12 px-4 bg-white rounded-lg border border-gray-200 text-gray-900 text-sm font-normal leading-normal focus:ring-blue-500 focus:border-blue-500 appearance-none">
-                <!-- Calendar Icon Placeholder -->
-                <svg class="w-6 h-4 absolute right-3 top-3 pointer-events-none text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                <input
+                  type="date"
+                  name="check_in_date"
+                  class="w-full h-12 px-4 bg-white rounded-lg border border-gray-200 text-gray-900 text-sm font-normal leading-normal focus:ring-blue-500 focus:border-blue-500 appearance-none"
+                >
+                <!-- Calendar Icon -->
+                <svg
+                  class="w-6 h-4 absolute right-3 top-3 pointer-events-none text-gray-300"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
                 </svg>
               </div>
             </div>
 
             <!-- Include Breakfast Toggle -->
             <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 flex justify-between items-center">
-              <label class="text-gray-900 text-sm font-medium font-['Inter'] cursor-pointer">Include Breakfast in this stay</label>
+              <label class="text-gray-900 text-sm font-medium font-['Inter'] cursor-pointer">
+                Include Breakfast in this stay
+              </label>
               <label class="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" name="include_breakfast" class="sr-only peer" checked>
-                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                <input
+                  type="checkbox"
+                  name="include_breakfast"
+                  class="sr-only peer"
+                  checked
+                >
+                <div
+                  class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"
+                ></div>
               </label>
             </div>
           </div>
@@ -94,85 +152,140 @@
           <div class="space-y-6">
             <!-- Room Number -->
             <div>
-              <label class="block text-gray-900 text-sm font-medium font-['Inter'] mb-2">Room Number</label>
-              <input type="text" name="room_no"
-                     class="w-full h-12 px-4 bg-white rounded-lg border border-gray-200 text-gray-900 text-base font-normal leading-normal focus:ring-blue-500 focus:border-blue-500"
-                     placeholder="e.g., 205A">
+              <label class="block text-gray-900 text-sm font-medium font-['Inter'] mb-2">
+                Room Number
+              </label>
+              <input
+                type="text"
+                name="room_no"
+                class="w-full h-12 px-4 bg-white rounded-lg border border-gray-200 text-gray-900 text-base font-normal leading-normal focus:ring-blue-500 focus:border-blue-500"
+                placeholder="e.g., 205A"
+              >
             </div>
 
             <!-- Email Address -->
             <div>
-              <label class="block text-gray-900 text-sm font-medium font-['Inter'] mb-2">Email Address</label>
-              <input type="email" name="email"
-                     class="w-full h-12 px-4 bg-white rounded-lg border border-gray-200 text-gray-900 text-base font-normal leading-normal focus:ring-blue-500 focus:border-blue-500"
-                     placeholder="Enter email address">
+              <label class="block text-gray-900 text-sm font-medium font-['Inter'] mb-2">
+                Email Address
+              </label>
+              <input
+                type="email"
+                name="email"
+                class="w-full h-12 px-4 bg-white rounded-lg border border-gray-200 text-gray-900 text-base font-normal leading-normal focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Enter email address"
+              >
             </div>
 
             <!-- Kids -->
             <div>
-              <label class="block text-gray-900 text-sm font-medium font-['Inter'] mb-2">Kids</label>
-              <input type="number" name="kids" min="0" value="0"
-                     class="w-full h-12 px-4 bg-white rounded-lg border border-gray-200 text-gray-900 text-base font-normal leading-normal focus:ring-blue-500 focus:border-blue-500">
+              <label class="block text-gray-900 text-sm font-medium font-['Inter'] mb-2">
+                Kids
+              </label>
+              <input
+                type="number"
+                name="kids"
+                min="0"
+                value="0"
+                class="w-full h-12 px-4 bg-white rounded-lg border border-gray-200 text-gray-900 text-base font-normal leading-normal focus:ring-blue-500 focus:border-blue-500"
+              >
             </div>
 
             <!-- Check-out Date -->
             <div>
-              <label class="block text-gray-900 text-sm font-medium font-['Inter'] mb-2">Check-out Date</label>
+              <label class="block text-gray-900 text-sm font-medium font-['Inter'] mb-2">
+                Check-out Date
+              </label>
               <div class="relative">
-                <input type="date" name="check_out_date"
-                       class="w-full h-12 px-4 bg-white rounded-lg border border-gray-200 text-gray-900 text-sm font-normal leading-normal focus:ring-blue-500 focus:border-blue-500 appearance-none">
-                <!-- Calendar Icon Placeholder -->
-                <svg class="w-6 h-4 absolute right-3 top-3 pointer-events-none text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                <input
+                  type="date"
+                  name="check_out_date"
+                  class="w-full h-12 px-4 bg-white rounded-lg border border-gray-200 text-gray-900 text-sm font-normal leading-normal focus:ring-blue-500 focus:border-blue-500 appearance-none"
+                >
+                <!-- Calendar Icon -->
+                <svg
+                  class="w-6 h-4 absolute right-3 top-3 pointer-events-none text-gray-300"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
                 </svg>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Voucher Options Section (Full Width) -->
+        <!-- Voucher Options Section -->
         <div class="mt-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
-          <h3 class="text-gray-900 text-lg font-semibold font-['Inter'] mb-4">Voucher Options</h3>
+          <h3 class="text-gray-900 text-lg font-semibold font-['Inter'] mb-4">
+            Voucher Options
+          </h3>
           <div class="space-y-4">
-            
             <!-- Generate QR Voucher Checkbox -->
             <div class="flex items-center gap-3">
-              <input type="checkbox" name="generate_qr" checked
-                     class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-              <label class="text-gray-900 text-sm font-medium font-['Inter'] cursor-pointer">Generate QR Voucher Automatically</label>
+              <input
+                type="checkbox"
+                name="generate_qr"
+                checked
+                class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              >
+              <label class="text-gray-900 text-sm font-medium font-['Inter'] cursor-pointer">
+                Generate QR Voucher Automatically
+              </label>
             </div>
 
             <!-- Voucher Type Dropdown -->
             <div>
-              <label class="block text-gray-900 text-sm font-medium font-['Inter'] mb-2">Voucher Type</label>
+              <label class="block text-gray-900 text-sm font-medium font-['Inter'] mb-2">
+                Voucher Type
+              </label>
               <div class="relative">
-                <select name="voucher_type" 
-                        class="w-full h-12 px-3 bg-white rounded-lg border border-gray-200 text-gray-900 text-base font-normal leading-normal focus:ring-blue-500 focus:border-blue-500 appearance-none">
+                <select
+                  name="voucher_type"
+                  class="w-full h-12 px-3 bg-white rounded-lg border border-gray-200 text-gray-900 text-base font-normal leading-normal focus:ring-blue-500 focus:border-blue-500 appearance-none"
+                >
                   <option value="Breakfast" selected>Breakfast</option>
                   <!-- <option value="Lunch">Lunch</option> -->
                   <!-- <option value="Dinner">Dinner</option> -->
                 </select>
                 <!-- Dropdown Arrow -->
-                <svg class="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                <svg
+                  class="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none text-gray-700"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Action Buttons (Stacked on mobile, side-by-side on sm+) -->
+        <!-- Action Buttons -->
         <div class="flex flex-col sm:flex-row gap-4 mt-8">
-          <button type="button" onclick="window.history.back()"
-                  class="w-full sm:w-24 h-12 px-6 rounded-xl border border-gray-300 text-gray-700 text-base font-medium hover:bg-gray-50 transition-colors">
+          <button
+            type="button"
+            onclick="window.history.back()"
+            class="w-full sm:w-24 h-12 px-6 rounded-xl border border-gray-300 text-gray-700 text-base font-medium hover:bg-gray-50 transition-colors"
+          >
             Cancel
           </button>
-          
-          <!-- Submit Button - Simplified and made responsive -->
-          <button type="submit"
-                  class="w-full sm:w-72 h-12 px-6 py-3 bg-blue-600 rounded-xl text-white text-base font-medium flex items-center justify-center gap-2 hover:bg-blue-700 transition-colors">
-            
-            <img src="{% static 'icon/right.svg'%}" class="w-3.5 h-4" alt="Generate">
+          <button
+            type="submit"
+            class="w-full sm:w-72 h-12 px-6 py-3 bg-blue-600 rounded-xl text-white text-base font-medium flex items-center justify-center gap-2 hover:bg-blue-700 transition-colors"
+          >
+            <img src="{% static 'icon/right.svg' %}" class="w-3.5 h-4" alt="Generate">
             <span>Generate Voucher</span>
           </button>
         </div>
@@ -246,11 +359,7 @@ const countries = [
   { code: '+964', name: 'Iraq', flag: '🇮🇶' },
   { code: '+98', name: 'Iran', flag: '🇮🇷' },
   { code: '+972', name: 'Israel', flag: '🇮🇱' },
-  { code: '+973', name: 'Bahrain', flag: '🇧🇭' },
-  { code: '+974', name: 'Qatar', flag: '🇶🇦' },
   { code: '+975', name: 'Bhutan', flag: '🇧🇹' },
-  { code: '+976', name: 'Mongolia', flag: '🇲🇳' },
-  { code: '+977', name: 'Nepal', flag: '🇳🇵' },
   { code: '+992', name: 'Tajikistan', flag: '🇹🇯' },
   { code: '+993', name: 'Turkmenistan', flag: '🇹🇲' },
   { code: '+994', name: 'Azerbaijan', flag: '🇦🇿' },
@@ -393,7 +502,6 @@ const countries = [
   { code: '+850', name: 'North Korea', flag: '🇰🇵' },
   { code: '+852', name: 'Hong Kong', flag: '🇭🇰' },
   { code: '+853', name: 'Macau', flag: '🇲🇴' },
-  { code: '+855', name: 'Cambodia', flag: '🇰🇭' },
   { code: '+856', name: 'Laos', flag: '🇱🇦' },
   { code: '+880', name: 'Bangladesh', flag: '🇧🇩' },
   { code: '+886', name: 'Taiwan', flag: '🇹🇼' },
@@ -425,14 +533,12 @@ const countries = [
 // Populate dropdown with all countries
 function populateCountryDropdown() {
   const select = document.getElementById('countryCode');
-  
   countries.forEach(country => {
     const option = document.createElement('option');
     option.value = country.code;
     option.textContent = `${country.flag} ${country.code} ${country.name}`;
     select.appendChild(option);
   });
-  
   // Set default (Indonesia +62 based on user's custom default)
   select.value = '+62';
 }
@@ -444,28 +550,27 @@ document.addEventListener('DOMContentLoaded', function() {
   // Set default dates
   const today = new Date();
   const todayISO = today.toISOString().split('T')[0];
-  const tomorrow = new Date(today.getTime() + 86400000); // 24 hours later
+  const tomorrow = new Date(today.getTime() + 86400000);
   const tomorrowISO = tomorrow.toISOString().split('T')[0];
-  
+
   const checkInInput = document.querySelector('input[name="check_in_date"]');
   const checkOutInput = document.querySelector('input[name="check_out_date"]');
 
   if (checkInInput) {
     checkInInput.value = todayISO;
     checkInInput.min = todayISO;
-    
-    // Event listener for date validation
+
     checkInInput.addEventListener('change', function() {
       const checkIn = new Date(this.value);
       const minCheckOut = new Date(checkIn.getTime() + 86400000).toISOString().split('T')[0];
-      
+
       checkOutInput.min = minCheckOut;
       if (checkOutInput.value <= this.value) {
         checkOutInput.value = minCheckOut;
       }
     });
   }
-  
+
   if (checkOutInput) {
     checkOutInput.value = tomorrowISO;
     checkOutInput.min = tomorrowISO;
@@ -476,7 +581,7 @@ document.addEventListener('DOMContentLoaded', function() {
 document.querySelector('form').addEventListener('submit', function(e) {
   const phoneInput = document.querySelector('input[name="phone_number"]');
   const phone = phoneInput.value.replace(/\D/g, '');
-  
+
   if (phone.length > 0 && phone.length < 7) {
     e.preventDefault();
     alert('Please enter a valid phone number (at least 7 digits)');
@@ -484,4 +589,5 @@ document.querySelector('form').addEventListener('submit', function(e) {
   }
 });
 </script>
+
 {% endblock %}
