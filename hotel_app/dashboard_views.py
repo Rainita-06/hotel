@@ -3861,115 +3861,94 @@ def my_tickets(request):
 @require_permission([ADMINS_GROUP])
 def configure_requests(request):
     """Render the Predefined / Configure Requests page.
-    Uses actual department data from the database.
+    Dynamically loads request templates from SLA Configuration with department associations.
     """
     # Get all departments from the database
     departments = Department.objects.all().order_by('name')
     
-    # Get all request types and associate them with departments
-    request_types = RequestType.objects.select_related('work_family').all()
+    # Get all active request types with their department and SLA configurations
+    request_types = RequestType.objects.select_related(
+        'default_department', 
+        'work_family', 
+        'request_family'
+    ).filter(active=True).order_by('name')
     
-    # Create requests list with actual department data
+    # Create requests list with actual department data and SLA info
     requests_list = []
     
-    # First, add request types that have a work_family (department association)
     for request_type in request_types:
+        # Determine the department
+        department = None
         department_name = 'General'
+        
+        # Priority: default_department > work_family > request_family
+        if request_type.default_department:
+            department = request_type.default_department
+            department_name = department.name
+        elif request_type.work_family:
+            department_name = request_type.work_family.name
+        elif request_type.request_family:
+            department_name = request_type.request_family.name
+        
+        # Determine icon and colors based on department
         icon = 'images/manage_users/general.svg'
         icon_bg = 'bg-gray-500/10'
         tag_bg = 'bg-gray-500/10'
+        tag_color = 'text-gray-500'
         
-        if request_type.work_family:
-            department_name = request_type.work_family.name
-            # Map department names to appropriate icons
-            department_lower = department_name.lower()
-            if 'housekeeping' in department_lower:
-                icon = 'images/manage_users/house_keeping.svg'
-                icon_bg = 'bg-green-500/10'
-                tag_bg = 'bg-green-500/10'
-            elif 'maintenance' in department_lower:
-                icon = 'images/manage_users/maintainence.svg'
-                icon_bg = 'bg-yellow-400/10'
-                tag_bg = 'bg-yellow-400/10'
-            elif 'concierge' in department_lower:
-                icon = 'images/manage_users/concierge.svg'
-                icon_bg = 'bg-fuchsia-700/10'
-                tag_bg = 'bg-fuchsia-700/10'
-            elif 'food' in department_lower or 'restaurant' in department_lower:
-                icon = 'images/manage_users/food_beverage.svg'
-                icon_bg = 'bg-red-500/10'
-                tag_bg = 'bg-red-500/10'
-            elif 'front' in department_lower or 'desk' in department_lower:
-                icon = 'images/manage_users/front_office.svg'
-                icon_bg = 'bg-sky-500/10'
-                tag_bg = 'bg-sky-500/10'
-            else:
-                # Default icon for other departments
-                icon = f'images/manage_users/{department_lower.replace(" ", "_")}.svg'
-                icon_bg = 'bg-blue-500/10'
-                tag_bg = 'bg-blue-500/10'
+        department_lower = department_name.lower()
+        if 'housekeeping' in department_lower:
+            icon = 'images/manage_users/house_keeping.svg'
+            icon_bg = 'bg-green-500/10'
+            tag_bg = 'bg-green-500/10'
+            tag_color = 'text-green-500'
+        elif 'maintenance' in department_lower:
+            icon = 'images/manage_users/maintainence.svg'
+            icon_bg = 'bg-yellow-400/10'
+            tag_bg = 'bg-yellow-400/10'
+            tag_color = 'text-yellow-400'
+        elif 'concierge' in department_lower:
+            icon = 'images/manage_users/concierge.svg'
+            icon_bg = 'bg-fuchsia-700/10'
+            tag_bg = 'bg-fuchsia-700/10'
+            tag_color = 'text-fuchsia-700'
+        elif 'food' in department_lower or 'beverage' in department_lower or 'restaurant' in department_lower:
+            icon = 'images/manage_users/food_beverage.svg'
+            icon_bg = 'bg-teal-500/10'
+            tag_bg = 'bg-teal-500/10'
+            tag_color = 'text-teal-500'
+        elif 'front' in department_lower or 'desk' in department_lower:
+            icon = 'images/manage_users/front_office.svg'
+            icon_bg = 'bg-sky-600/10'
+            tag_bg = 'bg-sky-600/10'
+            tag_color = 'text-sky-600'
+        elif 'it' in department_lower or 'technology' in department_lower or 'support' in department_lower:
+            icon = 'images/manage_users/it_support.svg'
+            icon_bg = 'bg-sky-600/10'
+            tag_bg = 'bg-sky-600/10'
+            tag_color = 'text-sky-600'
+        else:
+            # Default icon for other departments
+            icon = 'images/manage_users/general.svg'
+            icon_bg = 'bg-blue-500/10'
+            tag_bg = 'bg-blue-500/10'
+            tag_color = 'text-blue-500'
         
         requests_list.append({
+            'id': request_type.request_type_id,
             'title': request_type.name,
             'department': department_name,
-            'description': request_type.description or f'Request type for {department_name}',
-            'fields': 4,  # This would need to be calculated based on actual fields
+            'department_id': department.pk if department else None,
+            'description': request_type.description or f'Submit a {request_type.name} request',
+            'fields': 4,  # Default field count
             'exposed': request_type.active,
             'icon': icon,
             'icon_bg': icon_bg,
             'tag_bg': tag_bg,
+            'tag_color': tag_color,
         })
     
-    # Add departments that don't have request types yet as placeholders
-    for department in departments:
-        # Check if we already have requests for this department
-        has_requests = any(req['department'] == department.name for req in requests_list)
-        
-        if not has_requests:
-            # Add a placeholder request for the department
-            department_lower = department.name.lower()
-            icon = 'images/manage_users/general.svg'
-            icon_bg = 'bg-gray-500/10'
-            tag_bg = 'bg-gray-500/10'
-            
-            # Map department names to appropriate icons
-            if 'housekeeping' in department_lower:
-                icon = 'images/manage_users/house_keeping.svg'
-                icon_bg = 'bg-green-500/10'
-                tag_bg = 'bg-green-500/10'
-            elif 'maintenance' in department_lower:
-                icon = 'images/manage_users/maintainence.svg'
-                icon_bg = 'bg-yellow-400/10'
-                tag_bg = 'bg-yellow-400/10'
-            elif 'concierge' in department_lower:
-                icon = 'images/manage_users/concierge.svg'
-                icon_bg = 'bg-fuchsia-700/10'
-                tag_bg = 'bg-fuchsia-700/10'
-            elif 'food' in department_lower or 'restaurant' in department_lower:
-                icon = 'images/manage_users/food_beverage.svg'
-                icon_bg = 'bg-red-500/10'
-                tag_bg = 'bg-red-500/10'
-            elif 'front' in department_lower or 'desk' in department_lower:
-                icon = 'images/manage_users/front_office.svg'
-                icon_bg = 'bg-sky-500/10'
-                tag_bg = 'bg-sky-500/10'
-            else:
-                # Default icon for other departments
-                icon = f'images/manage_users/{department_lower.replace(" ", "_")}.svg'
-                icon_bg = 'bg-blue-500/10'
-                tag_bg = 'bg-blue-500/10'
-            
-            requests_list.append({
-                'title': f'{department.name} Request',
-                'department': department.name,
-                'description': f'Request services from the {department.name} department',
-                'fields': 3,
-                'exposed': True,
-                'icon': icon,
-                'icon_bg': icon_bg,
-                'tag_bg': tag_bg,
-            })
-    
+    # Calculate counts
     counts = {
         'all': len(requests_list),
         'portal': len([r for r in requests_list if r['exposed']]),
@@ -3980,6 +3959,7 @@ def configure_requests(request):
         'requests': requests_list,
         'counts': counts,
         'active_tab': 'all',
+        'departments': departments,
     }
     return render(request, 'dashboard/predefined_requests.html', context)
 import json
