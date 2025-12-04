@@ -28,6 +28,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project
 COPY . /app/
 
+RUN mkdir -p /app/media/qrcodes \
+    && chown -R appuser:appuser /app/media \
+    && chmod -R 755 /app/media
+
 # Change ownership and switch to non-root user
 RUN chown -R appuser:appuser /app
 USER appuser
