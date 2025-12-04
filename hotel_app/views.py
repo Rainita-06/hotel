@@ -1635,41 +1635,107 @@ from django.http import HttpResponse
 from django.shortcuts import render
 from .models import Voucher
 from django.utils import timezone
-# import pandas as pd
+# # import pandas as pd
+
+# @login_required
+# @require_section_permission('breakfast_voucher', 'view')
+# def breakfast_voucher_report(request):
+    
+    
+#     today = timezone.localdate()
+#     week_start = today - timedelta(days=today.weekday())  # Start of week (Monday)
+
+#     vouchers = Voucher.objects.all()
+    
+
+#     # Calculate counts
+#     daily_checkins = vouchers.filter(check_in_date=today).count()
+#     daily_checkouts = vouchers.filter(check_out_date=today).count()
+    
+#     weekly_checkins = vouchers.filter(check_in_date__range=[week_start, today]).count()
+#     weekly_checkouts = vouchers.filter(check_out_date__range=[week_start, today]).count()
+
+#     df =  pd.DataFrame(Voucher.objects.all().values())
+
+#     # ✅ Convert timezone-aware datetimes to naive datetimes
+#     for col in df.select_dtypes(include=['datetimetz']).columns:
+#         df[col] = df[col].dt.tz_localize(None)
+
+#     if request.GET.get("export") == "1":
+#         response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+#         response["Content-Disposition"] = 'attachment; filename="vouchers.xlsx"'
+#         df.to_excel(response, index=False)
+#         return response
+
+#     return render(request, "breakfast_voucher_report.html", {"vouchers": vouchers,'daily_checkins': daily_checkins,
+#         'daily_checkouts': daily_checkouts,
+#         'weekly_checkins': weekly_checkins,
+#         'weekly_checkouts': weekly_checkouts,})
 
 @login_required
 @require_section_permission('breakfast_voucher', 'view')
 def breakfast_voucher_report(request):
-    
-    
+
     today = timezone.localdate()
-    week_start = today - timedelta(days=today.weekday())  # Start of week (Monday)
+    week_start = today - timedelta(days=today.weekday())  # Monday
 
-    vouchers = Voucher.objects.all()
+    vouchers = Voucher.objects.all().order_by("-id")
 
-    # Calculate counts
-    daily_checkins = vouchers.filter(check_in_date=today).count()
-    daily_checkouts = vouchers.filter(check_out_date=today).count()
-    
-    weekly_checkins = vouchers.filter(check_in_date__range=[week_start, today]).count()
-    weekly_checkouts = vouchers.filter(check_out_date__range=[week_start, today]).count()
+    # ✅ Get filter values
+    from_date = request.GET.get("from_date")
+    to_date = request.GET.get("to_date")
 
-    df =  pd.DataFrame(Voucher.objects.all().values())
+    # ✅ ✅ ✅ CORRECT DATE FILTER USING check_in_date ✅ ✅ ✅
+    if from_date and to_date:
+        vouchers = vouchers.filter(
+            check_in_date__range=[from_date, to_date]
+        )
+    elif from_date:
+        vouchers = vouchers.filter(check_in_date__gte=from_date)
+    elif to_date:
+        vouchers = vouchers.filter(check_in_date__lte=to_date)
 
-    # ✅ Convert timezone-aware datetimes to naive datetimes
+    # ✅ Dashboard stats (FULL DATA - NOT FILTERED)
+    daily_checkins = Voucher.objects.filter(check_in_date=today).count()
+    daily_checkouts = Voucher.objects.filter(check_out_date=today).count()
+
+    weekly_checkins = Voucher.objects.filter(
+        check_in_date__range=[week_start, today]
+    ).count()
+
+    weekly_checkouts = Voucher.objects.filter(
+        check_out_date__range=[week_start, today]
+    ).count()
+
+    # ✅ ✅ ✅ EXPORT ONLY FILTERED RECORDS ✅ ✅ ✅
+    df = pd.DataFrame(vouchers.values())
+
     for col in df.select_dtypes(include=['datetimetz']).columns:
         df[col] = df[col].dt.tz_localize(None)
 
     if request.GET.get("export") == "1":
-        response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        response = HttpResponse(
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
         response["Content-Disposition"] = 'attachment; filename="vouchers.xlsx"'
         df.to_excel(response, index=False)
         return response
 
-    return render(request, "breakfast_voucher_report.html", {"vouchers": vouchers,'daily_checkins': daily_checkins,
-        'daily_checkouts': daily_checkouts,
-        'weekly_checkins': weekly_checkins,
-        'weekly_checkouts': weekly_checkouts,})
+    return render(
+        request,
+        "breakfast_voucher_report.html",
+        {
+            "vouchers": vouchers,
+            "daily_checkins": daily_checkins,
+            "daily_checkouts": daily_checkouts,
+            "weekly_checkins": weekly_checkins,
+            "weekly_checkouts": weekly_checkouts,
+            "from_date": from_date,
+            "to_date": to_date,
+        },
+    )
+
+
 from django.utils import timezone
 from datetime import timedelta
 
