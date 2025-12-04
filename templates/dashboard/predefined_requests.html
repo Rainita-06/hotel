@@ -492,6 +492,201 @@
         primaryActionBtn.addEventListener('click', function() {
             if (primaryActionBtnText.textContent.includes('Family')) {
                 alert('Add New Request Family...');
+                           <tr class="family-row border-t border-gray-200 hover:bg-gray-50 transition-colors" data-family="Housekeeping">
+                                <td class="px-6 py-4"><div class="flex items-center gap-3"><div class="w-8 h-8 bg-green-500/10 rounded-lg flex items-center justify-center flex-shrink-0"><div class="w-4 h-4 bg-green-500 rounded"></div></div><div><div class="text-gray-900 text-sm font-medium font-['Inter']">Housekeeping</div><div class="text-neutral-500 text-sm font-normal font-['Inter']">Room service, cleaning, amenities</div></div></div></td>
+                                <td class="px-6 py-4 text-gray-900 text-sm font-normal font-['Inter']">15 minutes</td>
+                                <td class="px-6 py-4 text-gray-900 text-sm font-normal font-['Inter']">2 hours</td>
+                                <td class="px-6 py-4"><div>1. Floor Supervisor</div><div class="text-neutral-500 text-sm font-normal font-['Inter']">2. Housekeeping Manager</div></td>
+                                <td class="px-6 py-4"><span class="px-2 py-1 bg-green-500/10 rounded-full text-green-500 text-xs font-medium font-['Inter']">Active</span></td>
+                                <td class="px-6 py-4"><div class="flex items-center gap-2"><button class="edit-family-btn w-6 h-6 hover:bg-gray-100 rounded flex items-center justify-center transition-colors"><img src="{% static 'images/manage_users/profiles/edit.svg' %}" alt="edit" class="w-4 h-4"></button><button class="delete-family-btn w-5 h-6 hover:bg-gray-100 rounded flex items-center justify-center transition-colors"><img src="{% static 'images/manage_users/action.svg' %}" alt="delete" class="w-3.5 h-4"></button></div></td>
+                            </tr>
+                            <tr class="family-row border-t border-gray-200 hover:bg-gray-50 transition-colors" data-family="Maintenance">
+                                <td class="px-6 py-4"><div class="flex items-center gap-3"><div class="w-8 h-8 bg-yellow-400/10 rounded-lg flex items-center justify-center flex-shrink-0"><div class="w-4 h-4 bg-yellow-400 rounded"></div></div><div><div class="text-gray-900 text-sm font-medium font-['Inter']">Maintenance</div><div class="text-neutral-500 text-sm font-normal font-['Inter']">Repairs, technical issues, equipment</div></div></div></td>
+                                <td class="px-6 py-4 text-gray-900 text-sm font-normal font-['Inter']">30 minutes</td>
+                                <td class="px-6 py-4 text-gray-900 text-sm font-normal font-['Inter']">4 hours</td>
+                                <td class="px-6 py-4"><div>1. Maintenance Staff</div><div class="text-neutral-500 text-sm font-normal font-['Inter']">2. Chief Engineer</div></td>
+                                <td class="px-6 py-4"><span class="px-2 py-1 bg-green-500/10 rounded-full text-green-500 text-xs font-medium font-['Inter']">Active</span></td>
+                                <td class="px-6 py-4"><div class="flex items-center gap-2"><button class="edit-family-btn w-6 h-6 hover:bg-gray-100 rounded flex items-center justify-center transition-colors"><img src="{% static 'images/manage_users/profiles/edit.svg' %}" alt="edit" class="w-4 h-4"></button><button class="delete-family-btn w-5 h-6 hover:bg-gray-100 rounded flex items-center justify-center transition-colors"><img src="{% static 'images/manage_users/action.svg' %}" alt="delete" class="w-3.5 h-4"></button></div></td>
+                            </tr>
+                            <tr class="family-row border-t border-gray-200 hover:bg-gray-50 transition-colors" data-family="Food & Beverage">
+                                <td class="px-6 py-4"><div class="flex items-center gap-3"><div class="w-8 h-8 bg-teal-500/10 rounded-lg flex items-center justify-center flex-shrink-0"><div class="w-4 h-4 bg-teal-500 rounded"></div></div><div><div class="text-gray-900 text-sm font-medium font-['Inter']">Food & Beverage</div><div class="text-neutral-500 text-sm font-normal font-['Inter']">Restaurant, room service, bar</div></div></div></td>
+                                <td class="px-6 py-4 text-gray-900 text-sm font-normal font-['Inter']">10 minutes</td>
+                                <td class="px-6 py-4 text-gray-900 text-sm font-normal font-['Inter']">45 minutes</td>
+                                <td class="px-6 py-4"><div>1. F&B Staff</div><div class="text-neutral-500 text-sm font-normal font-['Inter']">2. Restaurant Manager</div></td>
+                                <td class="px-6 py-4"><span class="px-2 py-1 bg-green-500/10 rounded-full text-green-500 text-xs font-medium font-['Inter']">Active</span></td>
+                                <td class="px-6 py-4"><div class="flex items-center gap-2"><button class="edit-family-btn w-6 h-6 hover:bg-gray-100 rounded flex items-center justify-center transition-colors"><img src="{% static 'images/manage_users/profiles/edit.svg' %}" alt="edit" class="w-4 h-4"></button><button class="delete-family-btn w-5 h-6 hover:bg-gray-100 rounded flex items-center justify-center transition-colors"><img src="{% static 'images/manage_users/action.svg' %}" alt="delete" class="w-3.5 h-4"></button></div></td>
+                            </tr>
+                            <tr class="family-row border-t border-gray-200 hover:bg-gray-50 transition-colors" data-family="Front Desk">
+                                <td class="px-6 py-4"><div class="flex items-center gap-3"><div class="w-8 h-8 bg-sky-600/10 rounded-lg flex items-center justify-center flex-shrink-0"><div class="w-4 h-4 bg-sky-600 rounded"></div></div><div><div class="text-gray-900 text-sm font-medium font-['Inter']">Front Desk</div><div class="text-neutral-500 text-sm font-normal font-['Inter']">Check-in, check-out, reservations</div></div></div></td>
+                                <td class="px-6 py-4 text-gray-900 text-sm font-normal font-['Inter']">5 minutes</td>
+                                <td class="px-6 py-4 text-gray-900 text-sm font-normal font-['Inter']">30 minutes</td>
+                                <td class="px-6 py-4"><div>1. Front Desk Agent</div><div class="text-neutral-500 text-sm font-normal font-['Inter']">2. Front Office Manager</div></td>
+                                <td class="px-6 py-4"><span class="px-2 py-1 bg-green-500/10 rounded-full text-green-500 text-xs font-medium font-['Inter']">Active</span></td>
+                                <td class="px-6 py-4"><div class="flex items-center gap-2"><button class="edit-family-btn w-6 h-6 hover:bg-gray-100 rounded flex items-center justify-center transition-colors"><img src="{% static 'images/manage_users/profiles/edit.svg' %}" alt="edit" class="w-4 h-4"></button><button class="delete-family-btn w-5 h-6 hover:bg-gray-100 rounded flex items-center justify-center transition-colors"><img src="{% static 'images/manage_users/action.svg' %}" alt="delete" class="w-3.5 h-4"></button></div></td>
+                            </tr>
+                            <tr class="family-row border-t border-gray-200 hover:bg-gray-50 transition-colors" data-family="Concierge">
+                                <td class="px-6 py-4"><div class="flex items-center gap-3"><div class="w-8 h-8 bg-fuchsia-700/10 rounded-lg flex items-center justify-center flex-shrink-0"><div class="w-4 h-4 bg-fuchsia-700 rounded"></div></div><div><div class="text-gray-900 text-sm font-medium font-['Inter']">Concierge</div><div class="text-neutral-500 text-sm font-normal font-['Inter']">Guest services, recommendations, bookings</div></div></div></td>
+                                <td class="px-6 py-4 text-gray-900 text-sm font-normal font-['Inter']">10 minutes</td>
+                                <td class="px-6 py-4 text-gray-900 text-sm font-normal font-['Inter']">1 hour</td>
+                                <td class="px-6 py-4"><div>1. Concierge Staff</div><div class="text-neutral-500 text-sm font-normal font-['Inter']">2. Guest Services Manager</div></td>
+                                <td class="px-6 py-4"><span class="px-2 py-1 bg-green-500/10 rounded-full text-green-500 text-xs font-medium font-['Inter']">Active</span></td>
+                                <td class="px-6 py-4"><div class="flex items-center gap-2"><button class="edit-family-btn w-6 h-6 hover:bg-gray-100 rounded flex items-center justify-center transition-colors"><img src="{% static 'images/manage_users/profiles/edit.svg' %}" alt="edit" class="w-4 h-4"></button><button class="delete-family-btn w-5 h-6 hover:bg-gray-100 rounded flex items-center justify-center transition-colors"><img src="{% static 'images/manage_users/action.svg' %}" alt="delete" class="w-3.5 h-4"></button></div></td>
+                            </tr>
+                            <tr class="family-row border-t border-gray-200 hover:bg-gray-50 transition-colors" data-family="IT Support">
+                                <td class="px-6 py-4"><div class="flex items-center gap-3"><div class="w-8 h-8 bg-red-500/10 rounded-lg flex items-center justify-center flex-shrink-0"><div class="w-4 h-4 bg-red-500 rounded"></div></div><div><div class="text-gray-900 text-sm font-medium font-['Inter']">IT Support</div><div class="text-neutral-500 text-sm font-normal font-['Inter']">WiFi, TV, technology issues</div></div></div></td>
+                                <td class="px-6 py-4 text-gray-900 text-sm font-normal font-['Inter']">20 minutes</td>
+                                <td class="px-6 py-4 text-gray-900 text-sm font-normal font-['Inter']">2 hours</td>
+                                <td class="px-6 py-4"><div>1. IT Technician</div><div class="text-neutral-500 text-sm font-normal font-['Inter']">2. IT Manager</div></td>
+                                <td class="px-6 py-4"><span class="px-2 py-1 bg-green-500/10 rounded-full text-green-500 text-xs font-medium font-['Inter']">Active</span></td>
+                                <td class="px-6 py-4"><div class="flex items-center gap-2"><button class="edit-family-btn w-6 h-6 hover:bg-gray-100 rounded flex items-center justify-center transition-colors"><img src="{% static 'images/manage_users/profiles/edit.svg' %}" alt="edit" class="w-4 h-4"></button><button class="delete-family-btn w-5 h-6 hover:bg-gray-100 rounded flex items-center justify-center transition-colors"><img src="{% static 'images/manage_users/action.svg' %}" alt="delete" class="w-3.5 h-4"></button></div></td>
+                            </tr>
+                            <tr class="family-row border-t border-gray-200 hover:bg-gray-50 transition-colors" data-family="Security">
+                                <td class="px-6 py-4"><div class="flex items-center gap-3"><div class="w-8 h-8 bg-gray-600/10 rounded-lg flex items-center justify-center flex-shrink-0"><div class="w-4 h-4 bg-gray-600 rounded"></div></div><div><div class="text-gray-900 text-sm font-medium font-['Inter']">Security</div><div class="text-neutral-500 text-sm font-normal font-['Inter']">Safety concerns, access issues</div></div></div></td>
+                                <td class="px-6 py-4 text-gray-900 text-sm font-normal font-['Inter']">5 minutes</td>
+                                <td class="px-6 py-4 text-gray-900 text-sm font-normal font-['Inter']">15 minutes</td>
+                                <td class="px-6 py-4"><div>1. Security Officer</div><div class="text-neutral-500 text-sm font-normal font-['Inter']">2. Security Manager</div></td>
+                                <td class="px-6 py-4"><span class="px-2 py-1 bg-green-500/10 rounded-full text-green-500 text-xs font-medium font-['Inter']">Active</span></td>
+                                <td class="px-6 py-4"><div class="flex items-center gap-2"><button class="edit-family-btn w-6 h-6 hover:bg-gray-100 rounded flex items-center justify-center transition-colors"><img src="{% static 'images/manage_users/profiles/edit.svg' %}" alt="edit" class="w-4 h-4"></button><button class="delete-family-btn w-5 h-6 hover:bg-gray-100 rounded flex items-center justify-center transition-colors"><img src="{% static 'images/manage_users/action.svg' %}" alt="delete" class="w-3.5 h-4"></button></div></td>
+                            </tr>
+                            <tr class="family-row border-t border-gray-200 hover:bg-gray-50 transition-colors" data-family="Other">
+                                <td class="px-6 py-4"><div class="flex items-center gap-3"><div class="w-8 h-8 bg-gray-400/10 rounded-lg flex items-center justify-center flex-shrink-0"><div class="w-4 h-4 bg-gray-400 rounded"></div></div><div><div class="text-gray-900 text-sm font-medium font-['Inter']">Other</div><div class="text-neutral-500 text-sm font-normal font-['Inter']">General inquiries, miscellaneous</div></div></div></td>
+                                <td class="px-6 py-4 text-gray-900 text-sm font-normal font-['Inter']">30 minutes</td>
+                                <td class="px-6 py-4 text-gray-900 text-sm font-normal font-['Inter']">4 hours</td>
+                                <td class="px-6 py-4"><div>1. Guest Relations</div><div class="text-neutral-500 text-sm font-normal font-['Inter']">2. Duty Manager</div></td>
+                                <td class="px-6 py-4"><span class="px-2 py-1 bg-green-500/10 rounded-full text-green-500 text-xs font-medium font-['Inter']">Active</span></td>
+                                <td class="px-6 py-4"><div class="flex items-center gap-2"><button class="edit-family-btn w-6 h-6 hover:bg-gray-100 rounded flex items-center justify-center transition-colors"><img src="{% static 'images/manage_users/profiles/edit.svg' %}" alt="edit" class="w-4 h-4"></button><button class="delete-family-btn w-5 h-6 hover:bg-gray-100 rounded flex items-center justify-center transition-colors"><img src="{% static 'images/manage_users/action.svg' %}" alt="delete" class="w-3.5 h-4"></button></div></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-gray-900 text-lg font-semibold font-['Inter'] mb-6">SLA Performance (Last 30 Days)</h3>
+                    <div class="space-y-6">
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <div class="flex items-center gap-3"><div class="w-3 h-3 bg-green-500 rounded-full"></div><span class="text-gray-600 text-sm font-normal font-['Inter']">Within SLA</span></div>
+                                <span class="text-gray-900 text-sm font-medium font-['Inter']">87.3%</span>
+                            </div>
+                            <div class="w-full h-2 bg-gray-200 rounded-full"><div class="w-[87.3%] h-2 bg-green-500 rounded-full"></div></div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center gap-3"><div class="w-3 h-3 bg-yellow-400 rounded-full"></div><span class="text-gray-600 text-sm font-normal font-['Inter']">Near Breach</span></div>
+                            <span class="text-gray-900 text-sm font-medium font-['Inter']">8.2%</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center gap-3"><div class="w-3 h-3 bg-red-500 rounded-full"></div><span class="text-gray-600 text-sm font-normal font-['Inter']">SLA Breach</span></div>
+                            <span class="text-gray-900 text-sm font-medium font-['Inter']">4.5%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-gray-900 text-lg font-semibold font-['Inter'] mb-6">Escalation Activity</h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center"><span class="text-gray-600 text-sm font-normal font-['Inter']">Total Escalations</span><span class="text-gray-900 text-lg font-semibold font-['Inter']">47</span></div>
+                        <div class="flex justify-between items-center"><span class="text-gray-600 text-sm font-normal font-['Inter']">Auto Escalations</span><span class="text-gray-900 text-sm font-medium font-['Inter']">31</span></div>
+                        <div class="flex justify-between items-center"><span class="text-gray-600 text-sm font-normal font-['Inter']">Manual Escalations</span><span class="text-gray-900 text-sm font-medium font-['Inter']">16</span></div>
+                        <div class="flex justify-between items-center"><span class="text-gray-600 text-sm font-normal font-['Inter']">Avg Resolution Time</span><span class="text-gray-900 text-sm font-medium font-['Inter']">3.2 hours</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- PAGE ELEMENTS ---
+        const navTabBtns = document.querySelectorAll('.nav-tab-btn');
+        const requestsPanel = document.getElementById('requestsContentPanel');
+        const familiesPanel = document.getElementById('familiesContentPanel');
+        
+        // Header elements
+        const titleContainer = document.getElementById('main-title').parentElement;
+        const mainTitle = document.getElementById('main-title');
+        const mainDescription = document.getElementById('main-description');
+        const breadcrumbActive = document.getElementById('breadcrumb-active');
+        const headerSearchContainer = document.getElementById('header-search-container');
+        const primaryActionBtn = document.getElementById('primary-action-btn');
+        const primaryActionBtnText = primaryActionBtn.querySelector('span');
+        const secondaryActionBtn = document.getElementById('secondary-action-btn');
+
+        // --- UNIFIED NAVIGATION LOGIC ---
+        navTabBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const tab = this.dataset.tab;
+
+                navTabBtns.forEach(b => {
+                    b.classList.remove('active', 'border-sky-600', 'text-sky-600');
+                    b.classList.add('border-transparent', 'text-gray-600');
+                });
+                this.classList.add('active', 'border-sky-600', 'text-sky-600');
+                this.classList.remove('border-transparent', 'text-gray-600');
+
+                if (tab === 'families') {
+                    // --- Show FAMILIES view ---
+                    requestsPanel.classList.add('hidden');
+                    familiesPanel.classList.remove('hidden');
+                    
+                    // Update header for "Families" context
+                    titleContainer.classList.remove('flex', 'items-center', 'gap-3', 'flex-wrap');
+                    mainTitle.textContent = 'Request Families';
+                    breadcrumbActive.textContent = 'Request Families';
+                    mainDescription.textContent = 'Manage service request categories, SLA targets, and escalation paths';
+                    headerSearchContainer.classList.add('hidden');
+                    secondaryActionBtn.classList.remove('hidden');
+                    primaryActionBtnText.textContent = 'Add Family';
+
+                } else {
+                    // --- Show REQUESTS view ---
+                    familiesPanel.classList.add('hidden');
+                    requestsPanel.classList.remove('hidden');
+
+                    // Update header for "Requests" context
+                    titleContainer.classList.add('flex', 'items-center', 'gap-3', 'flex-wrap');
+                    mainTitle.textContent = 'Predefined Requests';
+                    breadcrumbActive.textContent = 'Predefined Requests';
+                    mainDescription.textContent = 'Manage request templates and their availability in the Guest Portal';
+                    headerSearchContainer.classList.remove('hidden');
+                    secondaryActionBtn.classList.add('hidden');
+                    primaryActionBtnText.textContent = 'New Request';
+
+                    filterRequestCards(tab);
+                }
+            });
+        });
+
+        // --- SCRIPT FOR PREDEFINED REQUESTS PANEL ---
+        const requestCards = requestsPanel.querySelectorAll('.request-card');
+
+        function filterRequestCards(category) {
+            requestCards.forEach(card => {
+                card.style.display = (category === 'all' || card.dataset.category === category) ? 'flex' : 'none';
+            });
+        }
+        document.getElementById('searchInput').addEventListener('input', function() {
+             const searchTerm = this.value.toLowerCase();
+             requestCards.forEach(card => {
+                 const cardName = card.dataset.name.toLowerCase();
+                 card.style.display = cardName.includes(searchTerm) ? 'flex' : 'none';
+            });
+        });
+
+        // --- SCRIPT FOR REQUEST FAMILIES PANEL ---
+        const familyRows = familiesPanel.querySelectorAll('.family-row');
+        familiesPanel.querySelector('#searchFamilies').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            familyRows.forEach(row => {
+                row.style.display = row.dataset.family.toLowerCase().includes(searchTerm) ? '' : 'none';
+            });
+        });
+        
+        // --- HEADER ACTION BUTTONS LOGIC ---
+        primaryActionBtn.addEventListener('click', function() {
+            if (primaryActionBtnText.textContent.includes('Family')) {
+                alert('Add New Request Family...');
             } else {
                 alert('Create New Request Template...');
             }
@@ -499,6 +694,129 @@
 
         secondaryActionBtn.addEventListener('click', () => alert('Filter Options for Request Families...'));
         familiesPanel.querySelector('#tableFilterBtn').addEventListener('click', () => alert('Table Filter Options...'));
+        
+        // --- EDIT REQUEST FUNCTIONALITY ---
+        const editButtons = document.querySelectorAll('.edit-btn');
+        editButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const card = this.closest('.request-card');
+                const requestName = card.querySelector('h3').textContent;
+                const department = card.querySelector('.space-y-2 .flex:first-child .text-gray-900').textContent;
+                const description = card.querySelector('p.text-gray-600').textContent;
+                
+                // Open modal with pre-filled data
+                openEditRequestModal(requestName, department, description);
+            });
+        });
     });
+    
+    // Function to open edit request modal
+    function openEditRequestModal(requestName, department, description) {
+        const modal = document.getElementById('editRequestModal');
+        if (!modal) return;
+        
+        // Pre-fill form fields
+        document.getElementById('editRequestType').value = requestName;
+        document.getElementById('editDepartment').value = department;
+        document.getElementById('editDescription').value = description;
+        
+        // Show modal with animation
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        requestAnimationFrame(() => {
+            modal.classList.remove('opacity-0');
+            const modalContent = document.getElementById('editModalContent');
+            if (modalContent) {
+                modalContent.classList.remove('scale-95', 'opacity-0')  ;
+                modalContent.classList.add('scale-100', 'opacity-100');
+            }
+        });
+    }
+    
+    // Function to close edit request modal
+    function closeEditRequestModal() {
+        const modal = document.getElementById('editRequestModal');
+        const modalContent = document.getElementById('editModalContent');
+        if (!modal) return;
+        
+        modal.classList.add('opacity-0');
+        if (modalContent) {
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+        }
+        
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }, 300);
+    }
+</script>
+
+<!-- Edit Request Modal -->
+<div id="editRequestModal" class="hidden fixed inset-0 z-[1000] items-center justify-center p-4 backdrop-blur-md bg-black/30 transition-opacity duration-300 opacity-0" onclick="closeEditRequestModal()">
+    <div id="editModalContent" class="w-full max-w-2xl rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[95vh]" onclick="event.stopPropagation()">
+        <div class="flex justify-between items-center p-6 border-b border-gray-200 flex-shrink-0">
+            <h2 class="text-xl font-semibold text-gray-900">Edit Predefined Request</h2>
+            <button onclick="closeEditRequestModal()" class="rounded-full p-1 text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Close">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <form autocomplete="off" class="p-6 space-y-6 overflow-y-auto flex-grow" onsubmit="return false;">
+            <div>
+                <label for="editRequestType" class="block text-sm font-medium text-gray-700 mb-1">Request Type</label>
+                <div class="relative">
+                    <input autocomplete="off" type="text" id="editRequestType" readonly class="w-full h-11 px-4 bg-gray-50 rounded-lg border border-gray-300 focus:outline-none cursor-not-allowed" />
+                </div>
+            </div>
+            <div>
+                <label for="editDepartment" class="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                <div class="relative">
+                    <select id="editDepartment" class="w-full h-11 px-4 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 appearance-none">
+                        <option value="">Select department</option>
+                        <option value="Housekeeping">Housekeeping</option>
+                        <option value="Maintenance">Maintenance</option>
+                        <option value="Concierge">Concierge</option>
+                        <option value="Food & Beverage">Food & Beverage</option>
+                        <option value="IT Support">IT Support</option>
+                        <option value="General">General</option>
+                    </select>
+                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <label for="editDescription" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea id="editDescription" rows="4" placeholder="Describe the request template..." class="w-full p-3 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none"></textarea>
+            </div>
+            <div>
+                <label class="flex items-center gap-3">
+                    <input type="checkbox" id="editGuestPortal" class="w-4 h-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500" checked>
+                    <span class="text-sm font-medium text-gray-700">Expose in Guest Portal</span>
+                </label>
+            </div>
+        </form>
+        <div class="flex justify-end items-center gap-4 p-6 border-t border-gray-200 bg-gray-50 rounded-b-lg flex-shrink-0">
+            <button onclick="closeEditRequestModal()" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50">Cancel</button>
+            <button onclick="saveEditedRequest()" class="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function saveEditedRequest() {
+    const requestType = document.getElementById('editRequestType').value;
+    const department = document.getElementById('editDepartment').value;
+    const description = document.getElementById('editDescription').value;
+    const guestPortal = document.getElementById('editGuestPortal').checked;
+    
+    // Here you would send data to backend
+    console.log('Saving:', { requestType, department, description, guestPortal });
+    
+    // Show success message
+    alert('Request updated successfully!');
+    closeEditRequestModal();
+}
+
 </script>
 {% endblock content %}

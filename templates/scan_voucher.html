@@ -3,20 +3,18 @@
 
 {% block content %}
 
+<!-- Main Container (Identical Wrapper to Check-in) -->
 <div class="min-h-screen bg-gray-50 flex justify-center items-start py-8 px-4 sm:px-6 lg:px-8">
-  <!-- Content Card -->
+  
+  <!-- Content Card (Identical Width & Shadow) -->
   <div class="w-full max-w-5xl bg-white rounded-xl shadow-lg border border-gray-200">
-
-    <!-- Header -->
+    
+    <!-- Header (Identical Height & Spacing) -->
     <div class="w-full h-auto min-h-20 px-4 py-4 sm:px-6 bg-white border-b border-gray-200">
-      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
         <div>
-          <h1 class="text-gray-900 text-xl sm:text-2xl font-bold font-['Inter'] leading-tight">
-            Breakfast Voucher — Scan
-          </h1>
-          <p class="text-gray-600 text-sm font-normal font-['Inter'] mt-1">
-            Scan QR code or verify manually
-          </p>
+          <h1 class="text-gray-900 text-xl sm:text-2xl font-bold font-['Inter'] leading-tight">Breakfast Voucher — Scan</h1>
+          <p class="text-gray-600 text-sm font-normal font-['Inter'] mt-1">Scan QR code or verify manually</p>
         </div>
       </div>
     </div>
@@ -24,27 +22,24 @@
     <!-- Navigation Tab -->
     {% include 'partials/breakfast_tab.html' %}
     
-    <!-- Body Content -->
+    <!-- Body Content (Identical Padding) -->
     <div class="p-4 sm:p-8">
-      <!-- Grid Layout -->
+      
+      <!-- Grid Layout (Matches Form Grid) -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
         
         <!-- Left Column: Scanner -->
         <div class="space-y-6">
           <div>
-            <label class="block text-gray-900 text-sm font-medium font-['Inter'] mb-2">
-              Live Camera Scan
-            </label>
+            <label class="block text-gray-900 text-sm font-medium font-['Inter'] mb-2">Live Camera Scan</label>
+            <!-- Styled like an input field container -->
             <div class="bg-gray-50 rounded-lg border border-gray-200 p-4">
-              <div id="reader" class="w-full rounded-lg overflow-hidden bg-white shadow-sm border border-gray-200"></div>
-              <!-- Scan Feedback -->
-              <div
-                id="scan-result"
-                class="mt-4 hidden text-center text-sm font-medium p-3 rounded-lg transition-all"
-              ></div>
-              <p class="text-center text-xs text-gray-500 mt-3 font-['Inter']">
-                Ensure the QR code is clearly visible
-              </p>
+                <div id="reader" class="w-full rounded-lg overflow-hidden bg-white shadow-sm border border-gray-200"></div>
+                
+                <!-- Scan Feedback -->
+                <div id="scan-result" class="mt-4 hidden text-center text-sm font-medium p-3 rounded-lg transition-all"></div>
+                
+                <p class="text-center text-xs text-gray-500 mt-3 font-['Inter']">Ensure the QR code is clearly visible</p>
             </div>
           </div>
         </div>
@@ -52,49 +47,35 @@
         <!-- Right Column: Recent Scans -->
         <div class="space-y-6">
           <div>
-            <label class="block text-gray-900 text-sm font-medium font-['Inter'] mb-2">
-              Recent Activity
-            </label>
+            <label class="block text-gray-900 text-sm font-medium font-['Inter'] mb-2">Recent Activity</label>
+            <!-- Styled to match form background sections -->
             <div class="bg-gray-50 rounded-lg border border-gray-200 p-4 h-full min-h-[350px] relative">
-              <div
-                id="recentScans"
-                class="space-y-3 h-full overflow-y-auto max-h-[350px] pr-1 scrollbar-hide"
-              >
+              
+              <div id="recentScans" class="space-y-3 h-full overflow-y-auto max-h-[350px] pr-1 scrollbar-hide">
                 <!-- Empty State -->
-                <div
-                  id="empty-state"
-                  class="absolute inset-0 flex flex-col justify-center items-center text-gray-400"
-                >
-                  <svg
-                    class="w-12 h-12 mb-3 text-gray-300"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
-                    ></path>
+                <div id="empty-state" class="absolute inset-0 flex flex-col justify-center items-center text-gray-400">
+                  <svg class="w-12 h-12 mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
                   </svg>
                   <p class="text-sm font-['Inter']">No recent scans</p>
                 </div>
               </div>
+
             </div>
           </div>
         </div>
 
       </div>
     </div>
-
   </div>
 </div>
 
 <!-- QR Scripts -->
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script>
+// Logic to handle scanning and local storage
 function onScanSuccess(decodedText, decodedResult) {
+  // Prevent duplicate rapid scans if needed, or just process
   fetch(`/api/vouchers/validate/?code=${decodedText}`)
     .then(response => response.json())
     .then(data => {
@@ -103,29 +84,16 @@ function onScanSuccess(decodedText, decodedResult) {
       resultBox.innerHTML = data.message || "Processed";
 
       let status = "Duplicate";
-      if (data.message && data.message.toLowerCase().includes("expired")) {
-        status = "Expired";
-      } else if (data.success) {
-        status = "Success";
-      }
+      if (data.message && data.message.toLowerCase().includes("expired")) status = "Expired";
+      else if (data.success) status = "Success";
 
       // Styling based on result
-      resultBox.className =
-        "mt-4 text-center text-sm font-medium p-3 rounded-lg transition-all border";
-      if (status === "Success") {
-        resultBox.classList.add("bg-green-100", "text-green-800", "border-green-200");
-      } else if (status === "Expired") {
-        resultBox.classList.add("bg-red-100", "text-red-800", "border-red-200");
-      } else {
-        resultBox.classList.add("bg-yellow-100", "text-yellow-800", "border-yellow-200");
-      }
+      resultBox.className = "mt-4 text-center text-sm font-medium p-3 rounded-lg transition-all border";
+      if (status === "Success") resultBox.classList.add("bg-green-100", "text-green-800", "border-green-200");
+      else if (status === "Expired") resultBox.classList.add("bg-red-100", "text-red-800", "border-red-200");
+      else resultBox.classList.add("bg-yellow-100", "text-yellow-800", "border-yellow-200");
 
-      addRecentScan(
-        data.guest_name || "Unknown",
-        data.room_no || "-",
-        data.quantity || "0",
-        status
-      );
+      addRecentScan(data.guest_name || "Unknown", data.room_no || "-", data.quantity || "0", status);
 
       setTimeout(() => {
         resultBox.classList.add("hidden");
@@ -142,17 +110,11 @@ function addRecentScan(name, room, pax, status) {
   const emptyState = document.getElementById("empty-state");
   if (emptyState) emptyState.remove();
 
-  const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  let statusColor =
-    status === "Success"
-      ? "bg-green-100 text-green-800"
-      : status === "Expired"
-      ? "bg-red-100 text-red-800"
-      : "bg-yellow-100 text-yellow-800";
+  const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+  let statusColor = status === "Success" ? "bg-green-100 text-green-800" : (status === "Expired" ? "bg-red-100 text-red-800" : "bg-yellow-100 text-yellow-800");
 
   const card = document.createElement("div");
-  card.className =
-    "bg-white p-3 rounded-md border border-gray-200 shadow-sm flex justify-between items-center animate-fade-in-down";
+  card.className = "bg-white p-3 rounded-md border border-gray-200 shadow-sm flex justify-between items-center animate-fade-in-down";
   card.innerHTML = `
     <div>
       <p class="text-gray-900 font-medium text-sm font-['Inter']">${name}</p>
@@ -164,47 +126,39 @@ function addRecentScan(name, room, pax, status) {
     </div>
   `;
   container.prepend(card);
-
-  // LocalStorage Logic
+  
+  // LocalStorage Logic (Simplified)
   let scans = JSON.parse(localStorage.getItem("recentScans") || "[]");
-  scans.unshift({ name, room, pax, status, time });
-  if (scans.length > 20) scans.pop();
+  scans.unshift({name, room, pax, status, time});
+  if(scans.length > 20) scans.pop();
   localStorage.setItem("recentScans", JSON.stringify(scans));
 }
 
 // Load on start
 window.addEventListener("DOMContentLoaded", () => {
-  let scans = JSON.parse(localStorage.getItem("recentScans") || "[]");
-  if (scans.length > 0) {
-    document.getElementById("empty-state")?.remove();
-    const container = document.getElementById("recentScans");
-    scans.forEach(s => {
-      let statusColor =
-        s.status === "Success"
-          ? "bg-green-100 text-green-800"
-          : s.status === "Expired"
-          ? "bg-red-100 text-red-800"
-          : "bg-yellow-100 text-yellow-800";
-
-      const card = document.createElement("div");
-      card.className =
-        "bg-white p-3 rounded-md border border-gray-200 shadow-sm flex justify-between items-center mb-3";
-      card.innerHTML = `
-        <div>
-          <p class="text-gray-900 font-medium text-sm font-['Inter']">${s.name}</p>
-          <p class="text-gray-500 text-xs font-['Inter']">Room ${s.room} • ${s.pax} Pax</p>
-        </div>
-        <div class="text-right">
-          <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${statusColor}">${s.status}</span>
-          <p class="text-gray-400 text-[10px] mt-1">${s.time}</p>
-        </div>
-      `;
-      container.appendChild(card);
-    });
-  }
+    let scans = JSON.parse(localStorage.getItem("recentScans") || "[]");
+    if(scans.length > 0) {
+        document.getElementById("empty-state")?.remove();
+        const container = document.getElementById("recentScans");
+        scans.forEach(s => {
+             let statusColor = s.status === "Success" ? "bg-green-100 text-green-800" : (s.status === "Expired" ? "bg-red-100 text-red-800" : "bg-yellow-100 text-yellow-800");
+             const card = document.createElement("div");
+             card.className = "bg-white p-3 rounded-md border border-gray-200 shadow-sm flex justify-between items-center mb-3";
+             card.innerHTML = `
+                <div>
+                <p class="text-gray-900 font-medium text-sm font-['Inter']">${s.name}</p>
+                <p class="text-gray-500 text-xs font-['Inter']">Room ${s.room} • ${s.pax} Pax</p>
+                </div>
+                <div class="text-right">
+                <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${statusColor}">${s.status}</span>
+                <p class="text-gray-400 text-[10px] mt-1">${s.time}</p>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
 });
 </script>
-
 <style>
   @keyframes fade-in-down {
     0% { opacity: 0; transform: translateY(-10px); }
@@ -214,5 +168,4 @@ window.addEventListener("DOMContentLoaded", () => {
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 </style>
-
 {% endblock %}
