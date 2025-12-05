@@ -223,11 +223,22 @@
                     <div class="w-full bg-gray-200 rounded-full h-1.5">
                         <div class="h-1.5 rounded-full 
                             {% if ticket.sla_breached %}bg-red-500
-                            {% else %}bg-yellow-400{% endif %}" style="width: {{ ticket.sla_progress_percent|default:0 }}%"></div>
+                            {% else %}bg-green-500{% endif %}" style="width: {{ ticket.sla_progress_percent|default:0 }}%"></div>
                     </div>
-                </div>
-
-                <div class="flex items-center gap-2">
+                    <div class="mt-1">
+                        {% if ticket.sla_breached %}
+                            <span class="px-2 py-1 text-xs font-medium text-white bg-red-500 rounded-full inline-flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                Breached
+                            </span>
+                        {% else %}
+                            <span class="px-2 py-1 text-xs font-medium text-white bg-green-500 rounded-full inline-flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                On Track
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>                <div class="flex items-center gap-2">
                     {% if ticket.can_accept %}
                         <button class="accept-ticket-btn flex-grow text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 rounded-lg h-10 flex items-center justify-center" data-ticket-id="{{ ticket.id }}">Accept</button>
                     {% elif ticket.can_start %}

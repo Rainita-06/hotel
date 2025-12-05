@@ -2776,7 +2776,9 @@ def tickets(request):
         dept_colors = color_mapping.get(dept.name, {'color': 'blue-500', 'icon_color': 'sky-600'})
         
         # Get logo URL if available using the new method
-        logo_url = dept.get_logo_url() if dept.get_logo_url() else f'/static/images/manage_users/{dept.name.lower().replace(" ", "_")}.svg'
+        import urllib.parse
+        dept_name_safe = urllib.parse.quote_plus(dept.name.lower().replace(' ', '_'))
+        logo_url = dept.get_logo_url() if dept.get_logo_url() else f'/static/images/manage_users/{dept_name_safe}.svg'
         
         departments_data.append({
             'id': dept.department_id,
@@ -3134,6 +3136,8 @@ def tickets(request):
         'search_query': search_query,
         "matched_reviews": matched_reviews,
         "unmatched_reviews": unmatched_reviews,
+        'request_types_by_department_json': request_types_by_department_json,
+        'all_request_types_json': all_request_types_json,
     }
     return render(request, 'dashboard/tickets.html', context)
 
@@ -6169,10 +6173,17 @@ def create_ticket_api(request):
     """API endpoint to create a new ticket with department routing."""
     if request.method == 'POST':
         try:
-            from hotel_app.models import ServiceRequest, RequestType, Location, Department, User
+            from hotel_app.models import ServiceRequest, RequestType, Location, Department, User, Guest
             import json
+            import logging
+            
+            # Log the request for debugging
+            logging.basicConfig(level=logging.DEBUG)
+            logger = logging.getLogger(__name__)
+            logger.debug(f"Received ticket creation request: {request.body}")
             
             data = json.loads(request.body.decode('utf-8'))
+            logger.debug(f"Parsed data: {data}")
             
             # Extract data from request
             guest_name = (data.get('guest_name') or '').strip()
@@ -6201,9 +6212,26 @@ def create_ticket_api(request):
                 return JsonResponse({'error': 'Missing required fields'}, status=400)
             
             # Get or create location
+            # Try to find an existing building or create a default one
+            try:
+                from hotel_app.models import Building
+                building = Building.objects.first()
+                if not building:
+                    # Create a default building if none exists
+                    building = Building.objects.create(
+                        name='Default Building',
+                        description='Automatically created default building'
+                    )
+            except Exception:
+                # If we can't create a building, set it to None
+                building = None
+            
             location, _ = Location.objects.get_or_create(
                 room_no=room_number,
-                defaults={'name': f'Room {room_number}'}
+                defaults={
+                    'name': f'Room {room_number}',
+                    'building': building
+                }
             )
             
             # Get or create request type
@@ -7528,107 +7556,7 @@ def feedback_detail(request, feedback_id):
 
 
 # ---- Ticket Workflow API Endpoints ----
-@login_required
-@require_permission([ADMINS_GROUP, STAFF_GROUP])
-def create_ticket_api(request):
-    """API endpoint to create a new ticket with department routing."""
-    if request.method == 'POST':
-        try:
-            from hotel_app.models import ServiceRequest, RequestType, Location, Department, User, SLAConfiguration
-            import json
-            
-            data = json.loads(request.body.decode('utf-8'))
-            
-            # Extract data from request
-            guest_name = data.get('guest_name')
-            room_number = data.get('room_number')
-            department_name = data.get('department')
-            category = data.get('category')
-            priority = data.get('priority')
-            description = data.get('description')
-            
-            # Validate required fields
-            if not guest_name or not room_number or not department_name or not category or not priority:
-                return JsonResponse({'error': 'Missing required fields'}, status=400)
-            
-            # Get or create location
-            location, _ = Location.objects.get_or_create(
-                room_no=room_number,
-                defaults={'name': f'Room {room_number}'}
-            )
-            
-            # Get or create request type
-            request_type, _ = RequestType.objects.get_or_create(
-                name=category,
-                defaults={}
-            )
-            
-            # Get department
-            try:
-                department = Department.objects.get(name=department_name)
-            except Department.DoesNotExist:
-                return JsonResponse({'error': 'Invalid department'}, status=400)
-            
-            # Map priority to model values
-            priority_mapping = {
-                'Critical': 'critical',
-                'High': 'high',
-                'Medium': 'normal',
-                'Normal': 'normal',
-                'Low': 'low',
-            }
-            model_priority = priority_mapping.get(priority, 'normal')
-
-            guest = None
-            guest_queryset = Guest.objects.all()
-            if room_number:
-                guest_queryset = guest_queryset.filter(room_number__iexact=room_number)
-            if guest_name:
-                guest = (
-                    guest_queryset.filter(full_name__iexact=guest_name)
-                    .order_by('-updated_at')
-                    .first()
-                )
-            if guest is None:
-                guest = guest_queryset.order_by('-updated_at').first()
-            if guest is None and guest_name:
-                guest = (
-                    Guest.objects.filter(full_name__iexact=guest_name)
-                    .order_by('-updated_at')
-                    .first()
-                )
-            
-            # Create service request (SLA times will be set automatically in the model's save method)
-            service_request = ServiceRequest.objects.create(
-                request_type=request_type,
-                location=location,
-                requester_user=request.user,
-                guest=guest,
-                department=department,
-                priority=model_priority,
-                status='pending',
-                notes=description
-            )
-            
-            # Notify department staff
-            service_request.notify_department_staff()
-
-            guest_notified = _send_ticket_acknowledgement(
-                service_request,
-                guest=guest,
-            )
-            
-            return JsonResponse({
-                'success': True,
-                'message': 'Ticket created successfully',
-                'ticket_id': service_request.id,
-                'guest_notified': guest_notified,
-            })
-            
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-    
-    return JsonResponse({'error': 'Method not allowed'}, status=405)
+# Duplicate function removed to avoid conflict
 
 
 @login_required

@@ -7,9 +7,9 @@
 
     <header class="w-full bg-white border-b border-gray-200 p-4 lg:p-6 flex justify-between items-center">
         <div class="flex items-center gap-4">
-            <a href="{% url 'dashboard:my_tickets' %}" class="text-gray-600 hover:text-gray-800" aria-label="Back to tickets">
+            <button onclick="goBack()" class="text-gray-600 hover:text-gray-800" aria-label="Back to tickets">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-            </a>
+            </button>
             <div>
                 <h1 class="text-lg lg:text-2xl font-bold text-gray-900">Ticket #{{ ticket.id }}</h1>
                 <div class="hidden lg:flex items-center flex-wrap gap-3 mt-1">
@@ -204,32 +204,38 @@
                     {% endif %}
 
                     <div class="text-center">
-                        <p class="font-semibold {% if ticket.sla_breached %}text-red-500{% elif ticket.status == 'completed' or ticket.status == 'closed' %}text-green-500{% else %}text-gray-900{% endif %}">
+                        <p class="font-semibold text-lg {% if ticket.sla_breached %}text-red-500{% elif ticket.status == 'completed' or ticket.status == 'closed' %}text-green-500{% else %}text-gray-900{% endif %}">
                             {% if ticket.status == 'completed' or ticket.status == 'closed' %}COMPLETED{% elif ticket.sla_breached %}OVERDUE{% else %}IN PROGRESS{% endif %}
                         </p>
-                        <p class="text-sm text-gray-500">
+                        <p class="text-sm text-gray-500 mt-1">
                             {% if ticket.status == 'completed' or ticket.status == 'closed' %}Ticket resolved{% elif ticket.sla_breached %}{{ ticket.get_time_left }} past due{% else %}{{ ticket.get_time_left }} remaining{% endif %}
                         </p>
                     </div>
 
-                    <hr class="w-full border-gray-200 my-2">
+                    <hr class="w-full border-gray-200 my-3">
 
-                    <div class="w-full space-y-3 text-sm">
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">Response Time:</span>
-                            <span class="font-medium px-2 py-0.5 rounded-full text-xs {% if ticket.response_sla_breached %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+                    <div class="w-full space-y-4 text-sm">
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <div class="flex items-center gap-2">
+                                <svg class="w-5 h-5 {% if ticket.response_sla_breached %}text-red-500{% else %}text-green-500{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span class="text-gray-600">Response Time:</span>
+                            </div>
+                            <span class="font-medium px-2.5 py-1 rounded-full text-xs {% if ticket.response_sla_breached %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
                                 {% if ticket.response_sla_breached %}MISSED{% else %}ON TRACK{% endif %}
                             </span>
                         </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">Resolution Time:</span>
-                            <span class="font-medium {% if ticket.resolution_sla_breached %}text-red-500{% elif ticket.get_sla_status == 'On Track' %}text-green-500{% else %}text-yellow-500{% endif %}">
-                                {{ ticket.get_time_left }}
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <div class="flex items-center gap-2">
+                                <svg class="w-5 h-5 {% if ticket.resolution_sla_breached %}text-red-500{% else %}text-green-500{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span class="text-gray-600">Resolution Time:</span>
+                            </div>
+                            <span class="font-medium px-2.5 py-1 rounded-full text-xs {% if ticket.resolution_sla_breached %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+                                {% if ticket.resolution_sla_breached %}MISSED{% else %}ON TRACK{% endif %}
                             </span>
                         </div>
-                        <div class="flex justify-between items-center">
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                             <span class="text-gray-600">Priority Level:</span>
-                            <span class="font-medium {% if ticket.priority == 'critical' or ticket.priority == 'high' %}text-red-500{% elif ticket.priority == 'normal' %}text-yellow-500{% else %}text-gray-500{% endif %}">
+                            <span class="font-medium px-2.5 py-1 rounded-full text-xs {% if ticket.priority == 'critical' or ticket.priority == 'high' %}bg-red-100 text-red-700{% elif ticket.priority == 'normal' %}bg-yellow-100 text-yellow-700{% else %}bg-gray-100 text-gray-700{% endif %}">
                                 {{ ticket.get_priority_display }}
                             </span>
                         </div>
@@ -294,8 +300,35 @@
         </div>
     </div>
 </div>
+{% endblock content %}
 
+{% block extra_js %}
 <script>
+// Function to handle back navigation properly
+function goBack() {
+    try {
+        // Try to go back in history
+        if (window.history.length > 1 && document.referrer) {
+            // Check if referrer is from the same origin
+            try {
+                const referrerUrl = new URL(document.referrer);
+                if (referrerUrl.origin === window.location.origin) {
+                    window.history.back();
+                    return;
+                }
+            } catch (e) {
+                // If URL parsing fails, fall through to default
+            }
+        }
+    } catch (e) {
+        // If any error occurs with history API, fall through to default
+        console.warn('Error with history navigation, falling back to tickets page:', e);
+    }
+    // If no history or cross-origin referrer, go to tickets page
+    window.location.href = '/dashboard/tickets/';
+}
+
+
 document.addEventListener('DOMContentLoaded', function() {
     // Helper function to get CSRF token
     function getCookie(name) {
@@ -437,5 +470,37 @@ document.addEventListener('DOMContentLoaded', function() {
     setupButtonListeners('escalateBtn', `/dashboard/api/tickets/${ticketId}/escalate/`, 'Are you sure you want to escalate this ticket?', 'Ticket escalated successfully!');
     setupButtonListeners('rejectBtn', `/dashboard/api/tickets/${ticketId}/reject/`, 'Are you sure you want to reject this ticket?', 'Ticket rejected successfully!');
 });
+  function showConfirmationModal(title, message, onConfirm) {
+        const modal = document.getElementById('confirmationModal');
+        const titleElement = document.getElementById('confirmationModalTitle');
+        const messageElement = document.getElementById('confirmationModalMessage');
+        const confirmButton = document.getElementById('confirmationModalConfirm');
+        
+        if (!modal || !titleElement || !messageElement || !confirmButton) return;
+        
+        // Set modal content
+        titleElement.textContent = title;
+        messageElement.textContent = message;
+        
+        // Set up confirm action
+        confirmButton.onclick = function() {
+            closeConfirmationModal();
+            if (onConfirm && typeof onConfirm === 'function') {
+                onConfirm();
+            }
+        };
+        
+        // Show modal with animation
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        requestAnimationFrame(() => {
+            modal.classList.remove('opacity-0');
+            const dialog = modal.querySelector('div[onclick="event.stopPropagation()"]');
+            if (dialog) {
+                dialog.classList.remove('scale-95', 'opacity-0');
+                dialog.classList.add('scale-100', 'opacity-100');
+            }
+        });
+    }
 </script>
 {% endblock %}

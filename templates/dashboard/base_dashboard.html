@@ -244,6 +244,13 @@
                     cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
                     break;
                 }
+            }
+        }
+        return cookieValue;
+    }
+    
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('sidebarOverlay');
         
         // Only toggle on mobile devices
