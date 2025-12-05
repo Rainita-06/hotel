@@ -32,6 +32,14 @@ RUN mkdir -p /app/media/qrcodes \
     && chown -R appuser:appuser /app/media \
     && chmod -R 755 /app/media
 
+RUN mkdir -p /app/media/qr_codes \
+    && chown -R appuser:appuser /app/media \
+    && chmod -R 755 /app/media
+
+RUN mkdir -p /app/media/building_images \
+    && chown -R appuser:appuser /app/media \
+    && chmod -R 755 /app/media
+    
 # Change ownership and switch to non-root user
 RUN chown -R appuser:appuser /app
 USER appuser
