@@ -306,28 +306,15 @@
 <script>
 // Function to handle back navigation properly
 function goBack() {
-    try {
-        // Try to go back in history
-        if (window.history.length > 1 && document.referrer) {
-            // Check if referrer is from the same origin
-            try {
-                const referrerUrl = new URL(document.referrer);
-                if (referrerUrl.origin === window.location.origin) {
-                    window.history.back();
-                    return;
-                }
-            } catch (e) {
-                // If URL parsing fails, fall through to default
-            }
-        }
-    } catch (e) {
-        // If any error occurs with history API, fall through to default
-        console.warn('Error with history navigation, falling back to tickets page:', e);
-    }
-    // If no history or cross-origin referrer, go to tickets page
-    window.location.href = '/dashboard/tickets/';
-}
+    history.go(-1);
 
+    // Fallback if browser refuses to go back (e.g., no history entry)
+    setTimeout(() => {
+        if (document.referrer === "" || document.referrer === window.location.href) {
+            window.location.href = "/dashboard/tickets/";
+        }
+    }, 100);
+}
 
 document.addEventListener('DOMContentLoaded', function() {
     // Helper function to get CSRF token
