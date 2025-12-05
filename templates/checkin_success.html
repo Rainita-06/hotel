@@ -1,0 +1,141 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Check-In Success{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 flex justify-center items-center py-8">
+ <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+
+    <!-- Header -->
+    <div class="h-20 px-6 py-4 bg-white border-b border-gray-200 inline-flex justify-center items-center">
+      <div class="flex-1 h-12 flex justify-between items-center">
+        <div class="flex justify-start items-center gap-4">
+          <div class="inline-flex flex-col justify-center items-start">
+            <div class="inline-flex justify-start items-center">
+              <h1 class="w-[1100px] text-gray-900 text-2xl font-bold font-['Inter']">
+                Guest Check-In Successful
+              </h1>
+            </div>
+            <div class="inline-flex justify-center items-center">
+              <p class="w-[1100px] text-gray-600 text-sm font-normal font-['Inter']">
+                Guest has been successfully checked in (Breakfast not included)
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+{% include 'partials/breakfast_tab.html' %}
+    <!-- ✅ Success Card -->
+    <div class="w-[1107px] bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] border-gray-200 overflow-hidden mt-6">
+
+      <!-- Top Banner -->
+      <div class="w-full h-14 px-8 bg-blue-600 inline-flex justify-between items-center">
+        <div class="text-white text-lg font-bold font-['Inter']">
+          Check-In Completed Successfully
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="p-8 flex justify-start items-start gap-8">
+
+        <div class="flex-1">
+          <div class="w-[496px]">
+
+            <!-- Guest Name -->
+            <div class="h-12 py-3 border-b border-gray-200 inline-flex justify-start items-start">
+              <div class="w-60 text-gray-900 text-base font-semibold font-['Inter']">Guest Name</div>
+              <div class="w-60 text-gray-900 text-base font-normal font-['Inter']">
+                {{ checkin.guest_name }}
+              </div>
+            </div>
+
+            <!-- Room Number -->
+            <div class="h-12 py-3 border-b border-gray-200 inline-flex justify-start items-start">
+              <div class="w-60 text-gray-900 text-base font-semibold font-['Inter']">Room Number</div>
+              <div class="w-60 text-gray-900 text-base font-normal font-['Inter']">
+                {{ checkin.room_no }}
+              </div>
+            </div>
+
+            <!-- Adults -->
+            <div class="h-12 py-3 border-b border-gray-200 inline-flex justify-start items-start">
+              <div class="w-60 text-gray-900 text-base font-semibold font-['Inter']">Adults</div>
+              <div class="w-60 text-gray-900 text-base font-normal font-['Inter']">
+                {{ checkin.adults }}
+              </div>
+            </div>
+
+            <!-- Kids -->
+            <div class="h-12 py-3 border-b border-gray-200 inline-flex justify-start items-start">
+              <div class="w-60 text-gray-900 text-base font-semibold font-['Inter']">Kids</div>
+              <div class="w-60 text-gray-900 text-base font-normal font-['Inter']">
+                {{ checkin.kids }}
+              </div>
+            </div>
+
+            <!-- Check-in Date -->
+            <div class="h-12 py-3 border-b border-gray-200 inline-flex justify-start items-start">
+              <div class="w-60 text-gray-900 text-base font-semibold font-['Inter']">Check-in Date</div>
+              <div class="w-60 text-gray-900 text-base font-normal font-['Inter']">
+                {{ checkin.check_in_date|date:"M. d, Y" }}
+              </div>
+            </div>
+
+            <!-- Check-out Date -->
+            <div class="h-12 py-3 inline-flex justify-start items-start">
+              <div class="w-60 text-gray-900 text-base font-semibold font-['Inter']">Check-out Date</div>
+              <div class="w-60 text-gray-900 text-base font-normal font-['Inter']">
+                {% if checkin.check_out_date %}
+                  {{ checkin.check_out_date|date:"M. d, Y" }}
+                {% else %}
+                  N/A
+                {% endif %}
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ✅ Status Panel -->
+        <div class="w-64">
+          <div class="w-64 h-56 bg-green-50 rounded-lg outline outline-1 outline-offset-[-1px] outline-green-200 p-4 flex flex-col justify-center items-center text-center">
+            <svg class="w-12 h-12 text-green-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M5 13l4 4L19 7" />
+            </svg>
+            <div class="text-green-700 text-base font-semibold font-['Inter']">Check-In Completed</div>
+            <div class="text-green-600 text-sm font-normal font-['Inter'] mt-1">
+              Breakfast not included
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="w-full h-12 px-8 inline-flex justify-center items-start gap-4 pb-6">
+
+        
+
+        
+
+      </div>
+
+      <!-- Check-out Section -->
+      <div class="text-center p-4">
+        {% if not checkin.check_out_date %}
+          <a href="{% url 'checkout' checkin.id %}" 
+             class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors inline-block">
+            Mark Check-Out
+          </a>
+        {% else %}
+          <p class="text-green-600 font-bold text-lg">
+            Checked out on: {{ checkin.check_out_date }}
+          </p>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

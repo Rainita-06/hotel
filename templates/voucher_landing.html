@@ -42,7 +42,9 @@
 {% include 'partials/breakfast_tab.html' %}
 <div class="voucher-container text-center">
   <!-- QR Code -->
-  <img src="{{ qr_absolute_url }}" alt="QR Code">
+  <div style="display: flex; justify-content: center; margin-bottom: 20px;">
+    <img src="{{ qr_absolute_url }}" alt="QR Code">
+  </div>
 
   <!-- Title & Time -->
   <div class="voucher-title">Grand Sunshine Resort & Convention</div>

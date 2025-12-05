@@ -1950,8 +1950,8 @@ class Voucher(models.Model):
      if self.include_breakfast:
         now = timezone.localtime().time()
         if self.check_in_date and date.today() == self.check_in_date:
-            # Must check-in before 10:30 AM if breakfast included
-            if now > time(10, 30):
+            # Must check-in before 11:30 AM if breakfast included
+            if now > time(11, 30):
                 return False  # missed breakfast window
 
     # ✅ Otherwise, valid

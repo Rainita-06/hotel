@@ -1225,6 +1225,42 @@ def dashboard2_view(request):
         active_guests_change = 0
         active_guests_change_direction = "none"
 
+    try:
+    # Get all departments and count tickets per department
+        dept_qs = Department.objects.all()
+    # Build list of (dept, total_count, assigned_count, completed_count)
+        dept_stats = []
+        for d in dept_qs:
+            total = ServiceRequest.objects.filter(department=d).count()
+        # assigned/open = everything not completed/closed
+            assigned = ServiceRequest.objects.filter(department=d).exclude(status__in=['completed', 'closed']).count()
+            completed = ServiceRequest.objects.filter(department=d, status__in=['completed', 'closed']).count()
+            dept_stats.append((d.name, total, assigned, completed))
+
+            
+
+    # Sort by total ticket count (desc) and take top 6 (fallback to alphabetical if equal)
+        dept_stats_sorted = sorted(dept_stats, key=lambda x: (-x[1], x[0]))[:6]
+
+        labels = [t[0] for t in dept_stats_sorted]
+        assigned_counts = [t[2] for t in dept_stats_sorted]
+        completed_counts = [t[3] for t in dept_stats_sorted]
+    except Exception:
+    # Fallback to empty lists to avoid breaking template when DB or model missing
+        labels = []
+        assigned_counts = []
+        completed_counts = []
+
+# Provide JSON-encoded strings for safe use in templates
+    context_dept_chart = {
+    'dept_labels': json.dumps(labels),
+    'dept_assigned_counts': json.dumps(assigned_counts),
+    'dept_completed_counts': json.dumps(completed_counts),
+}
+
+
+
+
     # Fetch actual critical tickets (high priority service requests)
     try:
         critical_tickets = ServiceRequest.objects.filter(
@@ -1359,7 +1395,7 @@ def dashboard2_view(request):
         # Guest feedback - now using actual data
         'guest_feedback': feedback_data_list
     }
-    
+    context.update(context_dept_chart)
     return render(request, 'dashboard/dashboard.html', context)
 
 
@@ -2912,6 +2948,7 @@ def tickets(request):
         moved_to_ticket__in=[False, 0]
     ).order_by('-created_at')
     all_reviews = list(matched_reviews) + list(unmatched_reviews)
+    pending_count = matched_reviews.count() + unmatched_reviews.count()
     paginator = Paginator(all_reviews, 10)  # 10 reviews per page
     page_number = request.GET.get('page')
     page_ob = paginator.get_page(page_number)
@@ -3135,9 +3172,10 @@ def tickets(request):
         'status_filter': status_filter,
         'search_query': search_query,
         "matched_reviews": matched_reviews,
-        "unmatched_reviews": unmatched_reviews,
+        # "unmatched_reviews": unmatched_reviews,
         'request_types_by_department_json': request_types_by_department_json,
         'all_request_types_json': all_request_types_json,
+        "pending_count":pending_count,
     }
     return render(request, 'dashboard/tickets.html', context)
 

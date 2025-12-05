@@ -134,6 +134,14 @@
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scans</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Redeemed?</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Redeemed At</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+  Check-In
+</th>
+
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+  Check-Out
+</th>
+
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
@@ -163,6 +171,44 @@
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 {{ v.redeemed_at|default:"-" }}
               </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+  {{ v.check_in_date|date:"d M Y" }}
+</td><td class="px-6 py-4 whitespace-nowrap text-sm">
+
+  {% if not v.is_used %}
+
+      {% if not v.check_out_date %}
+        <!-- 🔴 NO CHECKOUT DATE -->
+        <a href="{% url 'checkout' v.id %}"
+           class="inline-flex items-center justify-center px-3 py-1.5 bg-red-600 text-white rounded-md text-[11px] font-semibold hover:bg-red-700 transition min-w-[170px]">
+           Mark Check-Out
+        </a>
+
+      {% elif v.check_out_date < today %}
+        <!-- 🟡 OVERSTAYED -->
+        <a href="{% url 'checkout' v.id %}"
+           class="inline-flex items-center justify-center px-3 py-1.5 bg-yellow-500 text-white rounded-md text-[11px] font-semibold hover:bg-yellow-600 transition min-w-[170px]">
+          Overdue:({{ v.check_out_date|date:"d M Y" }})
+        </a>
+
+      {% else %}
+        <!-- 🔵 STILL STAYING -->
+        <a href="{% url 'checkout' v.id %}"
+           class="inline-flex items-center justify-center px-3 py-1.5 bg-blue-600 text-white rounded-md text-[11px] font-semibold hover:bg-blue-700 transition min-w-[170px]">
+          Stay Till: {{ v.check_out_date|date:"d M Y" }}
+        </a>
+      {% endif %}
+
+  {% else %}
+      <!-- 🟢 FINAL CHECKED OUT -->
+      <span
+        class="inline-flex items-center justify-center px-3 py-1.5 bg-green-600 text-white rounded-md text-[11px] font-semibold min-w-[170px]">
+        Checked Out: {{ v.check_out_date|date:"d M Y" }}
+      </span>
+  {% endif %}
+
+</td>
+
             </tr>
             {% endfor %}
           </tbody>
