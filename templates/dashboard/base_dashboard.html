@@ -244,23 +244,6 @@
                     cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
                     break;
                 }
-            }
-        }
-        return cookieValue;
-    }
-    
-    // Initialize AOS animations
-    document.addEventListener('DOMContentLoaded', function() {
-        AOS.init({
-            duration: 800,
-            once: true,
-            easing: 'ease-out-cubic'
-        });
-    });
-    
-    // ----- Sidebar Functionality (mobile open/close) -----
-    function toggleSidebar() {
-        const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('sidebarOverlay');
         
         // Only toggle on mobile devices

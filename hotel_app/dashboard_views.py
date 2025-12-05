@@ -3873,6 +3873,13 @@ def configure_requests(request):
         'request_family'
     ).filter(active=True).order_by('name')
     
+    # Fetch DepartmentRequestSLA to get the correct department mapping
+    dept_sla_map = {}
+    dept_slas = DepartmentRequestSLA.objects.select_related('department').all()
+    for sla in dept_slas:
+        if sla.request_type_id not in dept_sla_map:
+             dept_sla_map[sla.request_type_id] = sla.department
+
     # Create requests list with actual department data and SLA info
     requests_list = []
     
@@ -3881,8 +3888,11 @@ def configure_requests(request):
         department = None
         department_name = 'General'
         
-        # Priority: default_department > work_family > request_family
-        if request_type.default_department:
+        # Priority: SLA Configuration > default_department > work_family > request_family
+        if request_type.request_type_id in dept_sla_map:
+            department = dept_sla_map[request_type.request_type_id]
+            department_name = department.name
+        elif request_type.default_department:
             department = request_type.default_department
             department_name = department.name
         elif request_type.work_family:
