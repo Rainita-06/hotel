@@ -306,14 +306,9 @@
 <script>
 // Function to handle back navigation properly
 function goBack() {
-    history.go(-1);
-
     // Fallback if browser refuses to go back (e.g., no history entry)
-    setTimeout(() => {
-        if (document.referrer === "" || document.referrer === window.location.href) {
-            window.location.href = "/dashboard/tickets/";
-        }
-    }, 100);
+    window.location.href = "/dashboard/tickets/";
+    
 }
 
 document.addEventListener('DOMContentLoaded', function() {
