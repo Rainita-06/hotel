@@ -3,7 +3,8 @@
 
 {% block content %}
 <div class="min-h-screen bg-gray-50 flex justify-center items-center py-8">
-  <div class="w-[1184px]">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
     <!-- Header -->
     <div class="h-20 px-6 py-4 bg-white border-b border-gray-200 inline-flex justify-center items-center">
       <div class="flex-1 h-12 flex justify-between items-center">
@@ -28,7 +29,7 @@
         <div class="flex justify-start items-center gap-3">
           <div class="w-4 h-7">
             <div class="w-4 h-4 inline-flex justify-center items-center mt-1">
-              <div class="w-4 h-4 bg-white rounded"></div>
+              <!-- <div class="w-4 h-4 bg-white rounded"></div> -->
             </div>
           </div>
           <div class="text-white text-lg font-bold font-['Inter']">Breakfast Voucher Generated</div>
@@ -150,11 +151,10 @@
              class="w-48 h-12 rounded-xl outline outline-1 outline-offset-[-1px] outline-gray-500 flex justify-center items-center hover:bg-gray-50 transition-colors">
             <div class="text-gray-500 text-base font-medium font-['Inter']">Download QR Code</div>
           </a>
-        </div>
-      </div>
+       
 
       <!-- Check-out Section -->
-      <div class="text-center p-4">
+      <!-- <div class="text-center p-4"> -->
         {% if not voucher.check_out_date %}
           <a href="{% url 'checkout' voucher.id %}" class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors inline-block">
             Mark Check-Out
@@ -173,7 +173,8 @@
         </svg>
         <p class="text-yellow-800 text-lg font-medium">No voucher created (Breakfast not included).</p>
       </div>
-    </div>
+    </div> </div>
+      
     {% endif %}
   </div>
 </div>

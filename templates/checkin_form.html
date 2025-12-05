@@ -63,7 +63,7 @@
             <!-- Adults -->
             <div>
               <label class="block text-gray-900 text-sm font-medium font-['Inter'] mb-2">Adults</label>
-              <input type="number" name="adults" min="1" value="1"
+              <input type="number" name="adults" min="1" value="1" required
                      class="w-full h-12 px-4 bg-white rounded-lg border border-gray-200 text-gray-900 text-base font-normal leading-normal focus:ring-blue-500 focus:border-blue-500">
             </div>
 
@@ -75,7 +75,7 @@
                        class="w-full h-12 px-4 bg-white rounded-lg border border-gray-200 text-gray-900 text-sm font-normal leading-normal focus:ring-blue-500 focus:border-blue-500 appearance-none">
                 <!-- Calendar Icon Placeholder -->
                 <svg class="w-6 h-4 absolute right-3 top-3 pointer-events-none text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"  />
                 </svg>
               </div>
             </div>
@@ -95,7 +95,7 @@
             <!-- Room Number -->
             <div>
               <label class="block text-gray-900 text-sm font-medium font-['Inter'] mb-2">Room Number</label>
-              <input type="text" name="room_no"
+              <input type="text" name="room_no" required
                      class="w-full h-12 px-4 bg-white rounded-lg border border-gray-200 text-gray-900 text-base font-normal leading-normal focus:ring-blue-500 focus:border-blue-500"
                      placeholder="e.g., 205A">
             </div>
@@ -111,7 +111,7 @@
             <!-- Kids -->
             <div>
               <label class="block text-gray-900 text-sm font-medium font-['Inter'] mb-2">Kids</label>
-              <input type="number" name="kids" min="0" value="0"
+              <input type="number" name="kids" min="0" value="0" required
                      class="w-full h-12 px-4 bg-white rounded-lg border border-gray-200 text-gray-900 text-base font-normal leading-normal focus:ring-blue-500 focus:border-blue-500">
             </div>
 
@@ -123,7 +123,7 @@
                        class="w-full h-12 px-4 bg-white rounded-lg border border-gray-200 text-gray-900 text-sm font-normal leading-normal focus:ring-blue-500 focus:border-blue-500 appearance-none">
                 <!-- Calendar Icon Placeholder -->
                 <svg class="w-6 h-4 absolute right-3 top-3 pointer-events-none text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"  />
                 </svg>
               </div>
             </div>
@@ -483,5 +483,34 @@ document.querySelector('form').addEventListener('submit', function(e) {
     phoneInput.focus();
   }
 });
+
+
+// ✅ Toggle Voucher + Button Text Based on Include Breakfast
+document.addEventListener("DOMContentLoaded", function () {
+  const breakfastToggle = document.querySelector('input[name="include_breakfast"]');
+  const generateQRCheckbox = document.querySelector('input[name="generate_qr"]');
+  const submitButton = document.querySelector('button[type="submit"] span');
+
+  function updateVoucherUI() {
+    if (breakfastToggle.checked) {
+      // ✅ Breakfast ON → Enable Voucher + QR
+      generateQRCheckbox.checked = true;
+      generateQRCheckbox.disabled = false;
+      submitButton.textContent = "Generate Voucher";
+    } else {
+      // ✅ Breakfast OFF → Disable Voucher + QR
+      generateQRCheckbox.checked = false;
+      generateQRCheckbox.disabled = true;
+      submitButton.textContent = "Submit Check-In";
+    }
+  }
+
+  // ✅ Initial Load
+  updateVoucherUI();
+
+  // ✅ On Toggle Change
+  breakfastToggle.addEventListener("change", updateVoucherUI);
+});
+
 </script>
 {% endblock %}

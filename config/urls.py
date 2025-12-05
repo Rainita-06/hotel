@@ -123,12 +123,14 @@ urlpatterns = [
     path("checkin/", views.create_voucher_checkin, name="checkin_form"),
     path("voucher/<str:voucher_code>/", views.voucher_landing, name="voucher_landing"),
     path("checkout/<int:voucher_id>/",views.mark_checkout, name="checkout"),
+    # path('voucher-checkout/<int:voucher_id>/', views.mark_checkout, name='mark_checkout'),
+
     path("scan/", views.scan_voucher_page, name="scan_voucher"),
     path("scan/<str:code>/", views.scan_voucher_page, name="scan_voucher"),
     path("api/vouchers/validate/", views.validate_voucher, name="validate_voucher"),
     path("report/vouchers/", views.breakfast_voucher_report, name="breakfast_voucher_report"),
     path("api/members/validate/", views.validate_member_qr, name="validate_member_qr"),
-
+    
     #Gym
     path("members/add/", views.add_member, name="add_member"),
     path("members/", views.member_list, name="member_list"),

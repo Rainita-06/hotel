@@ -1547,6 +1547,77 @@ import qrcode
 import io
 from django.core.files.base import ContentFile
 from django.urls import reverse
+# @login_required
+# @require_section_permission('breakfast_voucher', 'view')
+# def create_voucher_checkin(request):
+#     if request.method == "POST":
+#         guest_name = request.POST.get("guest_name")
+#         room_no = request.POST.get("room_no")
+#         adults = int(request.POST.get("adults", 1))
+#         kids = int(request.POST.get("kids", 0))
+#         quantity = int(request.POST.get("quantity", 0))
+#         country_code = request.POST.get("country_code")
+#         phone_number = request.POST.get("phone_number")
+#         email = request.POST.get("email")
+#         check_in_date = _parse_yyyy_mm_dd(request.POST.get("check_in_date"))
+#         check_out_date = _parse_yyyy_mm_dd(request.POST.get("check_out_date"))
+#         include_breakfast = request.POST.get("include_breakfast") == "on"  # checkbox
+
+#         # ✅ Create voucher first
+#         voucher = Voucher.objects.create(
+#             guest_name=guest_name,
+#             room_no=room_no,
+#             country_code=country_code,
+#             phone_number=phone_number,
+#             email=email,
+#             adults=adults,
+#             kids=kids,
+#             quantity=quantity,
+#             check_in_date=check_in_date,
+#             check_out_date=check_out_date,
+#             include_breakfast=include_breakfast,
+#         )
+
+#         # Generate landing URL using voucher_code
+#         voucher_page_url = reverse("voucher_landing", args=[voucher.voucher_code])
+#         landing_url = (voucher_page_url)
+
+#         # Generate scan URL for QR
+#         scan_url = (reverse("scan_voucher", args=[voucher.voucher_code]))
+
+#         # Generate QR code
+#         qr_content = voucher.voucher_code  # you can customize
+#         qr = qrcode.make(qr_content)
+#         buffer = io.BytesIO()
+#         qr.save(buffer, format="PNG")
+
+#         # Save QR code as base64 string
+#         qr_img_str = base64.b64encode(buffer.getvalue()).decode()
+#         voucher.qr_code = qr_img_str
+
+#         # Save QR code as image file
+#         file_name = f"voucher_{voucher.id}.png"
+#         voucher.qr_code_image.save(file_name, ContentFile(buffer.getvalue()), save=True)
+
+#         voucher.save()
+#         # qr_image_path = voucher.qr_code_image.path  # local file path
+#         # os.startfile(qr_image_path)
+#         # Absolute URL for QR sharing
+#         qr_absolute_url = (voucher.qr_code_image.url)
+#         qr = (
+#     f"{request.scheme}://{request.get_host()}{voucher.qr_code_image.url}"
+#     if ":" in request.get_host()  # host contains port → docker/live
+#     else f"{settings.SITE_BASE_URL}{voucher.qr_code_image.url}")
+#         return render(request, "voucher_success.html", {
+#             "voucher": voucher,
+#             "qr_absolute_url": qr_absolute_url,
+#             "include_breakfast": include_breakfast,
+#             "scan_url": scan_url,
+#             "landing_url": landing_url,
+#             "qr":qr,
+#         })
+
+#     return render(request, "checkin_form.html")
 @login_required
 @require_section_permission('breakfast_voucher', 'view')
 def create_voucher_checkin(request):
@@ -1559,11 +1630,40 @@ def create_voucher_checkin(request):
         country_code = request.POST.get("country_code")
         phone_number = request.POST.get("phone_number")
         email = request.POST.get("email")
+
         check_in_date = _parse_yyyy_mm_dd(request.POST.get("check_in_date"))
         check_out_date = _parse_yyyy_mm_dd(request.POST.get("check_out_date"))
-        include_breakfast = request.POST.get("include_breakfast") == "on"  # checkbox
 
-        # ✅ Create voucher first
+        # ✅ READ TOGGLE
+        include_breakfast = request.POST.get("include_breakfast") == "on"
+
+
+        # ==========================================================
+        # ✅ ✅ ✅ CASE 1: BREAKFAST OFF → NORMAL CHECK-IN ONLY
+        # ==========================================================
+        if not include_breakfast:
+            checkin = Voucher.objects.create(   # ✅ your normal check-in model
+                guest_name=guest_name,
+                room_no=room_no,
+                country_code=country_code,
+                phone_number=phone_number,
+                email=email,
+                adults=adults,
+                kids=kids,
+                quantity=quantity,
+                check_in_date=check_in_date,
+                check_out_date=check_out_date,
+            )
+
+            # ✅ Redirect to NORMAL success page
+            return render(request, "checkin_success.html", {
+                "checkin": checkin
+            })
+
+
+        # ==========================================================
+        # ✅ ✅ ✅ CASE 2: BREAKFAST ON → VOUCHER + QR FLOW
+        # ==========================================================
         voucher = Voucher.objects.create(
             guest_name=guest_name,
             room_no=room_no,
@@ -1575,49 +1675,51 @@ def create_voucher_checkin(request):
             quantity=quantity,
             check_in_date=check_in_date,
             check_out_date=check_out_date,
-            include_breakfast=include_breakfast,
+            include_breakfast=True,
         )
 
-        # Generate landing URL using voucher_code
-        voucher_page_url = reverse("voucher_landing", args=[voucher.voucher_code])
-        landing_url = (voucher_page_url)
+        landing_url = reverse("voucher_landing", args=[voucher.voucher_code])
+        scan_url = reverse("scan_voucher", args=[voucher.voucher_code])
 
-        # Generate scan URL for QR
-        scan_url = (reverse("scan_voucher", args=[voucher.voucher_code]))
+        qr_absolute_url = None
+        qr = None
 
-        # Generate QR code
-        qr_content = voucher.voucher_code  # you can customize
-        qr = qrcode.make(qr_content)
+        qr_content = voucher.voucher_code
+        qr_img = qrcode.make(qr_content)
+
         buffer = io.BytesIO()
-        qr.save(buffer, format="PNG")
+        qr_img.save(buffer, format="PNG")
 
-        # Save QR code as base64 string
-        qr_img_str = base64.b64encode(buffer.getvalue()).decode()
-        voucher.qr_code = qr_img_str
+        voucher.qr_code = base64.b64encode(buffer.getvalue()).decode()
 
-        # Save QR code as image file
         file_name = f"voucher_{voucher.id}.png"
-        voucher.qr_code_image.save(file_name, ContentFile(buffer.getvalue()), save=True)
+        voucher.qr_code_image.save(
+            file_name,
+            ContentFile(buffer.getvalue()),
+            save=False
+        )
 
         voucher.save()
-        # qr_image_path = voucher.qr_code_image.path  # local file path
-        # os.startfile(qr_image_path)
-        # Absolute URL for QR sharing
-        qr_absolute_url = (voucher.qr_code_image.url)
-        qr = (
-    f"{request.scheme}://{request.get_host()}{voucher.qr_code_image.url}"
-    if ":" in request.get_host()  # host contains port → docker/live
-    else f"{settings.SITE_BASE_URL}{voucher.qr_code_image.url}")
+
+        qr_absolute_url = (
+            f"{request.scheme}://{request.get_host()}{voucher.qr_code_image.url}"
+            if ":" in request.get_host()
+            else f"{settings.SITE_BASE_URL}{voucher.qr_code_image.url}"
+        )
+
+        qr = qr_absolute_url
+
         return render(request, "voucher_success.html", {
             "voucher": voucher,
             "qr_absolute_url": qr_absolute_url,
-            "include_breakfast": include_breakfast,
+            "include_breakfast": True,
             "scan_url": scan_url,
             "landing_url": landing_url,
-            "qr":qr,
+            "qr": qr,
         })
 
     return render(request, "checkin_form.html")
+
 
 from django.shortcuts import get_object_or_404
 
@@ -1732,6 +1834,7 @@ def breakfast_voucher_report(request):
             "weekly_checkouts": weekly_checkouts,
             "from_date": from_date,
             "to_date": to_date,
+            "today": today,
         },
     )
 
@@ -1747,6 +1850,27 @@ from django.shortcuts import redirect
 from django.utils.timezone import now
 from .models import Voucher
 
+# @login_required
+# @require_section_permission('breakfast_voucher', 'change')
+# def mark_checkout(request, voucher_id):
+#     """
+#     Mark a voucher as checked out (set today's date as checkout).
+#     """
+#     try:
+#         voucher = Voucher.objects.get(id=voucher_id)
+#     except Voucher.DoesNotExist:
+#         return HttpResponse("Voucher not found", status=404)
+
+#     voucher.check_out_date = now().date()
+#     voucher.save(update_fields=["check_out_date"])
+
+#     # ✅ If the test expects 200 OK, return JSON instead of redirect
+#     if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.method == "POST":
+#         return JsonResponse({"message": "Check-out marked successfully."}, status=200)
+
+#     # ✅ For normal browser request
+#     return redirect("breakfast_voucher_report")
+
 @login_required
 @require_section_permission('breakfast_voucher', 'change')
 def mark_checkout(request, voucher_id):
@@ -1758,17 +1882,40 @@ def mark_checkout(request, voucher_id):
     except Voucher.DoesNotExist:
         return HttpResponse("Voucher not found", status=404)
 
-    voucher.check_out_date = now().date()
-    voucher.save(update_fields=["check_out_date"])
+    today = now().date()
 
-    # ✅ If the test expects 200 OK, return JSON instead of redirect
+    # ✅ FORCE SAME-DAY CHECKOUT
+    voucher.check_out_date = today
+    voucher.is_used = True   # ✅ THIS IS REQUIRED FOR GREEN STATUS
+    voucher.save()
+
+    # ✅ For AJAX tests
     if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.method == "POST":
         return JsonResponse({"message": "Check-out marked successfully."}, status=200)
 
-    # ✅ For normal browser request
-    return redirect("checkin_form")
+    # ✅ Normal browser flow
+    return redirect("breakfast_voucher_report")
 
-      
+
+
+# @login_required
+# @require_section_permission('breakfast_voucher', 'change')
+# def mark_checkout(request, voucher_id):
+#     voucher = get_object_or_404(Voucher, id=voucher_id)
+
+#     # ✅ Always allow override (early or normal)
+#     voucher.check_out_date = now().date()
+#     voucher.is_used = True
+#     voucher.save(update_fields=["check_out_date", "is_used"])
+
+#     # ✅ AJAX Support
+#     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+#         return JsonResponse({
+#             "status": "success",
+#             "new_date": voucher.check_out_date.strftime("%d %b %Y")
+#         })
+
+#     return redirect("breakfast_voucher_report")
 
 
 from django.utils import timezone
