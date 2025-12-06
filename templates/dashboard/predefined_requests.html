@@ -1,6 +1,33 @@
 {% extends "dashboard/base_dashboard.html" %}
 {% load static %}
 
+{% block extra_css %}
+<style>
+    /* Autocomplete styles */
+    .autocomplete-list {
+        position: absolute;
+        z-index: 50;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 0.5rem;
+        margin-top: 0.25rem;
+        max-height: 12rem;
+        overflow-y: auto;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    }
+    .autocomplete-item {
+        padding: 0.5rem 0.75rem;
+        cursor: pointer;
+    }
+    .autocomplete-item:hover {
+        background: #eff6ff;
+    }
+</style>
+{% endblock extra_css %}
+
 {% block content %}
 <div class="w-full max-w-[1184px] mx-auto relative bg-white">
 
@@ -27,10 +54,11 @@
                     <img src="{% static 'images/manage_users/plus.svg' %}" alt="plus" class="w-3.5 h-3.5">
                     <span class="whitespace-nowrap text-white text-base font-normal font-['Inter']">New Request</span>
                 </button>
-                 <button id="secondary-action-btn" class="w-10 h-10 bg-white hover:bg-gray-50 rounded-lg border border-gray-200 flex items-center justify-center transition-colors hidden">
+                <button id="secondary-action-btn" class="w-10 h-10 bg-white hover:bg-gray-50 rounded-lg border border-gray-200 flex items-center justify-center transition-colors hidden">
                     <img src="{% static 'images/manage_users/filter.svg' %}" alt="filter" class="w-4 h-4">
                 </button>
             </div>
+        </div>
     </div>
 
     <div>
@@ -40,7 +68,7 @@
                 <div class="request-card bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col h-80" 
                      data-category="{% if req.exposed %}guest{% else %}internal{% endif %}" 
                      data-name="{{ req.title }}"
-                     data-department="{{ req.department }}">
+                     data-department="{{ req.department.name|default:req.department }}">
                     <div class="flex justify-between items-start mb-6">
                         <div class="flex items-start gap-3">
                             <div class="flex flex-col">
@@ -62,15 +90,11 @@
                         <div class="flex justify-between items-center"><span class="text-gray-600 text-sm font-normal font-['Inter']">Default Fields:</span><span class="text-gray-900 text-sm font-medium font-['Inter']">{{ req.fields|length }} fields</span></div>
                         <div class="flex justify-between items-center">
                             <span class="text-gray-600 text-sm font-normal font-['Inter']">Guest Portal:</span>
-                            {% if req.exposed %}
-                            <span class="px-2 py-1 bg-green-500/10 rounded-full text-green-500 text-xs font-medium font-['Inter']">Exposed</span>
-                            {% else %}
-                            <span class="px-2 py-1 bg-gray-200 rounded-full text-gray-600 text-xs font-medium font-['Inter']">Hidden</span>
-                            {% endif %}
+                            <span class="exposed-status px-2 py-1 {% if req.exposed %}bg-green-500/10 text-green-500{% else %}bg-gray-200 text-gray-600{% endif %} rounded-full text-xs font-medium font-['Inter']">{% if req.exposed %}Exposed{% else %}Hidden{% endif %}</span>
                         </div>
                     </div>
                     <div class="flex gap-2 mt-auto">
-                        <button class="edit-btn flex-1 h-9 bg-white hover:bg-sky-50 rounded-lg border border-sky-600 text-sky-600 text-sm font-medium font-['Inter'] transition-colors">Edit</button>
+                        <button class="create-btn flex-1 h-9 bg-white hover:bg-sky-50 rounded-lg border border-sky-600 text-sky-600 text-sm font-medium font-['Inter'] transition-colors">Create</button>
                         <button class="action-btn w-10 h-9 bg-white hover:bg-gray-50 rounded-lg border border-gray-200 flex items-center justify-center transition-colors"><img src="{% static 'images/manage_users/action.svg' %}" alt="actions" class="w-3 h-3.5"></button>
                     </div>
                 </div>
@@ -144,7 +168,7 @@
                             </tr>
                         </thead>
                         <tbody id="familiesTableBody">
-                           <tr class="family-row border-t border-gray-200 hover:bg-gray-50 transition-colors" data-family="Housekeeping">
+                            <tr class="family-row border-t border-gray-200 hover:bg-gray-50 transition-colors" data-family="Housekeeping">
                                 <td class="px-6 py-4"><div class="flex items-center gap-3"><div class="w-8 h-8 bg-green-500/10 rounded-lg flex items-center justify-center flex-shrink-0"><div class="w-4 h-4 bg-green-500 rounded"></div></div><div><div class="text-gray-900 text-sm font-medium font-['Inter']">Housekeeping</div><div class="text-neutral-500 text-sm font-normal font-['Inter']">Room service, cleaning, amenities</div></div></div></td>
                                 <td class="px-6 py-4 text-gray-900 text-sm font-normal font-['Inter']">15 minutes</td>
                                 <td class="px-6 py-4 text-gray-900 text-sm font-normal font-['Inter']">2 hours</td>
@@ -160,55 +184,7 @@
                                 <td class="px-6 py-4"><span class="px-2 py-1 bg-green-500/10 rounded-full text-green-500 text-xs font-medium font-['Inter']">Active</span></td>
                                 <td class="px-6 py-4"><div class="flex items-center gap-2"><button class="edit-family-btn w-6 h-6 hover:bg-gray-100 rounded flex items-center justify-center transition-colors"><img src="{% static 'images/manage_users/profiles/edit.svg' %}" alt="edit" class="w-4 h-4"></button><button class="delete-family-btn w-5 h-6 hover:bg-gray-100 rounded flex items-center justify-center transition-colors"><img src="{% static 'images/manage_users/action.svg' %}" alt="delete" class="w-3.5 h-4"></button></div></td>
                             </tr>
-                            <tr class="family-row border-t border-gray-200 hover:bg-gray-50 transition-colors" data-family="Food & Beverage">
-                                <td class="px-6 py-4"><div class="flex items-center gap-3"><div class="w-8 h-8 bg-teal-500/10 rounded-lg flex items-center justify-center flex-shrink-0"><div class="w-4 h-4 bg-teal-500 rounded"></div></div><div><div class="text-gray-900 text-sm font-medium font-['Inter']">Food & Beverage</div><div class="text-neutral-500 text-sm font-normal font-['Inter']">Restaurant, room service, bar</div></div></div></td>
-                                <td class="px-6 py-4 text-gray-900 text-sm font-normal font-['Inter']">10 minutes</td>
-                                <td class="px-6 py-4 text-gray-900 text-sm font-normal font-['Inter']">45 minutes</td>
-                                <td class="px-6 py-4"><div>1. F&B Staff</div><div class="text-neutral-500 text-sm font-normal font-['Inter']">2. Restaurant Manager</div></td>
-                                <td class="px-6 py-4"><span class="px-2 py-1 bg-green-500/10 rounded-full text-green-500 text-xs font-medium font-['Inter']">Active</span></td>
-                                <td class="px-6 py-4"><div class="flex items-center gap-2"><button class="edit-family-btn w-6 h-6 hover:bg-gray-100 rounded flex items-center justify-center transition-colors"><img src="{% static 'images/manage_users/profiles/edit.svg' %}" alt="edit" class="w-4 h-4"></button><button class="delete-family-btn w-5 h-6 hover:bg-gray-100 rounded flex items-center justify-center transition-colors"><img src="{% static 'images/manage_users/action.svg' %}" alt="delete" class="w-3.5 h-4"></button></div></td>
-                            </tr>
-                            <tr class="family-row border-t border-gray-200 hover:bg-gray-50 transition-colors" data-family="Front Desk">
-                                <td class="px-6 py-4"><div class="flex items-center gap-3"><div class="w-8 h-8 bg-sky-600/10 rounded-lg flex items-center justify-center flex-shrink-0"><div class="w-4 h-4 bg-sky-600 rounded"></div></div><div><div class="text-gray-900 text-sm font-medium font-['Inter']">Front Desk</div><div class="text-neutral-500 text-sm font-normal font-['Inter']">Check-in, check-out, reservations</div></div></div></td>
-                                <td class="px-6 py-4 text-gray-900 text-sm font-normal font-['Inter']">5 minutes</td>
-                                <td class="px-6 py-4 text-gray-900 text-sm font-normal font-['Inter']">30 minutes</td>
-                                <td class="px-6 py-4"><div>1. Front Desk Agent</div><div class="text-neutral-500 text-sm font-normal font-['Inter']">2. Front Office Manager</div></td>
-                                <td class="px-6 py-4"><span class="px-2 py-1 bg-green-500/10 rounded-full text-green-500 text-xs font-medium font-['Inter']">Active</span></td>
-                                <td class="px-6 py-4"><div class="flex items-center gap-2"><button class="edit-family-btn w-6 h-6 hover:bg-gray-100 rounded flex items-center justify-center transition-colors"><img src="{% static 'images/manage_users/profiles/edit.svg' %}" alt="edit" class="w-4 h-4"></button><button class="delete-family-btn w-5 h-6 hover:bg-gray-100 rounded flex items-center justify-center transition-colors"><img src="{% static 'images/manage_users/action.svg' %}" alt="delete" class="w-3.5 h-4"></button></div></td>
-                            </tr>
-                            <tr class="family-row border-t border-gray-200 hover:bg-gray-50 transition-colors" data-family="Concierge">
-                                <td class="px-6 py-4"><div class="flex items-center gap-3"><div class="w-8 h-8 bg-fuchsia-700/10 rounded-lg flex items-center justify-center flex-shrink-0"><div class="w-4 h-4 bg-fuchsia-700 rounded"></div></div><div><div class="text-gray-900 text-sm font-medium font-['Inter']">Concierge</div><div class="text-neutral-500 text-sm font-normal font-['Inter']">Guest services, recommendations, bookings</div></div></div></td>
-                                <td class="px-6 py-4 text-gray-900 text-sm font-normal font-['Inter']">10 minutes</td>
-                                <td class="px-6 py-4 text-gray-900 text-sm font-normal font-['Inter']">1 hour</td>
-                                <td class="px-6 py-4"><div>1. Concierge Staff</div><div class="text-neutral-500 text-sm font-normal font-['Inter']">2. Guest Services Manager</div></td>
-                                <td class="px-6 py-4"><span class="px-2 py-1 bg-green-500/10 rounded-full text-green-500 text-xs font-medium font-['Inter']">Active</span></td>
-                                <td class="px-6 py-4"><div class="flex items-center gap-2"><button class="edit-family-btn w-6 h-6 hover:bg-gray-100 rounded flex items-center justify-center transition-colors"><img src="{% static 'images/manage_users/profiles/edit.svg' %}" alt="edit" class="w-4 h-4"></button><button class="delete-family-btn w-5 h-6 hover:bg-gray-100 rounded flex items-center justify-center transition-colors"><img src="{% static 'images/manage_users/action.svg' %}" alt="delete" class="w-3.5 h-4"></button></div></td>
-                            </tr>
-                            <tr class="family-row border-t border-gray-200 hover:bg-gray-50 transition-colors" data-family="IT Support">
-                                <td class="px-6 py-4"><div class="flex items-center gap-3"><div class="w-8 h-8 bg-red-500/10 rounded-lg flex items-center justify-center flex-shrink-0"><div class="w-4 h-4 bg-red-500 rounded"></div></div><div><div class="text-gray-900 text-sm font-medium font-['Inter']">IT Support</div><div class="text-neutral-500 text-sm font-normal font-['Inter']">WiFi, TV, technology issues</div></div></div></td>
-                                <td class="px-6 py-4 text-gray-900 text-sm font-normal font-['Inter']">20 minutes</td>
-                                <td class="px-6 py-4 text-gray-900 text-sm font-normal font-['Inter']">2 hours</td>
-                                <td class="px-6 py-4"><div>1. IT Technician</div><div class="text-neutral-500 text-sm font-normal font-['Inter']">2. IT Manager</div></td>
-                                <td class="px-6 py-4"><span class="px-2 py-1 bg-green-500/10 rounded-full text-green-500 text-xs font-medium font-['Inter']">Active</span></td>
-                                <td class="px-6 py-4"><div class="flex items-center gap-2"><button class="edit-family-btn w-6 h-6 hover:bg-gray-100 rounded flex items-center justify-center transition-colors"><img src="{% static 'images/manage_users/profiles/edit.svg' %}" alt="edit" class="w-4 h-4"></button><button class="delete-family-btn w-5 h-6 hover:bg-gray-100 rounded flex items-center justify-center transition-colors"><img src="{% static 'images/manage_users/action.svg' %}" alt="delete" class="w-3.5 h-4"></button></div></td>
-                            </tr>
-                            <tr class="family-row border-t border-gray-200 hover:bg-gray-50 transition-colors" data-family="Security">
-                                <td class="px-6 py-4"><div class="flex items-center gap-3"><div class="w-8 h-8 bg-gray-600/10 rounded-lg flex items-center justify-center flex-shrink-0"><div class="w-4 h-4 bg-gray-600 rounded"></div></div><div><div class="text-gray-900 text-sm font-medium font-['Inter']">Security</div><div class="text-neutral-500 text-sm font-normal font-['Inter']">Safety concerns, access issues</div></div></div></td>
-                                <td class="px-6 py-4 text-gray-900 text-sm font-normal font-['Inter']">5 minutes</td>
-                                <td class="px-6 py-4 text-gray-900 text-sm font-normal font-['Inter']">15 minutes</td>
-                                <td class="px-6 py-4"><div>1. Security Officer</div><div class="text-neutral-500 text-sm font-normal font-['Inter']">2. Security Manager</div></td>
-                                <td class="px-6 py-4"><span class="px-2 py-1 bg-green-500/10 rounded-full text-green-500 text-xs font-medium font-['Inter']">Active</span></td>
-                                <td class="px-6 py-4"><div class="flex items-center gap-2"><button class="edit-family-btn w-6 h-6 hover:bg-gray-100 rounded flex items-center justify-center transition-colors"><img src="{% static 'images/manage_users/profiles/edit.svg' %}" alt="edit" class="w-4 h-4"></button><button class="delete-family-btn w-5 h-6 hover:bg-gray-100 rounded flex items-center justify-center transition-colors"><img src="{% static 'images/manage_users/action.svg' %}" alt="delete" class="w-3.5 h-4"></button></div></td>
-                            </tr>
-                            <tr class="family-row border-t border-gray-200 hover:bg-gray-50 transition-colors" data-family="Other">
-                                <td class="px-6 py-4"><div class="flex items-center gap-3"><div class="w-8 h-8 bg-gray-400/10 rounded-lg flex items-center justify-center flex-shrink-0"><div class="w-4 h-4 bg-gray-400 rounded"></div></div><div><div class="text-gray-900 text-sm font-medium font-['Inter']">Other</div><div class="text-neutral-500 text-sm font-normal font-['Inter']">General inquiries, miscellaneous</div></div></div></td>
-                                <td class="px-6 py-4 text-gray-900 text-sm font-normal font-['Inter']">30 minutes</td>
-                                <td class="px-6 py-4 text-gray-900 text-sm font-normal font-['Inter']">4 hours</td>
-                                <td class="px-6 py-4"><div>1. Guest Relations</div><div class="text-neutral-500 text-sm font-normal font-['Inter']">2. Duty Manager</div></td>
-                                <td class="px-6 py-4"><span class="px-2 py-1 bg-green-500/10 rounded-full text-green-500 text-xs font-medium font-['Inter']">Active</span></td>
-                                <td class="px-6 py-4"><div class="flex items-center gap-2"><button class="edit-family-btn w-6 h-6 hover:bg-gray-100 rounded flex items-center justify-center transition-colors"><img src="{% static 'images/manage_users/profiles/edit.svg' %}" alt="edit" class="w-4 h-4"></button><button class="delete-family-btn w-5 h-6 hover:bg-gray-100 rounded flex items-center justify-center transition-colors"><img src="{% static 'images/manage_users/action.svg' %}" alt="delete" class="w-3.5 h-4"></button></div></td>
-                            </tr>
-                        </tbody>
+                            </tbody>
                     </table>
                 </div>
             </div>
@@ -248,124 +224,21 @@
     </div>
 </div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // --- PAGE ELEMENTS ---
-        const navTabBtns = document.querySelectorAll('.nav-tab-btn');
-        const requestsPanel = document.getElementById('requestsContentPanel');
-        const familiesPanel = document.getElementById('familiesContentPanel');
-        
-        // Header elements
-        const titleContainer = document.getElementById('main-title').parentElement;
-        const mainTitle = document.getElementById('main-title');
-        const mainDescription = document.getElementById('main-description');
-        const breadcrumbActive = document.getElementById('breadcrumb-active');
-        const headerSearchContainer = document.getElementById('header-search-container');
-        const primaryActionBtn = document.getElementById('primary-action-btn');
-        const primaryActionBtnText = primaryActionBtn.querySelector('span');
-        const secondaryActionBtn = document.getElementById('secondary-action-btn');
-
-        // --- UNIFIED NAVIGATION LOGIC ---
-        navTabBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
-                const tab = this.dataset.tab;
-
-                navTabBtns.forEach(b => {
-                    b.classList.remove('active', 'border-sky-600', 'text-sky-600');
-                    b.classList.add('border-transparent', 'text-gray-600');
-                });
-                this.classList.add('active', 'border-sky-600', 'text-sky-600');
-                this.classList.remove('border-transparent', 'text-gray-600');
-
-                if (tab === 'families') {
-                    // --- Show FAMILIES view ---
-                    requestsPanel.classList.add('hidden');
-                    familiesPanel.classList.remove('hidden');
-                    
-                    // Update header for "Families" context
-                    titleContainer.classList.remove('flex', 'items-center', 'gap-3', 'flex-wrap');
-                    mainTitle.textContent = 'Request Families';
-                    breadcrumbActive.textContent = 'Request Families';
-                    mainDescription.textContent = 'Manage service request categories, SLA targets, and escalation paths';
-                    headerSearchContainer.classList.add('hidden');
-                    secondaryActionBtn.classList.remove('hidden');
-                    primaryActionBtnText.textContent = 'Add Family';
-
-                } else {
-                    // --- Show REQUESTS view ---
-                    familiesPanel.classList.add('hidden');
-                    requestsPanel.classList.remove('hidden');
-
-                    // Update header for "Requests" context
-                    titleContainer.classList.add('flex', 'items-center', 'gap-3', 'flex-wrap');
-                    mainTitle.textContent = 'Predefined Requests';
-                    breadcrumbActive.textContent = 'Predefined Requests';
-                    mainDescription.textContent = 'Manage request templates and their availability in the Guest Portal';
-                    headerSearchContainer.classList.remove('hidden');
-                    secondaryActionBtn.classList.add('hidden');
-                    primaryActionBtnText.textContent = 'New Request';
-
-                    filterRequestCards(tab);
-                }
-            });
-        });
-
-        // --- SCRIPT FOR PREDEFINED REQUESTS PANEL ---
-        const requestCards = requestsPanel.querySelectorAll('.request-card');
-
-        function filterRequestCards(category) {
-            requestCards.forEach(card => {
-                card.style.display = (category === 'all' || card.dataset.category === category) ? 'flex' : 'none';
-            });
-        }
-        document.getElementById('searchInput').addEventListener('input', function() {
-             const searchTerm = this.value.toLowerCase();
-             requestCards.forEach(card => {
-                 const cardName = card.dataset.name.toLowerCase();
-                 card.style.display = cardName.includes(searchTerm) ? 'flex' : 'none';
-            });
-        });
-
-        // --- SCRIPT FOR REQUEST FAMILIES PANEL ---
-        const familyRows = familiesPanel.querySelectorAll('.family-row');
-        familiesPanel.querySelector('#searchFamilies').addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            familyRows.forEach(row => {
-                row.style.display = row.dataset.family.toLowerCase().includes(searchTerm) ? '' : 'none';
-            });
-        });
-        
-        // --- HEADER ACTION BUTTONS LOGIC ---
-        primaryActionBtn.addEventListener('click', function() {
-            if (primaryActionBtnText.textContent.includes('Family')) {
-                alert('Add New Request Family...');
-            } else {
-                alert('Create New Request Template...');
-            }
-        });
-
-        secondaryActionBtn.addEventListener('click', () => alert('Filter Options for Request Families...'));
-        familiesPanel.querySelector('#tableFilterBtn').addEventListener('click', () => alert('Table Filter Options...'));
-        
-    });
-</script>
-
-<!-- Create Ticket Modal -->
 <div id="createTicketModal" class="hidden fixed inset-0 z-[1000] items-center justify-center p-4 backdrop-blur-md bg-black/30 transition-opacity duration-300 opacity-0" onclick="closeCreateTicketModal()">
     <div id="modalContent" class="w-full max-w-2xl rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[95vh]" onclick="event.stopPropagation()">
         <div class="flex justify-between items-center p-6 border-b border-gray-200 flex-shrink-0">
             <h2 class="text-xl font-semibold text-gray-900">Create New Ticket</h2>
-            <button id="closeCreateTicketModal" class="rounded-full p-1 text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Close">
+            <button id="closeCreateTicketModalBtn" class="rounded-full p-1 text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Close">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
-        <form autocomplete="off" class="p-6 space-y-6 overflow-y-auto flex-grow" onsubmit="return false;">
+        <form autocomplete="off" id="createTicketForm" class="p-6 space-y-6 overflow-y-auto flex-grow" onsubmit="return false;">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label for="guestName" class="block text-sm font-medium text-gray-700 mb-1">Guest Name</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                            <img src="{% static 'images/tickets/guest.svg' %}" alt="Guest Icon" class="h-5 w-5 text-gray-400" onerror="this.style.display='none'"/>
                         </div>
                         <input autocomplete="off" type="text" id="guestName" placeholder="Search guest name..." class="w-full h-11 pl-10 pr-4 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500" />
                         <input type="hidden" id="guestId" value="">
@@ -374,33 +247,69 @@
                 </div>
                 <div>
                     <label for="roomNumber" class="block text-sm font-medium text-gray-700 mb-1">Room Number</label>
-                    <div class="relative"><div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg></div><input autocomplete="off" type="text" id="roomNumber" placeholder="Enter room number" class="w-full h-11 pl-10 pr-4 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500"></div>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <img src="{% static 'images/tickets/room.svg' %}" alt="Room Icon" class="h-5 w-5 text-gray-400" onerror="this.style.display='none'"/>
+                        </div>
+                        <input autocomplete="off" type="text" id="roomNumber" placeholder="Enter room number" class="w-full h-11 pl-10 pr-4 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                    </div>
                 </div>
             </div>
             <div>
                 <label for="department" class="block text-sm font-medium text-gray-700 mb-1">Department</label>
-                <div class="relative"><div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg></div><select id="department" class="w-full h-11 pl-10 pr-4 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 appearance-none"><option value="">Select department</option>{% for dept in departments %}<option value="{{ dept.name }}">{{ dept.name }}</option>{% endfor %}</select><div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"><svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></div></div>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <img src="{% static 'images/tickets/department.svg' %}" alt="Department Icon" class="h-5 w-5 text-gray-400" onerror="this.style.display='none'"/>
+                    </div>
+                    <select id="department" class="w-full h-11 pl-10 pr-4 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 appearance-none">
+                        <option value="">Select department</option>
+                        {% for dept in departments %}
+                        <option value="{{ dept.name }}">{{ dept.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                </div>
             </div>
             <div class="relative">
                 <label for="requestType" class="block text-sm font-medium text-gray-700 mb-1">Request Type</label>
                 <div class="relative">
                     <input autocomplete="off" type="text" id="requestType" placeholder="Search and select request type..." class="w-full h-11 pl-10 pr-4 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+                         <img src="{% static 'images/tickets/category.svg' %}" alt="Category Icon" class="h-5 w-5 text-gray-400" onerror="this.style.display='none'"/>
                     </div>
                     <div id="requestTypeSuggestions" class="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md hidden max-h-60 overflow-auto">
-                        </div>
+                    </div>
                 </div>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Priority Level</label>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4"><button type="button" class="priority-btn w-full flex items-center gap-3 p-3 rounded-lg border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500" data-priority="Critical"><span class="w-4 h-4 rounded-full bg-red-500"></span><span class="text-sm font-medium text-gray-700">Critical</span></button><button type="button" class="priority-btn w-full flex items-center gap-3 p-3 rounded-lg border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500" data-priority="High"><span class="w-4 h-4 rounded-full bg-yellow-400"></span><span class="text-sm font-medium text-gray-700">High</span></button><button type="button" class="priority-btn w-full flex items-center gap-3 p-3 rounded-lg border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500" data-priority="Medium"><span class="w-4 h-4 rounded-full bg-sky-500"></span><span class="text-sm font-medium text-gray-700">Medium</span></button><button type="button" class="priority-btn w-full flex items-center gap-3 p-3 rounded-lg border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500" data-priority="Low"><span class="w-4 h-4 rounded-full bg-green-500"></span><span class="text-sm font-medium text-gray-700">Low</span></button></div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <button type="button" class="priority-btn w-full flex items-center gap-3 p-3 rounded-lg border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500" data-priority="Critical"><span class="w-4 h-4 rounded-full bg-red-500"></span><span class="text-sm font-medium text-gray-700">Critical</span></button>
+                    <button type="button" class="priority-btn w-full flex items-center gap-3 p-3 rounded-lg border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500" data-priority="High"><span class="w-4 h-4 rounded-full bg-yellow-400"></span><span class="text-sm font-medium text-gray-700">High</span></button>
+                    <button type="button" class="priority-btn w-full flex items-center gap-3 p-3 rounded-lg border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500" data-priority="Medium"><span class="w-4 h-4 rounded-full bg-sky-500"></span><span class="text-sm font-medium text-gray-700">Medium</span></button>
+                    <button type="button" class="priority-btn w-full flex items-center gap-3 p-3 rounded-lg border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500" data-priority="Low"><span class="w-4 h-4 rounded-full bg-green-500"></span><span class="text-sm font-medium text-gray-700">Low</span></button>
+                </div>
             </div>
             <div>
-                <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Description</label><textarea id="description" rows="4" placeholder="Describe the issue or request..." class="w-full p-3 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none"></textarea>
+                <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea id="description" rows="4" placeholder="Describe the issue or request..." class="w-full p-3 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none"></textarea>
             </div>
             <div>
-                <label for="attachments" class="block text-sm font-medium text-gray-700 mb-1">Attachments (Optional)</label><div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md"><div class="space-y-1 text-center"><svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg><div class="flex text-sm text-gray-600"><label for="file-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-sky-600 hover:text-sky-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-sky-500"><span>Upload photos or voice note</span><input autocomplete="off" id="file-upload" name="file-upload" type="file" class="sr-only"></label></div><p class="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p></div></div>
+                <label for="attachments" class="block text-sm font-medium text-gray-700 mb-1">Attachments (Optional)</label>
+                <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                    <div class="space-y-1 text-center">
+                        <img src="{% static 'images/tickets/file.svg' %}" class="mx-auto h-12 w-12 text-gray-400" alt="File upload icon" onerror="this.style.display='none'">
+                        <div class="flex text-sm text-gray-600">
+                            <label for="file-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-sky-600 hover:text-sky-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-sky-500">
+                                <span>Upload photos or voice note</span>
+                                <input autocomplete="off" id="file-upload" name="file-upload" type="file" class="sr-only">
+                            </label>
+                        </div>
+                        <p class="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                    </div>
+                </div>
             </div>
         </form>
         <div class="flex justify-end items-center gap-4 p-6 border-t border-gray-200 bg-gray-50 rounded-b-lg flex-shrink-0">
@@ -410,127 +319,269 @@
     </div>
 </div>
 
+<div id="toastNotification" class="fixed top-4 right-4 z-[1000] hidden items-center rounded-lg px-4 py-2 text-white shadow-lg transition-all duration-300 transform translate-x-full opacity-0">
+    <span id="toastMessage"></span>
+</div>
+
 <script>
-    // Fallbacks if not defined
-    if (typeof showToast !== 'function') {
-        window.showToast = function(message, type) {
-            alert(message);
-        };
-    }
-    if (typeof showConfirmationModal !== 'function') {
-        window.showConfirmationModal = function(title, message, onConfirm) {
-            if (confirm(message)) onConfirm();
-        };
-    }
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- CONSTANTS & ELEMENTS ---
+        const requestsPanel = document.getElementById('requestsContentPanel');
+        const familiesPanel = document.getElementById('familiesContentPanel');
+        const titleContainer = document.getElementById('main-title').parentElement;
+        const mainTitle = document.getElementById('main-title');
+        const mainDescription = document.getElementById('main-description');
+        const breadcrumbActive = document.getElementById('breadcrumb-active');
+        const headerSearchContainer = document.getElementById('header-search-container');
+        const primaryActionBtn = document.getElementById('primary-action-btn');
+        const primaryActionBtnText = primaryActionBtn.querySelector('span');
+        const secondaryActionBtn = document.getElementById('secondary-action-btn');
+        const navTabBtns = document.querySelectorAll('.nav-tab-btn'); // Assumed present in base template
+
+        // --- HELPER FUNCTIONS ---
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
                 }
             }
+            return cookieValue;
         }
-        return cookieValue;
-    }
 
-    // --- CREATE TICKET MODAL LOGIC ---
-    let selectedPriority = '';
-    let selectedRequestType = null;
-
-    function openCreateTicketModal(prefillRequestType, prefillDepartment) {
-        const modal = document.getElementById('createTicketModal');
-        const modalContent = document.getElementById('modalContent');
-        if (modal && modalContent) {
-            // Reset form
-            const form = modal.querySelector('form');
-            if (form) form.reset();
-            selectedPriority = '';
-            selectedRequestType = null;
-            document.querySelectorAll('.priority-btn').forEach(btn => btn.classList.remove('ring-2', 'ring-offset-2', 'ring-sky-500'));
-
-            // Pre-fill logic
-            if (prefillRequestType) {
-                document.getElementById('requestType').value = prefillRequestType;
-                // Simulate selection object if needed, or just rely on text value
-                selectedRequestType = { name: prefillRequestType };
+        function showToast(message, type = 'info') {
+            const toastContainer = document.getElementById('toastNotification');
+            const toastMessage = document.getElementById('toastMessage');
+            
+            if (!toastContainer || !toastMessage) {
+                alert(message);
+                return;
             }
-            if (prefillDepartment) {
-                document.getElementById('department').value = prefillDepartment;
+            
+            toastMessage.textContent = message;
+            toastContainer.className = 'fixed top-4 right-4 z-[1000] flex items-center rounded-lg px-4 py-2 text-white shadow-lg transition-all duration-300 transform';
+            
+            switch(type) {
+                case 'success': toastContainer.classList.add('bg-green-500'); break;
+                case 'error': toastContainer.classList.add('bg-red-500'); break;
+                case 'warning': toastContainer.classList.add('bg-yellow-500'); break;
+                default: toastContainer.classList.add('bg-blue-500');
             }
-
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            requestAnimationFrame(() => {
-                modal.classList.remove('opacity-0');
-                modalContent.classList.remove('scale-95', 'opacity-0');
-                modalContent.classList.add('scale-100', 'opacity-100');
-            });
+            
+            toastContainer.classList.remove('hidden', 'translate-x-full', 'opacity-0');
+            toastContainer.classList.add('flex', 'translate-x-0', 'opacity-100');
+            
+            setTimeout(() => {
+                toastContainer.classList.remove('translate-x-0', 'opacity-100');
+                toastContainer.classList.add('translate-x-full', 'opacity-0');
+                setTimeout(() => {
+                    toastContainer.classList.add('hidden');
+                    toastContainer.classList.remove('flex');
+                }, 300);
+            }, 3000);
         }
-    }
 
-    function closeCreateTicketModal() {
-        const modal = document.getElementById('createTicketModal');
-        const modalContent = document.getElementById('modalContent');
-        if (!modal) return;
-        
-        modal.classList.add('opacity-0');
-        if (modalContent) {
-            modalContent.classList.remove('scale-100', 'opacity-100');
-            modalContent.classList.add('scale-95', 'opacity-0');
-        }
-        
-        setTimeout(() => {
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-        }, 300);
-    }
+        // --- NAVIGATION LOGIC (Requests vs Families) ---
+        navTabBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const tab = this.dataset.tab;
 
-    document.addEventListener('DOMContentLoaded', function() {
-        // --- EDIT BUTTONS (TRIGGER CREATE TICKET) ---
-        // --- EDIT BUTTONS (TRIGGER CREATE TICKET) ---
-        const editButtons = document.querySelectorAll('.edit-btn');
-        console.log('Found ' + editButtons.length + ' edit buttons');
-        
-        editButtons.forEach(button => {
-            button.addEventListener('click', function(e) {
-                try {
-                    e.preventDefault();
-                    const card = this.closest('.request-card');
-                    if (!card) {
-                        console.error('Request card not found for button', this);
-                        return;
-                    }
+                // Update active tab styling
+                navTabBtns.forEach(b => {
+                    b.classList.remove('active', 'border-sky-600', 'text-sky-600');
+                    b.classList.add('border-transparent', 'text-gray-600');
+                });
+                this.classList.add('active', 'border-sky-600', 'text-sky-600');
+                this.classList.remove('border-transparent', 'text-gray-600');
+
+                if (tab === 'families') {
+                    // Show FAMILIES view
+                    requestsPanel.classList.add('hidden');
+                    familiesPanel.classList.remove('hidden');
                     
-                    const requestName = card.dataset.name;
-                    const department = card.dataset.department;
+                    // Update header
+                    titleContainer.classList.remove('flex', 'items-center', 'gap-3', 'flex-wrap');
+                    mainTitle.textContent = 'Request Families';
+                    breadcrumbActive.textContent = 'Request Families';
+                    mainDescription.textContent = 'Manage service request categories, SLA targets, and escalation paths';
+                    headerSearchContainer.classList.add('hidden');
+                    secondaryActionBtn.classList.remove('hidden');
+                    primaryActionBtnText.textContent = 'Add Family';
+
+                } else {
+                    // Show REQUESTS view
+                    familiesPanel.classList.add('hidden');
+                    requestsPanel.classList.remove('hidden');
+
+                    // Update header
+                    titleContainer.classList.add('flex', 'items-center', 'gap-3', 'flex-wrap');
+                    mainTitle.textContent = 'Predefined Requests';
+                    breadcrumbActive.textContent = 'Predefined Requests';
+                    mainDescription.textContent = 'Manage request templates and their availability in the Guest Portal';
+                    headerSearchContainer.classList.remove('hidden');
+                    secondaryActionBtn.classList.add('hidden');
+                    primaryActionBtnText.textContent = 'New Request';
                     
-                    console.log('Edit clicked:', { requestName, department });
-                    
-                    if (typeof openCreateTicketModal === 'function') {
-                        openCreateTicketModal(requestName, department);
-                    } else {
-                        console.error('openCreateTicketModal function is not defined');
-                    }
-                } catch (err) {
-                    console.error('Error in edit button click handler:', err);
+                    // Filter logic for Request tabs (All, Guest, Internal)
+                    filterRequestCards(tab);
                 }
             });
         });
 
-        // --- MODAL CONTROLS ---
-        const closeModalBtn = document.getElementById('closeCreateTicketModal');
-        const cancelBtn = document.getElementById('cancelCreateTicket');
-        const modal = document.getElementById('createTicketModal');
-        
-        if (closeModalBtn) closeModalBtn.addEventListener('click', closeCreateTicketModal);
-        if (cancelBtn) cancelBtn.addEventListener('click', closeCreateTicketModal);
-        if (modal) modal.addEventListener('click', (e) => { if (e.target === modal) closeCreateTicketModal(); });
+        // --- SEARCH & FILTER LOGIC (Requests) ---
+        const requestCards = document.querySelectorAll('.request-card');
+        const searchInput = document.getElementById('searchInput');
 
-        // --- PRIORITY SELECTION ---
+        function filterRequestCards(category) {
+            requestCards.forEach(card => {
+                const matchesCategory = (category === 'all' || !category || card.dataset.category === category);
+                const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+                const cardName = card.dataset.name.toLowerCase();
+                const matchesSearch = cardName.includes(searchTerm);
+                
+                card.style.display = (matchesCategory && matchesSearch) ? 'flex' : 'none';
+            });
+        }
+
+        if(searchInput) {
+            searchInput.addEventListener('input', function() {
+                // Determine current active tab (default to 'all' or check active tab button)
+                let activeCategory = 'all';
+                navTabBtns.forEach(btn => { if(btn.classList.contains('active') && btn.dataset.tab !== 'families') activeCategory = btn.dataset.tab; });
+                filterRequestCards(activeCategory);
+            });
+        }
+
+        // --- SEARCH LOGIC (Families) ---
+        const familyRows = familiesPanel.querySelectorAll('.family-row');
+        const searchFamiliesInput = familiesPanel.querySelector('#searchFamilies');
+        if(searchFamiliesInput) {
+            searchFamiliesInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                familyRows.forEach(row => {
+                    row.style.display = row.dataset.family.toLowerCase().includes(searchTerm) ? '' : 'none';
+                });
+            });
+        }
+
+        // --- TOGGLE BUTTON LOGIC (Exposed/Hidden) ---
+        document.querySelectorAll('.toggle-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const isActive = this.dataset.active === 'true';
+                const newActiveState = !isActive;
+                
+                this.dataset.active = newActiveState;
+                if (newActiveState) {
+                    this.classList.remove('bg-gray-200', 'justify-start');
+                    this.classList.add('bg-sky-600', 'justify-end');
+                } else {
+                    this.classList.remove('bg-sky-600', 'justify-end');
+                    this.classList.add('bg-gray-200', 'justify-start');
+                }
+                
+                const card = this.closest('.request-card');
+                card.dataset.category = newActiveState ? 'guest' : 'internal';
+                
+                const exposedSpan = card.querySelector('.exposed-status');
+                if (exposedSpan) {
+                    exposedSpan.className = newActiveState ? 
+                        "exposed-status px-2 py-1 bg-green-500/10 text-green-500 rounded-full text-xs font-medium font-['Inter']" : 
+                        "exposed-status px-2 py-1 bg-gray-200 text-gray-600 rounded-full text-xs font-medium font-['Inter']";
+                    exposedSpan.textContent = newActiveState ? 'Exposed' : 'Hidden';
+                }
+            });
+        });
+
+        // ==========================================
+        //        CREATE TICKET MODAL LOGIC
+        // ==========================================
+        
+        let selectedPriority = '';
+        let selectedRequestType = null;
+
+        // 1. OPEN MODAL FUNCTION
+        window.openCreateTicketModal = function(prefillRequestType, prefillDepartment) {
+            const modal = document.getElementById('createTicketModal');
+            const modalContent = document.getElementById('modalContent');
+            const form = document.getElementById('createTicketForm');
+
+            if (modal && modalContent) {
+                // Reset form
+                if (form) form.reset();
+                selectedPriority = '';
+                selectedRequestType = null;
+                document.querySelectorAll('.priority-btn').forEach(btn => btn.classList.remove('ring-2', 'ring-offset-2', 'ring-sky-500'));
+
+                // Handle Prefills
+                if (prefillDepartment) {
+                    const deptSelect = document.getElementById('department');
+                    for (let i = 0; i < deptSelect.options.length; i++) {
+                        if (deptSelect.options[i].text === prefillDepartment || deptSelect.options[i].value === prefillDepartment) {
+                            deptSelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+
+                if (prefillRequestType) {
+                    const reqInput = document.getElementById('requestType');
+                    reqInput.value = prefillRequestType;
+                    selectedRequestType = { name: prefillRequestType };
+                }
+
+                // Show Modal
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                requestAnimationFrame(() => {
+                    modal.classList.remove('opacity-0');
+                    modalContent.classList.remove('scale-95', 'opacity-0');
+                    modalContent.classList.add('scale-100', 'opacity-100');
+                });
+            }
+        };
+
+        // 2. CLOSE MODAL FUNCTION
+        window.closeCreateTicketModal = function() {
+            const modal = document.getElementById('createTicketModal');
+            const modalContent = document.getElementById('modalContent');
+            if (!modal) return;
+            
+            modal.classList.add('opacity-0');
+            if (modalContent) {
+                modalContent.classList.remove('scale-100', 'opacity-100');
+                modalContent.classList.add('scale-95', 'opacity-0');
+            }
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 300);
+        };
+
+        // 3. BINDING MODAL TRIGGERS
+        // Close buttons
+        const closeBtn = document.getElementById('closeCreateTicketModalBtn');
+        const cancelBtn = document.getElementById('cancelCreateTicket');
+        if(closeBtn) closeBtn.addEventListener('click', closeCreateTicketModal);
+        if(cancelBtn) cancelBtn.addEventListener('click', closeCreateTicketModal);
+
+        // Card "Create" buttons
+        document.querySelectorAll('.create-btn').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const card = this.closest('.request-card');
+                const requestName = card.dataset.name;
+                const department = card.dataset.department;
+                openCreateTicketModal(requestName, department);
+            });
+        });
+
+        // Priority Selection
         document.querySelectorAll('.priority-btn').forEach(button => { 
             button.addEventListener('click', () => { 
                 document.querySelectorAll('.priority-btn').forEach(btn => btn.classList.remove('ring-2', 'ring-offset-2', 'ring-sky-500')); 
@@ -539,51 +590,123 @@
             }); 
         });
 
-        // --- SUBMIT TICKET ---
+        // 4. GUEST AUTOCOMPLETE LOGIC
+        const guestNameInput = document.getElementById('guestName');
+        const guestSuggestions = document.getElementById('guestSuggestions');
+        const guestIdInput = document.getElementById('guestId');
+        const roomNumberInput = document.getElementById('roomNumber');
+
+        function hideGuestSuggestions() {
+            if (guestSuggestions) {
+                guestSuggestions.innerHTML = '';
+                guestSuggestions.classList.add('hidden');
+            }
+        }
+
+        if (guestNameInput) {
+            guestNameInput.addEventListener('input', function() {
+                const query = this.value.trim();
+                if (guestIdInput) guestIdInput.value = ''; // Clear ID if typing
+                
+                if (query.length < 2) {
+                    hideGuestSuggestions();
+                    return;
+                }
+
+                // API Call for Guest Search
+                fetch(`{% url 'dashboard:api_search_guests' %}?q=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        guestSuggestions.innerHTML = '';
+                        if (data.success && data.results && data.results.length > 0) {
+                            data.results.forEach(item => {
+                                const div = document.createElement('div');
+                                div.className = 'px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm flex flex-col';
+                                div.innerHTML = `<span class="font-medium text-gray-900">${item.name}</span><span class="text-xs text-gray-500">${item.room_number ? `Room ${item.room_number}` : 'No room'}</span>`;
+                                div.addEventListener('click', () => {
+                                    guestNameInput.value = item.name;
+                                    if(guestIdInput) guestIdInput.value = item.id;
+                                    if(roomNumberInput && item.room_number) roomNumberInput.value = item.room_number;
+                                    hideGuestSuggestions();
+                                });
+                                guestSuggestions.appendChild(div);
+                            });
+                            guestSuggestions.classList.remove('hidden');
+                        } else {
+                            hideGuestSuggestions();
+                        }
+                    })
+                    .catch(() => hideGuestSuggestions());
+            });
+        }
+        
+        // Hide autocomplete when clicking outside
+        document.addEventListener('click', (e) => {
+            if (guestSuggestions && !guestSuggestions.contains(e.target) && e.target !== guestNameInput) {
+                hideGuestSuggestions();
+            }
+        });
+
+        // 5. SUBMIT TICKET
         const submitTicketBtn = document.getElementById('submitCreateTicket');
         if (submitTicketBtn) { 
             submitTicketBtn.addEventListener('click', () => { 
+                const requestTypeInput = document.getElementById('requestType');
+                const categoryValue = selectedRequestType ? selectedRequestType.name : requestTypeInput.value.trim();
+
                 const ticketData = { 
                     guest_name: document.getElementById('guestName').value.trim(), 
                     room_number: document.getElementById('roomNumber').value.trim(), 
                     department: document.getElementById('department').value, 
-                    category: document.getElementById('requestType').value.trim(), // Use input value directly
+                    category: categoryValue, 
                     priority: selectedPriority, 
                     description: document.getElementById('description').value.trim(),
                     guest_id: document.getElementById('guestId').value || null 
                 }; 
                 
                 if (!ticketData.guest_name || !ticketData.room_number || !ticketData.department || !ticketData.category || !ticketData.priority) { 
-                    showToast('Please fill in all required fields: Guest Name, Room Number, Department, Request Type, and Priority.', 'error');
+                    showToast('Please fill in all required fields.', 'error');
                     return; 
                 } 
                 
-                showConfirmationModal('Create Ticket', 'Are you sure you want to create this ticket?', function() {
-                    fetch('{% url "dashboard:api_create_ticket" %}', { 
-                        method: 'POST', 
-                        headers: { 
-                            'Content-Type': 'application/json', 
-                            'X-CSRFToken': getCookie('csrftoken') 
-                        }, 
-                        body: JSON.stringify(ticketData) 
-                    })
-                    .then(response => response.json())
-                    .then(data => { 
-                        if (data.success) { 
-                            showToast('Ticket created successfully!', 'success');
-                            closeCreateTicketModal();
-                            // Optional: reload or update UI
-                        } else { 
-                            showToast('Error creating ticket: ' + (data.error || 'Unknown error'), 'error');
-                        } 
-                    })
-                    .catch(error => { 
-                        console.error('Error:', error); 
-                        showToast('An error occurred. Please try again.', 'error');
-                    });
-                });
+                fetch('{% url "dashboard:api_create_ticket" %}', { 
+                    method: 'POST', 
+                    headers: { 
+                        'Content-Type': 'application/json', 
+                        'X-CSRFToken': getCookie('csrftoken') 
+                    }, 
+                    body: JSON.stringify(ticketData) 
+                })
+                .then(response => response.json())
+                .then(data => { 
+                    if (data.success) { 
+                        showToast('Ticket created successfully!', 'success');
+                        closeCreateTicketModal();
+                    } else { 
+                        showToast('Error creating ticket: ' + (data.error || 'Unknown error'), 'error');
+                    } 
+                })
+                .catch(error => { 
+                    console.error('Error:', error); 
+                    showToast('An error occurred. Please try again.', 'error');
+                }); 
             });
         }
-    });
 
+        // --- GLOBAL ACTION BUTTONS ---
+        primaryActionBtn.addEventListener('click', function() {
+            if (primaryActionBtnText.textContent.includes('Family')) {
+                alert('Add New Request Family...');
+            } else {
+                openCreateTicketModal(); // Open empty modal
+            }
+        });
+
+        secondaryActionBtn.addEventListener('click', () => alert('Filter Options for Request Families...'));
+        if(familiesPanel.querySelector('#tableFilterBtn')) {
+            familiesPanel.querySelector('#tableFilterBtn').addEventListener('click', () => alert('Table Filter Options...'));
+        }
+
+    });
+</script>
 {% endblock content %}
