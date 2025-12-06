@@ -4484,6 +4484,10 @@ def create_request_type_api(request):
             if not department_id:
                 return JsonResponse({'error': 'Department is required'}, status=400)
             
+            # Check if request type already exists
+            if RequestType.objects.filter(name__iexact=title).exists():
+                return JsonResponse({'error': f'Request type "{title}" already exists.'}, status=400)
+            
             # Create the request type
             request_type = RequestType.objects.create(
                 name=title,
@@ -4493,7 +4497,7 @@ def create_request_type_api(request):
             
             # Get the department
             try:
-                department = Department.objects.get(id=department_id)
+                department = Department.objects.get(pk=department_id)
             except Department.DoesNotExist:
                 return JsonResponse({'error': 'Department not found'}, status=400)
             

@@ -100,9 +100,6 @@
                 </div>
                 {% endfor %}
             </div>
-            <div class="flex justify-center">
-                <button id="loadMoreBtn" class="w-48 h-11 bg-white hover:bg-sky-50 rounded-lg border border-sky-600 text-sky-600 text-sm font-medium font-['Inter'] transition-colors">Load More Requests</button>
-            </div>
         </div>
 
         <div id="familiesContentPanel" class="tab-content-panel hidden bg-gray-50 min-h-screen px-6 py-6">
@@ -339,14 +336,16 @@
             </div>
             <div>
                 <label for="requestTypeDepartment" class="block text-sm font-medium text-gray-700 mb-1">Department</label>
-                <select id="requestTypeDepartment" class="w-full h-11 px-4 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 appearance-none">
-                    <option value="">Select department</option>
-                    {% for dept in departments %}
-                    <option value="{{ dept.id }}">{{ dept.name }}</option>
-                    {% endfor %}
-                </select>
-                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                <div class="relative">
+                    <select id="requestTypeDepartment" class="w-full h-11 px-4 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 appearance-none">
+                        <option value="">Select department</option>
+                        {% for dept in departments %}
+                        <option value="{{ dept.pk }}">{{ dept.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
                 </div>
             </div>
             <div>
@@ -420,7 +419,7 @@
                     toastContainer.classList.add('hidden');
                     toastContainer.classList.remove('flex');
                 }, 300);
-            }, 3000);
+            }, 5000);
         }
 
         // --- NAVIGATION LOGIC (Requests vs Families) ---
@@ -684,25 +683,123 @@
             }
         });
 
+        // 4B. REQUEST TYPE AUTOCOMPLETE LOGIC
+        const requestTypeInput = document.getElementById('requestType');
+        const requestTypeSuggestions = document.getElementById('requestTypeSuggestions');
+
+        function hideRequestTypeSuggestions() {
+            if (requestTypeSuggestions) {
+                requestTypeSuggestions.innerHTML = '';
+                requestTypeSuggestions.classList.add('hidden');
+            }
+        }
+
+        if (requestTypeInput) {
+            requestTypeInput.addEventListener('input', function() {
+                const query = this.value.trim();
+                selectedRequestType = null; // Clear selection if typing
+                
+                if (query.length < 1) {
+                    hideRequestTypeSuggestions();
+                    return;
+                }
+
+                // Filter request types from the cards on the page
+                const allRequestCards = document.querySelectorAll('.request-card');
+                const matchingRequests = [];
+                
+                allRequestCards.forEach(card => {
+                    const requestName = card.dataset.name;
+                    const department = card.dataset.department;
+                    if (requestName.toLowerCase().includes(query.toLowerCase())) {
+                        matchingRequests.push({ name: requestName, department: department });
+                    }
+                });
+
+                requestTypeSuggestions.innerHTML = '';
+                if (matchingRequests.length > 0) {
+                    matchingRequests.forEach(item => {
+                        const div = document.createElement('div');
+                        div.className = 'px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm flex flex-col border-b border-gray-100 last:border-b-0';
+                        div.innerHTML = `<span class="font-medium text-gray-900">${item.name}</span><span class="text-xs text-gray-500">${item.department}</span>`;
+                        div.addEventListener('click', () => {
+                            requestTypeInput.value = item.name;
+                            selectedRequestType = { name: item.name, department: item.department };
+                            
+                            // Auto-fill department if not already selected
+                            const deptSelect = document.getElementById('department');
+                            if (deptSelect && !deptSelect.value) {
+                                for (let i = 0; i < deptSelect.options.length; i++) {
+                                    if (deptSelect.options[i].text === item.department || deptSelect.options[i].value === item.department) {
+                                        deptSelect.selectedIndex = i;
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            hideRequestTypeSuggestions();
+                        });
+                        requestTypeSuggestions.appendChild(div);
+                    });
+                    requestTypeSuggestions.classList.remove('hidden');
+                } else {
+                    // Show "No results" message
+                    const div = document.createElement('div');
+                    div.className = 'px-4 py-2 text-sm text-gray-500 italic';
+                    div.textContent = 'No matching request types found';
+                    requestTypeSuggestions.appendChild(div);
+                    requestTypeSuggestions.classList.remove('hidden');
+                }
+            });
+
+            // Hide suggestions when clicking outside
+            document.addEventListener('click', (e) => {
+                if (requestTypeSuggestions && !requestTypeSuggestions.contains(e.target) && e.target !== requestTypeInput) {
+                    hideRequestTypeSuggestions();
+                }
+            });
+        }
+
+
         // 5. SUBMIT TICKET
         const submitTicketBtn = document.getElementById('submitCreateTicket');
         if (submitTicketBtn) { 
             submitTicketBtn.addEventListener('click', () => { 
                 const requestTypeInput = document.getElementById('requestType');
                 const categoryValue = selectedRequestType ? selectedRequestType.name : requestTypeInput.value.trim();
+                const guestName = document.getElementById('guestName').value.trim();
+                const roomNumber = document.getElementById('roomNumber').value.trim();
+                const department = document.getElementById('department').value;
 
                 const ticketData = { 
-                    guest_name: document.getElementById('guestName').value.trim(), 
-                    room_number: document.getElementById('roomNumber').value.trim(), 
-                    department: document.getElementById('department').value, 
+                    guest_name: guestName, 
+                    room_number: roomNumber, 
+                    department: department, 
                     category: categoryValue, 
                     priority: selectedPriority, 
                     description: document.getElementById('description').value.trim(),
                     guest_id: document.getElementById('guestId').value || null 
                 }; 
                 
-                if (!ticketData.guest_name || !ticketData.room_number || !ticketData.department || !ticketData.category || !ticketData.priority) { 
-                    showToast('Please fill in all required fields.', 'error');
+                // Detailed validation with specific error messages
+                if (!guestName) { 
+                    showToast('Please enter or select a guest name.', 'error');
+                    return; 
+                }
+                if (!roomNumber) { 
+                    showToast('Please enter a room number.', 'error');
+                    return; 
+                }
+                if (!department) { 
+                    showToast('Please select a department.', 'error');
+                    return; 
+                }
+                if (!categoryValue) { 
+                    showToast('Please enter or select a request type.', 'error');
+                    return; 
+                }
+                if (!selectedPriority) { 
+                    showToast('Please select a priority level.', 'error');
                     return; 
                 } 
                 
@@ -787,9 +884,20 @@
                     description: document.getElementById('requestTypeDescription').value.trim()
                 }; 
                 
-                if (!requestData.title || !requestData.department_id) { 
-                    showToast('Please fill in all required fields.', 'error');
-                    return; 
+                // Detailed validation with specific error messages
+                if (!requestData.title) {
+                    showToast('Please enter a request name.', 'error');
+                    return;
+                }
+                
+                if (!requestData.department_id) {
+                    showToast('Please select a department.', 'error');
+                    return;
+                }
+                
+                if (!requestData.description) {
+                    showToast('Please enter a description.', 'error');
+                    return;
                 } 
                 
                 fetch('{% url "dashboard:api_create_request_type" %}', { 
