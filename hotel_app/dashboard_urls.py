@@ -112,6 +112,7 @@ urlpatterns = [
     path('integrations/', dashboard_views.integrations, name='integrations'),
     path('sla-configuration/', dashboard_views.sla_configuration, name='sla_configuration'),
     path('api/sla-configuration/update/', dashboard_views.api_sla_configuration_update, name='api_sla_configuration_update'),
+    path('api/requests/create/', dashboard_views.create_request_type_api, name='api_create_request_type'),
     path('analytics/', dashboard_views.analytics_dashboard, name='analytics'),
     path('performance/', dashboard_views.performance_dashboard, name='performance'),
     path('gym/', dashboard_views.gym, name='gym'),

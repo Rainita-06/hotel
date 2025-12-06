@@ -4466,6 +4466,62 @@ def create_sample_service_requests():
 
 @login_required
 @require_permission([ADMINS_GROUP])
+def create_request_type_api(request):
+    """API endpoint to create a new request type with department association."""
+    if request.method == 'POST':
+        try:
+            import json
+            from hotel_app.models import RequestType, Department, DepartmentRequestSLA
+            
+            data = json.loads(request.body.decode('utf-8'))
+            title = data.get('title')
+            department_id = data.get('department_id')
+            description = data.get('description', '')
+            
+            if not title:
+                return JsonResponse({'error': 'Title is required'}, status=400)
+            
+            if not department_id:
+                return JsonResponse({'error': 'Department is required'}, status=400)
+            
+            # Create the request type
+            request_type = RequestType.objects.create(
+                name=title,
+                description=description,
+                active=True
+            )
+            
+            # Get the department
+            try:
+                department = Department.objects.get(id=department_id)
+            except Department.DoesNotExist:
+                return JsonResponse({'error': 'Department not found'}, status=400)
+            
+            # Associate the request type with the department using DepartmentRequestSLA
+            # Set default SLA times (can be adjusted later in SLA configuration)
+            for priority in ['critical', 'high', 'normal', 'low']:
+                DepartmentRequestSLA.objects.create(
+                    department=department,
+                    request_type=request_type,
+                    priority=priority,
+                    response_time_minutes=30,  # Default 30 minutes
+                    resolution_time_minutes=120  # Default 2 hours
+                )
+            
+            return JsonResponse({
+                'success': True,
+                'id': request_type.request_type_id,
+                'message': 'Request type created successfully'
+            })
+            
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+
+@login_required
+@require_permission([ADMINS_GROUP])
 def configure_requests_api_bulk_action(request):
     """Bulk action endpoint for requests.
 
@@ -6264,14 +6320,17 @@ def create_ticket_api(request):
                 # If we can't create a building, set it to None
                 building = None
             
-            location, _ = Location.objects.get_or_create(
-                room_no=room_number,
-                defaults={
-                    'name': f'Room {room_number}',
-                    'building': building
-                }
-            )
-            
+            # Handle the case where multiple locations exist with the same room_no
+            # We'll use the first one or create a new one if none exists
+            location = Location.objects.filter(room_no=room_number).first()
+            if not location:
+                location, _ = Location.objects.get_or_create(
+                    room_no=room_number,
+                    defaults={
+                        'name': f'Room {room_number}',
+                        'building': building
+                    }
+                )            
             # Get or create request type
             request_type, _ = RequestType.objects.get_or_create(
                 name=category,
