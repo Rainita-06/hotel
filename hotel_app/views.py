@@ -3704,7 +3704,7 @@ def tickets_view(request):
     priority_filter = request.GET.get("priority", "")
     status_filter = request.GET.get("status", "")
 
-    tickets = ServiceRequest.objects.all().order_by("-created_at")
+    # tickets = ServiceRequest.objects.all().order_by("-created_at")
 
     if search_query:
         tickets = tickets.filter(notes__icontains=search_query)
@@ -3721,14 +3721,19 @@ def tickets_view(request):
 
     # ---- TicketReview Data ----
     matched_reviews = TicketReview.objects.filter(
-    is_matched__in=[True, 1],
-    moved_to_ticket__in=[False, 0]
-).select_related("matched_department", "matched_request_type")
+        is_matched__in=[True, 1],
+        moved_to_ticket__in=[False, 0]
+    ).select_related("matched_department", "matched_request_type").order_by('-created_at')
 
     unmatched_reviews = TicketReview.objects.filter(
-    is_matched__in=[False, 0],
-    moved_to_ticket__in=[False, 0]
-)
+        is_matched__in=[False, 0],
+        moved_to_ticket__in=[False, 0]
+    ).order_by('-created_at')
+    all_reviews = list(matched_reviews) + list(unmatched_reviews)
+    pending_count = matched_reviews.count() + unmatched_reviews.count()
+    paginator = Paginator(all_reviews, 10)  # 10 reviews per page
+    page_number = request.GET.get('page')
+    page_ob = paginator.get_page(page_number)
 
 
     # ---- Context ----
@@ -3743,6 +3748,8 @@ def tickets_view(request):
         "status_filter": status_filter,
         "matched_reviews": matched_reviews,
         "unmatched_reviews": unmatched_reviews,
+        'all_departments': Department.objects.all().order_by('name'),
+    'request_types': RequestType.objects.filter(active=True).order_by('name'),
         
     }
 
@@ -3957,6 +3964,7 @@ def submit_ticket_review(request, review_id):
         return redirect("tickets_view")
 
     return redirect("tickets_view")
+
 
 
 # # --------------------------------------------------------------------------

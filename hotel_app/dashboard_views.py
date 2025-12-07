@@ -3172,12 +3172,15 @@ def tickets(request):
         'status_filter': status_filter,
         'search_query': search_query,
         "matched_reviews": matched_reviews,
-        # "unmatched_reviews": unmatched_reviews,
+        "unmatched_reviews": unmatched_reviews,
         'request_types_by_department_json': request_types_by_department_json,
         'all_request_types_json': all_request_types_json,
         "pending_count":pending_count,
+        'all_departments': Department.objects.all().order_by('name'),
+    'request_types': RequestType.objects.filter(active=True).order_by('name'),
     }
     return render(request, 'dashboard/tickets.html', context)
+
 
 
 @login_required

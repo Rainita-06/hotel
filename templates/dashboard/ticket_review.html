@@ -57,6 +57,7 @@
                             <option value="normal">Normal</option>
                             <option value="high" selected>High</option>
                             <option value="critical">Critical</option>
+                            <option value="low">Low</option>
                         </select>
                     </td>
                     <td class="px-6 py-4 text-center">
@@ -72,8 +73,7 @@
 
                 {% for r in unmatched_reviews %}
                 <tr class="hover:bg-gray-50 transition">
-                    <form method="post" action="{% url 'submit_ticket_review' r.id %}">
-                        {% csrf_token %}
+                    
 
                         <!-- ID -->
                         <td class="p-4 text-sm font-medium text-gray-900">#{{ r.id }}</td>
@@ -128,11 +128,14 @@
                                 <option value="normal">Normal</option>
                                 <option value="high" selected>High</option>
                                 <option value="critical">Critical</option>
+                                <option value="low">Low</option>
                             </select>
                         </td>
 
                         <!-- Approve Button -->
                         <td class="px-6 py-4 text-center">
+                            <form method="post" action="{% url 'submit_ticket_review' r.id %}">
+                        {% csrf_token %}
                             <button type="submit"
                                 class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors">
                                 Approve
