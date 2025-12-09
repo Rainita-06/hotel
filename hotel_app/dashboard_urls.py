@@ -105,6 +105,7 @@ urlpatterns = [
     path('api/tickets/<int:ticket_id>/close/', dashboard_views.close_ticket_api, name='api_close_ticket'),
     path('api/tickets/<int:ticket_id>/escalate/', dashboard_views.escalate_ticket_api, name='api_escalate_ticket'),
     path('api/tickets/<int:ticket_id>/reject/', dashboard_views.reject_ticket_api, name='api_reject_ticket'),
+    path('api/tickets/<int:ticket_id>/comment/', dashboard_views.add_ticket_comment_api, name='api_add_ticket_comment'),
     path('configure-requests/', dashboard_views.configure_requests, name='configure_requests'),
     path('messaging-setup/', dashboard_views.messaging_setup, name='messaging_setup'),
     path('feedback/', dashboard_views.feedback_inbox, name='feedback_inbox'),

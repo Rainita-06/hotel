@@ -908,6 +908,32 @@ class ServiceRequestChecklist(models.Model):
         db_table='service_request_checklist'
 
 
+class TicketComment(models.Model):
+    """Internal comments on tickets that staff can add and view."""
+    ticket = models.ForeignKey(
+        ServiceRequest,
+        on_delete=models.CASCADE,
+        related_name='internal_comments'
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='ticket_comments'
+    )
+    comment = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'ticket_comment'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        user_name = self.user.get_full_name() if self.user else 'Unknown'
+        return f'Comment by {user_name} on Ticket #{self.ticket.pk}'
+
+
 class WhatsAppConversation(models.Model):
     """Track per-phone WhatsApp conversation state for workflow handling."""
     STATE_IDLE = 'idle'

@@ -3478,6 +3478,44 @@ def ticket_detail(request, ticket_id):
     # Limit to last 10 activities
     activity_log = activity_log[:10]
     
+    # Get internal comments for this ticket
+    from hotel_app.models import TicketComment
+    internal_comments_qs = TicketComment.objects.filter(ticket=service_request).select_related('user').order_by('-created_at')
+    
+    internal_comments = []
+    for comment in internal_comments_qs:
+        # Format the timestamp
+        time_ago = ""
+        if comment.created_at:
+            diff = timezone.now() - comment.created_at
+            if diff.days > 0:
+                time_ago = f"{diff.days} day{'s' if diff.days != 1 else ''} ago"
+            elif diff.seconds > 3600:
+                hours = diff.seconds // 3600
+                time_ago = f"{hours} hour{'s' if hours != 1 else ''} ago"
+            elif diff.seconds > 60:
+                minutes = diff.seconds // 60
+                time_ago = f"{minutes} minute{'s' if minutes != 1 else ''} ago"
+            else:
+                time_ago = "Just now"
+        
+        user_name = "Unknown"
+        user_avatar = "/static/images/tickets/default_avatar.png"
+        if comment.user:
+            user_name = comment.user.get_full_name() or comment.user.username
+            if hasattr(comment.user, 'userprofile') and comment.user.userprofile.avatar_url:
+                user_avatar = comment.user.userprofile.avatar_url
+        
+        internal_comments.append({
+            'id': comment.id,
+            'user_name': user_name,
+            'user_avatar': user_avatar,
+            'comment': comment.comment,
+            'created_at': comment.created_at,
+            'time_ago': time_ago,
+            'formatted_date': comment.created_at.strftime('%b %d, %Y at %H:%M') if comment.created_at else ''
+        })
+    
     context = {
         'ticket': service_request,
         'ticket_priority_label': priority_data['label'],
@@ -3504,7 +3542,8 @@ def ticket_detail(request, ticket_id):
         'notification_count': notification_count,
         'activity_log': activity_log,
         'sla_progress_percent': sla_progress_percent,
-        'resolution_notes': service_request.resolution_notes  # Pass resolution notes to template
+        'resolution_notes': service_request.resolution_notes,  # Pass resolution notes to template
+        'internal_comments': internal_comments,  # Pass internal comments to template
     }
     
     return render(request, 'dashboard/ticket_detail.html', context)
@@ -6632,6 +6671,55 @@ def reject_ticket_api(request, ticket_id):
                 'success': True,
                 'message': 'Ticket rejected successfully',
                 'ticket_id': service_request.id
+            })
+            
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+
+@login_required
+@require_role(['admin', 'staff', 'user'])
+def add_ticket_comment_api(request, ticket_id):
+    """API endpoint to add an internal comment to a ticket."""
+    if request.method == 'POST':
+        try:
+            from hotel_app.models import ServiceRequest, TicketComment
+            
+            # Get the service request
+            service_request = get_object_or_404(ServiceRequest, id=ticket_id)
+            
+            # Parse the request body
+            try:
+                data = json.loads(request.body)
+            except json.JSONDecodeError:
+                return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+            
+            comment_text = data.get('comment', '').strip()
+            
+            if not comment_text:
+                return JsonResponse({'error': 'Comment text is required'}, status=400)
+            
+            # Create the comment
+            comment = TicketComment.objects.create(
+                ticket=service_request,
+                user=request.user,
+                comment=comment_text
+            )
+            
+            # Get user display name
+            user_name = request.user.get_full_name() or request.user.username
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Comment added successfully',
+                'comment': {
+                    'id': comment.id,
+                    'user': user_name,
+                    'comment': comment.comment,
+                    'created_at': comment.created_at.strftime('%b %d, %Y at %H:%M')
+                }
             })
             
         except Exception as e:
