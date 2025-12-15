@@ -158,6 +158,20 @@ window.addEventListener("DOMContentLoaded", () => {
         });
     }
 });
+
+setTimeout(() => {
+  const input = document.getElementById("html5-qrcode-private-filescan-input");
+  const container = input?.closest("div");
+
+  if (input && container) {
+    const label = document.createElement("label");
+    label.htmlFor = input.id;
+    label.style.cursor = "pointer";
+    container.parentNode.insertBefore(label, container);
+    label.appendChild(container);
+  }
+}, 500);
+
 </script>
 <style>
   @keyframes fade-in-down {

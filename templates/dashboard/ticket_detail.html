@@ -44,7 +44,7 @@
 
             <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 lg:p-6">
                 <div class="hidden lg:flex items-start gap-4">
-                    <img class="w-10 h-10 rounded-full" src="{{ ticket.requester_user.userprofile.avatar_url|default:'/static/images/tickets/default_avatar.png' }}" alt="Requester Avatar" "/>
+                    <img class="w-10 h-10 rounded-full object-cover" src="{{ ticket.requester_user.userprofile.avatar_url|default:'/static/images/default_avatar.png' }}" alt="Requester Avatar" "/>
                     <div class="w-full">
                         <div class="flex justify-between items-start">
                             <div>
@@ -157,24 +157,7 @@
             <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 lg:p-6">
                 <h3 class="text-base font-semibold text-gray-900 mb-4">Internal Comments</h3>
                 
-                <!-- Add Comment Form -->
-                <div class="mb-6">
-                    <div class="flex items-start gap-3">
-                        <img class="w-8 h-8 rounded-full flex-shrink-0" src="{{ request.user.userprofile.avatar_url|default:'/static/images/tickets/default_avatar.png' }}" alt="Your Avatar" />
-                        <div class="flex-grow">
-                            <textarea id="newCommentInput" rows="3" 
-                                class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none text-sm" 
-                                placeholder="Add an internal comment..."></textarea>
-                            <div class="mt-2 flex justify-end">
-                                <button id="submitCommentBtn" 
-                                    class="px-4 py-2 text-sm font-medium text-white bg-sky-600 rounded-lg hover:bg-sky-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                    data-ticket-id="{{ ticket.id }}">
-                                    Add Comment
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                
                 
                 <!-- Comments List -->
                 <div id="commentsList" class="space-y-4">
@@ -198,6 +181,24 @@
                         <p class="text-xs text-gray-400 mt-1">Be the first to add a comment!</p>
                     </div>
                     {% endfor %}
+                </div>
+                <!-- Add Comment Form -->
+                <div class="mb-6 py-6">
+                    <div class="flex items-start gap-3">
+                        <img class="w-8 h-8 rounded-full object-cover flex-shrink-0" src="{{ request.user.userprofile.avatar_url|default:'/static/images/default_avatar.png' }}" alt="Your Avatar" />
+                        <div class="flex-grow">
+                            <textarea id="newCommentInput" rows="3" 
+                                class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none text-sm" 
+                                placeholder="Add an internal comment..."></textarea>
+                            <div class="mt-2 flex justify-end">
+                                <button id="submitCommentBtn" 
+                                    class="px-4 py-2 text-sm font-medium text-white bg-sky-600 rounded-lg hover:bg-sky-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    data-ticket-id="{{ ticket.id }}">
+                                    Add Comment
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
         </div>
@@ -579,7 +580,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Create and prepend the new comment element
                     const newCommentHtml = `
                         <div class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
-                            <img class="w-8 h-8 rounded-full flex-shrink-0" src="{{ request.user.userprofile.avatar_url|default:'/static/images/tickets/default_avatar.png' }}" alt="Your Avatar" />
+                            <img class="w-8 h-8 rounded-full flex-shrink-0" src="{{ request.user.userprofile.avatar_url|default:'/static/images/default_avatar.png' }}" alt="Your Avatar" />
                             <div class="flex-grow min-w-0">
                                 <div class="flex items-center justify-between gap-2 flex-wrap">
                                     <span class="text-sm font-medium text-gray-900">${data.comment.user}</span>

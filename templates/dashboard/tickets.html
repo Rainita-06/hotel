@@ -240,12 +240,13 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th scope="col" class="p-4 text-left"><input autocomplete="off" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500"></th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Ticket ID</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Priority</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Ticket #</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Room #</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Department</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Request Type</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Assigned To</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Priority</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">SLA %</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
@@ -255,9 +256,7 @@
                         <tr>
                             <td class="p-4"><input autocomplete="off" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500"></td>
                             <td class="px-6 py-4 text-sm font-medium text-gray-900">#{{ ticket.id }}</td>
-                            <td class="px-6 py-4">
-                                <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-{{ ticket.priority_color }}-100 text-{{ ticket.priority_color }}-700">{{ ticket.get_priority_display }}</span>
-                            </td>
+                            <td class="px-6 py-4 text-sm font-medium text-gray-900"> {{ ticket.room_no|default:ticket.display_room_no|default:"—" }}</td>
                             <td class="px-6 py-4 text-sm text-gray-900">
                                 {% if ticket.department %}
                                     {{ ticket.department.name }}
@@ -304,6 +303,9 @@
                                         <span class="px-2 py-1 text-xs font-medium text-gray-800 bg-gray-100 rounded-full">{{ ticket.status|title }}</span>
                                     {% endif %}
                                 </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-{{ ticket.priority_color }}-100 text-{{ ticket.priority_color }}-700">{{ ticket.get_priority_display }}</span>
                             </td>
                             <td class="px-6 py-4">
                                 <div class="flex flex-col">
@@ -366,7 +368,7 @@
             </div>
         </div>
 
-        <div class="mt-6 animate-on-load">
+        <div class="mt-6 animate-on-load py-8">
             {% include "dashboard/ticket_review.html" %}
         </div>
 

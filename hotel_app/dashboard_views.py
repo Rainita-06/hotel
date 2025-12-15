@@ -2924,6 +2924,15 @@ def tickets(request):
                 sla_color = '#22c55e'  # green-500
         
         # Add attributes to the ticket object
+        ticket.display_room_no = (
+    ticket.location.room_no 
+    if ticket.location and ticket.location.room_no
+    else ticket.guest.room_number
+    if ticket.guest and ticket.guest.room_number 
+    else ''
+    
+)
+
         ticket.priority_label = priority_data['label']
         ticket.priority_color = priority_data['color']
         ticket.status_label = status_data['label']
@@ -3500,7 +3509,7 @@ def ticket_detail(request, ticket_id):
                 time_ago = "Just now"
         
         user_name = "Unknown"
-        user_avatar = "/static/images/tickets/default_avatar.png"
+        user_avatar = "/static/images/default_avatar.png"
         if comment.user:
             user_name = comment.user.get_full_name() or comment.user.username
             if hasattr(comment.user, 'userprofile') and comment.user.userprofile.avatar_url:
@@ -6427,7 +6436,7 @@ def create_ticket_api(request):
                 department=department,
                 priority=model_priority,
                 status='pending',
-                notes=description
+                notes=description,
             )
             
             # Notify department staff
