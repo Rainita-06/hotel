@@ -3612,6 +3612,152 @@ from .models import (
 # -----------------------------------------------------------
 # ✅ TWILIO WHATSAPP WEBHOOK — Creates TicketReview
 # -----------------------------------------------------------
+# @csrf_exempt
+# def whatsapp_webhook(request):
+#     if request.method != "POST":
+#         return JsonResponse({"error": "Invalid request"}, status=400)
+
+#     from_number = request.POST.get("From", "")
+#     body = request.POST.get("Body", "").strip()
+#     resp = MessagingResponse()
+
+#     # Normalize phone number
+#     phone_digits = re.sub(r"\D", "", from_number)
+#     phone_last10 = phone_digits[-10:]
+
+#     # Find guest (via voucher)
+#     voucher = (
+#         Voucher.objects.filter(phone_number__icontains=phone_digits).first()
+#         or Voucher.objects.filter(phone_number__icontains=phone_last10).first()
+#     )
+#     if not voucher:
+#         print("⚠️ Guest not found for phone:", phone_digits)
+#         resp.message("⚠️ Sorry! Your number is not registered in our system.")
+#         return HttpResponse(str(resp))
+#     guest_name = voucher.guest_name if voucher else "Guest"
+#     room_no = voucher.room_no if voucher else "N/A"
+
+#     # ---- Auto-match Request Type ----
+#     matched_request_type = None
+#     confidence = 0.0
+
+#     for rt in RequestType.objects.filter(active=True):
+#         if re.search(rf"\b{re.escape(rt.name.lower())}\b", body.lower()):
+#             matched_request_type = rt
+#             confidence = 0.95
+#             break
+
+#     # ---- Get Department if request type matched ----
+#     department = None
+#     if matched_request_type:
+#         dept_sla = DepartmentRequestSLA.objects.filter(request_type=matched_request_type).first()
+#         if dept_sla:
+#             department = dept_sla.department
+
+#     # ---- Default priority ----
+#     priority = 'normal'
+
+#     # ---- Create TicketReview ----
+#     review = TicketReview.objects.create(
+#         voucher=voucher,
+#         guest_name=guest_name,
+#         room_no=room_no,
+#         phone_number=from_number,
+#         request_text=body,
+#         matched_request_type=matched_request_type,
+#         matched_department=department,
+#         match_confidence=confidence,
+#         is_matched=bool(matched_request_type),
+#         priority=priority,
+#     )
+
+#     # ---- WhatsApp Response ----
+#     if matched_request_type:
+#         resp.message(
+#             f"✅ Hello {guest_name}!\n"
+#             f"Your request for *{matched_request_type.name}* has been received.\n"
+#             f"Room: {room_no}\n"
+#             f"Reference ID: #{review.pk}\n"
+#             f"Our team will review and process it shortly."
+#         )
+#     else:
+#         resp.message(
+#             f"📝 Hello {guest_name}!\n"
+#             f"Your message has been received.\n"
+#             f"Reference ID: #{review.pk}\n"
+#             f"Our team will review and assign it shortly."
+#         )
+
+#     return HttpResponse(str(resp))
+import re
+import unicodedata
+
+def normalize_message(text: str) -> str:
+    text = text.lower().strip()
+
+    # Remove emojis & symbols
+    text = "".join(
+        ch for ch in text
+        if unicodedata.category(ch)[0] not in ("S", "C")
+    )
+
+    # Remove punctuation
+    text = re.sub(r"[^\w\s]", "", text)
+
+    # Normalize spaces
+    text = re.sub(r"\s+", " ", text)
+
+    return text
+
+
+def is_actionable_message(message: str) -> bool:
+    msg = normalize_message(message)
+
+    if not msg:
+        return False
+
+    words = msg.split()
+
+    # Too short = noise
+    if len(words) < 3:
+        return False
+
+    # Repetitive noise: ok ok ok
+    if len(set(words)) == 1:
+        return False
+
+    # Verb-like + noun-like signals
+    verb_like = any(
+        w.endswith(("e", "ing", "ed", "en")) or len(w) > 4
+        for w in words
+    )
+    noun_like = any(len(w) > 3 for w in words)
+
+    return verb_like and noun_like
+from datetime import timedelta
+from django.utils import timezone
+
+ACK_WINDOW_MINUTES = 5  # configurable
+
+def recently_created_ticket(phone_number: str) -> bool:
+    since = timezone.now() - timedelta(minutes=ACK_WINDOW_MINUTES)
+
+    return TicketReview.objects.filter(
+        phone_number=phone_number,
+        created_at__gte=since
+    ).exists()
+
+def handle_non_actionable_message(body, from_number, resp):
+    if recently_created_ticket(from_number):
+        resp.message("🙏 Thank you! Our team is working on your request.")
+    else:
+        resp.message(
+            "👋 Hi! Please describe your service request, for example:\n"
+            "• AC not working\n"
+            "• Need towels\n"
+            "• Room cleaning"
+        )
+
 @csrf_exempt
 def whatsapp_webhook(request):
     if request.method != "POST":
@@ -3621,21 +3767,31 @@ def whatsapp_webhook(request):
     body = request.POST.get("Body", "").strip()
     resp = MessagingResponse()
 
-    # Normalize phone number
+    # --------------------------------------------------
+    # 🚫 INTENT GATE (NOISE / SMALL TALK / EMOJIS)
+    # --------------------------------------------------
+    if not is_actionable_message(body):
+        handle_non_actionable_message(body, from_number, resp)
+        return HttpResponse(str(resp))
+
+    # --------------------------------------------------
+    # NORMAL FLOW CONTINUES
+    # --------------------------------------------------
+
     phone_digits = re.sub(r"\D", "", from_number)
     phone_last10 = phone_digits[-10:]
 
-    # Find guest (via voucher)
     voucher = (
         Voucher.objects.filter(phone_number__icontains=phone_digits).first()
         or Voucher.objects.filter(phone_number__icontains=phone_last10).first()
     )
+
     if not voucher:
-        print("⚠️ Guest not found for phone:", phone_digits)
         resp.message("⚠️ Sorry! Your number is not registered in our system.")
         return HttpResponse(str(resp))
-    guest_name = voucher.guest_name if voucher else "Guest"
-    room_no = voucher.room_no if voucher else "N/A"
+
+    guest_name = voucher.guest_name
+    room_no = voucher.room_no
 
     # ---- Auto-match Request Type ----
     matched_request_type = None
@@ -3647,15 +3803,14 @@ def whatsapp_webhook(request):
             confidence = 0.95
             break
 
-    # ---- Get Department if request type matched ----
+    # ---- Get Department ----
     department = None
     if matched_request_type:
-        dept_sla = DepartmentRequestSLA.objects.filter(request_type=matched_request_type).first()
+        dept_sla = DepartmentRequestSLA.objects.filter(
+            request_type=matched_request_type
+        ).first()
         if dept_sla:
             department = dept_sla.department
-
-    # ---- Default priority ----
-    priority = 'normal'
 
     # ---- Create TicketReview ----
     review = TicketReview.objects.create(
@@ -3668,24 +3823,22 @@ def whatsapp_webhook(request):
         matched_department=department,
         match_confidence=confidence,
         is_matched=bool(matched_request_type),
-        priority=priority,
+        priority="normal",
     )
 
-    # ---- WhatsApp Response ----
+    # ---- WhatsApp Reply ----
     if matched_request_type:
         resp.message(
             f"✅ Hello {guest_name}!\n"
             f"Your request for *{matched_request_type.name}* has been received.\n"
             f"Room: {room_no}\n"
-            f"Reference ID: #{review.pk}\n"
-            f"Our team will review and process it shortly."
+            f"Reference ID: #{review.pk}"
         )
     else:
         resp.message(
             f"📝 Hello {guest_name}!\n"
-            f"Your message has been received.\n"
-            f"Reference ID: #{review.pk}\n"
-            f"Our team will review and assign it shortly."
+            f"Your request has been received.\n"
+            f"Reference ID: #{review.pk}"
         )
 
     return HttpResponse(str(resp))
