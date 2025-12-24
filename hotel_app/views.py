@@ -3689,95 +3689,329 @@ from .models import (
 #         )
 
 #     return HttpResponse(str(resp))
+# import re
+# import unicodedata
+
+# def normalize_message(text: str) -> str:
+#     text = text.lower().strip()
+
+#     # Remove emojis & symbols
+#     text = "".join(
+#         ch for ch in text
+#         if unicodedata.category(ch)[0] not in ("S", "C")
+#     )
+
+#     # Remove punctuation
+#     text = re.sub(r"[^\w\s]", "", text)
+
+#     # Normalize spaces
+#     text = re.sub(r"\s+", " ", text)
+
+#     return text
+
+
+# def is_actionable_message(message: str) -> bool:
+#     msg = normalize_message(message)
+
+#     if not msg:
+#         return False
+
+#     words = msg.split()
+
+#     # Too short = noise
+#     if len(words) < 3:
+#         return False
+
+#     # Repetitive noise: ok ok ok
+#     if len(set(words)) == 1:
+#         return False
+
+#     # Verb-like + noun-like signals
+#     verb_like = any(
+#         w.endswith(("e", "ing", "ed", "en")) or len(w) > 4
+#         for w in words
+#     )
+#     noun_like = any(len(w) > 3 for w in words)
+
+#     return verb_like and noun_like
+# from datetime import timedelta
+# from django.utils import timezone
+
+# ACK_WINDOW_MINUTES = 5  # configurable
+
+# def recently_created_ticket(phone_number: str) -> bool:
+#     since = timezone.now() - timedelta(minutes=ACK_WINDOW_MINUTES)
+
+#     return TicketReview.objects.filter(
+#         phone_number=phone_number,
+#         created_at__gte=since
+#     ).exists()
+
+# def handle_non_actionable_message(body, from_number, resp):
+#     if recently_created_ticket(from_number):
+#         resp.message("🙏 Thank you! Our team is working on your request.")
+#     else:
+#         resp.message(
+#             "👋 Hi! Please describe your service request, for example:\n"
+#             "• AC not working\n"
+#             "• Need towels\n"
+#             "• Room cleaning"
+#         )
+
+# @csrf_exempt
+# def whatsapp_webhook(request):
+#     if request.method != "POST":
+#         return JsonResponse({"error": "Invalid request"}, status=400)
+
+#     from_number = request.POST.get("From", "")
+#     body = request.POST.get("Body", "").strip()
+#     resp = MessagingResponse()
+
+#     # --------------------------------------------------
+#     # 🚫 INTENT GATE (NOISE / SMALL TALK / EMOJIS)
+#     # --------------------------------------------------
+#     if not is_actionable_message(body):
+#         handle_non_actionable_message(body, from_number, resp)
+#         return HttpResponse(str(resp))
+
+#     # --------------------------------------------------
+#     # NORMAL FLOW CONTINUES
+#     # --------------------------------------------------
+
+#     phone_digits = re.sub(r"\D", "", from_number)
+#     phone_last10 = phone_digits[-10:]
+
+#     voucher = (
+#         Voucher.objects.filter(phone_number__icontains=phone_digits).first()
+#         or Voucher.objects.filter(phone_number__icontains=phone_last10).first()
+#     )
+
+#     if not voucher:
+#         resp.message("⚠️ Sorry! Your number is not registered in our system.")
+#         return HttpResponse(str(resp))
+
+#     guest_name = voucher.guest_name
+#     room_no = voucher.room_no
+
+#     # ---- Auto-match Request Type ----
+#     matched_request_type = None
+#     confidence = 0.0
+
+#     for rt in RequestType.objects.filter(active=True):
+#         if re.search(rf"\b{re.escape(rt.name.lower())}\b", body.lower()):
+#             matched_request_type = rt
+#             confidence = 0.95
+#             break
+
+#     # ---- Get Department ----
+#     department = None
+#     if matched_request_type:
+#         dept_sla = DepartmentRequestSLA.objects.filter(
+#             request_type=matched_request_type
+#         ).first()
+#         if dept_sla:
+#             department = dept_sla.department
+
+#     # ---- Create TicketReview ----
+#     review = TicketReview.objects.create(
+#         voucher=voucher,
+#         guest_name=guest_name,
+#         room_no=room_no,
+#         phone_number=from_number,
+#         request_text=body,
+#         matched_request_type=matched_request_type,
+#         matched_department=department,
+#         match_confidence=confidence,
+#         is_matched=bool(matched_request_type),
+#         priority="normal",
+#     )
+
+#     # ---- WhatsApp Reply ----
+#     if matched_request_type:
+#         resp.message(
+#             f"✅ Hello {guest_name}!\n"
+#             f"Your request for *{matched_request_type.name}* has been received.\n"
+#             f"Room: {room_no}\n"
+#             f"Reference ID: #{review.pk}"
+#         )
+#     else:
+#         resp.message(
+#             f"📝 Hello {guest_name}!\n"
+#             f"Your request has been received.\n"
+#             f"Reference ID: #{review.pk}"
+#         )
+
+#     return HttpResponse(str(resp))
+
 import re
 import unicodedata
+import faiss
+import numpy as np
+from sentence_transformers import SentenceTransformer
+from datetime import timedelta
+from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse, HttpResponse
+from twilio.twiml.messaging_response import MessagingResponse
 
+from .models import Voucher, RequestType, DepartmentRequestSLA, TicketReview
+
+
+# =========================================================
+# CONFIG
+# =========================================================
+ACK_WINDOW_MINUTES = 1
+CONFIDENCE_THRESHOLD = 0.70
+MIN_SEMANTIC_SIGNAL = 0.35   # below this = small talk / noise
+
+
+# =========================================================
+# NORMALIZATION
+# =========================================================
 def normalize_message(text: str) -> str:
     text = text.lower().strip()
-
-    # Remove emojis & symbols
     text = "".join(
         ch for ch in text
         if unicodedata.category(ch)[0] not in ("S", "C")
     )
-
-    # Remove punctuation
     text = re.sub(r"[^\w\s]", "", text)
-
-    # Normalize spaces
     text = re.sub(r"\s+", " ", text)
-
     return text
 
 
-def is_actionable_message(message: str) -> bool:
-    msg = normalize_message(message)
+# =========================================================
+# RAG INTENT ENGINE (NO LISTS, NO RULES)
+# =========================================================
+class RAGIntentEngine:
+    _instance = None
 
-    if not msg:
-        return False
+    def __new__(cls):
+        if not cls._instance:
+            cls._instance = super().__new__(cls)
+            cls._instance._init_engine()
+        return cls._instance
 
-    words = msg.split()
+    def _init_engine(self):
+        self.model = SentenceTransformer("all-MiniLM-L6-v2")
+        self.index = None
+        self.request_map = []
+        self._build_index()
 
-    # Too short = noise
-    if len(words) < 3:
-        return False
+    def _build_index(self):
+        texts = []
+        self.request_map = []
 
-    # Repetitive noise: ok ok ok
-    if len(set(words)) == 1:
-        return False
+        for rt in RequestType.objects.filter(active=True):
+            combined = f"{rt.name}. {rt.description or ''}"
+            texts.append(combined)
+            self.request_map.append(rt)
 
-    # Verb-like + noun-like signals
-    verb_like = any(
-        w.endswith(("e", "ing", "ed", "en")) or len(w) > 4
-        for w in words
-    )
-    noun_like = any(len(w) > 3 for w in words)
+        if not texts:
+            return
 
-    return verb_like and noun_like
-from datetime import timedelta
-from django.utils import timezone
+        embeddings = self.model.encode(
+            texts,
+            normalize_embeddings=True
+        )
 
-ACK_WINDOW_MINUTES = 5  # configurable
+        dim = embeddings.shape[1]
+        self.index = faiss.IndexFlatIP(dim)
+        self.index.add(np.array(embeddings))
 
-def recently_created_ticket(phone_number: str) -> bool:
+    def detect(self, message: str):
+        if not self.index:
+            return None, 0.0
+
+        emb = self.model.encode(
+            [message],
+            normalize_embeddings=True
+        )
+
+        scores, indices = self.index.search(np.array(emb), 1)
+        confidence = float(scores[0][0])
+        rt = self.request_map[indices[0][0]]
+
+        return rt, confidence
+
+
+# =========================================================
+# DUPLICATE TICKET CHECK
+# =========================================================
+def recently_created_ticket(phone: str) -> bool:
     since = timezone.now() - timedelta(minutes=ACK_WINDOW_MINUTES)
-
     return TicketReview.objects.filter(
-        phone_number=phone_number,
+        phone_number=phone,
         created_at__gte=since
     ).exists()
 
-def handle_non_actionable_message(body, from_number, resp):
-    if recently_created_ticket(from_number):
-        resp.message("🙏 Thank you! Our team is working on your request.")
+
+# =========================================================
+# NON-REQUEST HANDLER
+# =========================================================
+def handle_non_request(resp, phone):
+    if recently_created_ticket(phone):
+        resp.message("Thank you! Our team is already working on your request.")
     else:
         resp.message(
-            "👋 Hi! Please describe your service request, for example:\n"
+            "Hi! Please tell me what service you need.\n"
+            "For example:\n"
             "• AC not working\n"
             "• Need towels\n"
             "• Room cleaning"
         )
 
+
+# =========================================================
+# WHATSAPP WEBHOOK
+# =========================================================
 @csrf_exempt
 def whatsapp_webhook(request):
     if request.method != "POST":
         return JsonResponse({"error": "Invalid request"}, status=400)
 
     from_number = request.POST.get("From", "")
-    body = request.POST.get("Body", "").strip()
+    body = request.POST.get("Body", "")
     resp = MessagingResponse()
 
-    # --------------------------------------------------
-    # 🚫 INTENT GATE (NOISE / SMALL TALK / EMOJIS)
-    # --------------------------------------------------
-    if not is_actionable_message(body):
-        handle_non_actionable_message(body, from_number, resp)
+    # ----------------------------
+    # Normalize
+    # ----------------------------
+    msg = normalize_message(body)
+    if not msg:
+        handle_non_request(resp, from_number)
         return HttpResponse(str(resp))
 
-    # --------------------------------------------------
-    # NORMAL FLOW CONTINUES
-    # --------------------------------------------------
+    # ----------------------------
+    # RAG Intent Detection
+    # ----------------------------
+    engine = RAGIntentEngine()
+    request_type, confidence = engine.detect(msg)
 
+    # ----------------------------
+    # DECISION LOGIC (CORE FIX)
+    # ----------------------------
+    if confidence >= CONFIDENCE_THRESHOLD:
+        final_request_type = request_type
+
+    elif confidence >= MIN_SEMANTIC_SIGNAL:
+        # Semantically looks like a request but not in DB
+        final_request_type = None
+
+    else:
+        # Pure greeting / chit-chat / thanks / emojis
+        handle_non_request(resp, from_number)
+        return HttpResponse(str(resp))
+
+    # ----------------------------
+    # Duplicate protection
+    # ----------------------------
+    if recently_created_ticket(from_number):
+        resp.message("🙏 Your request is already registered. Our team is on it.")
+        return HttpResponse(str(resp))
+
+    # ----------------------------
+    # User lookup
+    # ----------------------------
     phone_digits = re.sub(r"\D", "", from_number)
     phone_last10 = phone_digits[-10:]
 
@@ -3842,6 +4076,95 @@ def whatsapp_webhook(request):
         )
 
     return HttpResponse(str(resp))
+# @csrf_exempt
+# def whatsapp_webhook(request):
+#     if request.method != "POST":
+#         return JsonResponse({"error": "Invalid request"}, status=400)
+
+#     from_number = request.POST.get("From", "")
+#     body = request.POST.get("Body", "").strip()
+#     resp = MessagingResponse()
+
+#     normalized_body = normalize_message(body)
+
+#     # ---------------------------------
+#     # Find guest
+#     # ---------------------------------
+#     phone_digits = re.sub(r"\D", "", from_number)
+#     phone_last10 = phone_digits[-10:]
+
+#     voucher = (
+#         Voucher.objects.filter(phone_number__icontains=phone_digits).first()
+#         or Voucher.objects.filter(phone_number__icontains=phone_last10).first()
+#     )
+
+#     if not voucher:
+#         resp.message("⚠️ Sorry! Your number is not registered in our system.")
+#         return HttpResponse(str(resp))
+
+#     guest_name = voucher.guest_name
+#     room_no = voucher.room_no
+
+#     # ---------------------------------
+#     # MATCH SERVICE INTENT (SOURCE OF TRUTH)
+#     # ---------------------------------
+#     matched_request_type = None
+#     department = None
+#     confidence = 0.0
+
+#     for rt in RequestType.objects.filter(active=True):
+#         if re.search(rf"\b{re.escape(rt.name.lower())}\b", normalized_body):
+#             matched_request_type = rt
+#             confidence = 0.95
+#             break
+
+#     if matched_request_type:
+#         dept_sla = DepartmentRequestSLA.objects.filter(
+#             request_type=matched_request_type
+#         ).first()
+#         if dept_sla:
+#             department = dept_sla.department
+
+#     # ---------------------------------
+#     # 🚫 NO SERVICE INTENT → NO TICKET
+#     # ---------------------------------
+#     if not matched_request_type:
+#         if recently_created_ticket(from_number):
+#             resp.message("🙏 Thank you! Our team is working on your request.")
+#         else:
+#             resp.message(
+#                 "👋 Hi! Please describe your service request, for example:\n"
+#                 "• AC not working\n"
+#                 "• Need towels\n"
+#                 "• Room cleaning"
+#             )
+#         return HttpResponse(str(resp))
+
+#     # ---------------------------------
+#     # ✅ CREATE TICKET (ONLY HERE)
+#     # ---------------------------------
+#     review = TicketReview.objects.create(
+#         voucher=voucher,
+#         guest_name=guest_name,
+#         room_no=room_no,
+#         phone_number=from_number,
+#         request_text=body,
+#         matched_request_type=matched_request_type,
+#         matched_department=department,
+#         match_confidence=confidence,
+#         is_matched=True,
+#         priority="normal",
+#     )
+
+#     resp.message(
+#         f"✅ Hello {guest_name}!\n"
+#         f"Your request for *{matched_request_type.name}* has been received.\n"
+#         f"Room: {room_no}\n"
+#         f"Reference ID: #{review.pk}"
+#     )
+
+#     return HttpResponse(str(resp))
+
 
 
 # -----------------------------------------------------------
