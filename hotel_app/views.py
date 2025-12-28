@@ -3991,11 +3991,11 @@ def whatsapp_webhook(request):
     # DECISION LOGIC (CORE FIX)
     # ----------------------------
     if confidence >= CONFIDENCE_THRESHOLD:
-        final_request_type = request_type
+        matched_request_type = request_type
 
     elif confidence >= MIN_SEMANTIC_SIGNAL:
         # Semantically looks like a request but not in DB
-        final_request_type = None
+        matched_request_type = None
 
     else:
         # Pure greeting / chit-chat / thanks / emojis

@@ -27,7 +27,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy project
 COPY . /app/
-
+RUN pip install --default-timeout=600 --no-cache-dir sentence-transformers faiss-cpu
 RUN mkdir -p /app/media/qrcodes \
     && chown -R appuser:appuser /app/media \
     && chmod -R 755 /app/media
