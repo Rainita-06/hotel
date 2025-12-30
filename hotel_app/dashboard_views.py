@@ -2137,7 +2137,7 @@ def api_notify_all_groups(request):
         else:
             failed += 1
 
-    return JsonResponse({'sent': sent, 'failed': failed, 'attempted': len(phones)})
+    return JsonResponse({'success': True, 'sent': sent, 'failed': failed, 'attempted': len(phones)})
 
 
 @login_required
@@ -2174,7 +2174,7 @@ def api_notify_department(request, dept_id):
         else:
             failed += 1
 
-    return JsonResponse({'sent': sent, 'failed': failed, 'attempted': len(phones)})
+    return JsonResponse({'success': True, 'sent': sent, 'failed': failed, 'attempted': len(phones)})
 
 
 @login_required

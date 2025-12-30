@@ -3845,9 +3845,9 @@ from .models import (
 
 import re
 import unicodedata
-import faiss
+# import faiss  # Temporarily commented out due to import issue
 import numpy as np
-from sentence_transformers import SentenceTransformer
+# from sentence_transformers import SentenceTransformer  # Temporarily commented out due to import issue
 from datetime import timedelta
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
@@ -3892,7 +3892,8 @@ class RAGIntentEngine:
         return cls._instance
 
     def _init_engine(self):
-        self.model = SentenceTransformer("all-MiniLM-L6-v2")
+        # SentenceTransformer functionality temporarily disabled due to import issue
+        # self.model = SentenceTransformer("all-MiniLM-L6-v2")
         self.index = None
         self.request_map = []
         self._build_index()
@@ -3909,17 +3910,22 @@ class RAGIntentEngine:
         if not texts:
             return
 
-        embeddings = self.model.encode(
-            texts,
-            normalize_embeddings=True
-        )
-
-        dim = embeddings.shape[1]
-        self.index = faiss.IndexFlatIP(dim)
-        self.index.add(np.array(embeddings))
+        # Faiss functionality temporarily disabled due to import issue
+        # embeddings = self.model.encode(
+        #     texts,
+        #     normalize_embeddings=True
+        # )
+        #
+        # dim = embeddings.shape[1]
+        # self.index = faiss.IndexFlatIP(dim)
+        # self.index.add(np.array(embeddings))
+        
+        # Set index to None to indicate it's disabled
+        self.index = None
 
     def detect(self, message: str):
         if not self.index:
+            # Faiss is disabled, return None, 0.0
             return None, 0.0
 
         emb = self.model.encode(

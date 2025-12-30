@@ -1,438 +1,498 @@
-{% extends "dashboard/manage_users_base.html" %}
-{% load static %}
-{% block manage_content %}
-<div class="w-[1184px] min-h-screen bg-black/0 border-gray-200 mx-auto">
-
-  <!-- Top Stats Cards -->
-  <div class="px-6 pt-6">
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-
-      <!-- Total Groups -->
-      <div class="bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200 p-6">
-        <div class="flex items-center justify-between">
-          <div class="w-8 h-10 bg-sky-600/10 rounded-lg flex items-center justify-center">
-            <img src="{% static 'images/manage_users/total_groups.svg' %}" alt="Total Groups" class="w-4 h-4" />
-          </div>
-          <div class="text-green-500 text-xs font-medium font-['Inter']">+2</div>
-        </div>
-        <div class="mt-6">
-          <div class="text-gray-900 text-2xl font-bold font-['Inter']">{{ total_groups }}</div>
-          <div class="text-gray-600 text-sm font-normal font-['Inter'] mt-1">Total Groups</div>
-        </div>
-      </div>
-
-      <!-- Members Assigned -->
-      <div class="bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200 p-6">
-        <div class="flex items-center justify-between">
-          <div class="w-9 h-10 bg-teal-500/10 rounded-lg flex items-center justify-center">
-            <img src="{% static 'images/manage_users/members_assigned.svg' %}" alt="Members Assigned" class="w-5 h-4" />
-          </div>
-          <div class="text-green-500 text-xs font-medium font-['Inter']">+12</div>
-        </div>
-        <div class="mt-6">
-          <div class="text-gray-900 text-2xl font-bold font-['Inter']">{{ total_group_members }}</div>
-          <div class="text-gray-600 text-sm font-normal font-['Inter'] mt-1">Members Assigned</div>
-        </div>
-      </div>
-
-      <!-- Recent Additions -->
-      <div class="bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200 p-6">
-        <div class="flex items-center justify-between">
-          <div class="w-9 h-10 bg-yellow-400/10 rounded-lg flex items-center justify-center">
-            <img src="{% static 'images/manage_users/recent_additions.svg' %}" alt="Recent Additions" class="w-5 h-4" />
-          </div>
-          <div class="text-gray-600 text-xs font-normal font-['Inter']">24h</div>
-        </div>
-        <div class="mt-6">
-          <div class="text-gray-900 text-2xl font-bold font-['Inter']">{{ recent_additions }}</div>
-          <div class="text-gray-600 text-sm font-normal font-['Inter'] mt-1">Recent Additions</div>
-        </div>
-      </div>
-
-      <!-- Active Groups / Bulk Notifications -->
-      <div class="bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200 p-6">
-        <div class="flex items-center justify-between">
-          <div class="w-7 h-10 bg-fuchsia-700/10 rounded-lg flex items-center justify-center">
-            <img src="{% static 'images/manage_users/bulk_notifications.svg' %}" alt="Bulk Notifications" class="w-3.5 h-4" />
-          </div>
-          <div class="text-sky-600 text-xs font-medium font-['Inter']">Active</div>
-        </div>
-        <div class="mt-6">
-          <div class="text-gray-900 text-2xl font-bold font-['Inter']">{{ active_groups }}</div>
-          <div class="text-gray-600 text-sm font-normal font-['Inter'] mt-1">Bulk Notifications</div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- Department Groups Panel -->
-  <div class="w-[1136px] bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200 mx-6 mt-6">
-    <!-- Panel Header -->
-    <div class="border-b border-gray-200 px-6 py-5">
-      <div class="flex items-center justify-between">
-        <div class="text-gray-900 text-lg font-semibold font-['Inter']">Department Groups</div>
-        <div class="flex items-center gap-3">
-          <button type="button" class="w-20 h-8 bg-white rounded-lg border border-gray-200 flex items-center justify-center gap-2 px-3">
-            <span class="w-3.5 h-2.5 ">
-              <img src="{% static 'images/manage_users/filter.svg' %}" alt="Filter"  />
-            </span>
-            <span class="text-gray-600 text-sm font-normal font-['Inter']">Filter</span>
-          </button>
-          <button type="button" class="w-36 h-8 bg-white rounded-lg border border-gray-200 flex items-center justify-center gap-2 px-3">
-            <span class="w-3.5 h-2.5 ">
-              <img src="{% static 'images/manage_users/notify.svg' %}" alt="Notify" />
-            </span>
-            <span class="text-sky-600 text-sm font-normal font-['Inter']">Bulk Notify All</span>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Department Groups List (Accordion) -->
-    <div class="px-6 py-6 space-y-6" id="departments-accordion">
-      {% for dept in departments %}
-  <div class="department-group w-full bg-black/0 rounded-lg outline outline-1 outline-offset-[-1px] outline-gray-200 p-4" id="department-group-{{ forloop.counter0 }}" data-dept-id="{{ dept.featured_group.id }}">
-        <div class="flex items-start justify-between gap-4">
-          <div class="flex items-start gap-4">
-            <div class="w-11 h-12 {{ dept.featured_group.icon_bg|default:'bg-green-500/10' }} rounded-lg flex items-center justify-center overflow-hidden">
-              <!-- Department icon loaded by name mapping -->
-              <img
-                class="h-6 w-6 dept-icon"
-                data-icon-name="{{ dept.featured_group.name|default:'Housekeeping' }}"
-                alt="{{ dept.featured_group.name|default:'Housekeeping' }} icon"
-                src="{% static 'images/manage_users/housekeeping.svg' %}"
-              />
-            </div>
-            <div class="min-w-0">
-              <div class="flex items-center gap-2">
-                <div class="text-gray-900 text-lg font-semibold font-['Inter'] truncate">
-                  {{ dept.featured_group.name|default:"Housekeeping" }}
-                </div>
-                <div class="{{ dept.featured_group.tag_bg|default:'bg-green-500/10' }} rounded-full">
-                  <div class="px-2 py-1">
-                    <span class="text-{{ dept.featured_group.icon_color|default:'green-500' }} text-xs font-medium font-['Inter']">
-                      <span class="dept-members-count">{{ dept.featured_group.members_count|default:"42" }}</span> members
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div class="text-gray-600 text-sm font-normal font-['Inter'] mt-1">
-                {{ dept.featured_group.description|default:"Room cleaning, maintenance, and guest services" }}
-              </div>
-              <div class="flex items-center gap-4 text-neutral-500 text-xs font-normal font-['Inter'] mt-2">
-                <div>Supervisors: <span class="dept-supervisors-count">{{ dept.featured_group.supervisors_count|default:"6" }}</span></div>
-                <div>Staff: <span class="dept-staff-count">{{ dept.featured_group.staff_count|default:"36" }}</span></div>
-                <div>Last updated: <span class="dept-updated-at">{{ dept.featured_group.updated_at|default:"2h ago" }}</span></div>
-              </div>
-            </div>
-          </div>
-          <div class="flex items-center gap-2 shrink-0">
-            <button type="button" class="w-32 h-8 bg-white rounded-lg border border-gray-200 flex items-center justify-center gap-2 dept-notify-btn" data-dept-id="{{ dept.featured_group.id }}">
-              <span class="w-3.5 h-2.5 ">
-                <img src="{% static 'images/manage_users/notify.svg' %}" alt="Notify"  />
-              </span>
-              <span class="text-sky-600 text-sm font-normal font-['Inter']">Notify Group</span>
-            </button>
-
-            <!-- Accordion Toggle Button (no border, closed by default) -->
-            <button
-              type="button"
-              class="w-8 h-8 rounded-lg flex items-center justify-center dept-accordion-toggle bg-transparent hover:bg-gray-50 border-none focus:outline-none"
-              aria-expanded="false"
-              aria-controls="dept-content-{{ forloop.counter0 }}"
-              data-target="dept-content-{{ forloop.counter0 }}"
-              title="Toggle details"
-            >
-              <!-- Open (expand) icon shown when collapsed -->
-              <img src="{% static 'images/manage_users/open.svg' %}" alt="Open" class="h-4 w-4 open-icon" />
-              <!-- Close (collapse) icon shown when expanded -->
-              <img src="{% static 'images/manage_users/close.svg' %}" alt="Close" class="h-4 w-4 close-icon hidden" />
-            </button>
-          </div>
-        </div>
-
-        <!-- Accordion Content: hidden by default -->
-        <div id="dept-content-{{ forloop.counter0 }}" class="mt-4 space-y-3 dept-accordion-content hidden">
-          {% for group in dept.groups|slice:":3" %}
-          <div class="group-item w-full p-3 bg-neutral-50 rounded-lg flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <div class="w-2 h-2 {{ group.dot_bg|default:'bg-green-500' }} rounded-full"></div>
-              <div class="text-gray-900 text-sm font-medium font-['Inter']">{{ group.name }}</div>
-              <div class="text-neutral-500 text-xs font-normal font-['Inter']">({{ group.members_count|default:"0" }} members)</div>
-            </div>
-            <div class="flex items-center gap-2">
-              <button type="button" class="text-sky-600 text-xs font-normal font-['Inter']" onclick="openGroupMembersModal({{ group.pk|default:0 }}, '{{ group.name|escapejs }}')">Add Users</button>
-              <button type="button" class="text-gray-600 text-xs font-normal font-['Inter']" onclick="openGroupEdit({{ group.pk|default:0 }}, '{{ group.name|escapejs }}')">Edit</button>
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-</div>
-{% endblock manage_content %}
-
-{% block extra_js %}{{ block.super }}
-<script>
-  document.addEventListener('DOMContentLoaded', function () {
-    // Static base path for icons
-    const BASE = "{% static 'images/manage_users/' %}";
-
-    // Explicit mapping as requested:
-    // housekeeping -> housekeeping.svg
-    // front office -> front_office.svg
-    // food & beverage -> food_beverage.svg
-    // maintainence -> maintainence.svg
-    // security -> security.svg
-    // Also handle common variants: "food & beverages", "food and beverage(s)", "maintenance"
-    const ICON_MAP = {
-      'housekeeping': 'housekeeping.svg',
-      'front office': 'front_office.svg',
-      'food & beverage': 'food_beverage.svg',
-      'food & beverages': 'food_beverage.svg',
-      'food and beverage': 'food_beverage.svg',
-      'food and beverages': 'food_beverage.svg',
-      'maintainence': 'maintainence.svg',
-      'maintenance': 'maintainence.svg',
-      'security': 'security.svg'
-    };
-
-    function normalizeName(name) {
-      return (name || '').toLowerCase().trim().replace(/\s+/g, ' ');
-    }
-
-    // Assign icons without infinite reloads; safe fallback
-    document.querySelectorAll('.dept-icon').forEach(function (img) {
-      const raw = img.getAttribute('data-icon-name') || '';
-      const key = normalizeName(raw);
-      const file = ICON_MAP[key] || 'housekeeping.svg'; // fallback
-      // prevent infinite error loop if fallback also 404s
-      img.onerror = function () {
-        this.onerror = null;
-        this.src = BASE + 'housekeeping.svg';
-      };
-      img.src = BASE + file;
-    });
-
-    // Accordion behavior: all closed by default, toggle without borders
-    const toggles = document.querySelectorAll('.dept-accordion-toggle');
-
-    function collapse(btn) {
-      const targetId = btn.getAttribute('data-target');
-      const content = document.getElementById(targetId);
-      if (!content) return;
-      btn.setAttribute('aria-expanded', 'false');
-      content.classList.add('hidden');
-      const openIcon = btn.querySelector('.open-icon');
-      const closeIcon = btn.querySelector('.close-icon');
-      if (openIcon) openIcon.classList.remove('hidden');
-      if (closeIcon) closeIcon.classList.add('hidden');
-    }
-
-    function expand(btn) {
-      const targetId = btn.getAttribute('data-target');
-      const content = document.getElementById(targetId);
-      if (!content) return;
-      btn.setAttribute('aria-expanded', 'true');
-      content.classList.remove('hidden');
-      const openIcon = btn.querySelector('.open-icon');
-      const closeIcon = btn.querySelector('.close-icon');
-      if (openIcon) openIcon.classList.add('hidden');
-      if (closeIcon) closeIcon.classList.remove('hidden');
-    }
-
-    // Initialize: collapsed
-    toggles.forEach(function (btn) {
-      btn.setAttribute('aria-expanded', 'false');
-      const targetId = btn.getAttribute('data-target');
-      const content = document.getElementById(targetId);
-      if (content && !content.classList.contains('hidden')) {
-        content.classList.add('hidden');
-      }
-      const openIcon = btn.querySelector('.open-icon');
-      const closeIcon = btn.querySelector('.close-icon');
-      if (openIcon) openIcon.classList.remove('hidden');
-      if (closeIcon) closeIcon.classList.add('hidden');
-
-      btn.addEventListener('click', function () {
-        const isExpanded = this.getAttribute('aria-expanded') === 'true';
-        if (isExpanded) {
-          collapse(this);
-        } else {
-          expand(this);
-        }
-      });
-    });
-
-    // --- Dynamic data & notify wiring ---
-    const csrftoken = (function getCSRF(){
-      const el = document.querySelector('input[name=csrfmiddlewaretoken]');
-      if(el) return el.value;
-      const cookieMatch = document.cookie.match(/csrftoken=([^;]+)/);
-      return cookieMatch ? cookieMatch[1] : '';
-    })();
-
-    function apiFetch(url, opts) {
-      opts = opts || {};
-      opts.headers = opts.headers || {};
-      if (opts.method && opts.method.toUpperCase() !== 'GET') {
-        opts.headers['X-CSRFToken'] = csrftoken;
-      }
-      opts.headers['Accept'] = 'application/json';
-      return fetch(url, opts).then(r => r.json());
-    }
-
-    // Fetch department members counts and update counts in-place
-    document.querySelectorAll('.department-group[data-dept-id]').forEach(async function(el){
-      const deptId = el.getAttribute('data-dept-id');
-      if(!deptId) return;
-      try{
-        const resp = await apiFetch(`/dashboard/api/departments/${deptId}/members/`);
-        if(resp && resp.members){
-          const members = resp.members;
-          const membersCountEl = el.querySelector('.dept-members-count');
-          const supervisorsEl = el.querySelector('.dept-supervisors-count');
-          const staffEl = el.querySelector('.dept-staff-count');
-          const updatedEl = el.querySelector('.dept-updated-at');
-
-          if(membersCountEl) membersCountEl.textContent = members.length;
-
-          // rudimentary supervisor/staff split based on title available via extra API is not implemented here;
-          // try to compute using email/phone heuristics (best-effort) and keep staff as members - supervisors
-          if(supervisorsEl) supervisorsEl.textContent = members.filter(m=>/supervisor|manager/i.test(m.full_name||'')).length || '0';
-          if(staffEl) staffEl.textContent = Math.max(0, members.length - (parseInt(supervisorsEl.textContent) || 0));
-          if(updatedEl) updatedEl.textContent = 'just now';
-        }
-      }catch(e){
-        // ignore errors - keep server-side values
-      }
-    });
-
-    // Bulk Notify All button (top panel)
-    const bulkBtn = document.querySelector('button:has(.text-sky-600[textContent="Bulk Notify All"])');
-    // If :has not supported, fallback to selecting by text in multiple buttons
-    function findBulkNotify(){
-      const buttons = Array.from(document.querySelectorAll('button'));
-      return buttons.find(b=>b.textContent && b.textContent.trim().includes('Bulk Notify All'));
-    }
-    const bulkNotifyBtn = bulkBtn || findBulkNotify();
-    if(bulkNotifyBtn){
-      bulkNotifyBtn.addEventListener('click', async function(){
-        const message = prompt('Enter bulk notification message (leave blank for default):');
-        try{
-          const body = JSON.stringify({message: message});
-          const resp = await apiFetch('/dashboard/api/groups/notify-all/', {method: 'POST', body: body, headers: {'Content-Type': 'application/json'}});
-          alert(`Bulk notify attempted. Sent: ${resp.sent || 0}, Failed: ${resp.failed || 0}`);
-        }catch(e){
-          alert('Bulk notify failed (network/error).');
-        }
-      });
-    }
-
-    // Per-department notify buttons
-    document.querySelectorAll('.dept-notify-btn').forEach(function(btn){
-      btn.addEventListener('click', async function(){
-        const deptId = this.getAttribute('data-dept-id');
-        const message = prompt('Enter notification message for this group (leave blank for default):');
-        try{
-          const body = JSON.stringify({message: message});
-          const resp = await apiFetch(`/dashboard/api/departments/${deptId}/notify/`, {method: 'POST', body: body, headers: {'Content-Type': 'application/json'}});
-          alert(`Notify attempted. Sent: ${resp.sent || 0}, Failed: ${resp.failed || 0}`);
-        }catch(e){
-          alert('Notify failed (network/error).');
-        }
-      });
-    });
-  });
-</script>
-<!-- Group Members Modal -->
-<div id="groupMembersModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/20 backdrop-blur-sm">
-  <div class="w-full max-w-2xl rounded-lg bg-white p-6">
-    <div class="flex items-start justify-between">
-      <h3 id="groupMembersTitle" class="text-lg font-semibold">Group Members</h3>
-      <button onclick="document.getElementById('groupMembersModal').classList.add('hidden')" class="text-gray-500">Close</button>
-    </div>
-    <div id="groupMembersBody" class="mt-4">
-      <div class="mb-3">
-        <label class="text-xs text-gray-600">Add user by ID</label>
-        <div class="flex items-center gap-2 mt-1">
-          <input autocomplete="off" id="addMemberUserId" class="rounded border border-gray-200 px-3 py-2 w-full" placeholder="User ID" />
-          <button id="addMemberBtn" class="rounded bg-sky-600 text-white px-3 py-2">Add</button>
-        </div>
-      </div>
-      <div id="groupMembersList" class="space-y-2">
-        <!-- members loaded here -->
-      </div>
-    </div>
-  </div>
-</div>
-
-<script>
-function openGroupMembersModal(groupId, groupName){
-  const modal = document.getElementById('groupMembersModal');
-  const title = document.getElementById('groupMembersTitle');
-  const bodyList = document.getElementById('groupMembersList');
-  title.textContent = 'Members — ' + (groupName || groupId);
-  bodyList.innerHTML = '<p class="text-sm text-gray-500">Loading...</p>';
-  modal.classList.remove('hidden');
-
-  fetch(`/dashboard/api/groups/${groupId}/members/`)
-    .then(r => r.json())
-    .then(j => {
-      const members = j.members || [];
-      if(members.length === 0){
-        bodyList.innerHTML = '<p class="text-sm text-gray-500">No members.</p>';
-      } else {
-        bodyList.innerHTML = '';
-        members.forEach(m => {
-          const row = document.createElement('div');
-          row.className = 'flex items-center justify-between p-2 bg-neutral-50 rounded';
-          row.innerHTML = `<div class="min-w-0"><div class="text-sm font-medium text-gray-900">${m.username||m.full_name||'User'}</div><div class="text-xs text-gray-500">${m.email||''}</div></div><div><button class="text-red-600 text-xs" onclick="removeMember(${groupId}, ${m.id})">Remove</button></div>`;
-          bodyList.appendChild(row);
-        });
-      }
-    }).catch(()=>{ bodyList.innerHTML = '<p class="text-sm text-red-500">Failed to load members.</p>' });
-
-  document.getElementById('addMemberBtn').onclick = function(){
-    const uid = document.getElementById('addMemberUserId').value.trim();
-    if(!uid) return alert('Enter user id');
-    fetch(`/dashboard/manage-users/groups/${groupId}/add-member/`, {method: 'POST', headers: {'Content-Type':'application/x-www-form-urlencoded','X-CSRFToken': (document.querySelector('input[name=csrfmiddlewaretoken]')||{}).value||getCookie('csrftoken')}, body: `user_id=${encodeURIComponent(uid)}`})
-      .then(r=>r.json()).then(j=>{ if(j.success){ openGroupMembersModal(groupId, groupName); } else alert('Failed: '+(j.error||'unknown')) }).catch(()=>alert('Add failed'));
-  };
-}
-
-function removeMember(groupId, userId){
-  if(!confirm('Remove user from group?')) return;
-  fetch(`/dashboard/manage-users/groups/${groupId}/remove-member/`, {method: 'POST', headers: {'Content-Type':'application/x-www-form-urlencoded','X-CSRFToken': (document.querySelector('input[name=csrfmiddlewaretoken]')||{}).value||getCookie('csrftoken')}, body: `user_id=${encodeURIComponent(userId)}`})
-    .then(r=>r.json()).then(j=>{ if(j.success){ document.getElementById('groupMembersModal').classList.remove('hidden'); openGroupMembersModal(groupId); } else alert('Failed: '+(j.error||'unknown')) }).catch(()=>alert('Remove failed'));
-}
-
-function openGroupEdit(groupId, groupName){
-  // Simple fallback: prompt to rename group
-  const newName = prompt('Rename group '+ (groupName||groupId) + '\n(Leave blank to cancel)');
-  if(!newName) return;
-  // naive POST to update group via existing group_update view
-  fetch(`/dashboard/groups/${groupId}/update/`, {method:'POST', headers: {'Content-Type':'application/x-www-form-urlencoded','X-CSRFToken': (document.querySelector('input[name=csrfmiddlewaretoken]')||{}).value||getCookie('csrftoken')}, body: `name=${encodeURIComponent(newName)}`})
-    .then(()=>location.reload())
-    .catch(()=>alert('Failed to update group'));
-}
-
-function getCookie(name) {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== '') {
-    const cookies = document.cookie.split(';');
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i].trim();
-      if (cookie.substring(0, name.length + 1) === (name + '=')) {
-        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-        break;
-      }
-    }
-  }
-  return cookieValue;
-}
-</script>
-{% endblock extra_js %}
+     1→{% extends "dashboard/manage_users_base.html" %}
+     2→{% load static %}
+     3→{% block manage_content %}
+     4→<div class="w-[1184px] min-h-screen bg-black/0 border-gray-200 mx-auto">
+     5→
+     6→  <!-- Top Stats Cards -->
+     7→  <div class="px-6 pt-6">
+     8→    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+     9→
+    10→      <!-- Total Groups -->
+    11→      <div class="bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200 p-6">
+    12→        <div class="flex items-center justify-between">
+    13→          <div class="w-8 h-10 bg-sky-600/10 rounded-lg flex items-center justify-center">
+    14→            <img src="{% static 'images/manage_users/total_groups.svg' %}" alt="Total Groups" class="w-4 h-4" />
+    15→          </div>
+    16→          <div class="text-green-500 text-xs font-medium font-['Inter']">+2</div>
+    17→        </div>
+    18→        <div class="mt-6">
+    19→          <div class="text-gray-900 text-2xl font-bold font-['Inter']">{{ total_groups }}</div>
+    20→          <div class="text-gray-600 text-sm font-normal font-['Inter'] mt-1">Total Groups</div>
+    21→        </div>
+    22→      </div>
+    23→
+    24→      <!-- Members Assigned -->
+    25→      <div class="bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200 p-6">
+    26→        <div class="flex items-center justify-between">
+    27→          <div class="w-9 h-10 bg-teal-500/10 rounded-lg flex items-center justify-center">
+    28→            <img src="{% static 'images/manage_users/members_assigned.svg' %}" alt="Members Assigned" class="w-5 h-4" />
+    29→          </div>
+    30→          <div class="text-green-500 text-xs font-medium font-['Inter']">+12</div>
+    31→        </div>
+    32→        <div class="mt-6">
+    33→          <div class="text-gray-900 text-2xl font-bold font-['Inter']">{{ total_group_members }}</div>
+    34→          <div class="text-gray-600 text-sm font-normal font-['Inter'] mt-1">Members Assigned</div>
+    35→        </div>
+    36→      </div>
+    37→
+    38→      <!-- Recent Additions -->
+    39→      <div class="bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200 p-6">
+    40→        <div class="flex items-center justify-between">
+    41→          <div class="w-9 h-10 bg-yellow-400/10 rounded-lg flex items-center justify-center">
+    42→            <img src="{% static 'images/manage_users/recent_additions.svg' %}" alt="Recent Additions" class="w-5 h-4" />
+    43→          </div>
+    44→          <div class="text-gray-600 text-xs font-normal font-['Inter']">24h</div>
+    45→        </div>
+    46→        <div class="mt-6">
+    47→          <div class="text-gray-900 text-2xl font-bold font-['Inter']">{{ recent_additions }}</div>
+    48→          <div class="text-gray-600 text-sm font-normal font-['Inter'] mt-1">Recent Additions</div>
+    49→        </div>
+    50→      </div>
+    51→
+    52→      <!-- Active Groups / Bulk Notifications -->
+    53→      <div class="bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200 p-6">
+    54→        <div class="flex items-center justify-between">
+    55→          <div class="w-7 h-10 bg-fuchsia-700/10 rounded-lg flex items-center justify-center">
+    56→            <img src="{% static 'images/manage_users/bulk_notifications.svg' %}" alt="Bulk Notifications" class="w-3.5 h-4" />
+    57→          </div>
+    58→          <div class="text-sky-600 text-xs font-medium font-['Inter']">Active</div>
+    59→        </div>
+    60→        <div class="mt-6">
+    61→          <div class="text-gray-900 text-2xl font-bold font-['Inter']">{{ active_groups }}</div>
+    62→          <div class="text-gray-600 text-sm font-normal font-['Inter'] mt-1">Bulk Notifications</div>
+    63→        </div>
+    64→      </div>
+    65→
+    66→    </div>
+    67→  </div>
+    68→
+    69→  <!-- Department Groups Panel -->
+    70→  <div class="w-[1136px] bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200 mx-6 mt-6">
+    71→    <!-- Panel Header -->
+    72→    <div class="border-b border-gray-200 px-6 py-5">
+    73→      <div class="flex items-center justify-between">
+    74→        <div class="text-gray-900 text-lg font-semibold font-['Inter']">Department Groups</div>
+    75→        <div class="flex items-center gap-3">
+    76→          <button type="button" class="w-20 h-8 bg-white rounded-lg border border-gray-200 flex items-center justify-center gap-2 px-3">
+    77→            <span class="w-3.5 h-2.5 ">
+    78→              <img src="{% static 'images/manage_users/filter.svg' %}" alt="Filter"  />
+    79→            </span>
+    80→            <span class="text-gray-600 text-sm font-normal font-['Inter']">Filter</span>
+    81→          </button>
+    82→          <button type="button" class="w-36 h-8 bg-white rounded-lg border border-gray-200 flex items-center justify-center gap-2 px-3">
+    83→            <span class="w-3.5 h-2.5 ">
+    84→              <img src="{% static 'images/manage_users/notify.svg' %}" alt="Notify" />
+    85→            </span>
+    86→            <span class="text-sky-600 text-sm font-normal font-['Inter']">Bulk Notify All</span>
+    87→          </button>
+    88→        </div>
+    89→      </div>
+    90→    </div>
+    91→
+    92→    <!-- Department Groups List (Accordion) -->
+    93→    <div class="px-6 py-6 space-y-6" id="departments-accordion">
+    94→      {% for dept in departments %}
+    95→  <div class="department-group w-full bg-black/0 rounded-lg outline outline-1 outline-offset-[-1px] outline-gray-200 p-4" id="department-group-{{ forloop.counter0 }}" data-dept-id="{{ dept.featured_group.id }}">
+    96→        <div class="flex items-start justify-between gap-4">
+    97→          <div class="flex items-start gap-4">
+    98→            <div class="w-11 h-12 {{ dept.featured_group.icon_bg|default:'bg-green-500/10' }} rounded-lg flex items-center justify-center overflow-hidden">
+    99→              <!-- Department icon loaded by name mapping -->
+   100→              <img
+   101→                class="h-6 w-6 dept-icon"
+   102→                data-icon-name="{{ dept.featured_group.name|default:'Housekeeping' }}"
+   103→                alt="{{ dept.featured_group.name|default:'Housekeeping' }} icon"
+   104→                src="{% static 'images/manage_users/housekeeping.svg' %}"
+   105→              />
+   106→            </div>
+   107→            <div class="min-w-0">
+   108→              <div class="flex items-center gap-2">
+   109→                <div class="text-gray-900 text-lg font-semibold font-['Inter'] truncate">
+   110→                  {{ dept.featured_group.name|default:"Housekeeping" }}
+   111→                </div>
+   112→                <div class="{{ dept.featured_group.tag_bg|default:'bg-green-500/10' }} rounded-full">
+   113→                  <div class="px-2 py-1">
+   114→                    <span class="text-{{ dept.featured_group.icon_color|default:'green-500' }} text-xs font-medium font-['Inter']">
+   115→                      <span class="dept-members-count">{{ dept.featured_group.members_count|default:"42" }}</span> members
+   116→                    </span>
+   117→                  </div>
+   118→                </div>
+   119→              </div>
+   120→              <div class="text-gray-600 text-sm font-normal font-['Inter'] mt-1">
+   121→                {{ dept.featured_group.description|default:"Room cleaning, maintenance, and guest services" }}
+   122→              </div>
+   123→              <div class="flex items-center gap-4 text-neutral-500 text-xs font-normal font-['Inter'] mt-2">
+   124→                <div>Supervisors: <span class="dept-supervisors-count">{{ dept.featured_group.supervisors_count|default:"6" }}</span></div>
+   125→                <div>Staff: <span class="dept-staff-count">{{ dept.featured_group.staff_count|default:"36" }}</span></div>
+   126→                <div>Last updated: <span class="dept-updated-at">{{ dept.featured_group.updated_at|default:"2h ago" }}</span></div>
+   127→              </div>
+   128→            </div>
+   129→          </div>
+   130→          <div class="flex items-center gap-2 shrink-0">
+   131→            <button type="button" class="w-32 h-8 bg-white rounded-lg border border-gray-200 flex items-center justify-center gap-2 dept-notify-btn" data-dept-id="{{ dept.featured_group.id }}" data-dept-name="{{ dept.featured_group.name }}">
+   132→              <span class="w-3.5 h-2.5 ">
+   133→                <img src="{% static 'images/manage_users/notify.svg' %}" alt="Notify"  />
+   134→              </span>
+   135→              <span class="text-sky-600 text-sm font-normal font-['Inter']">Notify Group</span>
+   136→            </button>
+   137→
+   138→            <!-- Accordion Toggle Button (no border, closed by default) -->
+   139→            <button
+   140→              type="button"
+   141→              class="w-8 h-8 rounded-lg flex items-center justify-center dept-accordion-toggle bg-transparent hover:bg-gray-50 border-none focus:outline-none"
+   142→              aria-expanded="false"
+   143→              aria-controls="dept-content-{{ forloop.counter0 }}"
+   144→              data-target="dept-content-{{ forloop.counter0 }}"
+   145→              title="Toggle details"
+   146→            >
+   147→              <!-- Open (expand) icon shown when collapsed -->
+   148→              <img src="{% static 'images/manage_users/open.svg' %}" alt="Open" class="h-4 w-4 open-icon" />
+   149→              <!-- Close (collapse) icon shown when expanded -->
+   150→              <img src="{% static 'images/manage_users/close.svg' %}" alt="Close" class="h-4 w-4 close-icon hidden" />
+   151→            </button>
+   152→          </div>
+   153→        </div>
+   154→
+   155→        <!-- Accordion Content: hidden by default -->
+   156→        <div id="dept-content-{{ forloop.counter0 }}" class="mt-4 space-y-3 dept-accordion-content hidden">
+   157→          {% for group in dept.groups|slice:":3" %}
+   158→          <div class="group-item w-full p-3 bg-neutral-50 rounded-lg flex items-center justify-between">
+   159→            <div class="flex items-center gap-3">
+   160→              <div class="w-2 h-2 {{ group.dot_bg|default:'bg-green-500' }} rounded-full"></div>
+   161→              <div class="text-gray-900 text-sm font-medium font-['Inter']">{{ group.name }}</div>
+   162→              <div class="text-neutral-500 text-xs font-normal font-['Inter']">({{ group.members_count|default:"0" }} members)</div>
+   163→            </div>
+   164→            <div class="flex items-center gap-2">
+   165→              <button type="button" class="text-sky-600 text-xs font-normal font-['Inter']" onclick="openGroupMembersModal({{ group.pk|default:0 }}, '{{ group.name|escapejs }}')">Add Users</button>
+   166→              <button type="button" class="text-gray-600 text-xs font-normal font-['Inter']" onclick="openGroupEdit({{ group.pk|default:0 }}, '{{ group.name|escapejs }}')">Edit</button>
+   167→            </div>
+   168→          </div>
+   169→          {% endfor %}
+   170→        </div>
+   171→      </div>
+   172→      {% endfor %}
+   173→    </div>
+   174→  </div>
+   175→</div>
+   176→{% endblock manage_content %}
+   177→
+   178→{% block extra_js %}{{ block.super }}
+   179→<script>
+   180→  document.addEventListener('DOMContentLoaded', function () {
+   181→    // Static base path for icons
+   182→    const BASE = "{% static 'images/manage_users/' %}";
+   183→
+   184→    // Explicit mapping as requested:
+   185→    // housekeeping -> housekeeping.svg
+   186→    // front office -> front_office.svg
+   187→    // food & beverage -> food_beverage.svg
+   188→    // maintainence -> maintainence.svg
+   189→    // security -> security.svg
+   190→    // Also handle common variants: "food & beverages", "food and beverage(s)", "maintenance"
+   191→    const ICON_MAP = {
+   192→      'housekeeping': 'housekeeping.svg',
+   193→      'front office': 'front_office.svg',
+   194→      'food & beverage': 'food_beverage.svg',
+   195→      'food & beverages': 'food_beverage.svg',
+   196→      'food and beverage': 'food_beverage.svg',
+   197→      'food and beverages': 'food_beverage.svg',
+   198→      'maintainence': 'maintainence.svg',
+   199→      'maintenance': 'maintainence.svg',
+   200→      'security': 'security.svg'
+   201→    };
+   202→
+   203→    function normalizeName(name) {
+   204→      return (name || '').toLowerCase().trim().replace(/\s+/g, ' ');
+   205→    }
+   206→
+   207→    // Assign icons without infinite reloads; safe fallback
+   208→    document.querySelectorAll('.dept-icon').forEach(function (img) {
+   209→      const raw = img.getAttribute('data-icon-name') || '';
+   210→      const key = normalizeName(raw);
+   211→      const file = ICON_MAP[key] || 'housekeeping.svg'; // fallback
+   212→      // prevent infinite error loop if fallback also 404s
+   213→      img.onerror = function () {
+   214→        this.onerror = null;
+   215→        this.src = BASE + 'housekeeping.svg';
+   216→      };
+   217→      img.src = BASE + file;
+   218→    });
+   219→
+   220→    // Accordion behavior: all closed by default, toggle without borders
+   221→    const toggles = document.querySelectorAll('.dept-accordion-toggle');
+   222→
+   223→    function collapse(btn) {
+   224→      const targetId = btn.getAttribute('data-target');
+   225→      const content = document.getElementById(targetId);
+   226→      if (!content) return;
+   227→      btn.setAttribute('aria-expanded', 'false');
+   228→      content.classList.add('hidden');
+   229→      const openIcon = btn.querySelector('.open-icon');
+   230→      const closeIcon = btn.querySelector('.close-icon');
+   231→      if (openIcon) openIcon.classList.remove('hidden');
+   232→      if (closeIcon) closeIcon.classList.add('hidden');
+   233→    }
+   234→
+   235→    function expand(btn) {
+   236→      const targetId = btn.getAttribute('data-target');
+   237→      const content = document.getElementById(targetId);
+   238→      if (!content) return;
+   239→      btn.setAttribute('aria-expanded', 'true');
+   240→      content.classList.remove('hidden');
+   241→      const openIcon = btn.querySelector('.open-icon');
+   242→      const closeIcon = btn.querySelector('.close-icon');
+   243→      if (openIcon) openIcon.classList.add('hidden');
+   244→      if (closeIcon) closeIcon.classList.remove('hidden');
+   245→    }
+   246→
+   247→    // Initialize: collapsed
+   248→    toggles.forEach(function (btn) {
+   249→      btn.setAttribute('aria-expanded', 'false');
+   250→      const targetId = btn.getAttribute('data-target');
+   251→      const content = document.getElementById(targetId);
+   252→      if (content && !content.classList.contains('hidden')) {
+   253→        content.classList.add('hidden');
+   254→      }
+   255→      const openIcon = btn.querySelector('.open-icon');
+   256→      const closeIcon = btn.querySelector('.close-icon');
+   257→      if (openIcon) openIcon.classList.remove('hidden');
+   258→      if (closeIcon) closeIcon.classList.add('hidden');
+   259→
+   260→      btn.addEventListener('click', function () {
+   261→        const isExpanded = this.getAttribute('aria-expanded') === 'true';
+   262→        if (isExpanded) {
+   263→          collapse(this);
+   264→        } else {
+   265→          expand(this);
+   266→        }
+   267→      });
+   268→    });
+   269→
+   270→    // --- Dynamic data & notify wiring ---
+   271→    const csrftoken = (function getCSRF(){
+   272→      const el = document.querySelector('input[name=csrfmiddlewaretoken]');
+   273→      if(el) return el.value;
+   274→      const cookieMatch = document.cookie.match(/csrftoken=([^;]+)/);
+   275→      return cookieMatch ? cookieMatch[1] : '';
+   276→    })();
+   277→
+   278→    function apiFetch(url, opts) {
+   279→      opts = opts || {};
+   280→      opts.headers = opts.headers || {};
+   281→      if (opts.method && opts.method.toUpperCase() !== 'GET') {
+   282→        opts.headers['X-CSRFToken'] = csrftoken;
+   283→      }
+   284→      opts.headers['Accept'] = 'application/json';
+   285→      return fetch(url, opts).then(r => r.json());
+   286→    }
+   287→
+   288→    // Fetch department members counts and update counts in-place
+   289→    document.querySelectorAll('.department-group[data-dept-id]').forEach(async function(el){
+   290→      const deptId = el.getAttribute('data-dept-id');
+   291→      if(!deptId) return;
+   292→      try{
+   293→        const resp = await apiFetch(`/dashboard/api/departments/${deptId}/members/`);
+   294→        if(resp && resp.members){
+   295→          const members = resp.members;
+   296→          const membersCountEl = el.querySelector('.dept-members-count');
+   297→          const supervisorsEl = el.querySelector('.dept-supervisors-count');
+   298→          const staffEl = el.querySelector('.dept-staff-count');
+   299→          const updatedEl = el.querySelector('.dept-updated-at');
+   300→
+   301→          if(membersCountEl) membersCountEl.textContent = members.length;
+   302→
+   303→          // rudimentary supervisor/staff split based on title available via extra API is not implemented here;
+   304→          // try to compute using email/phone heuristics (best-effort) and keep staff as members - supervisors
+   305→          if(supervisorsEl) supervisorsEl.textContent = members.filter(m=>/supervisor|manager/i.test(m.full_name||'')).length || '0';
+   306→          if(staffEl) staffEl.textContent = Math.max(0, members.length - (parseInt(supervisorsEl.textContent) || 0));
+   307→          if(updatedEl) updatedEl.textContent = 'just now';
+   308→        }
+   309→      }catch(e){
+   310→        // ignore errors - keep server-side values
+   311→      }
+   312→    });
+   313→
+   314→    // Bulk Notify All button (top panel)
+   315→    const bulkBtn = document.querySelector('button:has(.text-sky-600[textContent="Bulk Notify All"])');
+   316→    // If :has not supported, fallback to selecting by text in multiple buttons
+   317→    function findBulkNotify(){
+   318→      const buttons = Array.from(document.querySelectorAll('button'));
+   319→      return buttons.find(b=>b.textContent && b.textContent.trim().includes('Bulk Notify All'));
+   320→    }
+   321→    const bulkNotifyBtn = bulkBtn || findBulkNotify();
+   322→    if(bulkNotifyBtn){
+   323→      bulkNotifyBtn.addEventListener('click', async function(){
+   324→        const message = prompt('Enter bulk notification message (leave blank for default):');
+   325→        try{
+   326→          const body = JSON.stringify({message: message});
+   327→          const resp = await apiFetch('/dashboard/api/groups/notify-all/', {method: 'POST', body: body, headers: {'Content-Type': 'application/json'}});
+   328→          alert(`Bulk notify attempted. Sent: ${resp.sent || 0}, Failed: ${resp.failed || 0}`);
+   329→        }catch(e){
+   330→          alert('Bulk notify failed (network/error).');
+   331→        }
+   332→      });
+   333→    }
+   334→
+   335→    // Per-department notify buttons
+   336→    document.querySelectorAll('.dept-notify-btn').forEach(function(btn){
+   337→      btn.addEventListener('click', function(){
+   338→        const deptId = this.getAttribute('data-dept-id');
+   339→        const deptName = this.getAttribute('data-dept-name');
+   340→        openNotifyGroupDialog(deptId, deptName);
+   341→      });
+   342→    });
+   343→  });
+   344→</script>
+   345→<!-- Group Members Modal -->
+   346→<div id="groupMembersModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/20 backdrop-blur-sm">
+   347→  <div class="w-full max-w-2xl rounded-lg bg-white p-6">
+   348→    <div class="flex items-start justify-between">
+   349→      <h3 id="groupMembersTitle" class="text-lg font-semibold">Group Members</h3>
+   350→      <button onclick="document.getElementById('groupMembersModal').classList.add('hidden')" class="text-gray-500">Close</button>
+   351→    </div>
+   352→    <div id="groupMembersBody" class="mt-4">
+   353→      <div class="mb-3">
+   354→        <label class="text-xs text-gray-600">Add user by ID</label>
+   355→        <div class="flex items-center gap-2 mt-1">
+   356→          <input autocomplete="off" id="addMemberUserId" class="rounded border border-gray-200 px-3 py-2 w-full" placeholder="User ID" />
+   357→          <button id="addMemberBtn" class="rounded bg-sky-600 text-white px-3 py-2">Add</button>
+   358→        </div>
+   359→      </div>
+   360→      <div id="groupMembersList" class="space-y-2">
+   361→        <!-- members loaded here -->
+   362→      </div>
+   363→    </div>
+   364→  </div>
+   365→</div>
+   366→
+   367→<!-- Notify Group Dialog -->
+   368→<div id="notifyGroupDialog" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/20 backdrop-blur-sm">
+   369→  <div class="w-full max-w-md rounded-lg bg-white p-6">
+   370→    <div class="flex items-start justify-between">
+   371→      <h3 id="notifyDialogTitle" class="text-lg font-semibold">Notify Group</h3>
+   372→      <button onclick="closeNotifyGroupDialog()" class="text-gray-500">&times;</button>
+   373→    </div>
+   374→    <div id="notifyDialogBody" class="mt-4">
+   375→      <div class="mb-4">
+   376→        <label for="notifyGroupMessage" class="block text-sm font-medium text-gray-700 mb-1">Message</label>
+   377→        <textarea id="notifyGroupMessage" class="w-full rounded border border-gray-200 px-3 py-2" rows="4" placeholder="Enter your message here..."></textarea>
+   378→      </div>
+   379→      <div class="flex justify-end gap-2">
+   380→        <button onclick="closeNotifyGroupDialog()" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700">Cancel</button>
+   381→        <button onclick="sendGroupNotification()" class="px-4 py-2 bg-sky-600 text-white rounded-md">Send</button>
+   382→      </div>
+   383→    </div>
+   384→  </div>
+   385→</div>
+   386→
+   387→<script>
+   388→function openGroupMembersModal(groupId, groupName){
+   389→  const modal = document.getElementById('groupMembersModal');
+   390→  const title = document.getElementById('groupMembersTitle');
+   391→  const bodyList = document.getElementById('groupMembersList');
+   392→  title.textContent = 'Members — ' + (groupName || groupId);
+   393→  bodyList.innerHTML = '<p class="text-sm text-gray-500">Loading...</p>';
+   394→  modal.classList.remove('hidden');
+   395→
+   396→  fetch(`/dashboard/api/groups/${groupId}/members/`)
+   397→    .then(r => r.json())
+   398→    .then(j => {
+   399→      const members = j.members || [];
+   400→      if(members.length === 0){
+   401→        bodyList.innerHTML = '<p class="text-sm text-gray-500">No members.</p>';
+   402→      } else {
+   403→        bodyList.innerHTML = '';
+   404→        members.forEach(m => {
+   405→          const row = document.createElement('div');
+   406→          row.className = 'flex items-center justify-between p-2 bg-neutral-50 rounded';
+   407→          row.innerHTML = `<div class="min-w-0"><div class="text-sm font-medium text-gray-900">${m.username||m.full_name||'User'}</div><div class="text-xs text-gray-500">${m.email||''}</div></div><div><button class="text-red-600 text-xs" onclick="removeMember(${groupId}, ${m.id})">Remove</button></div>`;
+   408→          bodyList.appendChild(row);
+   409→        });
+   410→      }
+   411→    }).catch(()=>{ bodyList.innerHTML = '<p class="text-sm text-red-500">Failed to load members.</p>' });
+   412→
+   413→  document.getElementById('addMemberBtn').onclick = function(){
+   414→    const uid = document.getElementById('addMemberUserId').value.trim();
+   415→    if(!uid) return alert('Enter user id');
+   416→    fetch(`/dashboard/manage-users/groups/${groupId}/add-member/`, {method: 'POST', headers: {'Content-Type':'application/x-www-form-urlencoded','X-CSRFToken': (document.querySelector('input[name=csrfmiddlewaretoken]')||{}).value||getCookie('csrftoken')}, body: `user_id=${encodeURIComponent(uid)}`})
+   417→      .then(r=>r.json()).then(j=>{ if(j.success){ openGroupMembersModal(groupId, groupName); } else alert('Failed: '+(j.error||'unknown')) }).catch(()=>alert('Add failed'));
+   418→  };
+   419→}
+   420→
+   421→function removeMember(groupId, userId){
+   422→  if(!confirm('Remove user from group?')) return;
+   423→  fetch(`/dashboard/manage-users/groups/${groupId}/remove-member/`, {method: 'POST', headers: {'Content-Type':'application/x-www-form-urlencoded','X-CSRFToken': (document.querySelector('input[name=csrfmiddlewaretoken]')||{}).value||getCookie('csrftoken')}, body: `user_id=${encodeURIComponent(userId)}`})
+   424→    .then(r=>r.json()).then(j=>{ if(j.success){ document.getElementById('groupMembersModal').classList.remove('hidden'); openGroupMembersModal(groupId); } else alert('Failed: '+(j.error||'unknown')) }).catch(()=>alert('Remove failed'));
+   425→}
+   426→
+   427→function openGroupEdit(groupId, groupName){
+   428→  // Simple fallback: prompt to rename group
+   429→  const newName = prompt('Rename group '+ (groupName||groupId) + '\n(Leave blank to cancel)');
+   430→  if(!newName) return;
+   431→  // naive POST to update group via existing group_update view
+   432→  fetch(`/dashboard/groups/${groupId}/update/`, {method:'POST', headers: {'Content-Type':'application/x-www-form-urlencoded','X-CSRFToken': (document.querySelector('input[name=csrfmiddlewaretoken]')||{}).value||getCookie('csrftoken')}, body: `name=${encodeURIComponent(newName)}`})
+   433→    .then(()=>location.reload())
+   434→    .catch(()=>alert('Failed to update group'));
+   435→}
+   436→
+   437→function getCookie(name) {
+   438→  let cookieValue = null;
+   439→  if (document.cookie && document.cookie !== '') {
+   440→    const cookies = document.cookie.split(';');
+   441→    for (let i = 0; i < cookies.length; i++) {
+   442→      const cookie = cookies[i].trim();
+   443→      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+   444→        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+   445→        break;
+   446→      }
+   447→    }
+   448→  }
+   449→  return cookieValue;
+   450→}
+   451→
+   452→function openNotifyGroupDialog(deptId, deptName) {
+   453→  document.getElementById('notifyGroupDialog').classList.remove('hidden');
+   454→  document.getElementById('notifyDialogTitle').textContent = `Notify ${deptName}`;
+   455→  // Store deptId for later use
+   456→  document.getElementById('notifyGroupDialog').setAttribute('data-dept-id', deptId);
+   457→}
+   458→
+   459→function closeNotifyGroupDialog() {
+   460→  document.getElementById('notifyGroupDialog').classList.add('hidden');
+   461→  document.getElementById('notifyGroupMessage').value = '';
+   462→}
+   463→
+   464→function sendGroupNotification() {
+   465→  const deptId = document.getElementById('notifyGroupDialog').getAttribute('data-dept-id');
+   466→  const message = document.getElementById('notifyGroupMessage').value.trim();
+   467→  
+   468→  if (!message) {
+   469→    alert('Please enter a message to send.');
+   470→    return;
+   471→  }
+   472→  
+   473→  const csrftoken = (document.querySelector('input[name=csrfmiddlewaretoken]')||{}).value||getCookie('csrftoken');
+   474→  
+   475→  fetch(`/dashboard/api/departments/${deptId}/notify/`, {
+   476→    method: 'POST',
+   477→    headers: {
+   478→      'Content-Type': 'application/json',
+   479→      'X-CSRFToken': csrftoken
+   480→    },
+   481→    body: JSON.stringify({message: message})
+   482→  })
+   483→  .then(response => response.json())
+   484→  .then(data => {
+   485→    if (data.success) {
+   486→      alert(`Notification sent successfully! Sent: ${data.sent || 0}, Failed: ${data.failed || 0}`);
+   487→    } else {
+   488→      alert(`Failed to send notification: ${data.error || 'Unknown error'}`);
+   489→    }
+   490→    closeNotifyGroupDialog();
+   491→  })
+   492→  .catch(error => {
+   493→    alert('Error sending notification: ' + error.message);
+   494→    closeNotifyGroupDialog();
+   495→  });
+   496→}
+   497→</script>
+   498→{% endblock extra_js %}
