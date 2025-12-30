@@ -346,6 +346,101 @@
         }
       });
     });
+
+    // --- Search Functionality for Groups ---
+    const quickSearchInput = document.getElementById('quick-search');
+    if (quickSearchInput) {
+      // Update placeholder for groups page
+      quickSearchInput.placeholder = 'Search groups...';
+      
+      // Get all department group elements
+      const departmentGroups = document.querySelectorAll('.department-group');
+      
+      // Search function
+      function filterGroups(query) {
+        const searchTerm = query.toLowerCase().trim();
+        let visibleCount = 0;
+        
+        departmentGroups.forEach(function(groupEl) {
+          // Get the group name from the element
+          const groupNameEl = groupEl.querySelector('.text-gray-900.text-lg.font-semibold');
+          const groupDescEl = groupEl.querySelector('.text-gray-600.text-sm');
+          
+          const groupName = groupNameEl ? groupNameEl.textContent.toLowerCase() : '';
+          const groupDesc = groupDescEl ? groupDescEl.textContent.toLowerCase() : '';
+          
+          // Also check sub-groups in the accordion content
+          const subGroups = groupEl.querySelectorAll('.group-item .text-gray-900.text-sm.font-medium');
+          let subGroupMatch = false;
+          subGroups.forEach(function(subGroupEl) {
+            if (subGroupEl.textContent.toLowerCase().includes(searchTerm)) {
+              subGroupMatch = true;
+            }
+          });
+          
+          // Show/hide based on match
+          if (searchTerm === '' || 
+              groupName.includes(searchTerm) || 
+              groupDesc.includes(searchTerm) ||
+              subGroupMatch) {
+            groupEl.style.display = '';
+            visibleCount++;
+            
+            // If there was a sub-group match, expand the accordion
+            if (subGroupMatch && searchTerm !== '') {
+              const toggleBtn = groupEl.querySelector('.dept-accordion-toggle');
+              if (toggleBtn && toggleBtn.getAttribute('aria-expanded') !== 'true') {
+                expand(toggleBtn);
+              }
+            }
+          } else {
+            groupEl.style.display = 'none';
+          }
+        });
+        
+        // Show "no results" message if needed
+        const accordionContainer = document.getElementById('departments-accordion');
+        let noResultsMsg = document.getElementById('no-search-results');
+        
+        if (visibleCount === 0 && searchTerm !== '') {
+          if (!noResultsMsg) {
+            noResultsMsg = document.createElement('div');
+            noResultsMsg.id = 'no-search-results';
+            noResultsMsg.className = 'text-center py-8 text-gray-500';
+            noResultsMsg.innerHTML = '<p class="text-lg font-medium">No groups found</p><p class="text-sm mt-1">Try adjusting your search term</p>';
+            accordionContainer.appendChild(noResultsMsg);
+          }
+          noResultsMsg.style.display = '';
+        } else if (noResultsMsg) {
+          noResultsMsg.style.display = 'none';
+        }
+      }
+      
+      // Debounce function to avoid rapid filtering
+      let searchTimeout;
+      quickSearchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+          filterGroups(this.value);
+        }, 200);
+      });
+      
+      // Handle Enter key (prevent form submission if any)
+      quickSearchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          filterGroups(this.value);
+        }
+      });
+      
+      // Clear search on Escape
+      quickSearchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          this.value = '';
+          filterGroups('');
+        }
+      });
+    }
   });
 </script>
 <!-- Group Members Modal -->
