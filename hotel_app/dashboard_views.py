@@ -6144,6 +6144,7 @@ def voucher_analytics(request):
 def analytics_dashboard(request):
     from django.db.models import Avg, Count
     from datetime import datetime, timedelta
+    from django.utils import timezone
     import json
     
     # Date range for analytics (dynamic: 30, 90, or 180 days)
@@ -6155,20 +6156,33 @@ def analytics_dashboard(request):
     except (ValueError, TypeError):
         days = 30
     
-    today = datetime.now().date()
-    date_range_start = today - timedelta(days=days)
+    # Use timezone-aware datetime for proper filtering
+    now = timezone.now()
+    today = now.date()
+    
+    # Calculate the start datetime (beginning of the day X days ago)
+    date_range_start = now - timedelta(days=days)
+    
+    # Helper function to get start and end datetime for a specific date
+    def get_day_range(date_obj):
+        """Return timezone-aware datetime range for a specific date."""
+        start = timezone.make_aware(datetime.combine(date_obj, datetime.min.time()), timezone.get_current_timezone())
+        end = start + timedelta(days=1)
+        return start, end
     
     # Ticket volume trends (grouped by day for selected range)
     ticket_trends = []
     ticket_dates = []
     
+    start_date = today - timedelta(days=days)
     for i in range(days):
-        date = date_range_start + timedelta(days=i)
-        count = ServiceRequest.objects.filter(created_at__date=date).count()
+        current_date = start_date + timedelta(days=i)
+        day_start, day_end = get_day_range(current_date)
+        count = ServiceRequest.objects.filter(created_at__gte=day_start, created_at__lt=day_end).count()
         ticket_trends.append(count)
         # Show fewer labels for longer date ranges
         if days <= 30 or i % (days // 30) == 0:
-            ticket_dates.append(date.strftime('%b %d'))
+            ticket_dates.append(current_date.strftime('%b %d'))
         else:
             ticket_dates.append('')
     
@@ -6177,12 +6191,13 @@ def analytics_dashboard(request):
     feedback_dates = []
     
     for i in range(days):
-        date = date_range_start + timedelta(days=i)
-        count = Review.objects.filter(created_at__date=date).count()
+        current_date = start_date + timedelta(days=i)
+        day_start, day_end = get_day_range(current_date)
+        count = Review.objects.filter(created_at__gte=day_start, created_at__lt=day_end).count()
         feedback_trends.append(count)
         # Show fewer labels for longer date ranges
         if days <= 30 or i % (days // 30) == 0:
-            feedback_dates.append(date.strftime('%b %d'))
+            feedback_dates.append(current_date.strftime('%b %d'))
         else:
             feedback_dates.append('')
     
@@ -6192,9 +6207,10 @@ def analytics_dashboard(request):
     satisfaction_weeks = []
     
     for i in range(min(weeks_count, 12)):  # Cap at 12 weeks for readability
-        week_start = today - timedelta(days=today.weekday()) - timedelta(weeks=(min(weeks_count, 12)-1)-i)
+        week_start_date = today - timedelta(days=today.weekday()) - timedelta(weeks=(min(weeks_count, 12)-1)-i)
+        week_start, _ = get_day_range(week_start_date)
         week_end = week_start + timedelta(days=7)
-        reviews = Review.objects.filter(created_at__date__gte=week_start, created_at__date__lt=week_end)
+        reviews = Review.objects.filter(created_at__gte=week_start, created_at__lt=week_end)
         avg_rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0
         satisfaction_weeks.append(f'Week {i+1}')
         satisfaction_scores.append(round(avg_rating, 1))
@@ -6204,7 +6220,7 @@ def analytics_dashboard(request):
     dept_performance = []
     
     for dept in departments:
-        dept_requests = ServiceRequest.objects.filter(department=dept, created_at__date__gte=date_range_start)
+        dept_requests = ServiceRequest.objects.filter(department=dept, created_at__gte=date_range_start)
         avg_resolution_time = 0
         avg_satisfaction = 0
         
@@ -6222,7 +6238,7 @@ def analytics_dashboard(request):
             # Since there's no direct relationship between ServiceRequest and Review,
             # we'll use all reviews for now. In a real implementation, you would need
             # to establish a proper relationship between requests and reviews.
-            dept_reviews = Review.objects.filter(created_at__date__gte=date_range_start)
+            dept_reviews = Review.objects.filter(created_at__gte=date_range_start)
             avg_satisfaction = dept_reviews.aggregate(Avg('rating'))['rating__avg'] or 0
         
         dept_performance.append({
@@ -6237,7 +6253,7 @@ def analytics_dashboard(request):
     
     for room_type in room_types:
         # This is sample data - in a real implementation, you would join with actual room data
-        reviews = Review.objects.filter(created_at__date__gte=date_range_start)
+        reviews = Review.objects.filter(created_at__gte=date_range_start)
         avg_rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0
         room_feedback.append({
             'type': room_type,
@@ -6260,10 +6276,10 @@ def analytics_dashboard(request):
             })
     
     # Overall statistics for the selected period
-    total_tickets = ServiceRequest.objects.filter(created_at__date__gte=date_range_start).count()
-    total_reviews = Review.objects.filter(created_at__date__gte=date_range_start).count()
-    avg_rating = Review.objects.filter(created_at__date__gte=date_range_start).aggregate(Avg('rating'))['rating__avg'] or 0
-    completed_tickets = ServiceRequest.objects.filter(status='completed', created_at__date__gte=date_range_start).count()
+    total_tickets = ServiceRequest.objects.filter(created_at__gte=date_range_start).count()
+    total_reviews = Review.objects.filter(created_at__gte=date_range_start).count()
+    avg_rating = Review.objects.filter(created_at__gte=date_range_start).aggregate(Avg('rating'))['rating__avg'] or 0
+    completed_tickets = ServiceRequest.objects.filter(status='completed', created_at__gte=date_range_start).count()
     completion_rate = (completed_tickets / total_tickets * 100) if total_tickets > 0 else 0
     
     # Top performing departments
