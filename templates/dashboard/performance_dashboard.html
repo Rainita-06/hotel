@@ -282,15 +282,21 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', function () {
+    // Parse JSON data from Django
+    const departmentLabels = JSON.parse('{{ department_labels|escapejs }}');
+    const departmentCompletionData = JSON.parse('{{ department_completion_data|escapejs }}');
+    const slaBreachLabels = JSON.parse('{{ sla_breach_labels|escapejs }}');
+    const slaBreachTrends = JSON.parse('{{ sla_breach_trends|escapejs }}');
+
     // === Bar Chart: Completion Rates by Department ===
     const completionRateCtx = document.getElementById('completionRateChart').getContext('2d');
     const completionRateChart = new Chart(completionRateCtx, {
       type: 'bar',
       data: {
-        labels: {{ department_labels|safe }},
+        labels: departmentLabels,
         datasets: [{
           label: 'Completion Rate',
-          data: {{ department_completion_data }},
+          data: departmentCompletionData,
           backgroundColor: '#0284c7',
           borderColor: '#0369a1',
           borderWidth: 1,
@@ -344,10 +350,10 @@
     const slaTrendChart = new Chart(slaTrendCtx, {
       type: 'line',
       data: {
-        labels: {{ sla_breach_labels|safe }},
+        labels: slaBreachLabels,
         datasets: [{
           label: 'SLA Breaches',
-          data: {{ sla_breach_trends }},
+          data: slaBreachTrends,
           borderColor: '#ef4444',
           backgroundColor: 'rgba(239, 68, 68, 0.1)',
           tension: 0.4,

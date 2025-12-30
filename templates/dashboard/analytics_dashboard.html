@@ -41,13 +41,17 @@
                     <p class="mt-1 text-sm text-gray-600">Detailed insights and trends for informed decision making</p>
                 </div>
                 <div class="flex items-center gap-3 mt-4 md:mt-0">
-                    <button class="flex items-center justify-center gap-2 h-10 px-4 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50">
-                        <span>Last 30 days</span>
-                        <svg class="w-4 h-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <div class="relative">
+                        <select id="dateRangeFilter" onchange="changeDateRange(this.value)" class="flex items-center justify-center gap-2 h-10 px-4 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 appearance-none pr-8 cursor-pointer">
+                            <option value="30" {% if selected_days == 30 %}selected{% endif %}>Last 30 days</option>
+                            <option value="90" {% if selected_days == 90 %}selected{% endif %}>Last 90 days</option>
+                            <option value="180" {% if selected_days == 180 %}selected{% endif %}>Last 180 days</option>
+                        </select>
+                        <svg class="w-4 h-4 text-gray-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.23 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
                         </svg>
-                    </button>
-                    <button class="flex items-center gap-2 h-10 px-4 text-sm font-medium text-white bg-sky-600 rounded-lg hover:bg-sky-700">
+                    </div>
+                    <button id="exportReportBtn" onclick="exportAnalyticsReport()" class="flex items-center gap-2 h-10 px-4 text-sm font-medium text-white bg-sky-600 rounded-lg hover:bg-sky-700">
                         <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                            <path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.905 3.129V2.75z" />
                            <path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" />
@@ -506,5 +510,63 @@
             }
         }
     });
+
+    // Date Range Filter Function
+    window.changeDateRange = function(days) {
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set('days', days);
+        window.location.href = currentUrl.toString();
+    };
+
+    // Export Analytics Report Function
+    window.exportAnalyticsReport = function() {
+        const selectedDays = document.getElementById('dateRangeFilter').value;
+        
+        // Gather data from the page
+        const reportData = {
+            title: 'Analytics Report',
+            dateRange: `Last ${selectedDays} days`,
+            generatedAt: new Date().toLocaleString(),
+            totalTickets: {{ total_tickets }},
+            totalReviews: {{ total_reviews }},
+            avgRating: {{ avg_rating }},
+            completionRate: {{ completion_rate }}
+        };
+        
+        // Create CSV content
+        let csvContent = 'Analytics Report\n';
+        csvContent += `Date Range:,Last ${selectedDays} days\n`;
+        csvContent += `Generated At:,${reportData.generatedAt}\n\n`;
+        csvContent += 'Summary Statistics\n';
+        csvContent += `Total Tickets:,${reportData.totalTickets}\n`;
+        csvContent += `Total Reviews:,${reportData.totalReviews}\n`;
+        csvContent += `Average Rating:,${reportData.avgRating}\n`;
+        csvContent += `Completion Rate:,${reportData.completionRate}%\n\n`;
+        
+        // Add ticket trends
+        csvContent += 'Ticket Volume Trends\n';
+        csvContent += 'Date,Count\n';
+        const ticketDates = ticketDatesData;
+        const ticketCounts = ticketTrendsData;
+        for (let i = 0; i < ticketDates.length; i++) {
+            if (ticketDates[i]) {
+                csvContent += `${ticketDates[i]},${ticketCounts[i]}\n`;
+            }
+        }
+        
+        // Create download link
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `analytics_report_${selectedDays}_days_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Show success message
+        alert('Analytics report exported successfully!');
+    };
 </script>
 {% endblock content %}

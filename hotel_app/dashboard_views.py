@@ -5522,7 +5522,10 @@ def dashboard_departments(request):
     return render(request, "dashboard/manage_users_base.html", context)
 
 
-@require_permission([ADMINS_GROUP])
+
+@login_required
+@csrf_protect
+@require_permission([ADMINS_GROUP, STAFF_GROUP])
 @require_http_methods(['POST'])
 def add_group_member(request, group_id):
     """Add a user to a UserGroup and ensure their UserProfile.department is set to the group's department."""
@@ -5557,7 +5560,10 @@ def add_group_member(request, group_id):
     return JsonResponse({'success': True, 'created': created, 'user_id': user.pk, 'group_id': group.pk})
 
 
-@require_permission([ADMINS_GROUP])
+
+@login_required
+@csrf_protect
+@require_permission([ADMINS_GROUP, STAFF_GROUP])
 @require_http_methods(['POST'])
 def remove_group_member(request, group_id):
     """Remove a user from a UserGroup. Does not change department membership automatically."""
@@ -6140,36 +6146,53 @@ def analytics_dashboard(request):
     from datetime import datetime, timedelta
     import json
     
-    # Date range for analytics (last 30 days)
-    today = datetime.now().date()
-    thirty_days_ago = today - timedelta(days=30)
+    # Date range for analytics (dynamic: 30, 90, or 180 days)
+    days_param = request.GET.get('days', '30')
+    try:
+        days = int(days_param)
+        if days not in [30, 90, 180]:
+            days = 30
+    except (ValueError, TypeError):
+        days = 30
     
-    # Ticket volume trends (last 30 days, grouped by day)
+    today = datetime.now().date()
+    date_range_start = today - timedelta(days=days)
+    
+    # Ticket volume trends (grouped by day for selected range)
     ticket_trends = []
     ticket_dates = []
     
-    for i in range(30):
-        date = thirty_days_ago + timedelta(days=i)
+    for i in range(days):
+        date = date_range_start + timedelta(days=i)
         count = ServiceRequest.objects.filter(created_at__date=date).count()
         ticket_trends.append(count)
-        ticket_dates.append(date.strftime('%b %d'))
+        # Show fewer labels for longer date ranges
+        if days <= 30 or i % (days // 30) == 0:
+            ticket_dates.append(date.strftime('%b %d'))
+        else:
+            ticket_dates.append('')
     
-    # Feedback volume trends (last 30 days, grouped by day)
+    # Feedback volume trends (grouped by day for selected range)
     feedback_trends = []
     feedback_dates = []
     
-    for i in range(30):
-        date = thirty_days_ago + timedelta(days=i)
+    for i in range(days):
+        date = date_range_start + timedelta(days=i)
         count = Review.objects.filter(created_at__date=date).count()
         feedback_trends.append(count)
-        feedback_dates.append(date.strftime('%b %d'))
+        # Show fewer labels for longer date ranges
+        if days <= 30 or i % (days // 30) == 0:
+            feedback_dates.append(date.strftime('%b %d'))
+        else:
+            feedback_dates.append('')
     
-    # Guest satisfaction score over time (last 4 weeks)
+    # Guest satisfaction score over time (weeks based on range)
+    weeks_count = max(4, days // 7)
     satisfaction_scores = []
     satisfaction_weeks = []
     
-    for i in range(4):
-        week_start = today - timedelta(days=today.weekday()) - timedelta(weeks=3-i)
+    for i in range(min(weeks_count, 12)):  # Cap at 12 weeks for readability
+        week_start = today - timedelta(days=today.weekday()) - timedelta(weeks=(min(weeks_count, 12)-1)-i)
         week_end = week_start + timedelta(days=7)
         reviews = Review.objects.filter(created_at__date__gte=week_start, created_at__date__lt=week_end)
         avg_rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0
@@ -6181,7 +6204,7 @@ def analytics_dashboard(request):
     dept_performance = []
     
     for dept in departments:
-        dept_requests = ServiceRequest.objects.filter(department=dept)
+        dept_requests = ServiceRequest.objects.filter(department=dept, created_at__date__gte=date_range_start)
         avg_resolution_time = 0
         avg_satisfaction = 0
         
@@ -6199,7 +6222,7 @@ def analytics_dashboard(request):
             # Since there's no direct relationship between ServiceRequest and Review,
             # we'll use all reviews for now. In a real implementation, you would need
             # to establish a proper relationship between requests and reviews.
-            dept_reviews = Review.objects.all()
+            dept_reviews = Review.objects.filter(created_at__date__gte=date_range_start)
             avg_satisfaction = dept_reviews.aggregate(Avg('rating'))['rating__avg'] or 0
         
         dept_performance.append({
@@ -6214,7 +6237,7 @@ def analytics_dashboard(request):
     
     for room_type in room_types:
         # This is sample data - in a real implementation, you would join with actual room data
-        reviews = Review.objects.filter(created_at__date__gte=thirty_days_ago)
+        reviews = Review.objects.filter(created_at__date__gte=date_range_start)
         avg_rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0
         room_feedback.append({
             'type': room_type,
@@ -6223,24 +6246,24 @@ def analytics_dashboard(request):
     
     # Busiest hours heatmap data (sample data for demonstration)
     busiest_hours_data = []
-    days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    days_list = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
     hours = list(range(24))
     
-    for day in days:
+    for day in days_list:
         for hour in hours:
             # Generate sample data - in a real implementation, you would query actual data
-            value = (hour * 2 + days.index(day)) % 20  # Sample calculation
+            value = (hour * 2 + days_list.index(day)) % 20  # Sample calculation
             busiest_hours_data.append({
                 'day': day,
                 'hour': hour,
                 'value': value
             })
     
-    # Overall statistics
-    total_tickets = ServiceRequest.objects.count()
-    total_reviews = Review.objects.count()
-    avg_rating = Review.objects.aggregate(Avg('rating'))['rating__avg'] or 0
-    completed_tickets = ServiceRequest.objects.filter(status='completed').count()
+    # Overall statistics for the selected period
+    total_tickets = ServiceRequest.objects.filter(created_at__date__gte=date_range_start).count()
+    total_reviews = Review.objects.filter(created_at__date__gte=date_range_start).count()
+    avg_rating = Review.objects.filter(created_at__date__gte=date_range_start).aggregate(Avg('rating'))['rating__avg'] or 0
+    completed_tickets = ServiceRequest.objects.filter(status='completed', created_at__date__gte=date_range_start).count()
     completion_rate = (completed_tickets / total_tickets * 100) if total_tickets > 0 else 0
     
     # Top performing departments
@@ -6310,7 +6333,8 @@ def analytics_dashboard(request):
         'recent_tickets': recent_tickets,
         'recent_reviews': recent_reviews,
         'scheduled_reports': scheduled_reports,
-        'quick_templates': quick_templates
+        'quick_templates': quick_templates,
+        'selected_days': days,
     }
     
     return render(request, 'dashboard/analytics_dashboard.html', context)
@@ -7879,6 +7903,7 @@ def performance_dashboard(request):
     from django.db.models import Count, Avg, Q
     from .models import ServiceRequest, Department, User, UserProfile
     import datetime
+    import json
     from django.utils import timezone
 
     
@@ -8074,11 +8099,11 @@ def performance_dashboard(request):
         'active_staff_change': abs(active_staff_change),
         'active_staff_change_direction': active_staff_change_direction,
         
-        # Charts
-        'department_labels': department_labels,
-        'department_completion_data': department_completion_data,
-        'sla_breach_labels': sla_breach_labels,
-        'sla_breach_trends': sla_breach_trends,
+        # Charts - JSON serialized for JavaScript
+        'department_labels': json.dumps(department_labels),
+        'department_completion_data': json.dumps(department_completion_data),
+        'sla_breach_labels': json.dumps(sla_breach_labels),
+        'sla_breach_trends': json.dumps(sla_breach_trends),
         
         # Tables
         'top_performers': top_performers,
