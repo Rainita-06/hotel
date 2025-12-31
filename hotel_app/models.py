@@ -228,7 +228,7 @@ class Building(models.Model):
         ('maintenance', 'Maintenance'),
     ]
     building_id = models.BigAutoField(primary_key=True)
-    name = models.CharField(max_length=120,blank=False, null=False)
+    name = models.CharField(max_length=120,blank=False, null=False,unique=True)
     description = models.CharField(max_length=255, blank=True, null=True)
     image = models.ImageField(upload_to='building_images/', null=True, blank=True)  # NEW
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active') 
@@ -250,7 +250,7 @@ class Building(models.Model):
 class Floor(models.Model):
     floor_name=models.CharField(max_length=50,blank=False,null=False)
     floor_id = models.BigAutoField(primary_key=True)
-    building = models.ForeignKey('Building', models.DO_NOTHING,blank=False, default=1,null=False,related_name='floors')
+    building = models.ForeignKey('Building', models.CASCADE,blank=False,null=False,related_name='floors')
     floor_number = models.IntegerField(blank=False, null=False)
     description = models.CharField(max_length=255, blank=True)  # e.g. “Lobby & Reception”
     rooms = models.PositiveIntegerField(default=0)
@@ -290,7 +290,8 @@ class LocationType(models.Model):
     type_id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=120,blank=False, null=False)
     family = models.ForeignKey(LocationFamily, on_delete=models.CASCADE, related_name='types',null=False)
-    is_active = models.BooleanField(default=True) 
+    is_active = models.BooleanField(default=True)
+    image = models.ImageField(upload_to="location_types/", blank=True, null=True) 
     
     def __str__(self):
         return self.name
@@ -1550,7 +1551,7 @@ class GymMember(models.Model):
     # Scan tracking
     scan_count = models.IntegerField(default=0)
     scan_history = models.JSONField(default=list, blank=True)
-
+    country_code = models.CharField(max_length=5, default="91")
     
 
     class Meta:

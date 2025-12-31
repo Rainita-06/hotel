@@ -67,25 +67,7 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Floor (Select Dropdown) -->
-                <div>
-                    <label for="floor" class="block text-sm font-medium text-gray-700 mb-1">Floor</label>
-                    <div class="relative">
-                        <select id="floor" name="floor" required
-                                class="w-full h-12 px-3 bg-white rounded-lg outline outline-1 outline-offset-[-1px] outline-gray-300 appearance-none focus:outline-sky-500 focus:ring-sky-500 text-base">
-                            <option value="">--Select Floor--</option>
-                            {% for f in floors %}
-                                <option value="{{ f.floor_id }}" {% if location and location.floor_id == f.floor_id %}selected{% endif %}>{{ f.floor_name }}</option>
-                            {% endfor %}
-                        </select>
-                        <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                            <svg class="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Building (Select Dropdown) -->
+  <!-- Building (Select Dropdown) -->
                 <div>
                     <label for="building" class="block text-sm font-medium text-gray-700 mb-1">Building</label>
                     <div class="relative">
@@ -101,6 +83,24 @@
                         </div>
                     </div>
                 </div>
+                <!-- Floor (Select Dropdown) -->
+                <div>
+                    <label for="floor" class="block text-sm font-medium text-gray-700 mb-1">Floor</label>
+                    <div class="relative">
+                        <select id="floor" name="floor" required disabled
+                                class="w-full h-12 px-3 bg-white rounded-lg outline outline-1 outline-offset-[-1px] outline-gray-300 appearance-none focus:outline-sky-500 focus:ring-sky-500 text-base">
+                            <option value="">--Select Floor--</option>
+                            {% for f in floors %}
+                                <option value="{{ f.floor_id }}" {% if location and location.floor_id == f.floor_id %}selected{% endif %}>{{ f.floor_name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                            <svg class="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </div>
+                </div>
+
+              
 
                 {% comment %} --- Status Section (Radio Buttons) --- {% endcomment %}
                 {% with current_status=location.status|default:'Active' %}
@@ -210,4 +210,48 @@
         </div>
     </form>
 </div>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const buildingSelect = document.getElementById("building");
+    const floorSelect = document.getElementById("floor");
+
+    function loadFloors(buildingId, selectedFloorId = null) {
+        floorSelect.innerHTML = '<option value="">--Select Floor--</option>';
+        floorSelect.disabled = true;
+
+        if (!buildingId) return;
+
+        fetch(`/ajax/get-floors/?building_id=${buildingId}`)
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(floor => {
+                    const option = document.createElement("option");
+                    option.value = floor.floor_id;
+                    option.textContent = floor.floor_name;
+
+                    if (selectedFloorId && selectedFloorId == floor.floor_id) {
+                        option.selected = true;
+                    }
+
+                    floorSelect.appendChild(option);
+                });
+                floorSelect.disabled = false;
+            });
+    }
+
+    // On building change
+    buildingSelect.addEventListener("change", function () {
+        loadFloors(this.value);
+    });
+
+    // Auto-load floors on EDIT
+    {% if location %}
+        loadFloors(
+            "{{ location.building_id }}",
+            "{{ location.floor_id }}"
+        );
+    {% endif %}
+});
+</script>
+
 {% endblock %}

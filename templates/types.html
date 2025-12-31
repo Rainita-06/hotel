@@ -100,10 +100,10 @@
                 </div>
                 <div class="w-24 h-10 relative bg-black/0 border-gray-200">
                     <div class="w-24 h-6 left-0 top-0 absolute bg-black/0 border-gray-200">
-                        <div class="w-24 h-6 left-0 top-[2px] absolute justify-start text-gray-900 text-base font-semibold font-['Inter'] truncate whitespace-nowrap overflow-hidden">{{ t.name }}</div>
+                        <div class="w-52 h-6 left-0 top-[2px] absolute justify-start text-gray-900 text-base font-semibold font-['Inter'] truncate whitespace-nowrap overflow-hidden leading-snug whitespace-nowrap overflow-x-auto scrollbar-hide">{{ t.name }}</div>
                     </div>
                     <div class="w-24 h-4 left-0 top-[24px] absolute bg-black/0 border-gray-200">
-                        <div class="w-24 h-4 left-0 top-0 absolute justify-start text-gray-600 text-xs font-normal font-['Inter']">Family name:{{ t.family.name }} </div>
+                        <div class="w-52 h-4 left-0 top-0 absolute justify-start text-gray-600 text-xs font-normal font-['Inter'] leading-snug whitespace-nowrap overflow-x-auto scrollbar-hide">Family name:{{ t.family.name }} </div>
                     </div>
                 </div>
             </div>
@@ -161,6 +161,28 @@
             </div>
         </div> -->
 
+    <!-- Type Image Upload -->
+<div class="mt-10">
+    <form action="{% url 'upload_type_image' t.type_id %}"
+          method="POST"
+          enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <input type="file"
+               name="image"
+               id="typeImageInput{{ t.type_id }}"
+               class="hidden"
+               accept="image/*"
+               onchange="this.form.submit()" />
+
+        <img
+            src="{% if t.image %}{{ t.image.url }}{% else %}https://placehold.co/360x140?text=Upload+Image{% endif %}"
+            class="w-full h-44 object-cover rounded-lg  cursor-pointer hover:opacity-90 transition"
+            onclick="document.getElementById('typeImageInput{{ t.type_id }}').click()"
+            alt="{{ t.name }}"
+        />
+    </form>
+</div>
     </div>
     {% endfor %}
 </div>
@@ -312,5 +334,14 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 </script>
+<style>
+    /* Hide scrollbar but keep scroll functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE, Edge */
+  scrollbar-width: none;     /* Firefox */
+}
 
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;             /* Chrome, Safari */
+}</style>
 {% endblock %}

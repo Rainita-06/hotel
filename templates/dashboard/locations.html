@@ -94,15 +94,19 @@
                     
                     <!-- Building Filter Dropdown -->
                     <form method="GET" class="h-9">
-                        <select name="building" onchange="this.form.submit()"
-                                class="w-32 h-full bg-white rounded-lg border border-gray-200 text-black text-sm font-normal px-2 appearance-none focus:ring-sky-500 focus:border-sky-500">
-                            <option value="">All Locations</option>
-                            {% for building in buildings %}
-                            <option value="{{ building.id }}" {% if building.id|stringformat:"s" == selected_building %}selected{% endif %}>
-                                {{ building.name }}
-                            </option>
-                            {% endfor %}
-                        </select>
+                         <select name="building"
+            onchange="this.form.submit()"
+            class="w-32 h-full bg-white rounded-lg border border-gray-200 text-black text-sm px-2 focus:ring-sky-500 focus:border-sky-500">
+
+        <option value="">All Locations</option>
+
+        {% for building in buildings %}
+            <option value="{{ building.building_id }}"
+                {% if building.building_id|stringformat:"s" == selected_building %}selected{% endif %}>
+                {{ building.name }}
+            </option>
+        {% endfor %}
+    </select>
                     </form>
                 </div>
                 
@@ -117,22 +121,22 @@
             
             <!-- Table Header -->
             <div class="w-full h-12 bg-neutral-50 border-b border-gray-200 flex items-center text-gray-600 text-xs font-medium tracking-wide uppercase">
-                
-                <div class="w-44 px-4">LOCATION NAME</div>
+                <div class="w-8"></div>
+                <div class="w-55 px-4">LOCATION NAME</div>
                 <div class="w-48 px-4">FAMILY</div>
                 <div class="w-36 px-4">TYPE</div>
-                <div class="w-28 px-4">FLOOR</div>
-                <div class="w-40 px-4">BUILDING</div>
+                <div class="w-40 px-4">FLOOR</div>
+                <div class="w-45 px-4">BUILDING</div>
                 <div class="w-28 px-4">STATUS</div>
-                <div class="flex-grow px-4">ACTIONS</div>
+                <div class="w-40 px-4">ACTIONS</div>
             </div>
             
             <!-- Table Body -->
             {% for loc in locations %}
             <div class="w-full h-16 bg-white border-b border-gray-200 flex items-center hover:bg-gray-50 transition">
-                
+                 <div class="w-8"></div>
                 <!-- 1. LOCATION NAME (w-44) -->
-                <div class="w-44 px-4 text-sm font-bold text-gray-900">
+                <div class="w-55 px-4 text-sm font-bold text-gray-900">
                     {{ loc.name }} 
                     {% if loc.room_no %}
                         <span class="text-gray-500 font-normal">({{ loc.room_no }})</span>
@@ -156,12 +160,12 @@
                 </div>
                 
                 <!-- 4. FLOOR (w-28) -->
-                <div class="w-28 px-4 text-sm text-gray-600 font-normal">
+                <div class="w-40 px-4 text-sm text-gray-600 font-normal">
                     {% if loc.floor %}{{ loc.floor.floor_number }}{% else %}-{% endif %}
                 </div>
                 
                 <!-- 5. BUILDING (w-40) -->
-                <div class="w-40 px-4 text-sm text-gray-600 font-normal">
+                <div class="w-45 px-4 text-sm text-gray-600 font-normal">
                     {% if loc.building %}{{ loc.building.name }}{% else %}-{% endif %}
                 </div>
                 
@@ -177,7 +181,7 @@
                 </div>
 
                 <!-- 7. ACTIONS (flex-grow) -->
-                <div class="flex-grow px-4 flex items-center gap-2">
+                <div class="w-40 px-4 flex items-center gap-2">
                     <!-- Edit -->
                     <a href="{% url 'location_edit' loc.location_id %}" 
                        class="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100">

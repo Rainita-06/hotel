@@ -620,7 +620,14 @@ BUILDING_IMAGE_URLS = [
     "https://images.pexels.com/photos/261102/pexels-photo-261102.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
     "https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
 ]
-
+TYPE_IMAGE_URLS = [
+    "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+    "https://images.pexels.com/photos/261395/pexels-photo-261395.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+    "https://images.pexels.com/photos/189296/pexels-photo-189296.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+    "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+    "https://images.pexels.com/photos/261411/pexels-photo-261411.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+    "https://images.pexels.com/photos/271618/pexels-photo-271618.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+]
 
 # -----------------------------------------------------
 # FUNCTION → Assign random hotel image
@@ -654,7 +661,24 @@ def assign_random_image(building_obj):
         print(f"Image assign error: {e}")
 
 
+def assign_random_type_image(type_obj):
+    try:
+        url = random.choice(TYPE_IMAGE_URLS)
+        filename = url.split("/")[-1].split("?")[0]
 
+        folder_path = os.path.join(settings.MEDIA_ROOT, "location_types")
+        os.makedirs(folder_path, exist_ok=True)
+
+        response = requests.get(url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
+        if response.status_code == 200:
+            type_obj.image.save(
+                f"type_images/{filename}",
+                ContentFile(response.content),
+                save=True
+            )
+            print(f"Auto-image assigned → {type_obj.name}")
+    except Exception as e:
+        print(f"Type image assign error: {e}")
 # -----------------------------------------------------
 # MAIN POST-MIGRATE SIGNAL
 # -----------------------------------------------------
@@ -693,7 +717,7 @@ def create_basic_location_data(sender, **kwargs):
 
         # Assign image ONLY if empty
         if not building.image:
-            print(f"📸 Assigning image → {name}")
+            print(f"Assigning image → {name}")
             assign_random_image(building)
 
         buildings.append(building)
@@ -729,10 +753,23 @@ def create_basic_location_data(sender, **kwargs):
     # -----------------------------------------------------
     # 4️⃣ TYPES
     # -----------------------------------------------------
+    
     type_names = ["Deluxe Room", "Suite Room", "Lobby", "Dining Hall", "Executive Suite", "Conference Hall"]
-    types = [LocationType.objects.get_or_create(name=t, family=families[i])[0] for i, t in enumerate(type_names)]
+    types = []
+
+    for i, t in enumerate(type_names):
+        type_obj, _ = LocationType.objects.get_or_create(
+            name=t,
+            family=families[i]
+        )
+
+        if not type_obj.image:
+            assign_random_type_image(type_obj)
+
+        types.append(type_obj)
 
     print(" Types created: 6")
+
 
     # -----------------------------------------------------
     # 5️⃣ LOCATIONS (Auto Create)

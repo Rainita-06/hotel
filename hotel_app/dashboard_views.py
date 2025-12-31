@@ -8388,12 +8388,12 @@ def locations_list(request):
     if floor_filter:
         locations = locations.filter(floor_id=floor_filter)
     if building_filter:
-        locations = locations.filter(building_id=building_filter)
+        locations = locations.filter(building__building_id=int(building_filter))
     if search_query:  # only filter if input is not empty
         locations = locations.filter(name__icontains=search_query)
 
     # Pagination
-    paginator = Paginator(locations, 6)
+    paginator = Paginator(locations, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 

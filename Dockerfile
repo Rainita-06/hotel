@@ -20,14 +20,17 @@ RUN apt-get update \
 
 # Create a non-root user
 RUN adduser --disabled-password --gecos '' appuser
+# Copy pip config FIRST (so pip uses it)
+COPY pip.conf /etc/pip.conf
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
+
 # Copy project
 COPY . /app/
-RUN pip install --default-timeout=600 --no-cache-dir sentence-transformers faiss-cpu
+# RUN pip install --default-timeout=600 --no-cache-dir sentence-transformers faiss-cpu
 RUN mkdir -p /app/media/qrcodes \
     && chown -R appuser:appuser /app/media \
     && chmod -R 755 /app/media

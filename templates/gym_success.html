@@ -70,16 +70,19 @@
               </div>
 
               <!-- Address -->
-              <div class="h-auto py-3 border-b border-gray-200 inline-flex justify-start items-start">
-  <div class="w-60 shrink-0">
-    <div class="text-gray-900 text-base font-semibold font-['Inter']">Address</div>
-  </div>
-  <div class="w-[500px] break-words">
-    <div class="text-gray-900 text-base font-normal font-['Inter'] whitespace-pre-line">
-      {{ member.address }}, {{ member.city }}
+              <!-- Address -->
+<div class="py-3 border-b border-gray-200 flex items-start">
+  <div class="w-60 shrink-0 pt-1">
+    <div class="text-gray-900 text-base font-semibold font-['Inter']">
+      Address
     </div>
   </div>
+
+  <div class="flex-1 w-[500px] text-base font-normal font-['Inter'] break-words leading-relaxed">
+    {{ member.address|default:"—" }}{{ member.city }}
+  </div>
 </div>
+
 
 
               <!-- Start Date -->
@@ -132,17 +135,17 @@
         </div>
 
         <!-- Buttons -->
-        <div class="w-full h-12 px-8 inline-flex justify-center items-start gap-4 mt-4">
+        <div class="px-8 py-6 flex flex-col md:flex-row gap-4 justify-center border-gray-200">
           <!-- WhatsApp -->
          {% with base="Hi "|add:member.full_name %}
   {% with message=base|add:", here is your Gym QR Code: "|add:qr %}
-    <a href="https://wa.me/{{ member.phone|cut:'+'|cut:' ' }}?text={{ message|urlencode }}"
+    <a href="https://wa.me/{{member.country_code}}{{ member.phone}}?text={{ message|urlencode }}"
        target="_blank"
        class="w-56 h-12 px-6 py-3 bg-green-500 rounded-xl flex justify-start items-center gap-2 hover:bg-green-600 transition-colors">
       <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
         <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967...Z" />
       </svg>
-      <div class="text-white text-base font-medium font-['Inter']">Share on WhatsApp</div>
+      <div class="text-white text-base font-medium font-['Inter']">Share WhatsApp</div>
     </a>
   {% endwith %}
 {% endwith %}

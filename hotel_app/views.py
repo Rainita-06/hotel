@@ -228,7 +228,7 @@ from django.contrib import messages
 #     }
 #     return render(request, 'locations_list.html', context)
 from django.core.paginator import Paginator
-
+#it is not functional for location dashboard_view look for locations_list
 def locations_list(request):
     locations = Location.objects.all()
     families = LocationFamily.objects.all()
@@ -554,7 +554,7 @@ def location_form(request, location_id=None):
 
     families = LocationFamily.objects.all()
     types = LocationType.objects.all()
-    floors = Floor.objects.all()
+    floors = Floor.objects.filter(building=location.building) if location else []
     buildings = Building.objects.all()
     status = request.POST.get('status', 'active')  # Default to 'active' (match model storage)
     description = request.POST.get('description', '')
@@ -780,9 +780,15 @@ def buildings_list(request):
 
 def building_delete(request, building_id):
     b = get_object_or_404(Building, pk=building_id)
+    if b.locations.exists():
+        messages.error(
+            request,
+            "Cannot delete this building because locations are assigned to it."
+        )
+        return redirect("building_cards")
     b.delete()
     messages.success(request, "Building deleted successfully!")
-    return redirect("locations_list")
+    return redirect("building_cards")
 # -------------------------------
 # Location Families
 # -------------------------------
@@ -881,6 +887,13 @@ from .models import Building
 
 def building_cards(request):
     buildings = Building.objects.all().order_by('-building_id')
+    for b in buildings:
+        b.floor_names = list(
+            b.floors.values_list('floor_name', flat=True)
+        )
+        b.room_names = list(
+            b.locations.values_list('name', flat=True)
+        )
     return render(request, 'building.html', {'buildings': buildings})
 
 
@@ -959,6 +972,9 @@ def building_form(request, building_id=None):
         status = request.POST.get("status", "active")
         image = request.FILES.get("image")
 
+        if Building.objects.filter(name__iexact=name).exclude(pk=building_id).exists():
+            messages.error(request, "Building with this name already exists!")
+            return redirect(request.path_info)
         if building:
             building.name = name
             building.description = description
@@ -1087,10 +1103,15 @@ def floor_edit(request, floor_id):
         messages.success(request, "Floor updated successfully!")
         return redirect("floors_list")
     return render(request, "floor_form.html", {"floor": floor})
+
 def building_add(request):
     if request.method == "POST":
         name = request.POST.get("name")
         if name:
+            # Check if a building with this name already exists (case-insensitive)
+            if Building.objects.filter(name__iexact=name).exists():
+                messages.error(request, "Building with this name already exists!")
+                return redirect("building_add")  # redirect back to form
             Building.objects.create(name=name)
             messages.success(request, "Building added successfully!")
             return redirect("building_cards")
@@ -1106,6 +1127,20 @@ def building_edit(request, building_id):
         messages.success(request, "Building updated successfully!")
         return redirect("building_cards")
     return render(request, "building_form.html", {"building": building})
+
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
+from .models import LocationType
+
+def upload_type_image(request, type_id):
+    type_obj = get_object_or_404(LocationType, type_id=type_id)
+    if request.method == "POST" and request.FILES.get("image"):
+        type_obj.image = request.FILES["image"]
+        upload_dir = os.path.join(settings.MEDIA_ROOT, "location_types")
+        os.makedirs(upload_dir, exist_ok=True)
+        type_obj.save()
+        messages.success(request, "Image uploaded successfully!")
+    return redirect("type_add")  # update if URL name differs
 
 import csv
 from io import TextIOWrapper
@@ -2183,7 +2218,7 @@ def add_member(request):
         pin = request.POST.get("pin")
         password = request.POST.get("password")
         confirm_password = request.POST.get("confirm_password")
-
+        country_code=request.POST.get("country_code")
         if password != confirm_password:
             return render(
                 request,
@@ -2205,6 +2240,7 @@ def add_member(request):
         # Save model first (without image file)
         member = GymMember.objects.create(
             customer_code=customer_code,
+            country_code=country_code,
             full_name=full_name,
             nik=nik,
             address=address,
@@ -2294,9 +2330,54 @@ def member_list(request):
         return response
 
     return render(request, "member_list.html", {"members": members,"page_obj":page_obj,"entries":entries_per_page,"search":search})
+# views.py
+
+# from django.shortcuts import render, get_object_or_404
+# from django.http import JsonResponse
+# from .models import Location, Building, Floor
+
+# def location_form(request, pk=None):
+#     location = None
+#     if pk:
+#         location = get_object_or_404(Location, pk=pk)
+
+#     buildings = Building.objects.all()
+
+#     # Floors only if editing
+#     floors = Floor.objects.filter(building=location.building) if location else []
+
+#     if request.method == "POST":
+#         building_id = request.POST.get("building")
+#         floor_id = request.POST.get("floor")
+
+#         building = Building.objects.get(building_id=building_id)
+#         floor = Floor.objects.get(floor_id=floor_id)
+
+#         if location:
+#             location.building = building
+#             location.floor = floor
+#             location.save()
+#         else:
+#             Location.objects.create(
+#                 building=building,
+#                 floor=floor,
+#                 name=request.POST.get("name")
+#             )
+
+#     return render(request, "location_form.html", {
+#         "location": location,
+#         "buildings": buildings,
+#         "floors": floors,
+#     })
 
 
-    
+def get_floors_by_building(request):
+    building_id = request.GET.get("building_id")
+    floors = Floor.objects.filter(building_id=building_id).values(
+        "floor_id", "floor_name"
+    )
+    return JsonResponse(list(floors), safe=False)
+  
 # gym/views.py
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -2443,6 +2524,7 @@ def edit_member(request, member_id):
         return render(request, "gym_success.html", {
             "member": member,
             "qr_absolute_url": qr_absolute_url,
+            "qr": qr_absolute_url,
             "landing_url": landing_url,
         })
         return redirect("member_list")
@@ -2450,15 +2532,52 @@ def edit_member(request, member_id):
     return render(request, "edit_member.html", {"member": member})
 
 # ---------- DELETE MEMBER ----------
+# def delete_member(request, member_id):
+#     member = get_object_or_404(GymMember, member_id=member_id)
+
+    
+#     member.delete()
+#     messages.success(request, "✅ Member deleted successfully.")
+#     return redirect("member_list")
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
+from .models import GymMember  # make sure the model is imported
+
+@login_required
 def delete_member(request, member_id):
-    member = get_object_or_404(GymMember, member_id=member_id)
+    # Fetch the member object or return 404 if not found
+    member = get_object_or_404(GymMember, pk=member_id)
 
-    if request.method == "POST":
+    try:
         member.delete()
-        messages.success(request, "✅ Member deleted successfully.")
-        return redirect("member_list")
+        messages.success(request, f"Member has been deleted successfully.")
+    except Exception as e:
+        messages.error(request, "Cannot delete this member because there are related records in gym visits.")
 
-    return render(request, "delete_member.html", {"member": member})
+    # Redirect to the member list page (update with your URL name)
+    return redirect('member_list')
+
+
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from .models import GymMember
+
+@login_required
+def view_member(request, member_id):
+    # Fetch the member object or return 404 if not found
+    member = get_object_or_404(GymMember, pk=member_id)
+    last_visit = (
+        GymVisit.objects
+        .filter(member=member)
+        .order_by("-visit_at")
+        .first()
+    )
+
+    # Render the view_member.html template
+    return render(request, 'view_member.html', {'member': member,'last_visit':last_visit})
+
+
+    
 
 # gym/views.py
 from django.contrib.auth.decorators import login_required
@@ -2498,65 +2617,140 @@ from django.db.models import Q
     
 #     return render(request, "gym_report.html", {"visits": visits})
 from datetime import datetime, time
-@login_required
+# @login_required
 
-def gym_report(request):
-    visits = GymVisit.objects.select_related("member", "visitor", "checked_by_user").order_by("-visit_at")
+# def gym_report(request):
+#     visits = GymVisit.objects.select_related("member", "visitor", "checked_by_user").order_by("-visit_at")
     
-    # Date filter
+#     # Date filter
+#     from_date = request.GET.get("from_date")
+#     to_date = request.GET.get("to_date")
+    
+    
+    
+#     if from_date:
+#         start_dt = datetime.combine(datetime.strptime(from_date, "%Y-%m-%d"), time.min)
+#         visits = visits.filter(visit_at__gte=start_dt)
+
+#     if to_date:
+#         end_dt = datetime.combine(datetime.strptime(to_date, "%Y-%m-%d"), time.max)
+#         visits = visits.filter(visit_at__lte=end_dt)
+
+    
+
+#     # Export to Excel
+#     if request.GET.get("export") == "1":
+#         # Create DataFrame with filtered data
+#         data = []
+#         for visit in visits:
+#             data.append({
+#                 'ID': visit.visit_id,
+#                 'Customer ID': visit.member.customer_code if visit.member else '-',
+#                 'Name': visit.member.full_name if visit.member else visit.visitor.full_name,
+#                 'Date & Time': visit.visit_at.strftime("%Y-%m-%d %I:%M %p") if visit.visit_at else '',
+#                 'Admin': visit.checked_by_user.username if visit.checked_by_user else '-',
+#             })
+        
+#         df = pd.DataFrame(data)
+        
+#         # Create Excel file in memory
+#         output = BytesIO()
+#         with pd.ExcelWriter(output, engine='openpyxl') as writer:
+#             df.to_excel(writer, index=False, sheet_name='Gym Report')
+        
+#         output.seek(0)
+        
+#         response = HttpResponse(
+#             output.getvalue(),
+#             content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+#         )
+#         response["Content-Disposition"] = 'attachment; filename="gym_report.xlsx"'
+#         return response
+    
+#     # Pagination
+#     paginator = Paginator(visits, 10)  # 10 records per page
+#     page_number = request.GET.get('page', 1)
+#     page_obj = paginator.get_page(page_number)
+    
+#     context = {
+#         'page_obj': page_obj,
+#         'visits': page_obj.object_list,
+#         'from_date': from_date,
+#         'to_date': to_date,
+#         'total_count': paginator.count,
+#     }
+    
+#     return render(request, "gym_report.html", context)
+@login_required
+def gym_report(request):
+    visits = GymVisit.objects.select_related(
+        "member", "visitor", "checked_by_user"
+    ).order_by("-visit_at")
+
+    # -------------------
+    # DATE FILTER LOGIC
+    # -------------------
     from_date = request.GET.get("from_date")
     to_date = request.GET.get("to_date")
-    
+
     if from_date:
-        start_dt = datetime.combine(datetime.strptime(from_date, "%Y-%m-%d"), time.min)
+        start_dt = datetime.combine(
+            datetime.strptime(from_date, "%Y-%m-%d"),
+            time.min
+        )
         visits = visits.filter(visit_at__gte=start_dt)
 
     if to_date:
-        end_dt = datetime.combine(datetime.strptime(to_date, "%Y-%m-%d"), time.max)
+        end_dt = datetime.combine(
+            datetime.strptime(to_date, "%Y-%m-%d"),
+            time.max
+        )
         visits = visits.filter(visit_at__lte=end_dt)
 
-    # Export to Excel
+    # -------------------
+    # EXPORT LOGIC
+    # -------------------
     if request.GET.get("export") == "1":
-        # Create DataFrame with filtered data
         data = []
         for visit in visits:
             data.append({
-                'ID': visit.visit_id,
-                'Customer ID': visit.member.customer_code if visit.member else '-',
-                'Name': visit.member.full_name if visit.member else visit.visitor.full_name,
-                'Date & Time': visit.visit_at.strftime("%Y-%m-%d %I:%M %p") if visit.visit_at else '',
-                'Admin': visit.checked_by_user.username if visit.checked_by_user else '-',
+                "ID": visit.visit_id,
+                "Customer ID": visit.member.customer_code if visit.member else "-",
+                "Name": visit.member.full_name if visit.member else visit.visitor.full_name,
+                "Date & Time": visit.visit_at.strftime("%Y-%m-%d %I:%M %p"),
+                "Admin": visit.checked_by_user.username if visit.checked_by_user else "-",
             })
-        
+
         df = pd.DataFrame(data)
-        
-        # Create Excel file in memory
+
         output = BytesIO()
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            df.to_excel(writer, index=False, sheet_name='Gym Report')
-        
+        with pd.ExcelWriter(output, engine="openpyxl") as writer:
+            df.to_excel(writer, index=False, sheet_name="Gym Report")
+
         output.seek(0)
-        
+
         response = HttpResponse(
-            output.getvalue(),
-            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            output,
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
         response["Content-Disposition"] = 'attachment; filename="gym_report.xlsx"'
         return response
-    
-    # Pagination
-    paginator = Paginator(visits, 10)  # 10 records per page
-    page_number = request.GET.get('page', 1)
+
+    # -------------------
+    # PAGINATION
+    # -------------------
+    paginator = Paginator(visits, 10)
+    page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
-    
+
     context = {
-        'page_obj': page_obj,
-        'visits': page_obj.object_list,
-        'from_date': from_date,
-        'to_date': to_date,
-        'total_count': paginator.count,
+        "visits": page_obj.object_list,
+        "page_obj": page_obj,
+        "from_date": from_date,
+        "to_date": to_date,
+        "total_count": paginator.count,
     }
-    
+
     return render(request, "gym_report.html", context)
 from django.shortcuts import render
 from django.contrib import messages
@@ -3845,9 +4039,9 @@ from .models import (
 
 import re
 import unicodedata
-# import faiss  # Temporarily commented out due to import issue
+import faiss
 import numpy as np
-# from sentence_transformers import SentenceTransformer  # Temporarily commented out due to import issue
+from sentence_transformers import SentenceTransformer
 from datetime import timedelta
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
@@ -3892,8 +4086,7 @@ class RAGIntentEngine:
         return cls._instance
 
     def _init_engine(self):
-        # SentenceTransformer functionality temporarily disabled due to import issue
-        # self.model = SentenceTransformer("all-MiniLM-L6-v2")
+        self.model = SentenceTransformer("all-MiniLM-L6-v2")
         self.index = None
         self.request_map = []
         self._build_index()
@@ -3910,22 +4103,17 @@ class RAGIntentEngine:
         if not texts:
             return
 
-        # Faiss functionality temporarily disabled due to import issue
-        # embeddings = self.model.encode(
-        #     texts,
-        #     normalize_embeddings=True
-        # )
-        #
-        # dim = embeddings.shape[1]
-        # self.index = faiss.IndexFlatIP(dim)
-        # self.index.add(np.array(embeddings))
-        
-        # Set index to None to indicate it's disabled
-        self.index = None
+        embeddings = self.model.encode(
+            texts,
+            normalize_embeddings=True
+        )
+
+        dim = embeddings.shape[1]
+        self.index = faiss.IndexFlatIP(dim)
+        self.index.add(np.array(embeddings))
 
     def detect(self, message: str):
         if not self.index:
-            # Faiss is disabled, return None, 0.0
             return None, 0.0
 
         emb = self.model.encode(
@@ -3987,6 +4175,22 @@ def whatsapp_webhook(request):
         handle_non_request(resp, from_number)
         return HttpResponse(str(resp))
 
+
+    # ----------------------------
+    # User lookup
+    # ----------------------------
+    phone_digits = re.sub(r"\D", "", from_number)
+    phone_last10 = phone_digits[-10:]
+
+    voucher = (
+        Voucher.objects.filter(phone_number__icontains=phone_digits).first()
+        or Voucher.objects.filter(phone_number__icontains=phone_last10).first()
+    )
+
+    if not voucher:
+        resp.message("⚠️ Sorry! Your number is not registered in our system.")
+        return HttpResponse(str(resp))
+    
     # ----------------------------
     # RAG Intent Detection
     # ----------------------------
@@ -4013,21 +4217,6 @@ def whatsapp_webhook(request):
     # ----------------------------
     if recently_created_ticket(from_number):
         resp.message("🙏 Your request is already registered. Our team is on it.")
-        return HttpResponse(str(resp))
-
-    # ----------------------------
-    # User lookup
-    # ----------------------------
-    phone_digits = re.sub(r"\D", "", from_number)
-    phone_last10 = phone_digits[-10:]
-
-    voucher = (
-        Voucher.objects.filter(phone_number__icontains=phone_digits).first()
-        or Voucher.objects.filter(phone_number__icontains=phone_last10).first()
-    )
-
-    if not voucher:
-        resp.message("⚠️ Sorry! Your number is not registered in our system.")
         return HttpResponse(str(resp))
 
     guest_name = voucher.guest_name

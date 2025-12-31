@@ -13,12 +13,16 @@
             </div>
 
             <div class="flex items-center gap-4">
-                <button id="addMemberBtn" class="px-4 py-2.5 bg-blue-600 mt-8 rounded-lg flex justify-center items-center gap-2 text-white text-base font-medium no-underline hover:bg-blue-700 transition-colors">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                    </svg>
-                    Add New
-                </button>
+                <a href="{% url 'add_member' %}">
+    <button class="px-4 py-2.5 bg-blue-600 mt-8 rounded-lg flex justify-center items-center gap-2 text-white text-base font-medium no-underline hover:bg-blue-700 transition-colors backdrop-blur-md">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+        </svg>
+        Add New
+    </button>
+</a>
+
                 <form method="get" action="{% url 'member_list' %}">
                     <button type="submit" name="export" value="1" class="px-4 py-2.5 bg-green-500 mt-8 rounded-lg outline outline-1 outline-offset-[-1px] outline-green-500 flex justify-center items-center gap-2 text-white text-base font-medium hover:bg-green-600 transition-colors">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -121,7 +125,7 @@
                             <div class="flex items-center gap-2">
 
     <!-- View Button -->
-    <a href=#
+    <a href="{% url 'view_member' m.member_id %}"
        title="View Details"
        class="text-blue-500 hover:text-blue-600 transition-colors">
         <svg class="w-5 h-5 " fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -135,7 +139,7 @@
            -4.477 0-8.268-2.943-9.542-7z"/>
         </svg>
     </a>
-
+<a href="{% url 'edit_member' m.member_id%}"
     <!-- Edit Button -->
     <button data-member-id="{{ m.member_id }}"
             class="edit-member-btn text-gray-700 hover:text-gray-900 transition-colors"
@@ -146,7 +150,7 @@
                   d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414
                      a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
         </svg>
-    </button>
+    </button></a>
 
     <!-- Delete Button -->
     <a href="{% url 'delete_member' m.member_id %}" 
@@ -162,7 +166,7 @@
     </a>
 
     <!-- WhatsApp Button -->
-    <a href="https://wa.me/{{ m.phone|cut:'+'|cut:' ' }}?text=Hi%20{{m.full_name}},%20here%20is%20your%20Gym%20QR%20Code:%20{{ qr|urlencode }}"
+    <a href="https://wa.me/{{m.country_code}}{{ m.phone}}?text=Hi%20{{m.full_name}},%20here%20is%20your%20Gym%20QR%20Code:%20{{ qr|urlencode }}"
        target="_blank"
        title="Send via WhatsApp"
        class="text-green-500 hover:text-red-600 transition-colors">
@@ -235,87 +239,6 @@
     </div>
 </div>
 
-<!-- Modal Container -->
-<div id="modalContainer" class="hidden fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
-    <div id="modalContent" class="bg-white rounded-lg shadow-lg w-3/5 max-h-[90vh] overflow-y-auto p-6 relative">
-        <button id="closeModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl font-bold z-10">&times;</button>
-        <!-- Form content will load here -->
-    </div>
-</div>
 
-<script>
-// Add Member Modal
-document.getElementById('addMemberBtn').addEventListener('click', function() {
-    openModal("{% url 'add_member' %}");
-});
-
-// Edit Member Modal
-document.querySelectorAll('.edit-member-btn').forEach(button => {
-    button.addEventListener('click', function(e) {
-        e.preventDefault();
-        const memberId = this.getAttribute('data-member-id');
-        const editUrl = "{% url 'edit_member' 0 %}".replace('0', memberId);
-        openModal(editUrl);
-    });
-});
-
-// Open Modal Function
-function openModal(url) {
-    fetch(url)
-        .then(response => response.text())
-        .then(html => {
-            document.getElementById('modalContent').innerHTML = html + 
-                '<button id="closeModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl font-bold z-10">&times;</button>';
-            document.getElementById('modalContainer').classList.remove('hidden');
-            document.getElementById('main-content').classList.add('blur-md');
-            attachCloseEvent();
-            attachFormSubmit();
-        })
-        .catch(error => {
-            console.error('Error loading form:', error);
-            alert('Error loading form. Please try again.');
-        });
-}
-
-// Close Modal Function
-function attachCloseEvent() {
-    const closeBtn = document.getElementById('closeModal');
-    if (closeBtn) {
-        closeBtn.addEventListener('click', closeModal);
-    }
-    
-    // Close on outside click
-    document.getElementById('modalContainer').addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeModal();
-        }
-    });
-}
-
-function closeModal() {
-    document.getElementById('modalContainer').classList.add('hidden');
-    document.getElementById('main-content').classList.remove('blur-md');
-}
-
-// Handle Form Submit (Optional - for AJAX submission)
-function attachFormSubmit() {
-    const form = document.querySelector('#modalContent form');
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            // If you want to handle form submission via AJAX, uncomment below
-            // e.preventDefault();
-            // Add your AJAX form submission logic here
-            // For now, let it submit normally and redirect
-        });
-    }
-}
-
-// Close modal on Escape key
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        closeModal();
-    }
-});
-</script>
 
 {% endblock %}

@@ -119,6 +119,8 @@ urlpatterns = [
     path("bulk_import_floors/",views.bulk_import_floors,name="bulk_import_floors"),
     path("bulk_import_families/",views.bulk_import_families,name="bulk_import_families"),
       path("bulk_import_types/",views.bulk_import_types,name="bulk_import_types"),
+      path("types/<int:type_id>/upload-image/", views.upload_type_image, name="upload_type_image"),
+path("ajax/get-floors/", views.get_floors_by_building, name="get_floors"),
     #Breakfast voucher
     path("checkin/", views.create_voucher_checkin, name="checkin_form"),
     path("voucher/<str:voucher_code>/", views.voucher_landing, name="voucher_landing"),
@@ -134,6 +136,7 @@ urlpatterns = [
     #Gym
     path("members/add/", views.add_member, name="add_member"),
     path("members/", views.member_list, name="member_list"),
+    path('members/<int:member_id>/', views.view_member, name='view_member'),
     path("members/<int:member_id>/edit/", views.edit_member, name="edit_member"),
     path("members/<int:member_id>/delete/", views.delete_member, name="delete_member"),
     path("members/scan/", views.validate_member_qr, name="validate_member_qr"),

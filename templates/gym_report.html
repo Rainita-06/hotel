@@ -30,38 +30,39 @@
 
         <!-- Filter Section -->
         <div class="w-full bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-            <form method="get" class="flex flex-wrap items-center justify-between gap-4">
-                <div class="flex flex-wrap items-center gap-4">
-                    <!-- From Date -->
-                    <div class="flex items-center gap-2">
-                        <label class="text-base font-medium text-gray-900 whitespace-nowrap">From Date:</label>
-                        <input type="date" 
-                               name="from_date" 
-                               value="{{ from_date }}" 
-                               class="px-4 py-3 w-44 border border-gray-300 rounded-lg text-base text-gray-500 focus:outline-none focus:border-blue-500">
-                    </div>
+           <form method="get" class="flex flex-wrap items-center justify-between gap-4">
+    <div class="flex flex-wrap items-center gap-4">
+        <!-- From Date -->
+        <div class="flex items-center gap-2">
+            <label class="text-base font-medium text-gray-900">From Date:</label>
+            <input type="date" name="from_date" value="{{ from_date }}"
+                class="px-4 py-3 w-44 border border-gray-300 rounded-lg">
+        </div>
 
-                    <!-- To Date -->
-                    <div class="flex items-center gap-2">
-                        <label class="text-base font-medium text-gray-900 whitespace-nowrap">To Date:</label>
-                        <input type="date" 
-                               name="to_date" 
-                               value="{{ to_date }}" 
-                               class="px-4 py-3 w-44 border border-gray-300 rounded-lg text-base text-gray-500 focus:outline-none focus:border-blue-500">
-                    </div>
-                </div>
+        <!-- To Date -->
+        <div class="flex items-center gap-2">
+            <label class="text-base font-medium text-gray-900">To Date:</label>
+            <input type="date" name="to_date" value="{{ to_date }}"
+                class="px-4 py-3 w-44 border border-gray-300 rounded-lg">
+        </div>
+    </div>
 
-                <!-- Export Button -->
-                <button type="submit" 
-                        name="export" 
-                        value="1" 
-                        class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-base font-medium rounded-lg flex items-center gap-2 transition-colors">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                       <img src="{% static 'icon/export.svg' %}" 
-                    </svg>
-                    Export
-                </button>
-            </form>
+    <!-- Buttons -->
+    <div class="flex gap-3">
+        <!-- FILTER -->
+        <button type="submit"
+            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">
+            Filter
+        </button>
+
+        <!-- EXPORT -->
+        <button type="submit" name="export" value="1"
+            class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg">
+            Export
+        </button>
+    </div>
+</form>
+
         </div>
 
         <!-- Table Section -->

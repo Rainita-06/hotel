@@ -1,7 +1,20 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
 {% block content %}
+<style>
+  #sidebar,
+  .sidebar,
+  aside {
+    display: none !important;
+  }
+
+  body {
+    overflow: hidden;
+  }
+</style>
 
 <!-- Modal overlay (centered vertically and horizontally) -->
-<div class="fixed inset-0 bg-black/20 backdrop-blur-sm flex justify-center items-center z-50">
+<div class="fixed inset-0 bg-black/20 backdrop-blur-md flex justify-center items-center z-50">
     <!-- Form container -->
     <div class="bg-white rounded-xl shadow-lg w-[920px] max-w-full max-h-[90vh] overflow-auto p-6 relative">
         <h2 class="text-gray-900 text-lg font-semibold mb-4 font-['Inter']">Edit Member - {{ member.full_name }}</h2>
@@ -46,7 +59,7 @@
   <input
     type="tel"
     name="phone"
-    value="{{ member.phone }}"
+    value="{{member.country_code}}{{ member.phone }}"
     placeholder="+62XXXXXXXXXXX"
     pattern="^\+?[1-9]\d{6,15}$"
     title="Enter a valid phone number with country code (e.g., +6285565454544)"
