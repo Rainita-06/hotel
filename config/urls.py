@@ -120,6 +120,7 @@ urlpatterns = [
     path("bulk_import_families/",views.bulk_import_families,name="bulk_import_families"),
       path("bulk_import_types/",views.bulk_import_types,name="bulk_import_types"),
       path("types/<int:type_id>/upload-image/", views.upload_type_image, name="upload_type_image"),
+          path("family/<int:family_id>/upload-image/", views.upload_family_image, name="upload_family_image"),
 path("ajax/get-floors/", views.get_floors_by_building, name="get_floors"),
     #Breakfast voucher
     path("checkin/", views.create_voucher_checkin, name="checkin_form"),

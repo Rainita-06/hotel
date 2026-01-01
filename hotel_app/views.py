@@ -1,5 +1,6 @@
 import os
 from django.conf import settings
+from django.db import IntegrityError
 from django.shortcuts import render, redirect
 from django.contrib import messages
 
@@ -477,7 +478,7 @@ def bulk_import_locations(request):
 
             messages.success(request, f"✅ Successfully imported {count} locations.")
         except Exception as e:
-            messages.error(request, f"❌ Error while importing: {str(e)}")
+            messages.error(request, f"Error while importing: {str(e)}")
 
         return redirect('locations_list')
 
@@ -569,32 +570,52 @@ def location_form(request, location_id=None):
         pavilion = request.POST.get('pavilion')
         capacity = request.POST.get('capacity') or None
 
+        qs = Location.objects.filter(
+            name__iexact=name,
+            building_id=building
+        )
+
         if location:
-            location.name = name
-            location.family_id = family
-            location.type_id = loc_type
-            location.floor_id = floor
-            location.building_id = building
-            location.status = status
-            location.description = description
-            # location.room_no = room_no
-            location.pavilion = pavilion
-            location.capacity = capacity
-            location.save()
-        else:
-            Location.objects.create(
-                name=name,
-                family_id=family,
-                type_id=loc_type,
-                floor_id=floor,
-                building_id=building,
-                # room_no=room_no,
-                status=status,
-                    description=description,
-                pavilion=pavilion,
-                capacity=capacity
+            qs = qs.exclude(pk=location.pk)
+
+        if qs.exists():
+            messages.error(
+                request,
+                f'Location "{name}" already exists in the selected building.'
             )
-        messages.success(request,f"Location {name} successfully!")
+            return redirect(request.path_info)
+
+        try:
+            if location:
+                # Update
+                location.name = name
+                location.family_id = family
+                location.type_id = loc_type
+                location.floor_id = floor
+                location.building_id = building
+                location.status = status
+                location.description = description
+                location.pavilion = pavilion
+                location.capacity = capacity
+                location.save()
+                messages.success(request, "Location updated successfully!")
+            else:
+                # Create
+                Location.objects.create(
+                    name=name,
+                    family_id=family,
+                    type_id=loc_type,
+                    floor_id=floor,
+                    building_id=building,
+                    status=status,
+                    description=description,
+                    pavilion=pavilion,
+                    capacity=capacity
+                )
+                messages.success(request, f'Location "{name}" added successfully!')
+        except IntegrityError:
+            messages.error(request, "Duplicate location detected.")
+
         return redirect('locations_list')
 
     context = {
@@ -604,10 +625,8 @@ def location_form(request, location_id=None):
         'floors': floors,
         'buildings': buildings,
     }
-    
+
     return render(request, 'location_form.html', context)
-
-
 # -------------------------------
 # Delete Location
 # -------------------------------
@@ -702,7 +721,7 @@ def floors_list(request):
         )
     
     # Pagination: 10 floors per page
-    paginator = Paginator(floors, 5)
+    paginator = Paginator(floors, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
@@ -721,11 +740,53 @@ def floors_list(request):
 #     f.delete()
 #     messages.success(request, "Floor deleted successfully!")
 #     return redirect("locations_list")
+# def floor_form(request, floor_id=None):
+#     floor = get_object_or_404(Floor, pk=floor_id) if floor_id else None
+    
+#     if request.method == "POST":
+#         name = request.POST.get("floor_name")
+#         floor_number = request.POST.get("floor_number") or 0
+#         building_id = request.POST.get("building_id")
+#         rooms = request.POST.get("rooms") or 0
+#         occupancy = request.POST.get("occupancy") or 0
+#         is_active = request.POST.get("is_active") == "on"
+
+#         building = get_object_or_404(Building, pk=building_id)
+
+#         if floor:
+#             floor.floor_name = name
+#             floor.floor_number = floor_number
+#             floor.building = building
+#             floor.rooms = rooms
+#             floor.occupancy = occupancy
+#             floor.is_active = is_active
+#             floor.save()
+#             messages.success(request, "Floor updated successfully!")
+#         else:
+#             try:
+#                 Floor.objects.create(
+#                 floor_name=name,
+#                 floor_number=floor_number,
+#                 building=building,
+#                 rooms=rooms,
+#                 occupancy=occupancy,
+#                 is_active=is_active,
+#             )
+#                 messages.success(request, "Floor added successfully!")
+#             except IntegrityError:
+#                 messages.error(request, "Error: Could not create the floor. It might already exist.")
+#         return redirect("floors_list")
+
+#     buildings = Building.objects.all()
+#     return render(request, "floor_form.html", {"floor": floor, "buildings": buildings})
+from django.db import IntegrityError
+from django.db.models import Q
+
 def floor_form(request, floor_id=None):
     floor = get_object_or_404(Floor, pk=floor_id) if floor_id else None
-    
+
     if request.method == "POST":
-        name = request.POST.get("floor_name")
+        name = request.POST.get("floor_name").strip()
         floor_number = request.POST.get("floor_number") or 0
         building_id = request.POST.get("building_id")
         rooms = request.POST.get("rooms") or 0
@@ -734,29 +795,52 @@ def floor_form(request, floor_id=None):
 
         building = get_object_or_404(Building, pk=building_id)
 
+        # 🔒 DUPLICATE CHECK
+        duplicate_qs = Floor.objects.filter(
+            building=building,
+            floor_name=name
+        )
+
         if floor:
-            floor.floor_name = name
-            floor.floor_number = floor_number
-            floor.building = building
-            floor.rooms = rooms
-            floor.occupancy = occupancy
-            floor.is_active = is_active
-            floor.save()
-            messages.success(request, "Floor updated successfully!")
-        else:
-            Floor.objects.create(
-                floor_name=name,
-                floor_number=floor_number,
-                building=building,
-                rooms=rooms,
-                occupancy=occupancy,
-                is_active=is_active,
+            duplicate_qs = duplicate_qs.exclude(pk=floor.pk)
+
+        if duplicate_qs.exists():
+            messages.error(
+                request,
+                f'Floor "{name}" already exists in {building.name}.'
             )
-            messages.success(request, "Floor added successfully!")
+            return redirect(request.path_info)
+
+        try:
+            if floor:
+                floor.floor_name = name
+                floor.floor_number = floor_number
+                floor.building = building
+                floor.rooms = rooms
+                floor.occupancy = occupancy
+                floor.is_active = is_active
+                floor.save()
+                messages.success(request, "Floor updated successfully!")
+            else:
+                Floor.objects.create(
+                    floor_name=name,
+                    floor_number=floor_number,
+                    building=building,
+                    rooms=rooms,
+                    occupancy=occupancy,
+                    is_active=is_active,
+                )
+                messages.success(request, "Floor added successfully!")
+        except IntegrityError:
+            messages.error(request, "Duplicate floor detected.")
+
         return redirect("floors_list")
 
     buildings = Building.objects.all()
-    return render(request, "floor_form.html", {"floor": floor, "buildings": buildings})
+    return render(request, "floor_form.html", {
+        "floor": floor,
+        "buildings": buildings
+    })
 
 
 def floor_delete(request, floor_id):
@@ -792,28 +876,62 @@ def building_delete(request, building_id):
 # -------------------------------
 # Location Families
 # -------------------------------
+# def family_form(request, family_id=None):
+#     if family_id:
+#         family = get_object_or_404(LocationFamily, pk=family_id)
+#     else:
+#         family = None
+
+#     if request.method == "POST":
+#         name = request.POST.get("name")
+
+#         if family:
+#             family.name = name
+#             family.save()
+#             messages.success(request, "Family updated successfully!")
+#         else:
+#             try:
+#              LocationFamily.objects.create(name=name)
+#              messages.success(request, "Family added successfully!")
+#             except IntegrityError:
+#                 messages.error(request, "Error: Could not create the Family. It might already exist.")
+
+#         return redirect("location_manage_view")
+
+#     context = {"family": family}
+#     return render(request, "family_form.html", context)
+
+from django.db import IntegrityError
+
 def family_form(request, family_id=None):
-    if family_id:
-        family = get_object_or_404(LocationFamily, pk=family_id)
-    else:
-        family = None
+    family = get_object_or_404(LocationFamily, pk=family_id) if family_id else None
 
     if request.method == "POST":
-        name = request.POST.get("name")
+        name = request.POST.get("name", "").strip()
 
+        # 🔒 DUPLICATE CHECK
+        qs = LocationFamily.objects.filter(name__iexact=name)
         if family:
-            family.name = name
-            family.save()
-            messages.success(request, "Family updated successfully!")
-        else:
-            LocationFamily.objects.create(name=name)
-            messages.success(request, "Family added successfully!")
+            qs = qs.exclude(pk=family.pk)
+
+        if qs.exists():
+            messages.error(request, f'Family "{name}" already exists.')
+            return redirect(request.path_info)
+
+        try:
+            if family:
+                family.name = name
+                family.save()
+                messages.success(request, "Family updated successfully!")
+            else:
+                LocationFamily.objects.create(name=name)
+                messages.success(request, "Family added successfully!")
+        except IntegrityError:
+            messages.error(request, "Duplicate family name detected.")
 
         return redirect("location_manage_view")
 
-    context = {"family": family}
-    return render(request, "family_form.html", context)
-
+    return render(request, "family_form.html", {"family": family})
 
 
 
@@ -844,42 +962,110 @@ def family_form(request, family_id=None):
 #     context = {"loc_type": loc_type,"families":families}
 #     return render(request, "type_form.html", context)
 
+# from django.shortcuts import render, get_object_or_404, redirect
+# from django.contrib import messages
+# from .models import LocationType, LocationFamily
+
+# def type_form(request, type_id=None):
+#     # If editing
+#     loc_type = get_object_or_404(LocationType, pk=type_id) if type_id else None
+
+#     # All families for dropdown
+#     families = LocationFamily.objects.all()
+
+#     if request.method == "POST":
+#         name = request.POST.get("name")
+#         family_id = request.POST.get("family")
+
+#         if not family_id:
+#             messages.error(request, "Please select a family!")
+#             return render(request, "type_form.html", {"type": loc_type, "families": families})
+
+#         family = get_object_or_404(LocationFamily, pk=family_id)
+
+#         if loc_type:
+#             # Update existing
+#             loc_type.name = name
+#             loc_type.family = family
+#             loc_type.save()
+#             messages.success(request, "Type updated successfully!")
+#         else:
+#             try:
+#             # Create new
+#              LocationType.objects.create(name=name, family=family)
+#              messages.success(request, "Type added successfully!")
+#             except IntegrityError:
+#                 messages.error(request, "Error: Could not create the Type. It might already exist.")
+
+#         return redirect("types_list")
+
+#     return render(request, "type_form.html", {"type": loc_type, "families": families})
+
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
+from django.db import IntegrityError
 from .models import LocationType, LocationFamily
 
-def type_form(request, type_id=None):
-    # If editing
-    loc_type = get_object_or_404(LocationType, pk=type_id) if type_id else None
 
-    # All families for dropdown
+def type_form(request, type_id=None):
+    loc_type = get_object_or_404(LocationType, pk=type_id) if type_id else None
     families = LocationFamily.objects.all()
 
     if request.method == "POST":
-        name = request.POST.get("name")
+        name = request.POST.get("name", "").strip()
         family_id = request.POST.get("family")
+
 
         if not family_id:
             messages.error(request, "Please select a family!")
-            return render(request, "type_form.html", {"type": loc_type, "families": families})
+            return render(
+                request,
+                "type_form.html",
+                {"type": loc_type, "families": families},
+            )
 
         family = get_object_or_404(LocationFamily, pk=family_id)
 
+        # 🔒 DUPLICATE CHECK (same name in same family)
+        qs = LocationType.objects.filter(
+            name__iexact=name,
+            family=family
+        )
+
         if loc_type:
-            # Update existing
-            loc_type.name = name
-            loc_type.family = family
-            loc_type.save()
-            messages.success(request, "Type updated successfully!")
-        else:
-            # Create new
-            LocationType.objects.create(name=name, family=family)
-            messages.success(request, "Type added successfully!")
+            qs = qs.exclude(pk=loc_type.pk)
+
+        if qs.exists():
+            messages.error(
+                request,
+                f'Type "{name}" already exists in family "{family.name}".'
+            )
+            return redirect(request.path_info)
+
+        try:
+            if loc_type:
+                # Update
+                loc_type.name = name
+                loc_type.family = family
+                loc_type.save()
+                messages.success(request, "Type updated successfully!")
+            else:
+                # Create
+                LocationType.objects.create(
+                    name=name,
+                    family=family
+                )
+                messages.success(request, "Type added successfully!")
+        except IntegrityError:
+            messages.error(request, "Duplicate type detected.")
 
         return redirect("types_list")
 
-    return render(request, "type_form.html", {"type": loc_type, "families": families})
-
+    return render(
+        request,
+        "type_form.html",
+        {"type": loc_type, "families": families},
+    )
 
 # views.py
 from django.shortcuts import render
@@ -984,10 +1170,13 @@ def building_form(request, building_id=None):
             building.save()
             messages.success(request, "Building updated successfully!")
         else:
-            Building.objects.create(
+           
+             Building.objects.create(
                 name=name, description=description, status=status, image=image
             )
-            messages.success(request, "Building added successfully!")
+             messages.success(request, "Building added successfully!")
+            
+            
 
         return redirect("building_cards")
 
@@ -1109,9 +1298,9 @@ def building_add(request):
         name = request.POST.get("name")
         if name:
             # Check if a building with this name already exists (case-insensitive)
-            if Building.objects.filter(name__iexact=name).exists():
-                messages.error(request, "Building with this name already exists!")
-                return redirect("building_add")  # redirect back to form
+            # if Building.objects.filter(name__iexact=name).exists():
+            #     messages.error(request, "Building with this name already exists!")
+            #     return redirect("building_add")  # redirect back to form
             Building.objects.create(name=name)
             messages.success(request, "Building added successfully!")
             return redirect("building_cards")
@@ -1141,6 +1330,19 @@ def upload_type_image(request, type_id):
         type_obj.save()
         messages.success(request, "Image uploaded successfully!")
     return redirect("type_add")  # update if URL name differs
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
+from .models import LocationFamily
+
+def upload_family_image(request, family_id):
+    family_obj = get_object_or_404(LocationFamily, family_id=family_id)
+    if request.method == "POST" and request.FILES.get("image"):
+        family_obj.image = request.FILES["image"]
+        upload_dir = os.path.join(settings.MEDIA_ROOT, "location_family")
+        os.makedirs(upload_dir, exist_ok=True)
+        family_obj.save()
+        messages.success(request, "Image uploaded successfully!")
+    return redirect("location_manage_view")
 
 import csv
 from io import TextIOWrapper

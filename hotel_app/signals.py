@@ -628,6 +628,40 @@ TYPE_IMAGE_URLS = [
     "https://images.pexels.com/photos/261411/pexels-photo-261411.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
     "https://images.pexels.com/photos/271618/pexels-photo-271618.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
 ]
+# -----------------------------------------------------
+# GLOBAL LOCATION FAMILY IMAGES (361×192)
+# -----------------------------------------------------
+FAMILY_IMAGE_URLS = [
+    "https://images.pexels.com/photos/262048/pexels-photo-262048.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+    "https://images.pexels.com/photos/262978/pexels-photo-262978.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+    "https://images.pexels.com/photos/261395/pexels-photo-261395.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+    "https://images.pexels.com/photos/189296/pexels-photo-189296.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+    "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+    "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+]
+def assign_random_family_image(family_obj):
+    try:
+        url = random.choice(FAMILY_IMAGE_URLS)
+        filename = url.split("/")[-1].split("?")[0]
+
+        # Ensure folder exists: MEDIA_ROOT/location_families
+        folder_path = os.path.join(settings.MEDIA_ROOT, "location_family")
+        os.makedirs(folder_path, exist_ok=True)
+
+        response = requests.get(url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
+        if response.status_code == 200:
+            family_obj.image.save(
+                f"location_families/{filename}",
+                ContentFile(response.content),
+                save=True
+            )
+            print(f"Auto-image assigned → Family: {family_obj.name}")
+        else:
+            print(f"Failed to download family image: {url}")
+
+    except Exception as e:
+        print(f"Family image assign error: {e}")
+
 
 # -----------------------------------------------------
 # FUNCTION → Assign random hotel image
@@ -746,9 +780,24 @@ def create_basic_location_data(sender, **kwargs):
     # 3️⃣ FAMILIES
     # -----------------------------------------------------
     family_names = ["Guest Room", "Service Area", "Executive", "Premium", "Dining", "General Utility"]
-    families = [LocationFamily.objects.get_or_create(name=n)[0] for n in family_names]
+    families = []
 
-    print(" Families created: 6")
+    for name in family_names:
+        family, created = LocationFamily.objects.get_or_create(name=name)
+
+        if created:
+            print(f" {name} → CREATED")
+        else:
+            print(f" {name} → Already Exists")
+
+        if not family.image:
+            assign_random_family_image(family)
+
+        families.append(family)
+
+    print(" Families created : 6")
+
+ 
 
     # -----------------------------------------------------
     # 4️⃣ TYPES

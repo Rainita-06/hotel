@@ -274,16 +274,29 @@ class Floor(models.Model):
 
     class Meta:
         db_table = 'floor'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['building', 'floor_name'],
+                name='unique_floor_per_building'
+            )
+        ]
 
 
 class LocationFamily(models.Model):
     family_id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=120,blank=False, null=False)
+    image = models.ImageField(upload_to="location_family/", blank=True, null=True) 
     
     def __str__(self):
         return self.name
     class Meta:
         db_table = 'location_family'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['name'],
+                name='unique_location_family_name'
+            )
+        ]
 
 
 class LocationType(models.Model):
@@ -297,6 +310,12 @@ class LocationType(models.Model):
         return self.name
     class Meta:
         db_table = 'location_type'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['family', 'name'],
+                name='unique_type_per_building'
+            )
+        ]
 
 
 class Location(models.Model):
@@ -309,7 +328,7 @@ class Location(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
     description = models.CharField(max_length=255, blank=True, null=True)
     location_id = models.BigAutoField(primary_key=True)
-    name = models.CharField(max_length=50,blank=False, null=False)       # updated (was 160)
+    name = models.CharField(max_length=50,blank=False, null=False,unique=True)       # updated (was 160)
     family = models.ForeignKey(LocationFamily, on_delete=models.CASCADE,blank=True, null=True)
     # updated (was FK)
     type = models.ForeignKey(LocationType, on_delete=models.CASCADE, null=True, blank=True)
@@ -323,6 +342,7 @@ class Location(models.Model):
     is_occupied = models.BooleanField(default=False)
     class Meta:
         db_table = 'location'
+        
 
 
 

@@ -82,7 +82,8 @@
 
                 <div>
                   <div class="text-gray-900 text-base font-semibold font-['Inter'] truncate">{{ family.name }}</div>
-                  <div class="text-gray-600 text-xs font-normal font-['Inter']">+{{ family.types.count }} location types</div>
+                  <div class="text-gray-600 text-xs font-normal font-['Inter'] mt-2 show-all-types cursor-pointer" 
+     data-family-id="{{ family.family_id }}">+{{ family.types.count }} location types</div>
                 </div>
               </div>
 
@@ -113,7 +114,7 @@
             </div>
 
             <!-- Location Types -->
-            <div class="px-6 mt-4">
+            <!-- <div class="px-6 mt-4">
               {% for loc in family.types.all|slice:":5" %}
               <div class="flex justify-between items-center py-1">
                 <div class="text-gray-600 text-sm font-normal font-['Inter']">{{ loc.name }}</div>
@@ -133,7 +134,28 @@
     +{{ family.types.count|add:"-5" }} more types
 </div>
 {% endif %}
-            </div>
+            </div> -->
+            <div class="mt-4">
+    <form action="{% url 'upload_family_image' family.family_id %}"
+          method="POST"
+          enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <input type="file"
+               name="image"
+               id="typeImageInput{{ family.family_id }}"
+               class="hidden"
+               accept="image/*"
+               onchange="this.form.submit()" />
+
+        <img
+            src="{% if family.image %}{{ family.image.url }}{% else %}https://placehold.co/360x140?text=Upload+Image{% endif %}"
+            class="w-full h-44 object-cover rounded-lg  cursor-pointer hover:opacity-90 transition"
+            onclick="document.getElementById('typeImageInput{{ family.family_id }}').click()"
+            alt="{{ family.name }}"
+        />
+    </form>
+</div>
 <div id="allTypesModal{{ family.family_id }}" 
      class="fixed inset-0 z-[1000] hidden flex items-center justify-center bg-black/40 backdrop-blur-md">
     <div class="bg-white w-96 max-h-[400px] rounded-xl shadow-lg overflow-y-auto p-6 relative">
