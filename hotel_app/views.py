@@ -650,6 +650,12 @@ def families_list(request):
 
 def family_delete(request, family_id):
     family = get_object_or_404(LocationFamily, pk=family_id)
+    if family.location_set.exists():
+        messages.error(
+            request,
+            "Cannot delete this family because locations are assigned to it."
+        )
+        return redirect("location_manage_view")
     family.delete()
     messages.success(request, "Family deleted successfully!")
     return redirect("location_manage_view")
@@ -682,6 +688,12 @@ def types_list(request):
 
 def type_delete(request, type_id):
     t = get_object_or_404(LocationType, pk=type_id)
+    if t.location_set.exists():
+        messages.error(
+            request,
+            "Cannot delete thistype because locations are assigned to it."
+        )
+        return redirect("types_list")
     t.delete()
     messages.success(request, "Type deleted successfully!")
     return redirect("types_list")
@@ -864,12 +876,6 @@ def buildings_list(request):
 
 def building_delete(request, building_id):
     b = get_object_or_404(Building, pk=building_id)
-    if b.locations.exists():
-        messages.error(
-            request,
-            "Cannot delete this building because locations are assigned to it."
-        )
-        return redirect("building_cards")
     b.delete()
     messages.success(request, "Building deleted successfully!")
     return redirect("building_cards")

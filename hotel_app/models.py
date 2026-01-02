@@ -329,16 +329,16 @@ class Location(models.Model):
     description = models.CharField(max_length=255, blank=True, null=True)
     location_id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=50,blank=False, null=False,unique=True)       # updated (was 160)
-    family = models.ForeignKey(LocationFamily, on_delete=models.CASCADE,blank=True, null=True)
+    family = models.ForeignKey(LocationFamily, on_delete=models.PROTECT,blank=True, null=True)
     # updated (was FK)
-    type = models.ForeignKey(LocationType, on_delete=models.CASCADE, null=True, blank=True)
+    type = models.ForeignKey(LocationType, on_delete=models.PROTECT, null=True, blank=True)
       # updated (was FK)
     floor = models.ForeignKey(Floor, on_delete=models.CASCADE, blank=True, null=True,related_name='locations')
             # updated (was FK)
     pavilion = models.CharField(max_length=120, null=True, blank=True)   # added
     room_no = models.CharField(max_length=40,blank=True, null=True)
     capacity = models.IntegerField(blank=True, null=True)
-    building = models.ForeignKey('Building', models.DO_NOTHING,blank=True, null=True,related_name='locations')  # kept for compatibility
+    building = models.ForeignKey('Building', models.CASCADE,blank=True, null=True,related_name='locations')  # kept for compatibility
     is_occupied = models.BooleanField(default=False)
     class Meta:
         db_table = 'location'

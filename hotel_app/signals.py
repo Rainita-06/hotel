@@ -716,6 +716,9 @@ def assign_random_type_image(type_obj):
 # -----------------------------------------------------
 # MAIN POST-MIGRATE SIGNAL
 # -----------------------------------------------------
+from django.db.models.signals import post_migrate
+from django.dispatch import receiver
+
 @receiver(post_migrate)
 def create_basic_location_data(sender, **kwargs):
 
@@ -725,7 +728,7 @@ def create_basic_location_data(sender, **kwargs):
     print("\n Auto-generating Base Location Set (6X Format)…\n")
 
     # -----------------------------------------------------
-    # 1️⃣ BUILDINGS (Created Only Once)
+    # 1️⃣ BUILDINGS
     # -----------------------------------------------------
     building_names = [
         ("Main Building", "Primary building"),
@@ -744,72 +747,77 @@ def create_basic_location_data(sender, **kwargs):
             defaults={"description": desc}
         )
 
-        if created:
-            print(f" {name} → CREATED")
-        else:
-            print(f" {name} → Already Exists")
+        print(f" {name} → {'CREATED' if created else 'Already Exists'}")
 
-        # Assign image ONLY if empty
         if not building.image:
-            print(f"Assigning image → {name}")
             assign_random_image(building)
 
         buildings.append(building)
 
-    print("\n Buildings ready (with images)\n")
-
     # -----------------------------------------------------
-    # 2️⃣ FLOORS (1 per building)
+    # 2️⃣ FLOORS (SAFE + UNIQUE)
     # -----------------------------------------------------
     floors = []
+
     for idx, b in enumerate(buildings, start=1):
-
-        Floor.objects.filter(building=b, floor_number=idx).delete()
-
-        floor = Floor.objects.create(
+        floor, created = Floor.objects.get_or_create(
             building=b,
-            floor_number=idx,
-            floor_name=f"Floor {idx}"
+            floor_name=f"Floor {idx}",
+            defaults={"floor_number": idx}
+        )
+
+        print(
+            f" Floor {idx} ({b.name}) → {'CREATED' if created else 'Already Exists'}"
         )
 
         floors.append(floor)
 
-    print("Floors Created: 6")
-
     # -----------------------------------------------------
     # 3️⃣ FAMILIES
     # -----------------------------------------------------
-    family_names = ["Guest Room", "Service Area", "Executive", "Premium", "Dining", "General Utility"]
+    family_names = [
+        "Guest Room",
+        "Service Area",
+        "Executive",
+        "Premium",
+        "Dining",
+        "General Utility",
+    ]
+
     families = []
 
     for name in family_names:
         family, created = LocationFamily.objects.get_or_create(name=name)
 
-        if created:
-            print(f" {name} → CREATED")
-        else:
-            print(f" {name} → Already Exists")
+        print(f" {name} → {'CREATED' if created else 'Already Exists'}")
 
         if not family.image:
             assign_random_family_image(family)
 
         families.append(family)
 
-    print(" Families created : 6")
-
- 
-
     # -----------------------------------------------------
-    # 4️⃣ TYPES
+    # 4️⃣ TYPES (Family-bound UNIQUE)
     # -----------------------------------------------------
-    
-    type_names = ["Deluxe Room", "Suite Room", "Lobby", "Dining Hall", "Executive Suite", "Conference Hall"]
+    type_names = [
+        "Deluxe Room",
+        "Suite Room",
+        "Lobby",
+        "Dining Hall",
+        "Executive Suite",
+        "Conference Hall",
+    ]
+
     types = []
 
-    for i, t in enumerate(type_names):
-        type_obj, _ = LocationType.objects.get_or_create(
-            name=t,
+    for i, type_name in enumerate(type_names):
+        type_obj, created = LocationType.objects.get_or_create(
+            name=type_name,
             family=families[i]
+        )
+
+        print(
+            f" {type_name} → {'CREATED' if created else 'Already Exists'}"
         )
 
         if not type_obj.image:
@@ -817,22 +825,24 @@ def create_basic_location_data(sender, **kwargs):
 
         types.append(type_obj)
 
-    print(" Types created: 6")
-
-
     # -----------------------------------------------------
-    # 5️⃣ LOCATIONS (Auto Create)
+    # 5️⃣ LOCATIONS (FULLY SAFE)
     # -----------------------------------------------------
     for i, b in enumerate(buildings):
-        Location.objects.get_or_create(
-            name=f"{101+i}",
+        location, created = Location.objects.get_or_create(
+            name=str(101 + i),
             building=b,
             floor=floors[i],
-            type=types[i],
             family=types[i].family,
-            defaults={}
+            type=types[i]
         )
 
-    print(" Locations Created: 6")
+        print(
+            f" Location {location.name} ({b.name}) → "
+            f"{'CREATED' if created else 'Already Exists'}"
+        )
 
-    print("\n SUCCESS → 6 Buildings | 6 Floors | 6 Families | 6 Types | 6 Locations Ready!\n")
+    print(
+        "\n SUCCESS → Buildings | Floors | Families | Types | Locations are READY "
+        
+    )
