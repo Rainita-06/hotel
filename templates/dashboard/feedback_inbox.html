@@ -86,12 +86,12 @@
             <div class="px-4 py-4 border-b border-gray-200 flex flex-col md:flex-row items-center justify-between gap-4">
                 <form method="get" class="relative w-full md:w-80" data-aos="fade" data-aos-delay="50" data-aos-once="true">
                     <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                    <input autocomplete="off" type="text" name="q" class="w-full h-10 pl-10 pr-4 bg-white rounded-md border border-gray-300 text-sm focus:ring-sky-500 focus:border-sky-500" placeholder="Search feedback, keywords..." value="{{ request.GET.q|default:'' }}">
+                    <input autocomplete="off" type="text" name="q" id="feedback-search-input" class="w-full h-10 pl-10 pr-4 bg-white rounded-md border border-gray-300 text-sm focus:ring-sky-500 focus:border-sky-500" placeholder="Search feedback, keywords..." value="{{ request.GET.q|default:'' }}">
                 </form>
-                <button class="w-full md:w-auto h-10 bg-white rounded-md border border-gray-300 flex items-center justify-center px-4 hover:bg-gray-50 transition-colors" data-aos="fade" data-aos-delay="100" data-aos-once="true">
+                <a href="{% url 'dashboard:export_feedback' %}{% if request.GET.q %}?q={{ request.GET.q }}{% endif %}" id="export-feedback-btn" class="w-full md:w-auto h-10 bg-white rounded-md border border-gray-300 flex items-center justify-center px-4 hover:bg-gray-50 transition-colors" data-aos="fade" data-aos-delay="100" data-aos-once="true">
                     <img src="{% static 'images/feedback/export.svg' %}" alt="Export" class="w-4 h-4" />
                     <span class="ml-2 text-gray-700 text-sm font-medium">Export</span>
-                </button>
+                </a>
             </div>
 
             <div class="overflow-x-auto">
@@ -344,5 +344,24 @@ function goToPage(page) {
     url.searchParams.set('page', page);
     window.location.href = url.toString();
 }
+
+// --- UPDATE EXPORT LINK WHEN SEARCH CHANGES ---
+function updateExportLink() {
+    const searchInput = document.getElementById('feedback-search-input');
+    const exportBtn = document.getElementById('export-feedback-btn');
+    if (searchInput && exportBtn) {
+        const baseUrl = "{% url 'dashboard:export_feedback' %}";
+        const query = searchInput.value.trim();
+        exportBtn.href = query ? `${baseUrl}?q=${encodeURIComponent(query)}` : baseUrl;
+    }
+}
+
+// Listen for search input changes
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('feedback-search-input');
+    if (searchInput) {
+        searchInput.addEventListener('input', updateExportLink);
+    }
+});
 </script>
 {% endblock %}

@@ -109,6 +109,7 @@ urlpatterns = [
     path('configure-requests/', dashboard_views.configure_requests, name='configure_requests'),
     path('messaging-setup/', dashboard_views.messaging_setup, name='messaging_setup'),
     path('feedback/', dashboard_views.feedback_inbox, name='feedback_inbox'),
+    path('feedback/export/', dashboard_views.export_feedback, name='export_feedback'),
     path('feedback/<int:feedback_id>/', dashboard_views.feedback_detail, name='feedback_detail'),
     path('integrations/', dashboard_views.integrations, name='integrations'),
     path('sla-configuration/', dashboard_views.sla_configuration, name='sla_configuration'),

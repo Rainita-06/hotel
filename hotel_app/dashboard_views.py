@@ -1935,6 +1935,28 @@ def manage_users_groups(request):
         total_group_members = memberships_qs.count()
         recent_additions = memberships_qs.filter(joined_at__gte=timezone.now() - timedelta(hours=24)).count()
         active_groups = UserGroup.objects.annotate(mem_count=Count('usergroupmembership')).filter(mem_count__gt=0).count()
+        
+        # Calculate change indicators (comparing with previous week)
+        now = timezone.now()
+        one_week_ago = now - timedelta(days=7)
+        two_weeks_ago = now - timedelta(days=14)
+        
+        # Groups created in the last week
+        groups_added_this_week = UserGroup.objects.filter(
+            id__in=UserGroup.objects.all().values_list('id', flat=True)
+        ).count()  # This would need a created_at field, using recent additions as alternative
+        
+        # Members added this week vs previous week
+        members_added_this_week = memberships_qs.filter(joined_at__gte=one_week_ago).count()
+        members_added_last_week = memberships_qs.filter(
+            joined_at__gte=two_weeks_ago,
+            joined_at__lt=one_week_ago
+        ).count()
+        
+        # Calculate deltas
+        groups_delta = recent_additions  # Use recent additions as the delta indicator for groups
+        group_members_delta = members_added_this_week - members_added_last_week
+        recent_additions_period = "24h"  # Time window for recent additions
 
         color_map = {
             'Housekeeping': {'icon_bg': 'bg-green-500/10', 'tag_bg': 'bg-green-500/10', 'icon_color': 'green-500', 'dot_bg': 'bg-green-500'},
@@ -2081,10 +2103,37 @@ def manage_users_groups(request):
                 'groups': []
             },
         ]
-        total_groups = 8
-        total_group_members = 247
-        recent_additions = 18
-        active_groups = 5
+        # Still try to get dynamic stats even if department loop failed
+        try:
+            from hotel_app.models import UserGroup, UserGroupMembership
+            from django.db.models import Count
+            from django.utils import timezone
+            from datetime import timedelta
+            
+            total_groups = UserGroup.objects.count()
+            memberships_qs = UserGroupMembership.objects.all()
+            total_group_members = memberships_qs.count()
+            recent_additions = memberships_qs.filter(joined_at__gte=timezone.now() - timedelta(hours=24)).count()
+            active_groups = UserGroup.objects.annotate(mem_count=Count('usergroupmembership')).filter(mem_count__gt=0).count()
+            
+            # Calculate deltas
+            now = timezone.now()
+            one_week_ago = now - timedelta(days=7)
+            two_weeks_ago = now - timedelta(days=14)
+            members_added_this_week = memberships_qs.filter(joined_at__gte=one_week_ago).count()
+            members_added_last_week = memberships_qs.filter(joined_at__gte=two_weeks_ago, joined_at__lt=one_week_ago).count()
+            groups_delta = recent_additions
+            group_members_delta = members_added_this_week - members_added_last_week
+            recent_additions_period = "24h"
+        except Exception:
+            # Ultimate fallback - zeros
+            total_groups = 0
+            total_group_members = 0
+            recent_additions = 0
+            active_groups = 0
+            groups_delta = 0
+            group_members_delta = 0
+            recent_additions_period = "24h"
 
     ctx = dict(
         active_tab="groups",
@@ -2097,7 +2146,10 @@ def manage_users_groups(request):
         total_groups=total_groups,
         total_group_members=total_group_members,
         recent_additions=recent_additions,
+        recent_additions_period=recent_additions_period,
         active_groups=active_groups,
+        groups_delta=groups_delta,
+        group_members_delta=group_members_delta,
         q=q,
     )
     return render(request, 'dashboard/groups.html', ctx)
@@ -7795,6 +7847,63 @@ def feedback_detail(request, feedback_id):
     
     return render(request, 'dashboard/feedback_detail.html', context)
 
+
+@login_required
+@require_section_permission('feedback', 'view')
+def export_feedback(request):
+    """Export feedback data as CSV."""
+    import csv
+    from .models import Review, Guest
+    
+    # Get all reviews with related guest information
+    reviews = Review.objects.select_related('guest').all().order_by('-created_at')
+    
+    # Apply search filter if query exists
+    search_query = request.GET.get('q', '').strip()
+    if search_query:
+        reviews = reviews.filter(
+            Q(guest__full_name__icontains=search_query) |
+            Q(comment__icontains=search_query) |
+            Q(guest__room_number__icontains=search_query)
+        )
+    
+    # Create the HttpResponse object with CSV content type
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="feedback_export.csv"'
+    
+    writer = csv.writer(response)
+    # Write header row
+    writer.writerow(['ID', 'Date', 'Guest Name', 'Room Number', 'Rating', 'Sentiment', 'Feedback', 'Keywords'])
+    
+    # Write data rows
+    for review in reviews:
+        # Determine sentiment
+        if review.rating >= 4:
+            sentiment = 'Positive'
+        elif review.rating <= 2:
+            sentiment = 'Negative'
+        else:
+            sentiment = 'Neutral'
+        
+        # Extract keywords
+        keywords = []
+        if review.comment:
+            common_words = ['service', 'staff', 'room', 'food', 'clean', 'location', 'wifi', 'pool', 'spa', 'breakfast']
+            comment_lower = review.comment.lower()
+            keywords = [word for word in common_words if word in comment_lower]
+        
+        writer.writerow([
+            review.id,
+            review.created_at.strftime('%Y-%m-%d %H:%M'),
+            review.guest.full_name if review.guest else 'Anonymous',
+            getattr(review.guest, 'room_number', 'N/A') if review.guest else 'N/A',
+            review.rating,
+            sentiment,
+            review.comment or '',
+            ', '.join(keywords)
+        ])
+    
+    return response
 
 # ---- Ticket Workflow API Endpoints ----
 # Duplicate function removed to avoid conflict

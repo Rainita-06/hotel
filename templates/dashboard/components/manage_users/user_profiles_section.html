@@ -65,19 +65,6 @@
           <h3 class="text-lg font-semibold text-gray-900">Module Permissions Overview</h3>
           <p class="text-sm text-gray-600">Compare permissions across different role templates</p>
         </div>
-        <div class="flex items-center gap-3">
-          <!-- Only show action buttons if user has appropriate permissions -->
-          {% if 'manage_users' in user_permissions or 'manage_groups' in user_permissions or request.user.is_superuser %}
-          <button class="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50" onclick="exportPermissions()">
-            <img src="{% static 'images/manage_users/profiles/export.svg' %}" alt="Export" class="h-5 w-5">
-            <span>Export</span>
-          </button>
-          <button class="inline-flex items-center gap-2 rounded-lg bg-sky-600 px-3 py-2 text-sm font-medium text-white hover:bg-sky-700" onclick="window.openBulkEditPermissionsModal()">
-            <img src="{% static 'images/manage_users/profiles/bulk_edit.svg' %}" alt="Bulk edit" class="h-5 w-5">
-            <span>Bulk Edit</span>
-          </button>
-          {% endif %}
-        </div>
       </div>
 
       <div class="px-6 py-5">
@@ -85,123 +72,30 @@
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr>
-                <th scope="col" class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Module</th>
+                <th scope="col" rowspan="2" class="px-4 py-3 text-left text-sm font-semibold text-gray-900 border-b border-gray-200 align-bottom">Section</th>
                 {% for group in groups %}
-                <th scope="col" class="px-4 py-3 text-center text-sm font-semibold text-gray-900">{{ group.name }}</th>
+                <th scope="col" colspan="2" class="px-4 py-2 text-center text-sm font-semibold text-gray-900 border-b border-gray-200">{{ group.name }}</th>
+                {% endfor %}
+              </tr>
+              <tr>
+                {% for group in groups %}
+                <th scope="col" class="px-2 py-2 text-center text-xs font-medium text-gray-600 bg-gray-100">View</th>
+                <th scope="col" class="px-2 py-2 text-center text-xs font-medium text-gray-600 bg-gray-100">Edit</th>
                 {% endfor %}
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-100">
-              <!-- Guest Requests -->
+            <tbody id="permissions-overview-tbody" class="divide-y divide-gray-100">
+              <!-- Permissions rows will be populated dynamically via JavaScript -->
               <tr>
-                <td class="px-4 py-3 text-sm text-gray-900 font-medium">Guest Requests</td>
-                {% for group in groups %}
-                <td class="px-4 py-3 text-center">
-                  <span class="inline-flex h-5 w-5 items-center justify-center rounded-full {% if group.name == 'Admins' or group.name == 'Staff' %}bg-green-500{% else %}bg-gray-300{% endif %}">
-                    {% if group.name == 'Admins' or group.name == 'Staff' %}
-                    <img src="{% static 'images/manage_users/profiles/tick.svg' %}" alt="Full access" class="h-3 w-3">
-                    {% else %}
-                    <img src="{% static 'images/manage_users/profiles/cross.svg' %}" alt="No access" class="h-3 w-3">
-                    {% endif %}
-                  </span>
+                <td colspan="{{ groups|length|add:1|add:groups|length }}" class="px-4 py-8 text-center text-gray-500">
+                  <div class="flex items-center justify-center gap-2">
+                    <svg class="animate-spin h-5 w-5 text-sky-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Loading permissions...</span>
+                  </div>
                 </td>
-                {% endfor %}
-              </tr>
-
-              <!-- Messaging System -->
-              <tr>
-                <td class="px-4 py-3 text-sm text-gray-900 font-medium">Messaging System</td>
-                {% for group in groups %}
-                <td class="px-4 py-3 text-center">
-                  <span class="inline-flex h-5 w-5 items-center justify-center rounded-full {% if group.name == 'Admins' or group.name == 'Staff' %}bg-green-500{% else %}bg-gray-300{% endif %}">
-                    {% if group.name == 'Admins' or group.name == 'Staff' %}
-                    <img src="{% static 'images/manage_users/profiles/tick.svg' %}" alt="Full access" class="h-3 w-3">
-                    {% else %}
-                    <img src="{% static 'images/manage_users/profiles/cross.svg' %}" alt="No access" class="h-3 w-3">
-                    {% endif %}
-                  </span>
-                </td>
-                {% endfor %}
-              </tr>
-
-              <!-- Reports & Analytics -->
-              <tr>
-                <td class="px-4 py-3 text-sm text-gray-900 font-medium">Reports &amp; Analytics</td>
-                {% for group in groups %}
-                <td class="px-4 py-3 text-center">
-                  <span class="inline-flex h-5 w-5 items-center justify-center rounded-full {% if group.name == 'Admins' %}bg-green-500{% else %}bg-gray-300{% endif %}">
-                    {% if group.name == 'Admins' %}
-                    <img src="{% static 'images/manage_users/profiles/tick.svg' %}" alt="Full access" class="h-3 w-3">
-                    {% else %}
-                    <img src="{% static 'images/manage_users/profiles/cross.svg' %}" alt="No access" class="h-3 w-3">
-                    {% endif %}
-                  </span>
-                </td>
-                {% endfor %}
-              </tr>
-
-              <!-- User Management -->
-              <tr>
-                <td class="px-4 py-3 text-sm text-gray-900 font-medium">User Management</td>
-                {% for group in groups %}
-                <td class="px-4 py-3 text-center">
-                  <span class="inline-flex h-5 w-5 items-center justify-center rounded-full {% if group.name == 'Admins' %}bg-green-500{% else %}bg-gray-300{% endif %}">
-                    {% if group.name == 'Admins' %}
-                    <img src="{% static 'images/manage_users/profiles/tick.svg' %}" alt="Full access" class="h-3 w-3">
-                    {% else %}
-                    <img src="{% static 'images/manage_users/profiles/cross.svg' %}" alt="No access" class="h-3 w-3">
-                    {% endif %}
-                  </span>
-                </td>
-                {% endfor %}
-              </tr>
-
-              <!-- System Settings -->
-              <tr>
-                <td class="px-4 py-3 text-sm text-gray-900 font-medium">System Settings</td>
-                {% for group in groups %}
-                <td class="px-4 py-3 text-center">
-                  <span class="inline-flex h-5 w-5 items-center justify-center rounded-full {% if group.name == 'Admins' %}bg-green-500{% else %}bg-gray-300{% endif %}">
-                    {% if group.name == 'Admins' %}
-                    <img src="{% static 'images/manage_users/profiles/tick.svg' %}" alt="Full access" class="h-3 w-3">
-                    {% else %}
-                    <img src="{% static 'images/manage_users/profiles/cross.svg' %}" alt="No access" class="h-3 w-3">
-                    {% endif %}
-                  </span>
-                </td>
-                {% endfor %}
-              </tr>
-              
-              <!-- SLA Configuration -->
-              <tr>
-                <td class="px-4 py-3 text-sm text-gray-900 font-medium">SLA Configuration</td>
-                {% for group in groups %}
-                <td class="px-4 py-3 text-center">
-                  <span class="inline-flex h-5 w-5 items-center justify-center rounded-full {% if group.name == 'Admins' %}bg-green-500{% else %}bg-gray-300{% endif %}">
-                    {% if group.name == 'Admins' %}
-                    <img src="{% static 'images/manage_users/profiles/tick.svg' %}" alt="Full access" class="h-3 w-3">
-                    {% else %}
-                    <img src="{% static 'images/manage_users/profiles/cross.svg' %}" alt="No access" class="h-3 w-3">
-                    {% endif %}
-                  </span>
-                </td>
-                {% endfor %}
-              </tr>
-              
-              <!-- Gym Management -->
-              <tr>
-                <td class="px-4 py-3 text-sm text-gray-900 font-medium">Gym Management</td>
-                {% for group in groups %}
-                <td class="px-4 py-3 text-center">
-                  <span class="inline-flex h-5 w-5 items-center justify-center rounded-full {% if group.name == 'Admins' or group.name == 'Staff' %}bg-green-500{% else %}bg-gray-300{% endif %}">
-                    {% if group.name == 'Admins' or group.name == 'Staff' %}
-                    <img src="{% static 'images/manage_users/profiles/tick.svg' %}" alt="Full access" class="h-3 w-3">
-                    {% else %}
-                    <img src="{% static 'images/manage_users/profiles/cross.svg' %}" alt="No access" class="h-3 w-3">
-                    {% endif %}
-                  </span>
-                </td>
-                {% endfor %}
               </tr>
             </tbody>
           </table>
@@ -213,19 +107,13 @@
             <span class="inline-flex h-4 w-4 items-center justify-center rounded-full bg-green-500">
               <img src="{% static 'images/manage_users/profiles/tick.svg' %}" alt="" class="h-2.5 w-2.5">
             </span>
-            <span>Full Access</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <span class="inline-flex h-4 w-4 items-center justify-center rounded-full bg-yellow-400">
-              <img src="{% static 'images/manage_users/profiles/eye.svg' %}" alt="" class="h-2.5 w-2.5">
-            </span>
-            <span>View Only</span>
+            <span>Has Permission</span>
           </div>
           <div class="flex items-center gap-2">
             <span class="inline-flex h-4 w-4 items-center justify-center rounded-full bg-gray-300">
               <img src="{% static 'images/manage_users/profiles/cross.svg' %}" alt="" class="h-2.5 w-2.5">
             </span>
-            <span>No Access</span>
+            <span>No Permission</span>
           </div>
         </div>
       </div>
@@ -235,8 +123,29 @@
 </section>
 
 <script>
+// Helper function to format permission string for display
+function formatPermissionDisplay(permissionStr) {
+  // Convert "analytics.view" to "Analytics - View"
+  if (!permissionStr) return '';
+  const parts = permissionStr.split('.');
+  if (parts.length === 2) {
+    const section = parts[0].charAt(0).toUpperCase() + parts[0].slice(1).replace(/_/g, ' ');
+    const action = parts[1].charAt(0).toUpperCase() + parts[1].slice(1);
+    return `${section} - ${action}`;
+  }
+  return permissionStr;
+}
+
+// Store all permissions data for the overview table
+const allGroupPermissions = {};
+const groupIds = [{% for group in groups %}{{ group.id }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+const groupNames = [{% for group in groups %}'{{ group.name|escapejs }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
+
 // Load permissions for each group
 document.addEventListener('DOMContentLoaded', function() {
+  // Track how many groups have loaded
+  let loadedGroups = 0;
+  
   {% for group in groups %}
   // Show loading state
   const permissionsList{{ group.id }} = document.getElementById('permissions-list-{{ group.id }}');
@@ -247,6 +156,10 @@ document.addEventListener('DOMContentLoaded', function() {
   fetch('{% url "dashboard:api_group_permissions" group.id %}')
     .then(response => response.json())
     .then(data => {
+      // Store permissions data for overview table
+      allGroupPermissions[{{ group.id }}] = data;
+      loadedGroups++;
+      
       const permissionsList = document.getElementById('permissions-list-{{ group.id }}');
       if (data.permissions && data.permissions.length > 0) {
         permissionsList.innerHTML = '';
@@ -255,7 +168,7 @@ document.addEventListener('DOMContentLoaded', function() {
           const li = document.createElement('li');
           li.className = 'flex items-center justify-between text-sm text-gray-700';
           li.innerHTML = `
-            <span>${permission}</span>
+            <span>${formatPermissionDisplay(permission)}</span>
             <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-green-500">
               <img src="{% static 'images/manage_users/profiles/tick.svg' %}" alt="Full access" class="h-3 w-3">
             </span>
@@ -267,18 +180,28 @@ document.addEventListener('DOMContentLoaded', function() {
         if (data.permissions.length > 4) {
           const li = document.createElement('li');
           li.className = 'flex items-center justify-center text-sm text-sky-600 mt-2';
-          // Use escapejs on group name to avoid breaking the onclick string if it contains quotes
           li.innerHTML = `<button class="text-sky-600 hover:underline" onclick="window.openEditPermissionsModal({{ group.id }}, '{{ group.name|escapejs }}')">View all permissions</button>`;
           permissionsList.appendChild(li);
         }
       } else {
         permissionsList.innerHTML = '<li class="flex items-center justify-between text-sm text-gray-700"><span>No permissions defined</span></li>';
       }
+      
+      // Check if all groups have loaded, then render overview table
+      if (loadedGroups === groupIds.length) {
+        renderPermissionsOverviewTable();
+      }
     })
     .catch(error => {
       console.error('Error loading permissions for group {{ group.id }}:', error);
+      loadedGroups++;
       const permissionsList = document.getElementById('permissions-list-{{ group.id }}');
       permissionsList.innerHTML = '<li class="flex items-center justify-between text-sm text-gray-700"><span>Failed to load permissions</span></li>';
+      
+      // Still try to render overview table even if some groups fail
+      if (loadedGroups === groupIds.length) {
+        renderPermissionsOverviewTable();
+      }
     });
   {% endfor %}
   
@@ -295,19 +218,165 @@ document.addEventListener('DOMContentLoaded', function() {
       setTimeout(() => editForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })), 200);
     });
   }
-
-  const bulkForm = document.getElementById('bulkEditPermissionsForm');
-  if (bulkForm) {
-    bulkForm.addEventListener('submit', function(e) {
-      if (typeof window.handleBulkEditPermissionsSubmit === 'function') {
-        return window.handleBulkEditPermissionsSubmit(e);
-      }
-      e.preventDefault();
-      console.warn('handleBulkEditPermissionsSubmit not available yet, retrying...');
-      setTimeout(() => bulkForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })), 200);
-    });
-  }
 });
+
+// Render the permissions overview table dynamically
+function renderPermissionsOverviewTable() {
+  const tbody = document.getElementById('permissions-overview-tbody');
+  if (!tbody) return;
+  
+  // Define the required sections with their display names (sorted alphabetically)
+  const requiredSections = [
+    { key: 'analytics', display: 'Analytics' },
+    { key: 'breakfast_voucher', display: 'Breakfast Voucher' },
+    { key: 'dashboard', display: 'Dashboard' },
+    { key: 'feedback', display: 'Feedback' },
+    { key: 'gym', display: 'Gym Management' },
+    { key: 'integrations', display: 'Integrations' },
+    { key: 'locations', display: 'Locations' },
+    { key: 'messaging', display: 'Messaging Setup' },
+    { key: 'my_tickets', display: 'My Tickets' },
+    { key: 'performance', display: 'Performance' },
+    { key: 'requests', display: 'Predefined Requests' },
+    { key: 'sla', display: 'SLA Configuration' },
+    { key: 'tickets', display: 'Tickets' },
+    { key: 'users', display: 'Users' }
+  ];
+  
+  // Calculate colspan (1 for section + 2 cols per group)
+  const colSpan = 1 + (groupIds.length * 2);
+  
+  // If no groups, show a message
+  if (groupIds.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="${colSpan}" class="px-4 py-8 text-center text-gray-500">No user groups configured</td></tr>`;
+    return;
+  }
+  
+  // Build the table rows
+  let html = '';
+  
+  for (const section of requiredSections) {
+    html += '<tr class="hover:bg-gray-50">';
+    html += `<td class="px-4 py-3 text-sm text-gray-900 font-medium">${section.display}</td>`;
+    
+    for (const groupId of groupIds) {
+      const data = allGroupPermissions[groupId];
+      let hasView = false;
+      let hasEdit = false;
+      
+      if (data && data.permissions_by_section && data.permissions_by_section[section.key]) {
+        hasView = data.permissions_by_section[section.key].view || false;
+        hasEdit = data.permissions_by_section[section.key].edit || false;
+      }
+      
+      // View column
+      const viewBgColor = hasView ? 'bg-green-500' : 'bg-gray-300';
+      const viewIconSrc = hasView 
+        ? "{% static 'images/manage_users/profiles/tick.svg' %}" 
+        : "{% static 'images/manage_users/profiles/cross.svg' %}";
+      const viewAltText = hasView ? 'Has view permission' : 'No view permission';
+      
+      html += `<td class="px-2 py-3 text-center">
+        <span class="inline-flex h-5 w-5 items-center justify-center rounded-full ${viewBgColor}">
+          <img src="${viewIconSrc}" alt="${viewAltText}" class="h-3 w-3">
+        </span>
+      </td>`;
+      
+      // Edit column
+      const editBgColor = hasEdit ? 'bg-green-500' : 'bg-gray-300';
+      const editIconSrc = hasEdit 
+        ? "{% static 'images/manage_users/profiles/tick.svg' %}" 
+        : "{% static 'images/manage_users/profiles/cross.svg' %}";
+      const editAltText = hasEdit ? 'Has edit permission' : 'No edit permission';
+      
+      html += `<td class="px-2 py-3 text-center">
+        <span class="inline-flex h-5 w-5 items-center justify-center rounded-full ${editBgColor}">
+          <img src="${editIconSrc}" alt="${editAltText}" class="h-3 w-3">
+        </span>
+      </td>`;
+    }
+    
+    html += '</tr>';
+  }
+  
+  tbody.innerHTML = html;
+}
+
+// Make refresh function available globally for after permission updates
+window.refreshPermissionsOverview = function() {
+  let loadedGroups = 0;
+  
+  // Clear stored data
+  for (const key in allGroupPermissions) {
+    delete allGroupPermissions[key];
+  }
+  
+  // Show loading state
+  const tbody = document.getElementById('permissions-overview-tbody');
+  if (tbody) {
+    tbody.innerHTML = `<tr><td colspan="${1 + (groupIds.length * 2)}" class="px-4 py-8 text-center text-gray-500">
+      <div class="flex items-center justify-center gap-2">
+        <svg class="animate-spin h-5 w-5 text-sky-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span>Loading permissions...</span>
+      </div>
+    </td></tr>`;
+  }
+  
+  // Reload permissions for all groups
+  for (let i = 0; i < groupIds.length; i++) {
+    const groupId = groupIds[i];
+    const url = '{% url "dashboard:api_group_permissions" 0 %}'.replace('0', groupId);
+    
+    fetch(url)
+      .then(response => response.json())
+      .then(data => {
+        allGroupPermissions[groupId] = data;
+        loadedGroups++;
+        
+        // Also refresh the card permissions list
+        const permissionsList = document.getElementById('permissions-list-' + groupId);
+        if (permissionsList) {
+          if (data.permissions && data.permissions.length > 0) {
+            permissionsList.innerHTML = '';
+            data.permissions.slice(0, 4).forEach(permission => {
+              const li = document.createElement('li');
+              li.className = 'flex items-center justify-between text-sm text-gray-700';
+              li.innerHTML = `
+                <span>${formatPermissionDisplay(permission)}</span>
+                <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-green-500">
+                  <img src="{% static 'images/manage_users/profiles/tick.svg' %}" alt="Full access" class="h-3 w-3">
+                </span>
+              `;
+              permissionsList.appendChild(li);
+            });
+            
+            if (data.permissions.length > 4) {
+              const li = document.createElement('li');
+              li.className = 'flex items-center justify-center text-sm text-sky-600 mt-2';
+              li.innerHTML = `<button class="text-sky-600 hover:underline" onclick="window.openEditPermissionsModal(${groupId}, '${groupNames[i]}')">View all permissions</button>`;
+              permissionsList.appendChild(li);
+            }
+          } else {
+            permissionsList.innerHTML = '<li class="flex items-center justify-between text-sm text-gray-700"><span>No permissions defined</span></li>';
+          }
+        }
+        
+        if (loadedGroups === groupIds.length) {
+          renderPermissionsOverviewTable();
+        }
+      })
+      .catch(error => {
+        console.error('Error reloading permissions for group ' + groupId + ':', error);
+        loadedGroups++;
+        if (loadedGroups === groupIds.length) {
+          renderPermissionsOverviewTable();
+        }
+      });
+  }
+};
 
 // Icon functionality functions
 function copyRole(groupId) {
