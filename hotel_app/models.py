@@ -328,7 +328,7 @@ class Location(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
     description = models.CharField(max_length=255, blank=True, null=True)
     location_id = models.BigAutoField(primary_key=True)
-    name = models.CharField(max_length=50,blank=False, null=False,unique=True)       # updated (was 160)
+    name = models.CharField(max_length=50,blank=False, null=False)       # updated (was 160)
     family = models.ForeignKey(LocationFamily, on_delete=models.PROTECT,blank=True, null=True)
     # updated (was FK)
     type = models.ForeignKey(LocationType, on_delete=models.PROTECT, null=True, blank=True)
@@ -342,6 +342,12 @@ class Location(models.Model):
     is_occupied = models.BooleanField(default=False)
     class Meta:
         db_table = 'location'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['building', 'name'],
+                name='unique_location_name_per_building'
+            )
+        ]
         
 
 

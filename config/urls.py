@@ -114,6 +114,9 @@ urlpatterns = [
     path("buildings/delete/<int:building_id>/", views.building_delete, name="building_delete"),
     path("bulk_import_locations/",views.bulk_import_locations,name="bulk_import_locations"),
     path("export_locations_csv/",views.export_locations_csv,name="export_locations_csv"),
+
+    path("ajax/get-types/", views.get_types_by_family, name="get_types_by_family"),
+
     
     path("bulk_import_buildings/",views.bulk_import_buildings,name="bulk_import_buildings"),
     path("bulk_import_floors/",views.bulk_import_floors,name="bulk_import_floors"),

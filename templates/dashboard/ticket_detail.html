@@ -75,7 +75,7 @@
                      <h2 class="text-lg font-semibold text-gray-900">Guest Request</h2>
                      <div class="mt-4 space-y-3 text-sm text-gray-800">
                         <p><strong>Room:</strong> {{ room_number }}, Floor {{ floor }} - {{ room_type }}</p>
-                        <p><strong>Guest:</strong> {{ requester_name }}</p>
+                        <p><strong>Guest:</strong> {{ guest_name|default:"Unknown" }}</p>
                         <p><strong>Reported:</strong> {{ created_time }}</p>
                      </div>
                      <div class="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">

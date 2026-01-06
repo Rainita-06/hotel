@@ -33,40 +33,7 @@
                            class="w-full h-12 px-3 bg-white rounded-lg outline outline-1 outline-offset-[-1px] outline-gray-300 focus:outline-sky-500 focus:ring-sky-500 text-base">
                 </div>
 
-                <!-- Family (Select Dropdown) -->
-                <div>
-                    <label for="family" class="block text-sm font-medium text-gray-700 mb-1">Family</label>
-                    <div class="relative">
-                        <select id="family" name="family" required
-                                class="w-full h-12 px-3 bg-white rounded-lg outline outline-1 outline-offset-[-1px] outline-gray-300 appearance-none focus:outline-sky-500 focus:ring-sky-500 text-base">
-                            <option value="">--Select Family--</option>
-                            {% for f in families %}
-                                <option value="{{ f.family_id }}" {% if location and location.family_id == f.family_id %}selected{% endif %}>{{ f.name }}</option>
-                            {% endfor %}
-                        </select>
-                        <!-- Custom dropdown indicator to match design -->
-                        <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                            <svg class="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Type (Select Dropdown) -->
-                <div>
-                    <label for="type" class="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                    <div class="relative">
-                        <select id="type" name="type" required
-                                class="w-full h-12 px-3 bg-white rounded-lg outline outline-1 outline-offset-[-1px] outline-gray-300 appearance-none focus:outline-sky-500 focus:ring-sky-500 text-base">
-                            <option value="">--Select Type--</option>
-                            {% for t in types %}
-                                <option value="{{ t.type_id }}" {% if location and location.type_id == t.type_id %}selected{% endif %}>{{ t.name }}</option>
-                            {% endfor %}
-                        </select>
-                        <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                            <svg class="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                        </div>
-                    </div>
-                </div>
+                
   <!-- Building (Select Dropdown) -->
                 <div>
                     <label for="building" class="block text-sm font-medium text-gray-700 mb-1">Building</label>
@@ -99,7 +66,40 @@
                         </div>
                     </div>
                 </div>
+<!-- Family (Select Dropdown) -->
+                <div>
+                    <label for="family" class="block text-sm font-medium text-gray-700 mb-1">Family</label>
+                    <div class="relative">
+                        <select id="family" name="family" required
+                                class="w-full h-12 px-3 bg-white rounded-lg outline outline-1 outline-offset-[-1px] outline-gray-300 appearance-none focus:outline-sky-500 focus:ring-sky-500 text-base">
+                            <option value="">--Select Family--</option>
+                            {% for f in families %}
+                                <option value="{{ f.family_id }}" {% if location and location.family_id == f.family_id %}selected{% endif %}>{{ f.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <!-- Custom dropdown indicator to match design -->
+                        <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                            <svg class="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </div>
+                </div>
 
+                <!-- Type (Select Dropdown) -->
+                <div>
+                    <label for="type" class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                    <div class="relative">
+                        <select id="type" name="type" required disabled
+                                class="w-full h-12 px-3 bg-white rounded-lg outline outline-1 outline-offset-[-1px] outline-gray-300 appearance-none focus:outline-sky-500 focus:ring-sky-500 text-base">
+                            <option value="">--Select Type--</option>
+                            {% for t in types %}
+                                <option value="{{ t.type_id }}" {% if location and location.type_id == t.type_id %}selected{% endif %}>{{ t.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                            <svg class="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </div>
+                </div>
               
 
                 {% comment %} --- Status Section (Radio Buttons) --- {% endcomment %}
@@ -212,6 +212,8 @@
 </div>
 <script>
 document.addEventListener("DOMContentLoaded", function () {
+
+    /* ---------------- Building → Floor ---------------- */
     const buildingSelect = document.getElementById("building");
     const floorSelect = document.getElementById("floor");
 
@@ -222,35 +224,66 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!buildingId) return;
 
         fetch(`/ajax/get-floors/?building_id=${buildingId}`)
-            .then(response => response.json())
+            .then(res => res.json())
             .then(data => {
                 data.forEach(floor => {
                     const option = document.createElement("option");
                     option.value = floor.floor_id;
                     option.textContent = floor.floor_name;
 
-                    if (selectedFloorId && selectedFloorId == floor.floor_id) {
+                    if (selectedFloorId == floor.floor_id) {
                         option.selected = true;
                     }
-
                     floorSelect.appendChild(option);
                 });
                 floorSelect.disabled = false;
             });
     }
 
-    // On building change
     buildingSelect.addEventListener("change", function () {
         loadFloors(this.value);
     });
 
-    // Auto-load floors on EDIT
     {% if location %}
-        loadFloors(
-            "{{ location.building_id }}",
-            "{{ location.floor_id }}"
-        );
+        loadFloors("{{ location.building_id }}", "{{ location.floor_id }}");
     {% endif %}
+
+
+    /* ---------------- Family → Type ---------------- */
+    const familySelect = document.getElementById("family");
+    const typeSelect = document.getElementById("type");
+
+    function loadTypes(familyId, selectedTypeId = null) {
+        typeSelect.innerHTML = '<option value="">--Select Type--</option>';
+        typeSelect.disabled = true;
+
+        if (!familyId) return;
+
+        fetch(`/ajax/get-types/?family_id=${familyId}`)
+            .then(res => res.json())
+            .then(data => {
+                data.forEach(type => {
+                    const option = document.createElement("option");
+                    option.value = type.type_id;
+                    option.textContent = type.name;
+
+                    if (selectedTypeId == type.type_id) {
+                        option.selected = true;
+                    }
+                    typeSelect.appendChild(option);
+                });
+                typeSelect.disabled = false;
+            });
+    }
+
+    familySelect.addEventListener("change", function () {
+        loadTypes(this.value);
+    });
+
+    {% if location %}
+        loadTypes("{{ location.family_id }}", "{{ location.type_id }}");
+    {% endif %}
+
 });
 </script>
 

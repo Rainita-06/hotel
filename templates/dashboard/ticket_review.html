@@ -25,133 +25,109 @@
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-                {% for r in matched_reviews %}
-                <tr class="hover:bg-gray-50 transition">
-                    <td class="p-4 text-sm font-medium text-gray-900">#{{ r.id }}</td>
-                    <td class="px-6 py-4 text-sm text-gray-900">{{ r.guest_name }}</td>
-                    <td class="px-6 py-4 text-sm text-gray-900">{{ r.room_no }}</td>
-                    
-                    <!-- Description with Toggle -->
-                    <td class="px-6 py-4 text-sm text-gray-600 max-w-xs">
-                        <div class="flex flex-col">
-                            {% if r.request_text|length > 50 %}
-                                <span id="short-desc-{{ r.id }}">{{ r.request_text|slice:":50" }}...</span>
-                                <span id="full-desc-{{ r.id }}" class="hidden">{{ r.request_text }}</span>
-                                <button type="button" class="text-sky-600 hover:text-sky-700 text-xs mt-1"
-                                        onclick="toggleDescription('{{ r.id }}')">View full</button>
-                            {% else %}
-                                {{ r.request_text }}
-                            {% endif %}
-                        </div>
-                    </td>
+                {% for r in all_reviews %}
+<tr class="hover:bg-gray-50 transition">
 
-                    
-                    
-                    <td class="px-6 py-4 text-sm text-gray-900">{{ r.matched_department.name }}</td>
-                    <td class="px-6 py-4 text-sm text-gray-900">{{ r.matched_request_type.name }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-700">
-                            ✅ Matched
-                        </span>
-                    </td>
-                    <td class="px-6 py-4">
-                        <select name="priority" class="text-sm border border-gray-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-sky-500" onchange="this.form.submit()">
-                            <option value="normal">Normal</option>
-                            <option value="high" selected>High</option>
-                            <option value="critical">Critical</option>
-                            <option value="low">Low</option>
-                        </select>
-                    </td>
-                    
-                    <td class="px-6 py-4 text-center">
-                        <form method="post" action="{% url 'submit_ticket_review' r.id %}" class="inline-flex items-center gap-2">
-                            {% csrf_token %}
-                            <button type="submit" class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors">
-                                Approve
-                            </button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
+    <form method="post" action="{% url 'submit_ticket_review' r.id %}">
+        {% csrf_token %}
 
-                {% for r in unmatched_reviews %}
-                <tr class="hover:bg-gray-50 transition">
-                    
+        <!-- ID -->
+        <td class="p-4 text-sm font-medium text-gray-900">
+            #{{ r.id }}
+        </td>
 
-                        <!-- ID -->
-                        <td class="p-4 text-sm font-medium text-gray-900">#{{ r.id }}</td>
+        <!-- Guest -->
+        <td class="px-6 py-4 text-sm text-gray-900">
+            {{ r.guest_name }}
+        </td>
 
-                        <!-- Guest -->
-                        <td class="px-6 py-4 text-sm text-gray-900">{{ r.guest_name }}</td>
+        <!-- Room -->
+        <td class="px-6 py-4 text-sm text-gray-900">
+            {{ r.room_no|default:"-" }}
+        </td>
 
-                        <!-- Room -->
-                        <td class="px-6 py-4 text-sm text-gray-900">{{ r.room_no|default:"-" }}</td>
+        <!-- Description -->
+        <td class="px-6 py-4 text-sm text-gray-600 max-w-xs">
+            <div class="flex flex-col">
+                {% if r.request_text|length > 50 %}
+                    <span id="short-desc-{{ r.id }}">
+                        {{ r.request_text|slice:":50" }}...
+                    </span>
+                    <span id="full-desc-{{ r.id }}" class="hidden">
+                        {{ r.request_text }}
+                    </span>
+                    <button type="button"
+                        class="text-sky-600 hover:text-sky-700 text-xs mt-1"
+                        onclick="toggleDescription('{{ r.id }}')">
+                        View full
+                    </button>
+                {% else %}
+                    {{ r.request_text }}
+                {% endif %}
+            </div>
+        </td>
 
-                        <!-- Description with Toggle -->
-                        <td class="px-6 py-4 text-sm text-gray-600 max-w-xs">
-                            <div class="flex flex-col">
-                                {% if r.request_text|length > 50 %}
-                                    <span id="short-desc-{{ r.id }}">{{ r.request_text|slice:":50" }}...</span>
-                                    <span id="full-desc-{{ r.id }}" class="hidden">{{ r.request_text }}</span>
+        <!-- Department -->
+        <td class="px-6 py-4 text-sm text-gray-900">
+            {% if r.matched_department %}
+                {{ r.matched_department.name }}
+            {% else %}
+                <select name="department"
+                    class="text-sm border border-gray-300 rounded-lg px-2 py-1 w-32 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    required>
+                    <option value="" disabled selected>Select Dept</option>
+                    {% for d in departments %}
+                        <option value="{{ d.id }}">{{ d.name }}</option>
+                    {% endfor %}
+                </select>
+            {% endif %}
+        </td>
 
-                                    <button type="button" 
-                                        class="text-sky-600 hover:text-sky-700 text-xs mt-1"
-                                        onclick="toggleDescription('{{ r.id }}')">
-                                        View full
-                                    </button>
-                                {% else %}
-                                    {{ r.request_text }}
-                                {% endif %}
-                            </div>
-                        </td>
+        <!-- Request Type -->
+        <td class="px-6 py-4 text-sm text-gray-900">
+            {% if r.matched_request_type %}
+                {{ r.matched_request_type.name }}
+            {% else %}
+                <span class="text-gray-400 italic">Unassigned</span>
+            {% endif %}
+        </td>
 
-                       
-                        
-                        <!-- Department -->
-                        <td class="px-6 py-4">
-                            <select name="department"
-                                class="text-sm border border-gray-300 rounded-lg px-2 py-1 w-32 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                                required>
-                                <option value="" disabled selected>Select Dept</option>
-                                {% for d in departments %}
-                                    <option value="{{ d.id }}">{{ d.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </td>
-                        <!--Request Type-->
-                        <td class="px-6 py-4"></td>
+        <!-- Status -->
+        <td class="px-6 py-4 whitespace-nowrap">
+            {% if r.matched_department and r.matched_request_type %}
+                <span class="px-3 py-1 inline-flex text-xs font-semibold rounded-full bg-green-100 text-green-700">
+                    ✅ Matched
+                </span>
+            {% else %}
+                <span class="px-3 py-1 inline-flex text-xs font-semibold rounded-full bg-yellow-100 text-yellow-700">
+                    ⚠️ Unmatched
+                </span>
+            {% endif %}
+        </td>
 
-                         <!-- Status -->
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-700">
-                                ⚠️ Unmatched
-                            </span>
-                        </td>
-                        <!-- Priority -->
-                        <td class="px-6 py-4">
-                            <select name="priority"
-                                class="text-sm border border-gray-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-sky-500">
-                                <option value="normal">Normal</option>
-                                <option value="high" selected>High</option>
-                                <option value="critical">Critical</option>
-                                <option value="low">Low</option>
-                            </select>
-                        </td>
+        <!-- Priority -->
+        <td class="px-6 py-4">
+            <select name="priority"
+                class="text-sm border border-gray-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                <option value="normal" >Normal</option>
+                <option value="high"selected>High</option>
+                <option value="critical" >Critical</option>
+                <option value="low" >Low</option>
+            </select>
+        </td>
 
-                        <!-- Approve Button -->
-                        <td class="px-6 py-4 text-center">
-                            <form method="post" action="{% url 'submit_ticket_review' r.id %}">
-                        {% csrf_token %}
-                            <button type="submit"
-                                class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors">
-                                Approve
-                            </button>
-                        </td>
+        <!-- Approve -->
+        <td class="px-6 py-4 text-center">
+            <button type="submit"
+                class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors">
+                Approve
+            </button>
+        </td>
 
-                    </form>
-                </tr>
+    </form>
 
-                {% endfor %}
+</tr>
+{% endfor %}
 
                 {% if not matched_reviews and not unmatched_reviews %}
                 <tr>

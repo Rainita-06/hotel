@@ -41,7 +41,14 @@
           <div>
             <p class="text-base font-medium text-gray-900">#{{ ticket.id }} - {{ ticket.title }}</p>
             <p class="text-sm text-gray-600">
-              {% if ticket.location %}{{ ticket.location }} • {% endif %}{{ ticket.department }} • Guest: {{ ticket.requester_user.get_full_name|default:ticket.requester_user.username }}
+              {% if ticket.location %}{{ ticket.location }} • {% endif %}{{ ticket.department }} • Guest:
+{% if ticket.requester_user %}
+    {{ ticket.requester_user.get_full_name|default:ticket.requester_user.username }}
+{% endif %}
+{% if ticket.guest_name %}
+    ({{ ticket.guest_name }})
+{% endif %}
+
             </p>
             <p class="text-xs text-gray-500">
               {% if pr == 'RESOLVED' or pr == 'CLOSED' or pr == 'COMPLETED' %}

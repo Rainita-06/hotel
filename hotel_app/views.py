@@ -1088,6 +1088,17 @@ def building_cards(request):
         )
     return render(request, 'building.html', {'buildings': buildings})
 
+from django.http import JsonResponse
+from .models import LocationType
+
+def get_types_by_family(request):
+    family_id = request.GET.get("family_id")
+
+    types = LocationType.objects.filter(
+        family_id=family_id
+    ).values("type_id", "name")
+
+    return JsonResponse(list(types), safe=False)
 
 
 
@@ -4824,6 +4835,7 @@ def submit_ticket_review(request, review_id):
         ticket = ServiceRequest.objects.create(
             request_type=review.matched_request_type,
             department=review.matched_department,
+            requester_user=request.user, 
             priority=review.priority,
             guest_name=review.guest_name,
             room_no=review.room_no,
