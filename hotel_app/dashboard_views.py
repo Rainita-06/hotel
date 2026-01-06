@@ -8032,6 +8032,7 @@ def performance_dashboard(request):
     import datetime
     import json
     from django.utils import timezone
+    from django.db.models import F, DurationField, ExpressionWrapper, Avg
 
     
     # Calculate date ranges
@@ -8055,49 +8056,83 @@ def performance_dashboard(request):
     completion_rate_change_direction = "up" if completion_rate_change >= 0 else "down"
     
     # SLA Breaches
+    # SLA breaches in last 24 hours (CORRECT)
+    now = timezone.now()
+    since_24h = now - datetime.timedelta(hours=24)
+
     sla_breaches = ServiceRequest.objects.filter(
-        Q(response_sla_breached=True) | Q(resolution_sla_breached=True)
-    ).count()
-    
-    # Yesterday's SLA breaches for comparison
+    updated_at__gte=since_24h
+).filter(
+    Q(sla_breached=True) |
+    Q(response_sla_breached=True) |
+    Q(resolution_sla_breached=True)
+).count()
+
+# SLA breach change vs yesterday
+    yesterday = today - datetime.timedelta(days=1)
+
     yesterday_sla_breaches = ServiceRequest.objects.filter(
-        Q(response_sla_breached=True) | Q(resolution_sla_breached=True),
-        created_at__date=yesterday
-    ).count()
-    
-    # Calculate SLA breaches change
-    sla_breaches_change = sla_breaches - yesterday_sla_breaches
-    sla_breaches_change_direction = "up" if sla_breaches_change >= 0 else "down"
+    created_at__date=yesterday
+).filter(
+    Q(sla_breached=True) |
+    Q(response_sla_breached=True) |
+    Q(resolution_sla_breached=True)
+).count()
+
+    today_sla_breaches = ServiceRequest.objects.filter(
+    created_at__date=today
+).filter(
+    Q(sla_breached=True) |
+    Q(response_sla_breached=True) |
+    Q(resolution_sla_breached=True)
+).count()
+
+    sla_breaches_change = today_sla_breaches - yesterday_sla_breaches
+    sla_breaches_change_direction = (
+    "up" if sla_breaches_change > 0
+    else "down" if sla_breaches_change < 0
+    else "none"
+)
+
     
     # Average Response Time (in minutes)
-    avg_response_time = 0
-    responded_requests = ServiceRequest.objects.filter(
-        started_at__isnull=False
-    ).exclude(accepted_at__isnull=True)
-    
-    if responded_requests.exists():
-        total_response_time = datetime.timedelta()
-        for req in responded_requests:
-            total_response_time += (req.started_at - req.accepted_at)
-        avg_response_time = round(total_response_time.total_seconds() / 60 / responded_requests.count())
-    
-    # Previous week average response time for comparison
-    prev_week_responded = ServiceRequest.objects.filter(
-        started_at__isnull=False,
-        created_at__date__gte=last_week_start,
-        created_at__date__lt=week_ago
-    ).exclude(accepted_at__isnull=True)
-    
+    since_30d = timezone.now() - datetime.timedelta(days=30)
+
+    qs_resp = ServiceRequest.objects.filter(
+    accepted_at__isnull=False,
+    created_at__gte=since_30d
+).annotate(
+    resp_delta=ExpressionWrapper(
+        F('accepted_at') - F('created_at'),
+        output_field=DurationField()
+    )
+)
+
+    avg_resp = qs_resp.aggregate(avg=Avg('resp_delta'))['avg']
+
+    if avg_resp:
+        total_minutes = int(avg_resp.total_seconds() // 60)
+        avg_response_time = total_minutes  # numeric for stats card
+
+        avg_response_display = (
+        f"{total_minutes}m"
+        if total_minutes < 90
+        else f"{total_minutes // 60}h {total_minutes % 60}m"
+    )
+    else:
+        avg_response_time = 0
+        avg_response_display = "0m"
+
     prev_avg_response_time = 0
-    if prev_week_responded.exists():
-        prev_total_response_time = datetime.timedelta()
-        for req in prev_week_responded:
-            prev_total_response_time += (req.started_at - req.accepted_at)
-        prev_avg_response_time = round(prev_total_response_time.total_seconds() / 60 / prev_week_responded.count())
-    
-    # Calculate response time change
-    response_time_change = round(avg_response_time - prev_avg_response_time, 1)
-    response_time_change_direction = "up" if response_time_change >= 0 else "down"
+
+    response_time_change = avg_response_time - prev_avg_response_time
+
+    response_time_change_direction = (
+    "up" if response_time_change > 0
+    else "down" if response_time_change < 0
+    else "none"
+)
+
     
     # Active Staff
     active_staff = User.objects.filter(is_active=True).count()
@@ -8126,14 +8161,25 @@ def performance_dashboard(request):
     sla_breach_trends = []
     sla_breach_labels = []
     
-    for i in range(7):
-        date = week_ago + datetime.timedelta(days=i)
+    for i in range(6, -1, -1):
+        day = today - datetime.timedelta(days=i)
+        start = timezone.make_aware(
+        datetime.datetime.combine(day, datetime.time.min)
+    )
+        end = timezone.make_aware(
+        datetime.datetime.combine(day, datetime.time.max)
+    )
+
         breaches = ServiceRequest.objects.filter(
-            Q(response_sla_breached=True) | Q(resolution_sla_breached=True),
-            created_at__date=date
-        ).count()
-        
-        sla_breach_labels.append(date.strftime('%a'))
+        updated_at__range=(start, end)
+    ).filter(
+        Q(sla_breached=True) |
+        Q(response_sla_breached=True) |
+        Q(resolution_sla_breached=True)
+    ).count()
+
+
+        sla_breach_labels.append(day.strftime('%a'))
         sla_breach_trends.append(breaches)
     
     # Top Performers (users with highest completion rates)
