@@ -2179,72 +2179,155 @@ from rest_framework import status
 from .models import Voucher
 from datetime import date
 
+# @api_view(["GET"])
+# def validate_voucher(request):
+#     """
+#     Validate a voucher when its QR code is scanned.
+#     Increments scan_count, updates redeemed flags, and
+#     returns status + updated fields.
+#     """
+#     code = request.GET.get("code")
+#     if not code:
+#         return Response({"message": "Voucher code is required."},
+#                         status=status.HTTP_400_BAD_REQUEST)
+
+#     try:
+#         voucher = Voucher.objects.get(voucher_code=code)
+#     except Voucher.DoesNotExist:
+#         return Response({"message": "Invalid voucher code."},
+#                         status=status.HTTP_404_NOT_FOUND)
+    
+
+#     # 1. Expired?
+#     if voucher.is_expired():
+#         return Response({"message": "❌ Voucher has expired.","guest_name": voucher.guest_name,
+#     "room_no": voucher.room_no,
+#     "quantity": voucher.quantity,},
+#                         status=status.HTTP_400_BAD_REQUEST)
+
+#     # 2. Valid for today?
+#     if voucher.is_valid_today():
+#         # ✅ increment scan_count and record history
+#         today = date.today().isoformat()
+#         if today not in (voucher.scan_history or []):
+#             voucher.scan_history.append(today)
+#         voucher.scan_count = (voucher.scan_count or 0) + 1
+
+#         # ✅ mark as redeemed (if not already)
+#         if not voucher.redeemed:
+#             voucher.redeemed = True
+#             voucher.redeemed_at = timezone.now()
+
+#         voucher.save(update_fields=["scan_history",
+#                                     "scan_count",
+#                                     "redeemed",
+#                                     "redeemed_at"])
+
+#         return Response({
+#             "success": True,
+#             "message": "✅ Voucher redeemed successfully for today.",
+#             "scan_count": voucher.scan_count,
+#             "redeemed": voucher.redeemed,
+#             "redeemed_at": voucher.redeemed_at,
+#             "guest_name": voucher.guest_name,
+#     "room_no": voucher.room_no,
+#     "quantity": voucher.quantity,
+#         })
+
+#     # 3. Already used today or not valid
+#     return Response({
+#         "success": False,
+#         "message": "❌ Voucher already used today or not valid for today.",
+#         "scan_count": voucher.scan_count,
+#         "redeemed": voucher.redeemed,
+#         "redeemed_at": voucher.redeemed_at,
+#         "guest_name": voucher.guest_name,
+#     "room_no": voucher.room_no,
+#     "quantity": voucher.quantity,
+#     }, status=status.HTTP_400_BAD_REQUEST)
 @api_view(["GET"])
 def validate_voucher(request):
-    """
-    Validate a voucher when its QR code is scanned.
-    Increments scan_count, updates redeemed flags, and
-    returns status + updated fields.
-    """
     code = request.GET.get("code")
     if not code:
-        return Response({"message": "Voucher code is required."},
-                        status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message": "Voucher code required"}, status=400)
 
     try:
         voucher = Voucher.objects.get(voucher_code=code)
     except Voucher.DoesNotExist:
-        return Response({"message": "Invalid voucher code."},
-                        status=status.HTTP_404_NOT_FOUND)
-    
-
-    # 1. Expired?
-    if voucher.is_expired():
-        return Response({"message": "❌ Voucher has expired.","guest_name": voucher.guest_name,
-    "room_no": voucher.room_no,
-    "quantity": voucher.quantity,},
-                        status=status.HTTP_400_BAD_REQUEST)
-
-    # 2. Valid for today?
-    if voucher.is_valid_today():
-        # ✅ increment scan_count and record history
-        today = date.today().isoformat()
-        if today not in (voucher.scan_history or []):
-            voucher.scan_history.append(today)
-        voucher.scan_count = (voucher.scan_count or 0) + 1
-
-        # ✅ mark as redeemed (if not already)
-        if not voucher.redeemed:
-            voucher.redeemed = True
-            voucher.redeemed_at = timezone.now()
-
-        voucher.save(update_fields=["scan_history",
-                                    "scan_count",
-                                    "redeemed",
-                                    "redeemed_at"])
-
         return Response({
-            "success": True,
-            "message": "✅ Voucher redeemed successfully for today.",
-            "scan_count": voucher.scan_count,
-            "redeemed": voucher.redeemed,
-            "redeemed_at": voucher.redeemed_at,
-            "guest_name": voucher.guest_name,
-    "room_no": voucher.room_no,
-    "quantity": voucher.quantity,
-        })
+            "status": "invalid",
+            "message": "❌ Invalid voucher"
+        }, status=404)
 
-    # 3. Already used today or not valid
+    user = request.user if request.user.is_authenticated else None
+
+    # ❌ 1. EXPIRED (MUST COME FIRST)
+    if voucher.is_expired():
+        return Response({
+            "status": "expired",
+            "message": "❌ Voucher has expired",
+            "guest_name": voucher.guest_name,
+            "room_no": voucher.room_no,
+            "quantity": voucher.quantity,
+        }, status=400)
+
+    # ❌ 2. QUANTITY EXHAUSTED
+    if voucher.remaining_scans() <= 0:
+        return Response({
+            "status": "limit_reached",
+            "message": "❌ Voucher scan limit reached",
+            "remaining": 0,
+            "guest_name": voucher.guest_name,
+            "room_no": voucher.room_no,
+            "quantity": voucher.quantity,
+        }, status=400)
+
+    # ❌ 3. INVALID TODAY / DUPLICATE
+    if not voucher.is_valid_today():
+        return Response({
+            "status": "duplicate",
+            "message": "❌ Voucher already used today",
+            "remaining": voucher.remaining_scans(),
+            "guest_name": voucher.guest_name,
+            "room_no": voucher.room_no,
+            "quantity": voucher.quantity,
+        }, status=400)
+
+    # ✅ 4. VALID SCAN
+    today = date.today().isoformat()
+
+    voucher.scan_history.append({
+        "date": today,
+        "user_id": user.id if user else None,
+        "username": user.username if user else "System"
+    })
+
+    voucher.scan_count += 1
+
+    if not voucher.redeemed:
+        voucher.redeemed = True
+        voucher.redeemed_at = timezone.now()
+
+    voucher.save(update_fields=[
+        "scan_history",
+        "scan_count",
+        "redeemed",
+        "redeemed_at"
+    ])
+
     return Response({
-        "success": False,
-        "message": "❌ Voucher already used today or not valid for today.",
+        "success": True,
+        "status": "success",
+        "message": "✅ Voucher redemmed successfully",
+        "remaining": voucher.remaining_scans(),
         "scan_count": voucher.scan_count,
-        "redeemed": voucher.redeemed,
-        "redeemed_at": voucher.redeemed_at,
+        "scanned_by": user.username if user else "System",
         "guest_name": voucher.guest_name,
-    "room_no": voucher.room_no,
-    "quantity": voucher.quantity,
-    }, status=status.HTTP_400_BAD_REQUEST)
+        "room_no": voucher.room_no,
+        "quantity": voucher.quantity,
+    })
+
+
 
  
 @login_required

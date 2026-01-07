@@ -130,6 +130,8 @@
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Adults</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kids</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scanned by</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remaining scans</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">QR Sent?</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scans</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Redeemed?</th>
@@ -155,6 +157,15 @@
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ v.adults }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ v.kids }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ v.quantity }}</td>
+              <td class="px-6 py-4 text-sm text-gray-500">
+  {{ v.scanned_users_display }}
+</td>
+
+<td class="px-6 py-4 text-sm font-semibold
+  {% if v.remaining_scans == 0 %}text-red-600{% else %}text-green-600{% endif %}">
+  {{ v.remaining_scans }}
+</td>
+
               <td class="px-6 py-4 whitespace-nowrap text-sm">
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                     {% if v.qr_sent_whatsapp %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">

@@ -1984,31 +1984,60 @@ class Voucher(models.Model):
 
 
     def is_valid_today(self):
+        today = timezone.localdate().isoformat()
+
+    # 1️⃣ Expired
+        if self.is_expired():
+            return False
+
+    # 2️⃣ Quantity exhausted
+        scans_today = len([
+        s for s in (self.scan_history or [])
+        if s.get("date") == today
+    ])
+
+        if scans_today >= self.quantity:
+            return False
+
+    # 3️⃣ Date must be valid
+        if today not in (self.valid_dates or []):
+            return False
+
+    # 4️⃣ Breakfast timing rule (check-in day only)
+        if self.include_breakfast:
+            now = timezone.localtime().time()
+            if self.check_in_date and date.today() == self.check_in_date:
+                if now > time(11, 00):
+                    return False
+
+        return True
+
+    # def is_valid_today(self):
     
-     today = timezone.localdate().isoformat()
+    #  today = timezone.localdate().isoformat()
 
-    # 1. Not valid if expired
-     if self.is_expired():
-        return False
+    # # 1. Not valid if expired
+    #  if self.is_expired():
+    #     return False
 
-    # 2. Only one scan per day
-     if today in (self.scan_history or []):
-        return False
+    # # 2. Only one scan per day
+    #  if today in (self.scan_history or []):
+    #     return False
 
-    # 3. Date must be in valid_dates
-     if today not in (self.valid_dates or []):
-        return False
+    # # 3. Date must be in valid_dates
+    #  if today not in (self.valid_dates or []):
+    #     return False
 
-    # 4. Special rule for breakfast
-     if self.include_breakfast:
-        now = timezone.localtime().time()
-        if self.check_in_date and date.today() == self.check_in_date:
-            # Must check-in before 11:30 AM if breakfast included
-            if now > time(11, 30):
-                return False  # missed breakfast window
+    # # 4. Special rule for breakfast
+    #  if self.include_breakfast:
+    #     now = timezone.localtime().time()
+    #     if self.check_in_date and date.today() == self.check_in_date:
+    #         # Must check-in before 11:30 AM if breakfast included
+    #         if now > time(11, 30):
+    #             return False  # missed breakfast window
 
-    # ✅ Otherwise, valid
-     return True
+    # # ✅ Otherwise, valid
+    #  return True
 
 
     def mark_scanned_today(self):
@@ -2028,6 +2057,27 @@ class Voucher(models.Model):
         return format_html('<span style="color:green;font-weight:bold;">Active</span>')
 
     is_used_display.short_description = "Voucher Status"
+
+    def remaining_scans(self):
+        if not self.include_breakfast:
+            return 0
+
+        today = timezone.localdate().isoformat()
+        scans_today = len([
+            s for s in (self.scan_history or [])
+            if s.get("date") == today
+        ])
+        return max(0, self.quantity - scans_today)
+
+
+    def scanned_users_display(self):
+    
+        users = []
+        for s in self.scan_history or []:
+            if "username" in s:
+                users.append(s["username"])
+        return ", ".join(sorted(set(users))) if users else "-"
+
 
     def generate_qr_code(self, size='xxlarge'):
         """Generate QR code image and save to file system"""
