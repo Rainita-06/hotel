@@ -7017,39 +7017,27 @@ def sla_configuration(request):
     
     # Get distinct department/request combinations
     # We need to get one entry per department/request_type combination
+    # We'll use 'normal' priority as the representative for display/editing
     department_sla_configs = DepartmentRequestSLA.objects.select_related(
         'department', 'request_type'
-    ).order_by('department__name', 'request_type__name')
+    ).filter(priority='normal').order_by('department__name', 'request_type__name')
     
-    # Since we can't use distinct() with select_related in PostgreSQL, we'll handle this in Python
-    # Get all entries and then filter to unique combinations
-    all_configs = list(department_sla_configs)
-    unique_configs = []
-    seen_combinations = set()
-    
-    for config in all_configs:
-        combination = (config.department_id, config.request_type_id)
-        if combination not in seen_combinations:
-            unique_configs.append(config)
-            seen_combinations.add(combination)
-    
-    department_sla_configs = unique_configs
-    
-    # Apply filters
+    # Apply filters using QuerySet methods
     if search_query:
-        department_sla_configs = [config for config in department_sla_configs 
-                                 if search_query.lower() in config.department.name.lower() or 
-                                    search_query.lower() in config.request_type.name.lower()]
+        department_sla_configs = department_sla_configs.filter(
+            Q(department__name__icontains=search_query) | 
+            Q(request_type__name__icontains=search_query)
+        )
     
     if department_filter:
-        department_sla_configs = [config for config in department_sla_configs 
-                                 if config.department.name == department_filter]
+        department_sla_configs = department_sla_configs.filter(
+            department__name=department_filter
+        )
     
-    # Convert to a format that can be paginated
-    # Since we're working with a list, we need to manually handle pagination
-    from django.core.paginator import Paginator as ListPaginator
+    # Paginate the QuerySet
+    from django.core.paginator import Paginator
     
-    paginator = ListPaginator(department_sla_configs, page_size)
+    paginator = Paginator(department_sla_configs, page_size)
     try:
         department_sla_page = paginator.page(page)
     except PageNotAnInteger:
@@ -7142,7 +7130,7 @@ def api_sla_configuration_update(request):
                 if department_id and request_type_name and response_time and resolution_time:
                     # Get the department
                     try:
-                        department = Department.objects.get(id=department_id)
+                        department = Department.objects.get(department_id=department_id)
                     except Department.DoesNotExist:
                         return JsonResponse({'error': 'Department not found'}, status=400)
                     
@@ -7178,7 +7166,7 @@ def api_sla_configuration_update(request):
                 if department_id and request_type_name:
                     # Get the department
                     try:
-                        department = Department.objects.get(id=department_id)
+                        department = Department.objects.get(department_id=department_id)
                     except Department.DoesNotExist:
                         return JsonResponse({'error': 'Department not found'}, status=400)
                     
@@ -7231,7 +7219,7 @@ def api_sla_configuration_update(request):
                     
                     # Get the department
                     try:
-                        department = Department.objects.get(id=department_id)
+                        department = Department.objects.get(department_id=department_id)
                     except Department.DoesNotExist:
                         continue  # Skip if department doesn't exist
                         
@@ -7268,31 +7256,26 @@ def api_sla_configuration_update(request):
                     'resolution_time_minutes': config.resolution_time_minutes
                 })
             
-            # Department/request-specific SLA configurations (distinct combinations)
-            all_department_configs = DepartmentRequestSLA.objects.select_related(
+            # Department/request-specific SLA configurations
+            # Use 'normal' priority as the representative for display/editing
+            department_configs = DepartmentRequestSLA.objects.select_related(
                 'department', 'request_type'
-            ).order_by('department_id', 'request_type_id')
+            ).filter(priority='normal').order_by('department_id', 'request_type_id')
             
-            # Get unique combinations
-            unique_department_configs = []
-            seen_combinations = set()
-            
-            for config in all_department_configs:
-                combination = (config.department_id, config.request_type_id)
-                if combination not in seen_combinations:
-                    unique_department_configs.append({
-                        'department_id': config.department_id,
-                        'request_type_id': config.request_type_id,
-                        'request_type_name': config.request_type.name,
-                        'response_time_minutes': config.response_time_minutes,
-                        'resolution_time_minutes': config.resolution_time_minutes
-                    })
-                    seen_combinations.add(combination)
+            department_config_data = []
+            for config in department_configs:
+                department_config_data.append({
+                    'department_id': config.department_id,
+                    'request_type_id': config.request_type_id,
+                    'request_type_name': config.request_type.name,
+                    'response_time_minutes': config.response_time_minutes,
+                    'resolution_time_minutes': config.resolution_time_minutes
+                })
             
             return JsonResponse({
                 'success': True,
                 'general_configs': general_config_data,
-                'department_configs': unique_department_configs
+                'department_configs': department_config_data
             })
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)

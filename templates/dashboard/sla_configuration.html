@@ -196,16 +196,30 @@
                 </thead>
                 <tbody id="departmentSlaConfigContainer" class="bg-white divide-y divide-gray-200">
                     {% for config in department_sla_configs %}
-                    <tr class="department-sla-row" data-department-id="{{ config.department.id }}" data-request-type-id="{{ config.request_type.id }}">
+                    <tr class="department-sla-row" data-department-id="{{ config.department.department_id }}" data-request-type-id="{{ config.request_type.request_type_id }}" data-edit-mode="false">
                         <td class="px-4 py-3 whitespace-nowrap text-gray-800 font-medium">{{ config.department.name }}</td>
                         <td class="px-4 py-3 whitespace-nowrap text-gray-800">{{ config.request_type.name }}</td>
-                        <td class="px-4 py-3 whitespace-nowrap"><input autocomplete="off" type="number" min="1" class="w-24 h-9 px-3 bg-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 department-response-time-input" value="{{ config.response_time_minutes }}" data-original-value="{{ config.response_time_minutes }}"></td>
-                        <td class="px-4 py-3 whitespace-nowrap"><input autocomplete="off" type="number" min="1" class="w-24 h-9 px-3 bg-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 department-resolution-time-input" value="{{ config.resolution_time_minutes }}" data-original-value="{{ config.resolution_time_minutes }}"></td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <span class="department-response-time-text text-gray-800">{{ config.response_time_minutes }}</span>
+                            <input autocomplete="off" type="number" min="1" class="w-24 h-9 px-3 bg-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 department-response-time-input hidden" value="{{ config.response_time_minutes }}" data-original-value="{{ config.response_time_minutes }}">
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <span class="department-resolution-time-text text-gray-800">{{ config.resolution_time_minutes }}</span>
+                            <input autocomplete="off" type="number" min="1" class="w-24 h-9 px-3 bg-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 department-resolution-time-input hidden" value="{{ config.resolution_time_minutes }}" data-original-value="{{ config.resolution_time_minutes }}">
+                        </td>
                         <td class="px-4 py-3 whitespace-nowrap text-gray-500 department-example-text">Respond: {{ config.response_time_minutes }}m, Resolve: {{ config.resolution_time_minutes }}m</td>
                         <td class="px-4 py-3 whitespace-nowrap">
-                            <button class="text-red-600 hover:text-red-800 delete-department-sla-btn">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                            </button>
+                            <div class="flex items-center gap-2">
+                                <button class="text-red-600 hover:text-red-800 delete-department-sla-btn">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                                <button class="change-department-sla-btn px-3 py-1 text-sm font-medium text-sky-600 hover:text-sky-800 border border-sky-600 rounded-md hover:bg-sky-50 transition-colors">
+                                    Change
+                                </button>
+                                <button class="save-department-sla-btn hidden px-3 py-1 text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 rounded-md transition-colors">
+                                    Save
+                                </button>
+                            </div>
                         </td>
                     </tr>
                     {% empty %}
@@ -394,24 +408,24 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        document.getElementById('addDepartmentSlaBtn')?.addEventListener('click', () => {
-            const form = document.getElementById('addDepartmentSlaForm');
-            form.classList.toggle('hidden');
-            if (!form.classList.contains('hidden')) form.scrollIntoView({ behavior: 'smooth', block: 'end' });
-        });
-
-        document.getElementById('cancelNewDepartmentSlaBtn')?.addEventListener('click', () => {
-            const form = document.getElementById('addDepartmentSlaForm');
-            form.classList.add('hidden');
-            form.querySelector('#newDepartmentSelect').value = '';
-            form.querySelector('#newRequestTypeInput').value = '';
-            form.querySelector('#newResponseTimeInput').value = '';
-            form.querySelector('#newResolutionTimeInput').value = '';
-        });
-
-        document.getElementById('saveNewDepartmentSlaBtn')?.addEventListener('click', addNewDepartmentSlaRow);
-        
+        // Handle Change button click
         document.getElementById('departmentSlaConfigContainer')?.addEventListener('click', e => {
+            const changeBtn = e.target.closest('.change-department-sla-btn');
+            if (changeBtn) {
+                const row = changeBtn.closest('.department-sla-row');
+                toggleEditMode(row, true);
+                return;
+            }
+
+            // Handle Save button click
+            const saveBtn = e.target.closest('.save-department-sla-btn');
+            if (saveBtn) {
+                const row = saveBtn.closest('.department-sla-row');
+                saveDepartmentSlaRow(row);
+                return;
+            }
+
+            // Handle Delete button click
             if (!e.target.closest('.delete-department-sla-btn')) return;
             const row = e.target.closest('.department-sla-row');
             showConfirmationModal(
@@ -447,6 +461,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             );
         });
+
+        document.getElementById('addDepartmentSlaBtn')?.addEventListener('click', () => {
+            const form = document.getElementById('addDepartmentSlaForm');
+            form.classList.toggle('hidden');
+            if (!form.classList.contains('hidden')) form.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        });
+
+        document.getElementById('cancelNewDepartmentSlaBtn')?.addEventListener('click', () => {
+            const form = document.getElementById('addDepartmentSlaForm');
+            form.classList.add('hidden');
+            form.querySelector('#newDepartmentSelect').value = '';
+            form.querySelector('#newRequestTypeInput').value = '';
+            form.querySelector('#newResponseTimeInput').value = '';
+            form.querySelector('#newResolutionTimeInput').value = '';
+        });
+
+        document.getElementById('saveNewDepartmentSlaBtn')?.addEventListener('click', addNewDepartmentSlaRow);
         
         document.getElementById('clearDepartmentSlaBtn')?.addEventListener('click', () => {
             showConfirmationModal(
@@ -713,6 +744,90 @@ document.addEventListener('DOMContentLoaded', function() {
         if (statusIndicator) {
             statusIndicator.textContent = hasChanged ? 'Modified' : 'Active';
             statusIndicator.className = `status-indicator px-2 py-1 rounded-full text-xs font-medium ${hasChanged ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`;
+        }
+    }
+
+    function toggleEditMode(row, editMode) {
+        const responseText = row.querySelector('.department-response-time-text');
+        const resolutionText = row.querySelector('.department-resolution-time-text');
+        const responseInput = row.querySelector('.department-response-time-input');
+        const resolutionInput = row.querySelector('.department-resolution-time-input');
+        const changeBtn = row.querySelector('.change-department-sla-btn');
+        const saveBtn = row.querySelector('.save-department-sla-btn');
+
+        row.dataset.editMode = editMode.toString();
+
+        if (editMode) {
+            // Switch to edit mode
+            responseText.classList.add('hidden');
+            resolutionText.classList.add('hidden');
+            responseInput.classList.remove('hidden');
+            resolutionInput.classList.remove('hidden');
+            changeBtn.classList.add('hidden');
+            saveBtn.classList.remove('hidden');
+        } else {
+            // Switch to read-only mode
+            responseText.classList.remove('hidden');
+            resolutionText.classList.remove('hidden');
+            responseInput.classList.add('hidden');
+            resolutionInput.classList.add('hidden');
+            changeBtn.classList.remove('hidden');
+            saveBtn.classList.add('hidden');
+        }
+    }
+
+    async function saveDepartmentSlaRow(row) {
+        const departmentId = parseInt(row.dataset.departmentId);
+        const requestTypeText = row.querySelector('td:nth-child(2)').textContent;
+        const responseInput = row.querySelector('.department-response-time-input');
+        const resolutionInput = row.querySelector('.department-resolution-time-input');
+        const responseText = row.querySelector('.department-response-time-text');
+        const resolutionText = row.querySelector('.department-resolution-time-text');
+        const exampleText = row.querySelector('.department-example-text');
+
+        const responseTime = parseInt(responseInput.value);
+        const resolutionTime = parseInt(resolutionInput.value);
+
+        if (responseTime < 1 || resolutionTime < 1) {
+            showToast('SLA times must be greater than 0.', 'error');
+            return;
+        }
+
+        // Prepare single department config for update
+        const departmentConfigs = [{
+            department_id: departmentId,
+            request_type: requestTypeText,
+            response_time_minutes: responseTime,
+            resolution_time_minutes: resolutionTime
+        }];
+
+        try {
+            const response = await fetch('{% url "dashboard:api_sla_configuration_update" %}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                body: JSON.stringify({ department_configs: departmentConfigs })
+            });
+            const data = await response.json();
+            
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || 'Failed to save.');
+            }
+
+            // Update text values
+            responseText.textContent = responseTime;
+            resolutionText.textContent = resolutionTime;
+            exampleText.textContent = `Respond: ${responseTime}m, Resolve: ${resolutionTime}m`;
+            
+            // Update original values
+            responseInput.dataset.originalValue = responseTime;
+            resolutionInput.dataset.originalValue = resolutionTime;
+
+            // Toggle back to read mode
+            toggleEditMode(row, false);
+
+            showToast('SLA configuration saved successfully!', 'success');
+        } catch (error) {
+            showToast(`Error: ${error.message}`, 'error');
         }
     }
 
