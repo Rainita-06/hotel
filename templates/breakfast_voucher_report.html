@@ -132,7 +132,7 @@
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scanned by</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remaining scans</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">QR Sent?</th>
+              <!-- <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">QR Sent?</th> -->
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scans</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Redeemed?</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Redeemed At</th>
@@ -166,12 +166,12 @@
   {{ v.remaining_scans }}
 </td>
 
-              <td class="px-6 py-4 whitespace-nowrap text-sm">
+              <!-- <td class="px-6 py-4 whitespace-nowrap text-sm">
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                     {% if v.qr_sent_whatsapp %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
                     {% if v.qr_sent_whatsapp %}✅{% else %}❌{% endif %}
                 </span>
-              </td>
+              </td> -->
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ v.scan_count }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm">
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
