@@ -172,9 +172,7 @@
                     <div class="px-6 py-4 border-b border-gray-100">
                         <div class="flex items-center gap-2">
                             {% if ticket.can_accept %}
-                                <button class="accept-ticket-btn text-xs font-medium text-white bg-sky-600 hover:bg-sky-700 rounded px-3 py-1.5" data-ticket-id="{{ ticket.id }}">Accept</button>
-                            {% elif ticket.can_start %}
-                                <button class="start-ticket-btn text-xs font-medium text-white bg-sky-600 hover:bg-sky-700 rounded px-3 py-1.5" data-ticket-id="{{ ticket.id }}">Start</button>
+                                <button class="accept-start-ticket-btn text-xs font-medium text-white bg-sky-600 hover:bg-sky-700 rounded px-3 py-1.5" data-ticket-id="{{ ticket.id }}">Accept & Start</button>
                             {% elif ticket.can_complete %}
                                 <button class="complete-ticket-btn text-xs font-medium text-white bg-green-500 hover:bg-green-600 rounded px-3 py-1.5" data-ticket-id="{{ ticket.id }}">Complete</button>
                             {% endif %}
@@ -240,9 +238,7 @@
                     </div>
                 </div>                <div class="flex items-center gap-2">
                     {% if ticket.can_accept %}
-                        <button class="accept-ticket-btn flex-grow text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 rounded-lg h-10 flex items-center justify-center" data-ticket-id="{{ ticket.id }}">Accept</button>
-                    {% elif ticket.can_start %}
-                        <button class="start-ticket-btn flex-grow text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 rounded-lg h-10 flex items-center justify-center" data-ticket-id="{{ ticket.id }}">Start Task</button>
+                        <button class="accept-start-ticket-btn flex-grow text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 rounded-lg h-10 flex items-center justify-center" data-ticket-id="{{ ticket.id }}">Accept & Start</button>
                     {% elif ticket.can_complete %}
                         <button class="complete-ticket-btn flex-grow text-sm font-medium text-white bg-green-500 hover:bg-green-600 rounded-lg h-10 flex items-center justify-center" data-ticket-id="{{ ticket.id }}">Complete</button>
                     {% endif %}
@@ -415,16 +411,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const button = event.target.closest('button');
         if (!button) return;
 
-        if (button.classList.contains('accept-ticket-btn')) {
-            handleTicketAction(button, '/dashboard/api/tickets/TICKET_ID/accept/', {
-                confirmationMessage: 'Are you sure you want to accept this ticket?',
-                successMessage: 'Ticket accepted successfully!'
-            });
-        }
-        else if (button.classList.contains('start-ticket-btn')) {
-            handleTicketAction(button, '/dashboard/api/tickets/TICKET_ID/start/', {
-                confirmationMessage: 'Are you sure you want to start working on this ticket?',
-                successMessage: 'Work started on ticket successfully!'
+        if (button.classList.contains('accept-start-ticket-btn')) {
+            handleTicketAction(button, '/dashboard/api/tickets/TICKET_ID/accept-and-start/', {
+                confirmationMessage: 'Are you sure you want to accept and start working on this ticket?',
+                successMessage: 'Ticket accepted and work started successfully!'
             });
         }
         else if (button.classList.contains('complete-ticket-btn')) {

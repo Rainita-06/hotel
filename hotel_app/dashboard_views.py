@@ -2818,6 +2818,8 @@ def tickets(request):
     department_filter = request.GET.get('department', '')
     priority_filter = request.GET.get('priority', '')
     status_filter = request.GET.get('status', '')
+    request_type_filter = request.GET.get('request_type', '')
+    location_filter = request.GET.get('location', '')
     search_query = request.GET.get('search', '')
     
     # Get departments with active ticket counts and dynamic SLA compliance
@@ -2918,6 +2920,20 @@ def tickets(request):
         model_status = status_mapping.get(status_filter)
         if model_status:
             tickets_queryset = tickets_queryset.filter(status=model_status)
+    
+    # New filters for request type
+    if request_type_filter:
+        try:
+            tickets_queryset = tickets_queryset.filter(request_type_id=int(request_type_filter))
+        except (ValueError, TypeError):
+            pass
+    
+    # New filters for location
+    if location_filter:
+        try:
+            tickets_queryset = tickets_queryset.filter(location_id=int(location_filter))
+        except (ValueError, TypeError):
+            pass
     
     if search_query:
         tickets_queryset = tickets_queryset.filter(
@@ -3232,6 +3248,8 @@ def tickets(request):
         'department_filter': department_filter,
         'priority_filter': priority_filter,
         'status_filter': status_filter,
+        'request_type_filter': request_type_filter,
+        'location_filter': location_filter,
         'search_query': search_query,
         "matched_reviews": matched_reviews,
         "unmatched_reviews": unmatched_reviews,
@@ -3241,6 +3259,7 @@ def tickets(request):
         "pending_count":pending_count,
         'all_departments': Department.objects.all().order_by('name'),
     'request_types': RequestType.objects.filter(active=True).order_by('name'),
+    'locations': Location.objects.all().order_by('name'),
     }
     return render(request, 'dashboard/tickets.html', context)
 
@@ -7986,6 +8005,55 @@ def accept_ticket_api(request, ticket_id):
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
+@login_required
+@require_role(['admin', 'staff', 'user'])
+def accept_and_start_ticket_api(request, ticket_id):
+    """API endpoint for a user to accept and immediately start work on a ticket."""
+    if request.method == 'POST':
+        try:
+            from hotel_app.models import ServiceRequest
+            
+            # Get the service request
+            service_request = get_object_or_404(ServiceRequest, id=ticket_id)
+            
+            # Check if the ticket is pending and in the user's department
+            user_department = None
+            if hasattr(request.user, 'userprofile') and request.user.userprofile.department:
+                user_department = request.user.userprofile.department
+            
+            if service_request.status != 'pending':
+                return JsonResponse({'error': 'Ticket is not in pending status'}, status=400)
+            
+            # Check if user can accept the ticket
+            if not (service_request.department == user_department or service_request.requester_user == request.user):
+                return JsonResponse({'error': 'You do not have permission to accept this ticket'}, status=403)
+            
+            # Assign the ticket to the current user if not already assigned
+            if not service_request.assignee_user:
+                service_request.assignee_user = request.user
+                service_request.save()
+            
+            # Accept the ticket (change status to accepted)
+            service_request.accept_task()
+            
+            # Immediately start work on it (change status to in_progress)
+            service_request.start_work()
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Ticket accepted and work started successfully',
+                'ticket_id': service_request.id
+            })
+            
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+
+
 # ---- Integrations ----
 @login_required
 def integrations(request):
@@ -8265,9 +8333,130 @@ def performance_dashboard(request):
         'top_performers': top_performers,
         'department_rankings': department_rankings,
         'staff_performance': staff_performance,
+        'departments': departments,  # Add departments for the analytics component
     }
     
     return render(request, 'dashboard/performance_dashboard.html', context)
+
+
+@login_required
+@require_role(['admin', 'staff'])
+def department_analytics_api(request):
+    """API endpoint to get analytics for a specific department and date range."""
+    from django.db.models import Count, Avg, Q, F, DurationField, ExpressionWrapper
+    from .models import ServiceRequest, Department, User, UserProfile
+    import datetime
+    from django.utils import timezone
+    
+    try:
+        department_id = request.GET.get('department_id')
+        start_date_str = request.GET.get('start_date')
+        end_date_str = request.GET.get('end_date')
+        
+        if not department_id:
+            return JsonResponse({'success': False, 'error': 'Department ID is required'}, status=400)
+        
+        if not start_date_str or not end_date_str:
+            return JsonResponse({'success': False, 'error': 'Start and end dates are required'}, status=400)
+        
+        # Get department
+        department = get_object_or_404(Department, department_id=department_id)
+        
+        # Parse dates
+        start_date = datetime.datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        end_date = datetime.datetime.strptime(end_date_str, '%Y-%m-%d').date()
+        
+        # Convert to timezone-aware datetime for filtering
+        start_datetime = timezone.make_aware(datetime.datetime.combine(start_date, datetime.time.min))
+        end_datetime = timezone.make_aware(datetime.datetime.combine(end_date, datetime.time.max))
+        
+        # Get tickets for this department in the date range
+        dept_tickets = ServiceRequest.objects.filter(
+            department=department,
+            created_at__range=(start_datetime, end_datetime)
+        )
+        
+        # Basic statistics
+        total_tickets = dept_tickets.count()
+        completed_tickets = dept_tickets.filter(status='completed').count()
+        
+        # SLA Breaches
+        sla_breaches = dept_tickets.filter(
+            Q(sla_breached=True) |
+            Q(response_sla_breached=True) |
+            Q(resolution_sla_breached=True)
+        ).count()
+        
+        # Average Response Time
+        tickets_with_response = dept_tickets.filter(
+            accepted_at__isnull=False
+        ).annotate(
+            resp_delta=ExpressionWrapper(
+                F('accepted_at') - F('created_at'),
+                output_field=DurationField()
+            )
+        )
+        
+        avg_resp = tickets_with_response.aggregate(avg=Avg('resp_delta'))['avg']
+        avg_response_time = int(avg_resp.total_seconds() // 60) if avg_resp else 0
+        
+        # Staff Performance in this department
+        staff_performance = []
+        dept_staff = UserProfile.objects.filter(department=department).select_related('user')
+        
+        for profile in dept_staff:
+            user = profile.user
+            user_tickets = dept_tickets.filter(assignee_user=user)
+            user_total = user_tickets.count()
+            user_completed = user_tickets.filter(status='completed').count()
+            
+            if user_total > 0:
+                completion_rate = round((user_completed / user_total * 100), 1)
+                
+                # Calculate average response time for this user
+                user_tickets_with_response = user_tickets.filter(
+                    accepted_at__isnull=False
+                ).annotate(
+                    resp_delta=ExpressionWrapper(
+                        F('accepted_at') - F('created_at'),
+                        output_field=DurationField()
+                    )
+                )
+                
+                user_avg_resp = user_tickets_with_response.aggregate(avg=Avg('resp_delta'))['avg']
+                user_avg_response = int(user_avg_resp.total_seconds() // 60) if user_avg_resp else 0
+                
+                staff_performance.append({
+                    'name': user.get_full_name() or user.username,
+                    'tickets_handled': user_total,
+                    'completion_rate': completion_rate,
+                    'avg_response': user_avg_response
+                })
+        
+        # Sort by completion rate
+        staff_performance.sort(key=lambda x: x['completion_rate'], reverse=True)
+        
+        analytics = {
+            'total_tickets': total_tickets,
+            'completed_tickets': completed_tickets,
+            'sla_breaches': sla_breaches,
+            'avg_response_time': avg_response_time,
+            'staff_performance': staff_performance
+        }
+        
+        return JsonResponse({
+            'success': True,
+            'analytics': analytics
+        })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
 
 
 # ---- Tailwind Test ----

@@ -1,0 +1,289 @@
+{% load static %}
+
+<section class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <div class="flex justify-between items-center mb-6">
+        <h3 class="text-lg font-semibold text-gray-900">Department Analytics</h3>
+    </div>
+    
+    <!-- Department and Date Range Filters -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div>
+            <label for="deptAnalyticsDepartment" class="block text-sm font-medium text-gray-700 mb-2">Department</label>
+            <select id="deptAnalyticsDepartment" class="w-full h-11 px-4 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                <option value="">Select Department</option>
+                {% for dept in departments %}
+                <option value="{{ dept.department_id }}">{{ dept.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="deptAnalyticsStartDate" class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+            <input type="date" id="deptAnalyticsStartDate" class="w-full h-11 px-4 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500">
+        </div>
+        <div>
+            <label for="deptAnalyticsEndDate" class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+            <input type="date" id="deptAnalyticsEndDate" class="w-full h-11 px-4 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500">
+        </div>
+    </div>
+    
+    <div class="flex justify-end gap-3 mb-6">
+        <button id="loadDeptAnalytics" class="px-4 py-2 bg-sky-600 text-white font-medium rounded-lg hover:bg-sky-700 transition-colors">
+            Load Analytics
+        </button>
+        <button id="exportDeptAnalytics" class="px-4 py-2 border border-sky-600 text-sky-600 font-medium rounded-lg hover:bg-sky-50 transition-colors flex items-center gap-2" disabled>
+            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9.75v6.75m0 0l-3-3m3 3l3-3m-8.25 6a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+            </svg>
+            Export Data
+        </button>
+    </div>
+    
+    <!-- Analytics Display Area -->
+    <div id="deptAnalyticsContent" class="hidden">
+        <div class="border-t border-gray-200 pt-6">
+            <!-- Department Name -->
+            <h4 class="text-base font-semibold text-gray-900 mb-4" id="selectedDeptName"></h4>
+            
+            <!-- Statistics Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-blue-600">Total Tickets</p>
+                            <p class="text-2xl font-bold text-blue-900 mt-1" id="deptTotalTickets">-</p>
+                        </div>
+                        <div class="bg-blue-200 p-3 rounded-lg">
+                            <svg class="h-6 w-6 text-blue-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-green-600">Completed</p>
+                            <p class="text-2xl font-bold text-green-900 mt-1" id="deptCompletedTickets">-</p>
+                        </div>
+                        <div class="bg-green-200 p-3 rounded-lg">
+                            <svg class="h-6 w-6 text-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-lg p-4 border border-red-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-red-600">SLA Breaches</p>
+                            <p class="text-2xl font-bold text-red-900 mt-1" id="deptSLABreaches">-</p>
+                        </div>
+                        <div class="bg-red-200 p-3 rounded-lg">
+                            <svg class="h-6 w-6 text-red-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg p-4 border border-yellow-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-yellow-600">Avg Response</p>
+                            <p class="text-2xl font-bold text-yellow-900 mt-1" id="deptAvgResponse">-</p>
+                        </div>
+                        <div class="bg-yellow-200 p-3 rounded-lg">
+                            <svg class="h-6 w-6 text-yellow-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Staff Performance Table -->
+            <div class="bg-gray-50 rounded-lg p-4">
+                <h5 class="text-sm font-semibold text-gray-900 mb-3">Staff Performance</h5>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead>
+                            <tr>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Staff Member</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Tickets Handled</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Completion Rate</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Avg Response</th>
+                            </tr>
+                        </thead>
+                        <tbody id="deptStaffPerformance" class="bg-white divide-y divide-gray-200">
+                            <tr>
+                                <td colspan="4" class="px-4 py-8 text-center text-gray-500">Load analytics to see staff performance</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Empty State -->
+    <div id="deptAnalyticsEmptyState" class="text-center py-12">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No Analytics Loaded</h3>
+        <p class="mt-1 text-sm text-gray-500">Select a department and date range to view analytics</p>
+    </div>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const loadBtn = document.getElementById('loadDeptAnalytics');
+    const exportBtn = document.getElementById('exportDeptAnalytics');
+    const deptSelect = document.getElementById('deptAnalyticsDepartment');
+    const startDateInput = document.getElementById('deptAnalyticsStartDate');
+    const endDateInput = document.getElementById('deptAnalyticsEndDate');
+    const contentDiv = document.getElementById('deptAnalyticsContent');
+    const emptyState = document.getElementById('deptAnalyticsEmptyState');
+    
+    let currentAnalyticsData = null;
+    
+    // Set default dates (last 30 days)
+    const today = new Date();
+    const thirtyDaysAgo = new Date(today);
+    thirtyDaysAgo.setDate(today.getDate() - 30);
+    
+    endDateInput.valueAsDate = today;
+    startDateInput.valueAsDate = thirtyDaysAgo;
+    
+    // Load Analytics
+    if (loadBtn) {
+        loadBtn.addEventListener('click', async function() {
+            const deptId = deptSelect.value;
+            const startDate = startDateInput.value;
+            const endDate = endDateInput.value;
+            
+            if (!deptId) {
+                showToast('Please select a department', 'error');
+                return;
+            }
+            
+            if (!startDate || !endDate) {
+                showToast('Please select start and end dates', 'error');
+                return;
+            }
+            
+            // Disable button and show loading state
+            loadBtn.disabled = true;
+            loadBtn.textContent = 'Loading...';
+            
+            try {
+                const response = await fetch(`/dashboard/api/department-analytics/?department_id=${deptId}&start_date=${startDate}&end_date=${endDate}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentAnalyticsData = data.analytics;
+                    displayAnalytics(data.analytics);
+                    exportBtn.disabled = false;
+                } else {
+                    showToast('Error loading analytics: ' + (data.error || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('An error occurred while loading analytics', 'error');
+            } finally {
+                loadBtn.disabled = false;
+                loadBtn.textContent = 'Load Analytics';
+            }
+        });
+    }
+    
+    // Display Analytics
+    function displayAnalytics(analytics) {
+        emptyState.classList.add('hidden');
+        contentDiv.classList.remove('hidden');
+        
+        // Update department name
+        const selectedDept = deptSelect.options[deptSelect.selectedIndex].text;
+        document.getElementById('selectedDeptName').textContent = `${selectedDept} Department Analytics`;
+        
+        // Update statistics
+        document.getElementById('deptTotalTickets').textContent = analytics.total_tickets || 0;
+        document.getElementById('deptCompletedTickets').textContent = analytics.completed_tickets || 0;
+        document.getElementById('deptSLABreaches').textContent = analytics.sla_breaches || 0;
+        document.getElementById('deptAvgResponse').textContent = (analytics.avg_response_time || 0) + 'm';
+        
+        // Update staff performance table
+        const tbody = document.getElementById('deptStaffPerformance');
+        tbody.innerHTML = '';
+        
+        if (analytics.staff_performance && analytics.staff_performance.length > 0) {
+            analytics.staff_performance.forEach(staff => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="px-4 py-3 text-sm text-gray-900">${staff.name}</td>
+                    <td class="px-4 py-3 text-sm text-gray-600">${staff.tickets_handled}</td>
+                    <td class="px-4 py-3 text-sm">
+                        <span class="px-2 py-1 text-xs font-medium rounded-full ${
+                            staff.completion_rate >= 90 ? 'bg-green-100 text-green-700' :
+                            staff.completion_rate >= 70 ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-red-100 text-red-700'
+                        }">${staff.completion_rate}%</span>
+                    </td>
+                    <td class="px-4 py-3 text-sm text-gray-600">${staff.avg_response}m</td>
+                `;
+                tbody.appendChild(row);
+            });
+        } else {
+            tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-8 text-center text-gray-500">No staff performance data available</td></tr>';
+        }
+    }
+    
+    // Export Analytics
+    if (exportBtn) {
+        exportBtn.addEventListener('click', function() {
+            if (!currentAnalyticsData) {
+                showToast('No data to export', 'error');
+                return;
+            }
+            
+            const deptName = deptSelect.options[deptSelect.selectedIndex].text;
+            const startDate = startDateInput.value;
+            const endDate = endDateInput.value;
+            
+            // Create CSV content
+            let csv = `Department Analytics Report\n`;
+            csv += `Department: ${deptName}\n`;
+            csv += `Date Range: ${startDate} to ${endDate}\n\n`;
+            csv += `Total Tickets,${currentAnalyticsData.total_tickets}\n`;
+            csv += `Completed Tickets,${currentAnalyticsData.completed_tickets}\n`;
+            csv += `SLA Breaches,${currentAnalyticsData.sla_breaches}\n`;
+            csv += `Average Response Time,${currentAnalyticsData.avg_response_time}m\n\n`;
+            
+            csv += `Staff Performance\n`;
+            csv += `Staff Member,Tickets Handled,Completion Rate,Avg Response\n`;
+            
+            if (currentAnalyticsData.staff_performance) {
+                currentAnalyticsData.staff_performance.forEach(staff => {
+                    csv += `${staff.name},${staff.tickets_handled},${staff.completion_rate}%,${staff.avg_response}m\n`;
+                });
+            }
+            
+            // Create download link
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${deptName}_analytics_${startDate}_to_${endDate}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            showToast('Analytics exported successfully', 'success');
+        });
+    }
+});
+</script>

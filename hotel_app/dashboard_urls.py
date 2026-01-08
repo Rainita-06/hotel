@@ -100,6 +100,7 @@ urlpatterns = [
     path('api/tickets/<int:ticket_id>/assign/', dashboard_views.assign_ticket_api, name='api_assign_ticket'),
     # Removed claim_ticket_api as we're removing the claim functionality
     path('api/tickets/<int:ticket_id>/accept/', dashboard_views.accept_ticket_api, name='api_accept_ticket'),
+    path('api/tickets/<int:ticket_id>/accept-and-start/', dashboard_views.accept_and_start_ticket_api, name='api_accept_and_start_ticket'),
     path('api/tickets/<int:ticket_id>/start/', dashboard_views.start_ticket_api, name='api_start_ticket'),
     path('api/tickets/<int:ticket_id>/complete/', dashboard_views.complete_ticket_api, name='api_complete_ticket'),
     path('api/tickets/<int:ticket_id>/close/', dashboard_views.close_ticket_api, name='api_close_ticket'),
@@ -117,6 +118,7 @@ urlpatterns = [
     path('api/requests/create/', dashboard_views.create_request_type_api, name='api_create_request_type'),
     path('analytics/', dashboard_views.analytics_dashboard, name='analytics'),
     path('performance/', dashboard_views.performance_dashboard, name='performance'),
+    path('api/department-analytics/', dashboard_views.department_analytics_api, name='api_department_analytics'),
     path('gym/', dashboard_views.gym, name='gym'),
     path('gym/report/', dashboard_views.gym_report, name='gym_report'),
     
