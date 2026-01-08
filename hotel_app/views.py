@@ -2064,7 +2064,49 @@ def breakfast_voucher_report(request):
     ).count()
 
     # ✅ ✅ ✅ EXPORT ONLY FILTERED RECORDS ✅ ✅ ✅
-    df = pd.DataFrame(vouchers.values())
+    # ----------------------------------
+# EXPORT DATA PREPARATION
+# ----------------------------------
+    export_data = []
+
+    for v in vouchers:
+        if v.valid_dates:
+            valid_dates_display = f"{v.valid_dates[0]} → {v.valid_dates[-1]}"
+        else:
+            valid_dates_display = "-"
+
+    # ✅ Format scan history
+        if v.scan_history:
+            scan_history_display = ", ".join([
+            f"{s.get('date')} ({s.get('username', 'System')})"
+            for s in v.scan_history
+        ])
+        else:
+            scan_history_display = "-"
+        export_data.append({
+        "Voucher Code": v.voucher_code,
+        "Guest Name": v.guest_name,
+        "Phone Number": v.phone_number,
+        "Room No": v.room_no,
+        "Check-in Date": v.check_in_date,
+        "Check-out Date": v.check_out_date,
+    "Valid Dates": valid_dates_display,
+    "Scan History": scan_history_display,
+        "Include Breakfast": "Yes" if v.include_breakfast else "No",
+        "Adults": v.adults,
+        "Kids": v.kids,
+        "Quantity": v.quantity,
+        "Scan Count": v.scan_count,
+        "Remaining Scans": v.remaining_scans(),
+
+        "Scanned By": v.scanned_users_display(),
+        # "Status": "Expired" if v.is_expired() else "Active",
+        "Created At": v.created_at,
+         "Redeemed At": v.redeemed_at.strftime("%Y-%m-%d %H:%M") if v.redeemed_at else "-",
+    })
+
+    df = pd.DataFrame(export_data)
+
 
     for col in df.select_dtypes(include=['datetimetz']).columns:
         df[col] = df[col].dt.tz_localize(None)
