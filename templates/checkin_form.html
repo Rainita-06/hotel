@@ -16,9 +16,65 @@
         </div>
       </div>
     </div>
+   
 
     {% include 'partials/breakfast_tab.html' %}
-    
+     <div class="p-4 sm:p-8">
+      
+      <!-- Stats Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <!-- Today's Check-Ins -->
+        <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <div class="flex justify-between items-center">
+            <div>
+              <div class="text-gray-900 text-2xl font-bold font-['Inter']">{{ daily_checkins }}</div>
+              <div class="text-gray-600 text-sm font-medium font-['Inter']">Today's Check-Ins</div>
+            </div>
+            <div class="w-10 h-10 bg-blue-500/10 rounded-lg flex justify-center items-center">
+              <div class="w-4 h-4 bg-blue-500 rounded"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Today's Check-Outs -->
+        <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <div class="flex justify-between items-center">
+            <div>
+              <div class="text-gray-900 text-2xl font-bold font-['Inter']">{{ daily_checkouts }}</div>
+              <div class="text-gray-600 text-sm font-medium font-['Inter']">Today's Check-Outs</div>
+            </div>
+            <div class="w-10 h-10 bg-orange-500/10 rounded-lg flex justify-center items-center">
+              <div class="w-4 h-4 bg-orange-500 rounded"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Weekly Check-Ins -->
+        <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <div class="flex justify-between items-center">
+            <div>
+              <div class="text-gray-900 text-2xl font-bold font-['Inter']">{{ weekly_checkins }}</div>
+              <div class="text-gray-600 text-sm font-medium font-['Inter']">Weekly Check-Ins</div>
+            </div>
+            <div class="w-10 h-10 bg-green-500/10 rounded-lg flex justify-center items-center">
+              <div class="w-4 h-4 bg-green-500 rounded"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Weekly Check-Outs -->
+        <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <div class="flex justify-between items-center">
+            <div>
+              <div class="text-gray-900 text-2xl font-bold font-['Inter']">{{ weekly_checkouts }}</div>
+              <div class="text-gray-600 text-sm font-medium font-['Inter']">Weekly Check-Outs</div>
+            </div>
+            <div class="w-10 h-10 bg-red-500/10 rounded-lg flex justify-center items-center">
+              <div class="w-4 h-4 bg-red-500 rounded"></div>
+            </div>
+          </div>
+        </div>
+      </div></div>
     <!-- Form Content -->
     <div class="p-4 sm:p-8">
       <form method="POST" autocomplete="off">
