@@ -1150,6 +1150,7 @@ class Guest(models.Model):
     full_name = models.CharField(max_length=160, blank=True, null=True)
     phone = models.CharField(max_length=15, blank=True, null=True)
     email = models.EmailField(max_length=100, blank=True, null=True)
+    location = models.ForeignKey('Location', on_delete=models.SET_NULL, null=True, blank=True, related_name='current_guests')
     room_number = models.CharField(max_length=20, blank=True, null=True)
     
     # Enhanced check-in/checkout with time support
@@ -1247,6 +1248,10 @@ class Guest(models.Model):
         return str(self.full_name or f'Guest {self.pk}')
     
     def save(self, *args, **kwargs):
+        # Sync room_number from location if set
+        if self.location and self.location.room_no:
+            self.room_number = self.location.room_no
+
         # Generate unique guest ID if not provided
         if not self.guest_id:
             import random
@@ -1882,6 +1887,7 @@ class Voucher(models.Model):
 
     phone_number = models.CharField(max_length=15,blank=False, null=False) 
     room_no = models.CharField(max_length=100,blank=False, null=False)   # added
+    location = models.ForeignKey('Location', on_delete=models.SET_NULL, null=True, blank=True) # added
     check_in_date = models.DateField(blank=True, null=True)            # added
     check_out_date = models.DateField(blank=True, null=True)           # added
     expiry_date = models.DateField(blank=True, null=True)              # existing-ish field (keep)

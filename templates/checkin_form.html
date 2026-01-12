@@ -148,23 +148,62 @@
 
           <!-- Right Column -->
           <div class="space-y-6">
-            <!-- Room Number -->
+            <!-- Room Number (Searchable) -->
             <div>
               <label class="block text-gray-900 text-sm font-medium font-['Inter'] mb-2">Room Number</label>
-              <div class="relative">
-                <select name="room_no" required
-                       class="w-full h-12 px-4 bg-white rounded-lg border border-gray-200 text-gray-900 text-base font-normal leading-normal focus:ring-blue-500 focus:border-blue-500 appearance-none cursor-pointer">
-                  <option value="">Select Room</option>
-                  {% for room in available_rooms %}
-                    <option value="{{ room.room_no }}">{{ room.room_no }}{% if room.name %} - {{ room.name }}{% endif %}{% if room.floor %} (Floor {{ room.floor.floor_number }}){% endif %}</option>
-                  {% empty %}
-                    <option value="" disabled>No rooms available</option>
-                  {% endfor %}
-                </select>
-                <!-- Dropdown Arrow -->
-                <svg class="w-4 h-4 absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div class="relative" id="roomSearchContainer">
+                <!-- Visible Search Input -->
+                <input type="text" id="roomSearchInput" name="room_no"
+                       class="w-full h-12 px-4 bg-white rounded-lg border border-gray-200 text-gray-900 text-base font-normal leading-normal focus:ring-blue-500 focus:border-blue-500"
+                       placeholder="Type to search room..." autocomplete="off" required>
+                
+                <!-- Dropdown Icon -->
+                 <svg class="w-4 h-4 absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                 </svg>
+
+                <!-- Hidden Input for Form Submission -->
+                <input type="hidden" name="location_id" id="locationIdInput">
+
+                <!-- Dropdown List -->
+                <div id="roomDropdown" class="hidden absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {% for room in available_rooms %}
+                    <div class="room-option p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0"
+                         data-id="{{ room.pk }}"
+                         data-room="{{ room.room_no }}"
+                         data-floor="{{ room.floor.floor_number|default:'-' }}"
+                         data-building="{{ room.building.name|default:'-' }}">
+                        <div class="flex justify-between items-center">
+                            <span class="font-medium text-gray-900 text-lg">{{ room.room_no }}</span>
+                            <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                               {% if room.building %}{{ room.building.name }}{% endif %} 
+                               {% if room.floor %}• Floor {{ room.floor.floor_number }}{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    {% empty %}
+                     <div class="p-3 text-sm text-gray-500 text-center">No rooms available</div>
+                    {% endfor %}
+                    <div id="noRooms" class="hidden p-3 text-sm text-gray-500 text-center">No matching rooms</div>
+                </div>
+              </div>
+              
+              <!-- Selected Room Details -->
+              <div id="selectedRoomDetails" class="hidden mt-3 p-3 bg-blue-50 rounded-lg border border-blue-100 transition-all duration-300">
+                  <div class="flex gap-4 text-sm items-center">
+                       <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                       </div>
+                      <div>
+                          <span class="block text-gray-500 text-xs uppercase tracking-wider">Building</span>
+                          <span class="font-semibold text-gray-900" id="detailBuilding">-</span>
+                      </div>
+                      <div class="w-px h-8 bg-blue-200 mx-2"></div>
+                      <div>
+                          <span class="block text-gray-500 text-xs uppercase tracking-wider">Floor</span>
+                          <span class="font-semibold text-gray-900" id="detailFloor">-</span>
+                      </div>
+                  </div>
               </div>
             </div>
 
@@ -580,5 +619,80 @@ document.addEventListener("DOMContentLoaded", function () {
   breakfastToggle.addEventListener("change", updateVoucherUI);
 });
 
+</script>
+<script>
+/* Room Search Logic */
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('roomSearchInput');
+    const dropdown = document.getElementById('roomDropdown');
+    const locationInput = document.getElementById('locationIdInput');
+    const options = document.querySelectorAll('.room-option');
+    const noRooms = document.getElementById('noRooms');
+    const detailsDiv = document.getElementById('selectedRoomDetails');
+    const buildingSpan = document.getElementById('detailBuilding');
+    const floorSpan = document.getElementById('detailFloor');
+
+    if (!searchInput || !dropdown) return;
+
+    // Filter function
+    function filterRooms(query) {
+        query = query.toLowerCase();
+        let hasMatches = false;
+        options.forEach(option => {
+            const roomTxt = option.getAttribute('data-room').toLowerCase();
+            const floorTxt = option.getAttribute('data-floor').toLowerCase();
+            const buildTxt = option.getAttribute('data-building').toLowerCase();
+            
+            if(roomTxt.includes(query) || floorTxt.includes(query) || buildTxt.includes(query)) {
+                option.style.display = 'block';
+                hasMatches = true;
+            } else {
+                option.style.display = 'none';
+            }
+        });
+        
+        if (noRooms) noRooms.style.display = hasMatches ? 'none' : 'block';
+        dropdown.classList.remove('hidden');
+    }
+
+    // Input events
+    searchInput.addEventListener('input', (e) => {
+        filterRooms(e.target.value);
+        locationInput.value = ''; 
+    });
+    
+    searchInput.addEventListener('focus', () => {
+        dropdown.classList.remove('hidden');
+    });
+
+    // Select Option
+    options.forEach(option => {
+        option.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            const room = this.getAttribute('data-room');
+            const floor = this.getAttribute('data-floor');
+            const building = this.getAttribute('data-building');
+
+            // Update visible input and hidden ID
+            searchInput.value = room;
+            locationInput.value = id;
+
+            // Update details
+            if (buildingSpan) buildingSpan.textContent = building;
+            if (floorSpan) floorSpan.textContent = floor;
+            if (detailsDiv) detailsDiv.classList.remove('hidden');
+
+            // Hide dropdown
+            dropdown.classList.add('hidden');
+        });
+    });
+
+    // Click outside to close
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.classList.add('hidden');
+        }
+    });
+});
 </script>
 {% endblock %}

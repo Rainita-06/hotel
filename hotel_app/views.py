@@ -1894,7 +1894,17 @@ def create_voucher_checkin(request):
     ).count()
     if request.method == "POST":
         guest_name = request.POST.get("guest_name")
-        room_no = request.POST.get("room_no")
+        # room_no = request.POST.get("room_no") # Deprecated, use location_id
+        location_id = request.POST.get("location_id")
+        location = None
+        room_no = request.POST.get("room_no") # Fallback or initial value
+
+        if location_id:
+            try:
+                location = Location.objects.get(pk=location_id)
+                room_no = location.room_no # Enable sync with Location
+            except Location.DoesNotExist:
+                pass
         adults = int(request.POST.get("adults", 1))
         kids = int(request.POST.get("kids", 0))
         quantity = int(request.POST.get("quantity", 0))
@@ -1915,6 +1925,7 @@ def create_voucher_checkin(request):
         if not include_breakfast:
             checkin = Voucher.objects.create(   # ✅ your normal check-in model
                 guest_name=guest_name,
+                location=location, # Added location
                 room_no=room_no,
                 country_code=country_code,
                 phone_number=phone_number,
@@ -1937,6 +1948,7 @@ def create_voucher_checkin(request):
         # ==========================================================
         voucher = Voucher.objects.create(
             guest_name=guest_name,
+            location=location, # Added location
             room_no=room_no,
             country_code=country_code,
             phone_number=phone_number,
@@ -1998,7 +2010,7 @@ def create_voucher_checkin(request):
         room_no__isnull=True
     ).exclude(
         room_no=''
-    ).order_by('room_no')
+    ).order_by('room_no').select_related('floor', 'building')
     
     return render(request, "checkin_form.html",{
         "daily_checkins": daily_checkins,
@@ -5002,6 +5014,7 @@ def submit_ticket_review(request, review_id):
             requester_user=request.user, 
             priority=review.priority,
             guest_name=review.guest_name,
+            location=review.voucher.location if review.voucher else None,
             room_no=review.room_no,
             phone_number=review.phone_number,
             notes=review.request_text or "",
