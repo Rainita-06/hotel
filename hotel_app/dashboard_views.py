@@ -1,4 +1,4 @@
-﻿import json
+import json
 import datetime
 import re
 from django.shortcuts import render, redirect, get_object_or_404
@@ -6220,21 +6220,41 @@ def analytics_dashboard(request):
     from django.utils import timezone
     import json
     
-    # Date range for analytics (dynamic: 30, 90, or 180 days)
-    days_param = request.GET.get('days', '30')
-    try:
-        days = int(days_param)
-        if days not in [30, 90, 180]:
-            days = 30
-    except (ValueError, TypeError):
-        days = 30
+    # Date range for analytics (custom date range or default to last 30 days)
+    start_date_param = request.GET.get('start_date')
+    end_date_param = request.GET.get('end_date')
     
     # Use timezone-aware datetime for proper filtering
     now = timezone.now()
     today = now.date()
     
-    # Calculate the start datetime (beginning of the day X days ago)
-    date_range_start = now - timedelta(days=days)
+    # Parse start and end dates from parameters, default to last 30 days if not provided
+    try:
+        if start_date_param:
+            start_date = datetime.strptime(start_date_param, '%Y-%m-%d').date()
+        else:
+            start_date = today - timedelta(days=30)
+    except (ValueError, TypeError):
+        start_date = today - timedelta(days=30)
+    
+    try:
+        if end_date_param:
+            end_date = datetime.strptime(end_date_param, '%Y-%m-%d').date()
+        else:
+            end_date = today
+    except (ValueError, TypeError):
+        end_date = today
+    
+    # Ensure start_date is not after end_date
+    if start_date > end_date:
+        start_date, end_date = end_date, start_date
+    
+    # Calculate the number of days in the range
+    days = (end_date - start_date).days + 1
+    
+    # Calculate the start datetime (beginning of the day)
+    date_range_start = timezone.make_aware(datetime.combine(start_date, datetime.min.time()), timezone.get_current_timezone())
+    date_range_end = timezone.make_aware(datetime.combine(end_date, datetime.max.time()), timezone.get_current_timezone())
     
     # Helper function to get start and end datetime for a specific date
     def get_day_range(date_obj):
@@ -6247,14 +6267,13 @@ def analytics_dashboard(request):
     ticket_trends = []
     ticket_dates = []
     
-    start_date = today - timedelta(days=days)
     for i in range(days):
         current_date = start_date + timedelta(days=i)
         day_start, day_end = get_day_range(current_date)
         count = ServiceRequest.objects.filter(created_at__gte=day_start, created_at__lt=day_end).count()
         ticket_trends.append(count)
         # Show fewer labels for longer date ranges
-        if days <= 30 or i % (days // 30) == 0:
+        if days <= 30 or i % max(1, (days // 30)) == 0:
             ticket_dates.append(current_date.strftime('%b %d'))
         else:
             ticket_dates.append('')
@@ -6269,7 +6288,7 @@ def analytics_dashboard(request):
         count = Review.objects.filter(created_at__gte=day_start, created_at__lt=day_end).count()
         feedback_trends.append(count)
         # Show fewer labels for longer date ranges
-        if days <= 30 or i % (days // 30) == 0:
+        if days <= 30 or i % max(1, (days // 30)) == 0:
             feedback_dates.append(current_date.strftime('%b %d'))
         else:
             feedback_dates.append('')
@@ -6423,7 +6442,8 @@ def analytics_dashboard(request):
         'recent_reviews': recent_reviews,
         'scheduled_reports': scheduled_reports,
         'quick_templates': quick_templates,
-        'selected_days': days,
+        'start_date': start_date,
+        'end_date': end_date,
     }
     
     return render(request, 'dashboard/analytics_dashboard.html', context)
@@ -8086,28 +8106,44 @@ def performance_dashboard(request):
     from django.db.models import F, DurationField, ExpressionWrapper, Avg
 
     
+    # Get date range parameter from request
+    days_param = request.GET.get('days', '7')
+    try:
+        days = int(days_param)
+        if days not in [7, 30, 90]:
+            days = 7  # Default to 7 days
+    except (ValueError, TypeError):
+        days = 7  # Default to 7 days
+    
     # Calculate date ranges
     today = timezone.now().date()
+    date_range_start = today - datetime.timedelta(days=days)
     week_ago = today - datetime.timedelta(days=7)
     yesterday = today - datetime.timedelta(days=1)
     last_week_start = week_ago - datetime.timedelta(days=7)
     
-    # Overall Completion Rate
-    total_requests = ServiceRequest.objects.count()
-    completed_requests = ServiceRequest.objects.filter(status='completed').count()
+    # Calculate date range for previous period for comparison
+    prev_period_end = date_range_start
+    prev_period_start = prev_period_end - datetime.timedelta(days=days)
+    
+    # Calculate date range for SLA trends (last 7 days regardless of selected range)
+    sla_trend_start = today - datetime.timedelta(days=6)  # Last 7 days including today
+    
+    # Overall Completion Rate for selected date range
+    total_requests = ServiceRequest.objects.filter(created_at__date__gte=date_range_start).count()
+    completed_requests = ServiceRequest.objects.filter(status='completed', created_at__date__gte=date_range_start).count()
     completion_rate = round((completed_requests / total_requests * 100), 1) if total_requests > 0 else 0
     
-    # Previous week completion rate for comparison
-    prev_week_total = ServiceRequest.objects.filter(created_at__date__gte=last_week_start, created_at__date__lt=week_ago).count()
-    prev_week_completed = ServiceRequest.objects.filter(status='completed', created_at__date__gte=last_week_start, created_at__date__lt=week_ago).count()
-    prev_completion_rate = round((prev_week_completed / prev_week_total * 100), 1) if prev_week_total > 0 else 0
+    # Previous period completion rate for comparison
+    prev_period_total = ServiceRequest.objects.filter(created_at__date__gte=prev_period_start, created_at__date__lt=prev_period_end).count()
+    prev_period_completed = ServiceRequest.objects.filter(status='completed', created_at__date__gte=prev_period_start, created_at__date__lt=prev_period_end).count()
+    prev_completion_rate = round((prev_period_completed / prev_period_total * 100), 1) if prev_period_total > 0 else 0
     
     # Calculate completion rate change
     completion_rate_change = round(completion_rate - prev_completion_rate, 1)
     completion_rate_change_direction = "up" if completion_rate_change >= 0 else "down"
     
-    # SLA Breaches
-    # SLA breaches in last 24 hours (CORRECT)
+    # SLA Breaches for selected date range
     now = timezone.now()
     since_24h = now - datetime.timedelta(hours=24)
 
@@ -8146,12 +8182,12 @@ def performance_dashboard(request):
 )
 
     
-    # Average Response Time (in minutes)
-    since_30d = timezone.now() - datetime.timedelta(days=30)
+    # Average Response Time (in minutes) for selected date range
+    since_date = timezone.now() - datetime.timedelta(days=days)
 
     qs_resp = ServiceRequest.objects.filter(
     accepted_at__isnull=False,
-    created_at__gte=since_30d
+    created_at__gte=since_date
 ).annotate(
     resp_delta=ExpressionWrapper(
         F('accepted_at') - F('created_at'),
@@ -8194,13 +8230,13 @@ def performance_dashboard(request):
     active_staff_change = active_staff - prev_active_staff
     active_staff_change_direction = "up" if active_staff_change > 0 else "down" if active_staff_change < 0 else "none"
     
-    # Completion Rates by Department
+    # Completion Rates by Department for selected date range
     departments = Department.objects.all()
     department_completion_data = []
     department_labels = []
     
     for dept in departments:
-        dept_requests = ServiceRequest.objects.filter(department=dept)
+        dept_requests = ServiceRequest.objects.filter(department=dept, created_at__date__gte=date_range_start)
         total_dept_requests = dept_requests.count()
         completed_dept_requests = dept_requests.filter(status='completed').count()
         dept_completion_rate = round((completed_dept_requests / total_dept_requests * 100), 1) if total_dept_requests > 0 else 0
@@ -8208,7 +8244,7 @@ def performance_dashboard(request):
         department_labels.append(dept.name)
         department_completion_data.append(dept_completion_rate)
     
-    # SLA Breach Trends (last 7 days)
+    # SLA Breach Trends (last 7 days regardless of selected range)
     sla_breach_trends = []
     sla_breach_labels = []
     
@@ -8233,17 +8269,17 @@ def performance_dashboard(request):
         sla_breach_labels.append(day.strftime('%a'))
         sla_breach_trends.append(breaches)
     
-    # Top Performers (users with highest completion rates)
+    # Top Performers (users with highest completion rates) for selected date range
     top_performers = []
     users_with_requests = User.objects.filter(
         requests_assigned__isnull=False
     ).annotate(
-        total_requests=Count('requests_assigned'),
-        completed_requests=Count('requests_assigned', filter=Q(requests_assigned__status='completed'))
+        total_requests=Count('requests_assigned', filter=Q(requests_assigned__created_at__date__gte=date_range_start)),
+        completed_requests=Count('requests_assigned', filter=Q(requests_assigned__status='completed', requests_assigned__created_at__date__gte=date_range_start))
     ).filter(total_requests__gt=0)
     
     for user in users_with_requests:
-        completion_rate_user = round((user.completed_requests / user.total_requests * 100), 1)
+        completion_rate_user = round((user.completed_requests / user.total_requests * 100), 1) if user.total_requests > 0 else 0
         top_performers.append({
             'user': user,
             'completion_rate': completion_rate_user,
@@ -8254,10 +8290,10 @@ def performance_dashboard(request):
     # Sort by completion rate and take top 5
     top_performers = sorted(top_performers, key=lambda x: x['completion_rate'], reverse=True)[:5]
     
-    # Department Rankings
+    # Department Rankings for selected date range
     department_rankings = []
     for dept in departments:
-        dept_requests = ServiceRequest.objects.filter(department=dept)
+        dept_requests = ServiceRequest.objects.filter(department=dept, created_at__date__gte=date_range_start)
         total_dept_requests = dept_requests.count()
         completed_dept_requests = dept_requests.filter(status='completed').count()
         dept_completion_rate = round((completed_dept_requests / total_dept_requests * 100), 1) if total_dept_requests > 0 else 0
@@ -8334,6 +8370,7 @@ def performance_dashboard(request):
         'department_rankings': department_rankings,
         'staff_performance': staff_performance,
         'departments': departments,  # Add departments for the analytics component
+        'selected_days': days,  # Pass selected days to template
     }
     
     return render(request, 'dashboard/performance_dashboard.html', context)

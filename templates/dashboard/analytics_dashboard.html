@@ -40,17 +40,32 @@
                     <h1 class="text-2xl font-bold text-gray-900">Analytics Dashboard</h1>
                     <p class="mt-1 text-sm text-gray-600">Detailed insights and trends for informed decision making</p>
                 </div>
-                <div class="flex items-center gap-3 mt-4 md:mt-0">
-                    <div class="relative">
-                        <select id="dateRangeFilter" onchange="changeDateRange(this.value)" class="flex items-center justify-center gap-2 h-10 px-4 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 appearance-none pr-8 cursor-pointer">
-                            <option value="30" {% if selected_days == 30 %}selected{% endif %}>Last 30 days</option>
-                            <option value="90" {% if selected_days == 90 %}selected{% endif %}>Last 90 days</option>
-                            <option value="180" {% if selected_days == 180 %}selected{% endif %}>Last 180 days</option>
-                        </select>
-                        <svg class="w-4 h-4 text-gray-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.23 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-                        </svg>
+                <div class="flex items-center gap-3 mt-4 md:mt-0 flex-wrap">
+                    <!-- Date Range Picker -->
+                    <div class="flex items-center gap-2">
+                        <div class="relative">
+                            <label for="startDate" class="sr-only">Start Date</label>
+                            <input type="date" id="startDate" name="start_date" 
+                                   value="{{ start_date|date:'Y-m-d' }}"
+                                   class="h-10 px-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 cursor-pointer"
+                                   title="Start Date">
+                        </div>
+                        <span class="text-gray-500 text-sm font-medium">to</span>
+                        <div class="relative">
+                            <label for="endDate" class="sr-only">End Date</label>
+                            <input type="date" id="endDate" name="end_date"
+                                   value="{{ end_date|date:'Y-m-d' }}"
+                                   class="h-10 px-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 cursor-pointer"
+                                   title="End Date">
+                        </div>
                     </div>
+                    <!-- Load Button -->
+                    <button id="loadAnalyticsBtn" onclick="loadAnalyticsByDateRange()" class="flex items-center gap-2 h-10 px-4 text-sm font-medium text-white bg-sky-600 rounded-lg hover:bg-sky-700 shadow-sm transition-colors">
+                        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                        </svg>
+                        <span>Load</span>
+                    </button>
                     <button id="exportReportBtn" onclick="exportAnalyticsReport()" class="flex items-center gap-2 h-10 px-4 text-sm font-medium text-white bg-sky-600 rounded-lg hover:bg-sky-700">
                         <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                            <path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.905 3.129V2.75z" />
@@ -511,21 +526,37 @@
         }
     });
 
-    // Date Range Filter Function
-    window.changeDateRange = function(days) {
+    // Load Analytics by Date Range Function
+    window.loadAnalyticsByDateRange = function() {
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        
+        if (!startDate || !endDate) {
+            alert('Please select both start and end dates.');
+            return;
+        }
+        
+        if (new Date(startDate) > new Date(endDate)) {
+            alert('Start date cannot be after end date.');
+            return;
+        }
+        
         const currentUrl = new URL(window.location.href);
-        currentUrl.searchParams.set('days', days);
+        currentUrl.searchParams.set('start_date', startDate);
+        currentUrl.searchParams.set('end_date', endDate);
         window.location.href = currentUrl.toString();
     };
 
     // Export Analytics Report Function
     window.exportAnalyticsReport = function() {
-        const selectedDays = document.getElementById('dateRangeFilter').value;
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        const dateRangeLabel = startDate && endDate ? `${startDate} to ${endDate}` : 'Custom Range';
         
         // Gather data from the page
         const reportData = {
             title: 'Analytics Report',
-            dateRange: `Last ${selectedDays} days`,
+            dateRange: dateRangeLabel,
             generatedAt: new Date().toLocaleString(),
             totalTickets: {{ total_tickets }},
             totalReviews: {{ total_reviews }},
@@ -535,7 +566,7 @@
         
         // Create CSV content
         let csvContent = 'Analytics Report\n';
-        csvContent += `Date Range:,Last ${selectedDays} days\n`;
+        csvContent += `Date Range:,${dateRangeLabel}\n`;
         csvContent += `Generated At:,${reportData.generatedAt}\n\n`;
         csvContent += 'Summary Statistics\n';
         csvContent += `Total Tickets:,${reportData.totalTickets}\n`;
@@ -559,7 +590,10 @@
         const link = document.createElement('a');
         const url = URL.createObjectURL(blob);
         link.setAttribute('href', url);
-        link.setAttribute('download', `analytics_report_${selectedDays}_days_${new Date().toISOString().split('T')[0]}.csv`);
+        const fileName = startDate && endDate 
+            ? `analytics_report_${startDate}_to_${endDate}.csv` 
+            : `analytics_report_${new Date().toISOString().split('T')[0]}.csv`;
+        link.setAttribute('download', fileName);
         link.style.visibility = 'hidden';
         document.body.appendChild(link);
         link.click();

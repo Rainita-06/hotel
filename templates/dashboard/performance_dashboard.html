@@ -29,16 +29,14 @@
       <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
         <div class="flex flex-col md:flex-row justify-between items-center gap-4">
           <div class="flex flex-wrap items-center gap-4">
-            <select class="border-gray-300 rounded-lg">
-              <option>All Departments</option>
-              <option>Guest Services</option>
-              <option>Housekeeping</option>
+            <select id="dateRangeFilter" onchange="changeDateRange(this.value)" class="flex items-center justify-center gap-2 h-10 px-4 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 appearance-none pr-8 cursor-pointer">
+              <option value="7" {% if selected_days == 7 %}selected{% endif %}>Last 7 days</option>
+              <option value="30" {% if selected_days == 30 %}selected{% endif %}>Last 30 days</option>
+              <option value="90" {% if selected_days == 90 %}selected{% endif %}>Last 90 days</option>
             </select>
-            <div class="flex items-center gap-2">
-              <input autocomplete="off" type="date" value="2024-01-15" class="border-gray-300 rounded-lg">
-              <span class="text-gray-500">to</span>
-              <input autocomplete="off" type="date" value="2024-01-22" class="border-gray-300 rounded-lg">
-            </div>
+            <svg class="w-4 h-4 text-gray-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.23 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+            </svg>
           </div>
           <button class="w-full md:w-auto px-4 py-2 bg-sky-600 text-white font-medium rounded-lg hover:bg-sky-700 flex items-center justify-center gap-2">
             <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9.75v6.75m0 0l-3-3m3 3l3-3m-8.25 6a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" /></svg>
@@ -151,7 +149,7 @@
         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <div class="flex justify-between items-center">
              <h3 class="text-lg font-semibold text-gray-900">Top Performers</h3>
-             <span class="text-sm text-gray-500">This Week</span>
+             <span class="text-sm text-gray-500">This {% if selected_days == 7 %}Week{% elif selected_days == 30 %}Month{% elif selected_days == 90 %}Quarter{% endif %}</span>
           </div>
           <div class="mt-4 space-y-3">
             {% for performer in top_performers %}
@@ -189,7 +187,7 @@
         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <div class="flex justify-between items-center">
              <h3 class="text-lg font-semibold text-gray-900">Department Rankings</h3>
-             <span class="text-sm text-gray-500">This Week</span>
+             <span class="text-sm text-gray-500">This {% if selected_days == 7 %}Week{% elif selected_days == 30 %}Month{% elif selected_days == 90 %}Quarter{% endif %}</span>
           </div>
            <div class="mt-4 space-y-3">
             {% for ranking in department_rankings %}
@@ -289,6 +287,9 @@
     const departmentCompletionData = JSON.parse('{{ department_completion_data|escapejs }}');
     const slaBreachLabels = JSON.parse('{{ sla_breach_labels|escapejs }}');
     const slaBreachTrends = JSON.parse('{{ sla_breach_trends|escapejs }}');
+    
+    
+
 
     // === Bar Chart: Completion Rates by Department ===
     const completionRateCtx = document.getElementById('completionRateChart').getContext('2d');
