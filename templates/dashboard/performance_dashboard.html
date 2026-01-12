@@ -398,6 +398,11 @@
       }
     });
   });
+   function changeDateRange(days) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('days', days);   // 👈 MUST MATCH BACKEND
+    window.location.href = url.toString();
+  }
 </script>
 
 {% endblock content %}

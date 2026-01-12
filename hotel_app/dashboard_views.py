@@ -1,4 +1,4 @@
-import json
+﻿import json
 import datetime
 import re
 from django.shortcuts import render, redirect, get_object_or_404
@@ -8346,6 +8346,13 @@ def performance_dashboard(request):
     week_ago = today - datetime.timedelta(days=7)
     yesterday = today - datetime.timedelta(days=1)
     last_week_start = week_ago - datetime.timedelta(days=7)
+    start_date = today - datetime.timedelta(days=days)
+    start_dt = timezone.make_aware(
+        datetime.datetime.combine(start_date, datetime.time.min)
+    )
+    end_dt = timezone.make_aware(
+        datetime.datetime.combine(today, datetime.time.max)
+    )
     
     # Calculate date range for previous period for comparison
     prev_period_end = date_range_start
@@ -8369,81 +8376,93 @@ def performance_dashboard(request):
     completion_rate_change_direction = "up" if completion_rate_change >= 0 else "down"
     
     # SLA Breaches for selected date range
-    now = timezone.now()
-    since_24h = now - datetime.timedelta(hours=24)
-
     sla_breaches = ServiceRequest.objects.filter(
-    updated_at__gte=since_24h
-).filter(
-    Q(sla_breached=True) |
-    Q(response_sla_breached=True) |
-    Q(resolution_sla_breached=True)
-).count()
+        created_at__gte=start_dt,
+        created_at__lte=end_dt
+    ).filter(
+        Q(sla_breached=True) |
+        Q(response_sla_breached=True) |
+        Q(resolution_sla_breached=True)
+    ).count()
 
-# SLA breach change vs yesterday
     yesterday = today - datetime.timedelta(days=1)
 
-    yesterday_sla_breaches = ServiceRequest.objects.filter(
-    created_at__date=yesterday
-).filter(
-    Q(sla_breached=True) |
-    Q(response_sla_breached=True) |
-    Q(resolution_sla_breached=True)
-).count()
+    today_breaches = ServiceRequest.objects.filter(
+        created_at__date=today
+    ).filter(
+        Q(sla_breached=True) |
+        Q(response_sla_breached=True) |
+        Q(resolution_sla_breached=True)
+    ).count()
 
-    today_sla_breaches = ServiceRequest.objects.filter(
-    created_at__date=today
-).filter(
-    Q(sla_breached=True) |
-    Q(response_sla_breached=True) |
-    Q(resolution_sla_breached=True)
-).count()
+    yesterday_breaches = ServiceRequest.objects.filter(
+        created_at__date=yesterday
+    ).filter(
+        Q(sla_breached=True) |
+        Q(response_sla_breached=True) |
+        Q(resolution_sla_breached=True)
+    ).count()
 
-    sla_breaches_change = today_sla_breaches - yesterday_sla_breaches
+    sla_breaches_change = today_breaches - yesterday_breaches
     sla_breaches_change_direction = (
-    "up" if sla_breaches_change > 0
-    else "down" if sla_breaches_change < 0
-    else "none"
-)
-
-    
-    # Average Response Time (in minutes) for selected date range
-    since_date = timezone.now() - datetime.timedelta(days=days)
-
-    qs_resp = ServiceRequest.objects.filter(
-    accepted_at__isnull=False,
-    created_at__gte=since_date
-).annotate(
-    resp_delta=ExpressionWrapper(
-        F('accepted_at') - F('created_at'),
-        output_field=DurationField()
+        "up" if sla_breaches_change > 0
+        else "down" if sla_breaches_change < 0
+        else "none"
     )
-)
 
-    avg_resp = qs_resp.aggregate(avg=Avg('resp_delta'))['avg']
+    # ----------------------------
+    # Average response time
+    # ----------------------------
+    resp_qs = ServiceRequest.objects.filter(
+        accepted_at__isnull=False,
+        created_at__range=(start_dt, end_dt)
+    ).annotate(
+        resp_delta=ExpressionWrapper(
+            F('accepted_at') - F('created_at'),
+            output_field=DurationField()
+        )
+    )
+
+    avg_resp = resp_qs.aggregate(avg=Avg('resp_delta'))['avg']
 
     if avg_resp:
-        total_minutes = int(avg_resp.total_seconds() // 60)
-        avg_response_time = total_minutes  # numeric for stats card
-
+        avg_minutes = int(avg_resp.total_seconds() // 60)
         avg_response_display = (
-        f"{total_minutes}m"
-        if total_minutes < 90
-        else f"{total_minutes // 60}h {total_minutes % 60}m"
-    )
+            f"{avg_minutes}m"
+            if avg_minutes < 90
+            else f"{avg_minutes // 60}h {avg_minutes % 60}m"
+        )
     else:
-        avg_response_time = 0
+        avg_minutes = 0
         avg_response_display = "0m"
 
-    prev_avg_response_time = 0
+    # Compare with previous period
+    prev_start = start_date - datetime.timedelta(days=days)
+    prev_start_dt = timezone.make_aware(
+        datetime.datetime.combine(prev_start, datetime.time.min)
+    )
+    prev_end_dt = timezone.make_aware(
+        datetime.datetime.combine(start_date, datetime.time.max)
+    )
 
-    response_time_change = avg_response_time - prev_avg_response_time
+    prev_resp = ServiceRequest.objects.filter(
+        accepted_at__isnull=False,
+        created_at__range=(prev_start_dt, prev_end_dt)
+    ).annotate(
+        resp_delta=ExpressionWrapper(
+            F('accepted_at') - F('created_at'),
+            output_field=DurationField()
+        )
+    ).aggregate(avg=Avg('resp_delta'))['avg']
 
+    prev_minutes = int(prev_resp.total_seconds() // 60) if prev_resp else 0
+
+    response_time_change = avg_minutes - prev_minutes
     response_time_change_direction = (
-    "up" if response_time_change > 0
-    else "down" if response_time_change < 0
-    else "none"
-)
+        "up" if response_time_change > 0
+        else "down" if response_time_change < 0
+        else "none"
+    )
 
     
     # Active Staff
@@ -8472,9 +8491,10 @@ def performance_dashboard(request):
     # SLA Breach Trends (last 7 days regardless of selected range)
     sla_breach_trends = []
     sla_breach_labels = []
-    
-    for i in range(6, -1, -1):
+
+    for i in range(days - 1, -1, -1):
         day = today - datetime.timedelta(days=i)
+
         start = timezone.make_aware(
         datetime.datetime.combine(day, datetime.time.min)
     )
@@ -8483,16 +8503,16 @@ def performance_dashboard(request):
     )
 
         breaches = ServiceRequest.objects.filter(
-        updated_at__range=(start, end)
+        created_at__range=(start, end)
     ).filter(
         Q(sla_breached=True) |
         Q(response_sla_breached=True) |
         Q(resolution_sla_breached=True)
     ).count()
 
-
-        sla_breach_labels.append(day.strftime('%a'))
+        sla_breach_labels.append(day.strftime('%d %b'))
         sla_breach_trends.append(breaches)
+
     
     # Top Performers (users with highest completion rates) for selected date range
     top_performers = []
@@ -8563,7 +8583,7 @@ def performance_dashboard(request):
             'department': getattr(user.userprofile, 'department', None),
             'tickets_completed': user.completed_requests,
             'completion_rate': completion_rate_user,
-            'avg_response': avg_response_time,  # Simplified for now
+            'avg_response': avg_response_display,  # Simplified for now
             'breaches': user_breaches,
             'status': status,
             'status_class': status_class
@@ -8577,7 +8597,7 @@ def performance_dashboard(request):
         'sla_breaches': sla_breaches,
         'sla_breaches_change': abs(sla_breaches_change),
         'sla_breaches_change_direction': sla_breaches_change_direction,
-        'avg_response_time': avg_response_time,
+        'avg_response_time': avg_response_display,
         'response_time_change': abs(response_time_change),
         'response_time_change_direction': response_time_change_direction,
         'active_staff': active_staff,
