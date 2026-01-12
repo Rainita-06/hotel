@@ -1121,16 +1121,29 @@ def dashboard2_view(request):
     except Exception:
         active_gym_members = 0
 
-    # Trend data for charts (last 7 days)
+    # Trend data for charts
     try:
+        trend_period_param = request.GET.get('trend_period', '7')
+        try:
+            trend_days = int(trend_period_param)
+            if trend_days not in [7, 30, 90]:
+                trend_days = 7
+        except ValueError:
+            trend_days = 7
+
         labels = []
         tickets_series = []
         feedback_series = []
-        for i in range(6, -1, -1):
+        
+        # Determine date format based on range
+        date_fmt = '%a' if trend_days <= 7 else '%d/%m'
+        
+        for i in range(trend_days - 1, -1, -1):
             day = today - datetime.timedelta(days=i)
-            labels.append(day.strftime('%a'))
+            labels.append(day.strftime(date_fmt))
             tickets_series.append(ServiceRequest.objects.filter(created_at__date=day).count())
             feedback_series.append(Review.objects.filter(created_at__date=day).count())
+            
         trend_labels_json = json.dumps(labels)
         tickets_data_json = json.dumps(tickets_series)
         feedback_data_json = json.dumps(feedback_series)
@@ -1138,12 +1151,14 @@ def dashboard2_view(request):
         peak_day_tickets_val = max(tickets_series) if tickets_series else 0
         peak_day_feedback_val = max(feedback_series) if feedback_series else 0
     except Exception:
+        trend_days = 7
         trend_labels_json = json.dumps([])
         tickets_data_json = json.dumps([])
         feedback_data_json = json.dumps([])
         feedback_total = 0
         peak_day_tickets_val = 0
         peak_day_feedback_val = 0
+
 
     # Sentiment (last 30 days)
     try:
@@ -1442,12 +1457,12 @@ def dashboard2_view(request):
         # Trend chart data
         'trend_labels': trend_labels_json,
         'tickets_data': tickets_data_json,
-        'tickets_data': tickets_data_json,
         'feedback_data': feedback_data_json,
         'feedback_total': feedback_total,
         'peak_day_tickets': peak_day_tickets_val,
         'peak_day_feedback': peak_day_feedback_val,
         'weekly_growth': 0,  # TODO: implement actual growth tracking
+        'trend_period': trend_days,
         # Sentiment data
         'positive_reviews': pos_pct,
         'neutral_reviews': neu_pct,
