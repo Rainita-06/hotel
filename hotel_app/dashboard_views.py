@@ -826,6 +826,35 @@ def dashboard2_view(request):
     
     User = get_user_model()
     today = timezone.localdate()
+    
+    # Parse date range parameters
+    start_date_param = request.GET.get('start_date')
+    end_date_param = request.GET.get('end_date')
+    
+    # Parse start and end dates from parameters, default to last 30 days if not provided
+    try:
+        if start_date_param:
+            start_date = datetime.datetime.strptime(start_date_param, '%Y-%m-%d').date()
+        else:
+            start_date = today - datetime.timedelta(days=30)
+    except (ValueError, TypeError):
+        start_date = today - datetime.timedelta(days=30)
+    
+    try:
+        if end_date_param:
+            end_date = datetime.datetime.strptime(end_date_param, '%Y-%m-%d').date()
+        else:
+            end_date = today
+    except (ValueError, TypeError):
+        end_date = today
+    
+    # Ensure start_date is not after end_date
+    if start_date > end_date:
+        start_date, end_date = end_date, start_date
+    
+    # Calculate timezone-aware datetime range for filtering
+    date_range_start = timezone.make_aware(datetime.datetime.combine(start_date, datetime.time.min), timezone.get_current_timezone())
+    date_range_end = timezone.make_aware(datetime.datetime.combine(end_date, datetime.time.max), timezone.get_current_timezone())
 
     # Live counts (defensive)
     try:
@@ -844,24 +873,46 @@ def dashboard2_view(request):
         total_locations = 0
 
     try:
-        open_complaints = Complaint.objects.filter(status__in=["pending", "in_progress"]).count()
+        open_complaints = Complaint.objects.filter(
+            status__in=["pending", "in_progress"],
+            created_at__gte=date_range_start,
+            created_at__lte=date_range_end
+        ).count()
     except Exception:
         try:
-            open_complaints = Complaint.objects.count()
+            open_complaints = Complaint.objects.filter(
+                created_at__gte=date_range_start,
+                created_at__lte=date_range_end
+            ).count()
         except Exception:
             open_complaints = 0
 
     try:
-        resolved_complaints = Complaint.objects.filter(status="resolved").count()
+        resolved_complaints = Complaint.objects.filter(
+            status="resolved",
+            created_at__gte=date_range_start,
+            created_at__lte=date_range_end
+        ).count()
     except Exception:
         resolved_complaints = 0
 
-    # Vouchers
+    # Vouchers (filtered by date range)
     try:
-        vouchers_issued = Voucher.objects.count()
-        vouchers_redeemed = Voucher.objects.filter(redeemed=True).count()
+        vouchers_issued = Voucher.objects.filter(
+            created_at__gte=date_range_start,
+            created_at__lte=date_range_end
+        ).count()
+        vouchers_redeemed = Voucher.objects.filter(
+            redeemed=True,
+            redeemed_at__gte=date_range_start,
+            redeemed_at__lte=date_range_end
+        ).count()
         # Treat vouchers expired if expiry_date < today
-        vouchers_expired = Voucher.objects.filter(expiry_date__lt=today).count()
+        vouchers_expired = Voucher.objects.filter(
+            expiry_date__lt=today,
+            created_at__gte=date_range_start,
+            created_at__lte=date_range_end
+        ).count()
     except Exception:
         vouchers_issued = vouchers_redeemed = vouchers_expired = 0
     
@@ -893,24 +944,34 @@ def dashboard2_view(request):
         vouchers_redeemed_change = 0
         vouchers_redeemed_change_direction = "none"
 
-    # Reviews
+    # Reviews (filtered by date range)
     try:
-        average_review_rating = Review.objects.aggregate(avg=Avg("rating"))["avg"] or 0
+        average_review_rating = Review.objects.filter(
+            created_at__gte=date_range_start,
+            created_at__lte=date_range_end
+        ).aggregate(avg=Avg("rating"))["avg"] or 0
     except Exception:
         average_review_rating = 0
 
-    # Complaint trends for charting
+    # Complaint trends for charting (filtered by date range)
     try:
-        complaint_trends = list(Complaint.objects.values("status").annotate(count=Count("id")))
+        complaint_trends = list(Complaint.objects.filter(
+            created_at__gte=date_range_start,
+            created_at__lte=date_range_end
+        ).values("status").annotate(count=Count("id")))
     except Exception:
         complaint_trends = []
 
-    # Requests chart data (try to derive from RequestType + ServiceRequest if available)
+    # Requests chart data (filtered by date range)
     try:
         request_types = list(RequestType.objects.all())
         requests_labels = [rt.name for rt in request_types]
         try:
-            requests_values = [ServiceRequest.objects.filter(request_type=rt).count() for rt in request_types]
+            requests_values = [ServiceRequest.objects.filter(
+                request_type=rt,
+                created_at__gte=date_range_start,
+                created_at__lte=date_range_end
+            ).count() for rt in request_types]
         except Exception:
             requests_values = [1 for _ in requests_labels]
     except Exception:
@@ -949,12 +1010,12 @@ def dashboard2_view(request):
             'negative': [],
         }
 
-    # Occupancy (active guests today)
+    # Occupancy (guests in the selected date range)
     try:
-        # Prefer datetime fields if set, otherwise use date fields
+        # Filter guests who stayed during the selected date range
         occupancy_qs = Guest.objects.filter(
-            Q(checkin_date__lte=today, checkout_date__gte=today) |
-            Q(checkin_datetime__date__lte=today, checkout_datetime__date__gte=today)
+            Q(checkin_date__lte=end_date, checkout_date__gte=start_date) |
+            Q(checkin_datetime__date__lte=end_date, checkout_datetime__date__gte=start_date)
         )
         occupancy_today = occupancy_qs.count()
         occupancy_rate = float(occupancy_today) / max(1, total_locations) * 100 if total_locations else 0
@@ -964,9 +1025,13 @@ def dashboard2_view(request):
 
     occupancy_data = {'occupied': occupancy_today, 'rate': round(occupancy_rate, 1)}
 
-    # Active tickets (Service Requests still open)
+    # Active tickets (Service Requests in date range)
     try:
-        active_tickets_count = ServiceRequest.objects.filter(status__in=['pending', 'accepted', 'in_progress']).count()
+        active_tickets_count = ServiceRequest.objects.filter(
+            status__in=['pending', 'accepted', 'in_progress'],
+            created_at__gte=date_range_start,
+            created_at__lte=date_range_end
+        ).count()
     except Exception:
         active_tickets_count = 0
     
@@ -987,12 +1052,11 @@ def dashboard2_view(request):
         active_tickets_change = 0
         active_tickets_change_direction = "none"
 
-    # SLA breaches in last 24h
+    # SLA breaches in date range
     try:
-        now = timezone.now()
-        since_24h = now - datetime.timedelta(hours=24)
         sla_breaches_24h = ServiceRequest.objects.filter(
-            updated_at__gte=since_24h
+            created_at__gte=date_range_start,
+            created_at__lte=date_range_end
         ).filter(
             Q(sla_breached=True) | Q(response_sla_breached=True) | Q(resolution_sla_breached=True)
         ).count()
@@ -1020,12 +1084,13 @@ def dashboard2_view(request):
         sla_breaches_change = 0
         sla_breaches_change_direction = "none"
 
-    # Average response time (created_at -> accepted_at) over last 30 days
+    # Average response time in date range
     try:
         from django.db.models import F, DurationField, ExpressionWrapper
-        since_30d = timezone.now() - datetime.timedelta(days=30)
         qs_resp = ServiceRequest.objects.filter(
-            accepted_at__isnull=False, created_at__gte=since_30d
+            accepted_at__isnull=False, 
+            created_at__gte=date_range_start,
+            created_at__lte=date_range_end
         ).annotate(
             resp_delta=ExpressionWrapper(F('accepted_at') - F('created_at'), output_field=DurationField())
         )
@@ -1038,10 +1103,12 @@ def dashboard2_view(request):
     except Exception:
         avg_response_display = "0%"
 
-    # Staff efficiency: % completed (last 30d) that met resolution SLA
+    # Staff efficiency: % completed in date range that met resolution SLA
     try:
-        since_30d = timezone.now() - datetime.timedelta(days=30)
-        completed_qs = ServiceRequest.objects.filter(completed_at__gte=since_30d)
+        completed_qs = ServiceRequest.objects.filter(
+            completed_at__gte=date_range_start,
+            completed_at__lte=date_range_end
+        )
         total_completed = completed_qs.count()
         met_sla = completed_qs.filter(resolution_sla_breached=False).count() if total_completed else 0
         staff_efficiency_pct = int(round((met_sla / total_completed) * 100)) if total_completed else 0
@@ -1394,7 +1461,10 @@ def dashboard2_view(request):
         # Critical tickets - now using actual data
         'critical_tickets': critical_tickets_data,
         # Guest feedback - now using actual data
-        'guest_feedback': feedback_data_list
+        'guest_feedback': feedback_data_list,
+        # Date range for filtering
+        'start_date': start_date,
+        'end_date': end_date,
     }
     context.update(context_dept_chart)
     return render(request, 'dashboard/dashboard.html', context)

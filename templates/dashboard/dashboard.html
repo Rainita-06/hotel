@@ -14,45 +14,33 @@
                 </p>
             </div>
 
-            <div class="mt-4 md:mt-0 flex items-center space-x-4 min-w-0">
-                <div class="relative w-full max-w-xs">
-                    <input autocomplete="off" 
-                        type="text" 
-                        placeholder="Search..." 
-                        class="w-full pl-10 pr-3 py-2 rounded-lg border bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
-                    />
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
-                        </svg>
+            <div class="mt-4 md:mt-0 flex items-center space-x-3 min-w-0 flex-wrap">
+                <!-- Date Range Picker -->
+                <div class="flex items-center gap-2">
+                    <div class="relative">
+                        <label for="startDate" class="sr-only">Start Date</label>
+                        <input type="date" id="startDate" name="start_date" 
+                               value="{{ start_date|date:'Y-m-d' }}"
+                               class="h-9 px-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 cursor-pointer"
+                               title="Start Date">
+                    </div>
+                    <span class="text-gray-500 text-sm font-medium">to</span>
+                    <div class="relative">
+                        <label for="endDate" class="sr-only">End Date</label>
+                        <input type="date" id="endDate" name="end_date"
+                               value="{{ end_date|date:'Y-m-d' }}"
+                               class="h-9 px-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 cursor-pointer"
+                               title="End Date">
                     </div>
                 </div>
-
-                <!-- <button class="p-2 rounded-full hover:bg-gray-100 flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                <!-- Load Button -->
+                <button id="loadDashboardBtn" onclick="loadDashboardByDateRange()" class="flex items-center gap-2 h-9 px-4 text-sm font-medium text-white bg-sky-600 rounded-lg hover:bg-sky-700 shadow-sm transition-colors">
+                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
                     </svg>
-                </button> -->
-
-                <!-- <button class="p-2 rounded-full hover:bg-gray-100 flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                </button> -->
-                <div class="relative">
-    <!-- Your Icon Button -->
-    <button id="calendarBtn" 
-            class="p-2 rounded-full hover:bg-gray-100 flex items-center justify-center">
-        <svg xmlns="http://www.w3.org/2000/svg" 
-             class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-    </button>
-
-    <!-- Hidden date input (this triggers the calendar) -->
-    <input type="date" id="hiddenCalendar" class="absolute opacity-0 pointer-events-none "  style="left: -60px;">
-</div>
+                    <span>Load</span>
+                </button>
+            </div>
 
             </div>
         </header>
@@ -102,11 +90,26 @@
             once: true,
         });
     });
-    const btn = document.getElementById("calendarBtn");
-    const dateInput = document.getElementById("hiddenCalendar");
 
-    btn.addEventListener("click", () => {
-        dateInput.showPicker();   // Directly open native calendar
-    });
+    // Load Dashboard by Date Range Function
+    window.loadDashboardByDateRange = function() {
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        
+        if (!startDate || !endDate) {
+            alert('Please select both start and end dates.');
+            return;
+        }
+        
+        if (new Date(startDate) > new Date(endDate)) {
+            alert('Start date cannot be after end date.');
+            return;
+        }
+        
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set('start_date', startDate);
+        currentUrl.searchParams.set('end_date', endDate);
+        window.location.href = currentUrl.toString();
+    };
 </script>
 {% endblock extra_js %}
