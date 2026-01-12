@@ -93,6 +93,7 @@ urlpatterns = [
     
     path('tickets/', dashboard_views.tickets, name='tickets'),
      path("tickets/", dashboard_views.tickets_view, name="tickets_view"),
+    path('tickets/export/', dashboard_views.export_tickets, name='export_tickets'),
     path('my-tickets/', dashboard_views.my_tickets, name='my_tickets'),
     path('tickets/<int:ticket_id>/', dashboard_views.ticket_detail, name='ticket_detail'),
     path('api/guests/search/', dashboard_views.search_guests_api, name='api_search_guests'),

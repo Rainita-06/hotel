@@ -242,10 +242,10 @@
                     </select>
                 </form>
                 <div class="flex gap-2">
-                    <button class="h-10 w-40 rounded-lg border border-sky-600 text-sky-600 flex items-center justify-center gap-2 hover:bg-sky-50 transition-colors">
+                    <a href="{% url 'dashboard:export_tickets' %}?department={{ department_filter|default:'' }}&priority={{ priority_filter|default:'' }}&status={{ status_filter|default:'' }}&request_type={{ request_type_filter|default:'' }}&location={{ location_filter|default:'' }}&search={{ search_query|default:'' }}" class="h-10 w-40 rounded-lg border border-sky-600 text-sky-600 flex items-center justify-center gap-2 hover:bg-sky-50 transition-colors">
                         <img src="{% static 'images/tickets/export.svg' %}" alt="Export Icon"/>
                         <span>Export</span>
-                    </button>
+                    </a>
                 </div>
             </div>
         </div>

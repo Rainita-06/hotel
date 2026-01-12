@@ -3334,6 +3334,127 @@ def tickets(request):
     return render(request, 'dashboard/tickets.html', context)
 
 
+@login_required
+def export_tickets(request):
+    """Export tickets to CSV file."""
+    import csv
+    from django.http import HttpResponse
+    from hotel_app.models import ServiceRequest, Department, RequestType, Location
+    
+    # Get filter parameters (same as tickets view)
+    department_filter = request.GET.get('department', '')
+    priority_filter = request.GET.get('priority', '')
+    status_filter = request.GET.get('status', '')
+    request_type_filter = request.GET.get('request_type', '')
+    location_filter = request.GET.get('location', '')
+    search_query = request.GET.get('search', '')
+    
+    # Build queryset with filters
+    tickets_queryset = ServiceRequest.objects.select_related(
+        'department', 'request_type', 'assignee_user', 'location', 'guest'
+    ).order_by('-created_at')
+    
+    # Apply filters
+    if department_filter:
+        tickets_queryset = tickets_queryset.filter(department__name=department_filter)
+    
+    if priority_filter:
+        priority_map = {'Critical': 'critical', 'High': 'high', 'Medium': 'normal', 'Low': 'low'}
+        mapped_priority = priority_map.get(priority_filter, priority_filter.lower())
+        tickets_queryset = tickets_queryset.filter(priority=mapped_priority)
+    
+    if status_filter:
+        status_map = {
+            'Pending': 'pending', 'In Progress': 'in_progress',
+            'Resolved': 'completed', 'Closed': 'closed'
+        }
+        mapped_status = status_map.get(status_filter, status_filter.lower())
+        tickets_queryset = tickets_queryset.filter(status=mapped_status)
+    
+    if request_type_filter:
+        tickets_queryset = tickets_queryset.filter(request_type_id=request_type_filter)
+    
+    if location_filter:
+        tickets_queryset = tickets_queryset.filter(location_id=location_filter)
+    
+    if search_query:
+        tickets_queryset = tickets_queryset.filter(
+            Q(id__icontains=search_query) |
+            Q(room_no__icontains=search_query) |
+            Q(notes__icontains=search_query) |
+            Q(guest_name__icontains=search_query)
+        )
+    
+    # Create the HttpResponse object with CSV header
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="tickets_export.csv"'
+    
+    writer = csv.writer(response)
+    
+    # Write header row
+    writer.writerow([
+        'Ticket #', 'Room #', 'Guest Name', 'Department', 'Request Type',
+        'Assigned To', 'Status', 'Priority', 'SLA Status', 'Created At',
+        'Due At', 'Completed At', 'Notes'
+    ])
+    
+    # Write data rows
+    for ticket in tickets_queryset:
+        # Get department name
+        dept_name = ticket.department.name if ticket.department else 'Not Assigned'
+        
+        # Get request type name
+        req_type = ticket.request_type.name if ticket.request_type else 'General Request'
+        
+        # Get assignee name
+        assignee = ''
+        if ticket.assignee_user:
+            assignee = ticket.assignee_user.get_full_name() or ticket.assignee_user.username
+        else:
+            assignee = 'Unassigned'
+        
+        # Get status display
+        status_display = ticket.get_status_display() if hasattr(ticket, 'get_status_display') else ticket.status
+        
+        # Get priority display
+        priority_display = ticket.get_priority_display() if hasattr(ticket, 'get_priority_display') else ticket.priority
+        
+        # Get SLA status
+        sla_status = 'Breached' if ticket.sla_breached else 'On Track'
+        
+        # Get room number
+        room_no = ticket.room_no or ''
+        if ticket.location:
+            room_no = ticket.location.room_no or room_no
+        
+        # Get guest name
+        guest_name = ticket.guest_name or ''
+        if ticket.guest:
+            guest_name = ticket.guest.full_name or guest_name
+        
+        # Format dates
+        created_at = ticket.created_at.strftime('%Y-%m-%d %H:%M') if ticket.created_at else ''
+        due_at = ticket.due_at.strftime('%Y-%m-%d %H:%M') if ticket.due_at else ''
+        completed_at = ticket.completed_at.strftime('%Y-%m-%d %H:%M') if ticket.completed_at else ''
+        
+        writer.writerow([
+            f'#{ticket.id}',
+            room_no,
+            guest_name,
+            dept_name,
+            req_type,
+            assignee,
+            status_display,
+            priority_display,
+            sla_status,
+            created_at,
+            due_at,
+            completed_at,
+            ticket.notes or ''
+        ])
+    
+    return response
+
 
 @login_required
 def gym(request):
@@ -3497,7 +3618,13 @@ def ticket_detail(request, ticket_id):
     if not location and (service_request.room_no or guest_room_number):
         room_to_search = service_request.room_no or guest_room_number
         try:
-            location = Location.objects.filter(room_no=room_to_search).first()
+            # Import Location here to ensure it's available
+            from hotel_app.models import Location
+            # First try to find by room_no
+            location = Location.objects.select_related('floor', 'floor__building', 'type').filter(room_no=room_to_search).first()
+            # If not found, try to match by name (room number might be stored as name)
+            if not location:
+                location = Location.objects.select_related('floor', 'floor__building', 'type').filter(name=room_to_search).first()
         except Exception:
             location = None
     
