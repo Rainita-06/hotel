@@ -15,18 +15,7 @@
           <h1 class="text-gray-900 text-xl sm:text-2xl font-bold font-['Inter'] leading-tight">Breakfast Voucher — Report</h1>
           <p class="text-gray-600 text-sm font-normal font-['Inter'] mt-1">View and export voucher data</p>
         </div>
-        <form method="get" class="flex flex-wrap gap-3">
-          {% if from_date %}
-            <input type="hidden" name="from_date" value="{{ from_date }}">
-          {% endif %}
-          {% if to_date %}
-            <input type="hidden" name="to_date" value="{{ to_date }}">
-          {% endif %}
-          <button type="submit" name="export" value="1" 
-              class="px-6 py-3 bg-blue-600 rounded-xl text-white text-base font-medium hover:bg-blue-700 transition-colors">
-              Export
-          </button>
-        </form>
+        
       </div>
     </div>
 
@@ -41,8 +30,8 @@
         <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
           <div class="flex justify-between items-center">
             <div>
-              <div class="text-gray-900 text-2xl font-bold font-['Inter']">{{ daily_checkins }}</div>
-              <div class="text-gray-600 text-sm font-medium font-['Inter']">Today's Check-Ins</div>
+              <div class="text-gray-900 text-2xl font-bold font-['Inter']">{{ today_total }}</div>
+              <div class="text-gray-600 text-sm font-medium font-['Inter']">Total Planned Today</div>
             </div>
             <div class="w-10 h-10 bg-blue-500/10 rounded-lg flex justify-center items-center">
               <div class="w-4 h-4 bg-blue-500 rounded"></div>
@@ -54,8 +43,8 @@
         <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
           <div class="flex justify-between items-center">
             <div>
-              <div class="text-gray-900 text-2xl font-bold font-['Inter']">{{ daily_checkouts }}</div>
-              <div class="text-gray-600 text-sm font-medium font-['Inter']">Today's Check-Outs</div>
+              <div class="text-gray-900 text-2xl font-bold font-['Inter']">{{ today_redeemed }}</div>
+              <div class="text-gray-600 text-sm font-medium font-['Inter']">Redemmed Today</div>
             </div>
             <div class="w-10 h-10 bg-orange-500/10 rounded-lg flex justify-center items-center">
               <div class="w-4 h-4 bg-orange-500 rounded"></div>
@@ -67,8 +56,8 @@
         <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
           <div class="flex justify-between items-center">
             <div>
-              <div class="text-gray-900 text-2xl font-bold font-['Inter']">{{ weekly_checkins }}</div>
-              <div class="text-gray-600 text-sm font-medium font-['Inter']">Weekly Check-Ins</div>
+              <div class="text-gray-900 text-2xl font-bold font-['Inter']">{{ today_left }}</div>
+              <div class="text-gray-600 text-sm font-medium font-['Inter']">Left to Redemmed Today</div>
             </div>
             <div class="w-10 h-10 bg-green-500/10 rounded-lg flex justify-center items-center">
               <div class="w-4 h-4 bg-green-500 rounded"></div>
@@ -80,8 +69,8 @@
         <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
           <div class="flex justify-between items-center">
             <div>
-              <div class="text-gray-900 text-2xl font-bold font-['Inter']">{{ weekly_checkouts }}</div>
-              <div class="text-gray-600 text-sm font-medium font-['Inter']">Weekly Check-Outs</div>
+              <div class="text-gray-900 text-2xl font-bold font-['Inter']">{{ weekly_redeemed_percent}}%</div>
+              <div class="text-gray-600 text-sm font-medium font-['Inter']">Weekly Redemmed</div>
             </div>
             <div class="w-10 h-10 bg-red-500/10 rounded-lg flex justify-center items-center">
               <div class="w-4 h-4 bg-red-500 rounded"></div>
@@ -97,22 +86,35 @@
           <div>
             <label class="block text-gray-900 text-sm font-medium font-['Inter'] mb-2">From Date</label>
             <input type="date" name="from_date" value="{{ from_date|default:'' }}" 
-                class="w-full h-12 px-4 bg-white rounded-lg border border-gray-200 text-gray-900 text-base font-normal leading-normal focus:ring-blue-500 focus:border-blue-500">
+                class="w-full h-10 px-4 bg-white rounded-lg border border-gray-200 text-gray-900 text-base font-normal leading-normal focus:ring-blue-500 focus:border-blue-500">
           </div>
           <div>
             <label class="block text-gray-900 text-sm font-medium font-['Inter'] mb-2">To Date</label>
             <input type="date" name="to_date" value="{{ to_date|default:'' }}" 
-                class="w-full h-12 px-4 bg-white rounded-lg border border-gray-200 text-gray-900 text-base font-normal leading-normal focus:ring-blue-500 focus:border-blue-500">
+                class="w-full h-10 px-4 bg-white rounded-lg border border-gray-200 text-gray-900 text-base font-normal leading-normal focus:ring-blue-500 focus:border-blue-500">
           </div>
           <div class="flex items-end gap-3">
             <button type="submit" 
-                class="px-6 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors">
+                class="px-6 py-2 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors">
                 Filter
             </button>
             <a href="{% url 'breakfast_voucher_report' %}" 
-                class="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-300 transition-colors">
+                class="px-6 py-2 bg-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-300 transition-colors">
                 Reset
             </a>
+        
+          <div class="flex flex-wrap gap-3">
+          {% if from_date %}
+            <input type="hidden" name="from_date" value="{{ from_date }}">
+          {% endif %}
+          {% if to_date %}
+            <input type="hidden" name="to_date" value="{{ to_date }}">
+          {% endif %}
+          <button type="submit" name="export" value="1" 
+              class="px-6 py-2 bg-blue-600 rounded-xl text-white text-base font-medium hover:bg-blue-700 transition-colors">
+              Export
+          </button>
+          </div>
           </div>
         </form>
       </div>
@@ -130,10 +132,12 @@
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Adults</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kids</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scanned by</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remaining scans</th>
+            
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scans Used</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scans Left</th>
               <!-- <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">QR Sent?</th> -->
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scans</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Scans Redemmed </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scanned by</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Redeemed?</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Redeemed At</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -157,13 +161,26 @@
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ v.adults }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ v.kids }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ v.quantity }}</td>
-              <td class="px-6 py-4 text-sm text-gray-500">
-  {{ v.scanned_users_display }}
+              
+ <td class="px-6 py-4 text-sm whitespace-nowrap text-sm text-gray-900 font-medium">
+  {% if v.include_breakfast %}
+    {{ v.used_scans }} / {{ v.quantity }}
+  {% else %}
+    Check-In
+  {% endif %}
 </td>
 
 <td class="px-6 py-4 text-sm font-semibold
-  {% if v.remaining_scans == 0 %}text-red-600{% else %}text-green-600{% endif %}">
-  {{ v.remaining_scans }}
+  {% if v.include_breakfast %}
+      {% if v.remaining_scans == 0 %}text-red-600{% else %}text-green-600{% endif %}
+  {% else %}
+      text-gray-500
+  {% endif %}">
+  {% if v.include_breakfast %}
+      {{ v.remaining_scans }}
+  {% else %}
+      -
+  {% endif %}
 </td>
 
               <!-- <td class="px-6 py-4 whitespace-nowrap text-sm">
@@ -173,6 +190,9 @@
                 </span>
               </td> -->
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ v.scan_count }}</td>
+              <td class="px-6 py-4 text-sm whitespace-nowrap text-sm text-gray-900 font-medium">
+  {{ v.scanned_users_display }}
+</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm">
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                     {% if v.redeemed %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
@@ -241,7 +261,10 @@ $(document).ready(function () {
         lengthMenu: [10, 20, 50, 100],
         order: [[0, 'desc']],
         responsive: true,
-        dom: 'Bfrtip',
+        language: {
+            search: "Search:",
+            searchPlaceholder: "Search by Guest, Room No, Phone"
+        },
         buttons: [
             'csvHtml5',
             'pdfHtml5'

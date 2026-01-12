@@ -2057,6 +2057,57 @@ class Voucher(models.Model):
         return format_html('<span style="color:green;font-weight:bold;">Active</span>')
 
     is_used_display.short_description = "Voucher Status"
+    def used_scans(self):
+    
+        if not self.include_breakfast:
+            return 0
+
+        today = timezone.localdate().isoformat()
+
+        return len([
+            s for s in (self.scan_history or [])
+            if s.get("date") == today
+    ])
+    def scans_on_date(self, target_date=None):
+        target_date = target_date or timezone.localdate().isoformat()
+        return [s for s in (self.scan_history or []) if s.get("date") == target_date]
+
+    def scans_in_range(self, start_date, end_date):
+        """Return scans between start_date and end_date inclusive"""
+        scans = []
+        for s in (self.scan_history or []):
+            d = s.get("date")
+            if d >= start_date.isoformat() and d <= end_date.isoformat():
+                scans.append(s)
+        return scans
+
+    def total_scans_today(self):
+        """Planned scans today (quantity for today if voucher valid)"""
+        today = timezone.localdate().isoformat()
+        if self.include_breakfast and today in (self.valid_dates or []):
+            return self.quantity
+        return 0
+
+    def redeemed_today(self):
+        """Actual scans done today"""
+        return len(self.scans_on_date())
+
+    def left_to_redeem_today(self):
+        return max(0, self.total_scans_today() - self.redeemed_today())
+
+    def total_scans_week(self, week_start, week_end):
+        """Planned scans this week"""
+        if not self.include_breakfast:
+            return 0
+        count = 0
+        for d in (self.valid_dates or []):
+            if week_start.isoformat() <= d <= week_end.isoformat():
+                count += self.quantity
+        return count
+
+    def redeemed_week(self, week_start, week_end):
+        return len(self.scans_in_range(week_start, week_end))
+
 
     def remaining_scans(self):
         if not self.include_breakfast:

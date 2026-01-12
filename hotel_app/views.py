@@ -1875,6 +1875,23 @@ from django.urls import reverse
 @login_required
 @require_section_permission('breakfast_voucher', 'view')
 def create_voucher_checkin(request):
+    today = timezone.localdate()
+    week_start = today - timedelta(days=today.weekday())  # Monday
+
+    vouchers = Voucher.objects.all().order_by("-id")
+
+    
+    # ✅ Dashboard stats (FULL DATA - NOT FILTERED)
+    daily_checkins = Voucher.objects.filter(check_in_date=today).count()
+    daily_checkouts = Voucher.objects.filter(check_out_date=today).count()
+
+    weekly_checkins = Voucher.objects.filter(
+        check_in_date__range=[week_start, today]
+    ).count()
+
+    weekly_checkouts = Voucher.objects.filter(
+        check_out_date__range=[week_start, today]
+    ).count()
     if request.method == "POST":
         guest_name = request.POST.get("guest_name")
         room_no = request.POST.get("room_no")
@@ -1970,9 +1987,17 @@ def create_voucher_checkin(request):
             "scan_url": scan_url,
             "landing_url": landing_url,
             "qr": qr,
+            "vouchers": vouchers,
+            
         })
 
-    return render(request, "checkin_form.html")
+    return render(request, "checkin_form.html",{
+        "daily_checkins": daily_checkins,
+            "daily_checkouts": daily_checkouts,
+            "weekly_checkins": weekly_checkins,
+            "weekly_checkouts": weekly_checkouts,
+            "today": today,
+    })
 
 
 from django.shortcuts import get_object_or_404
@@ -2034,6 +2059,7 @@ def breakfast_voucher_report(request):
 
     today = timezone.localdate()
     week_start = today - timedelta(days=today.weekday())  # Monday
+    week_end = today
 
     vouchers = Voucher.objects.all().order_by("-id")
 
@@ -2052,19 +2078,61 @@ def breakfast_voucher_report(request):
         vouchers = vouchers.filter(check_in_date__lte=to_date)
 
     # ✅ Dashboard stats (FULL DATA - NOT FILTERED)
-    daily_checkins = Voucher.objects.filter(check_in_date=today).count()
-    daily_checkouts = Voucher.objects.filter(check_out_date=today).count()
+    today_total = sum(v.total_scans_today() for v in vouchers)
+    today_redeemed = sum(v.redeemed_today() for v in vouchers)
+    today_left = today_total - today_redeemed
 
-    weekly_checkins = Voucher.objects.filter(
-        check_in_date__range=[week_start, today]
-    ).count()
-
-    weekly_checkouts = Voucher.objects.filter(
-        check_out_date__range=[week_start, today]
-    ).count()
+    weekly_total = sum(v.total_scans_week(week_start, week_end) for v in vouchers)
+    weekly_redeemed = sum(v.redeemed_week(week_start, week_end) for v in vouchers)
+    weekly_left = weekly_total - weekly_redeemed
+    weekly_redeemed_percent = 0
+    if weekly_total > 0:
+        weekly_redeemed_percent = round((weekly_redeemed / weekly_total) * 100, 2)
 
     # ✅ ✅ ✅ EXPORT ONLY FILTERED RECORDS ✅ ✅ ✅
-    df = pd.DataFrame(vouchers.values())
+    # ----------------------------------
+# EXPORT DATA PREPARATION
+# ----------------------------------
+    export_data = []
+
+    for v in vouchers:
+        if v.valid_dates:
+            valid_dates_display = f"{v.valid_dates[0]} → {v.valid_dates[-1]}"
+        else:
+            valid_dates_display = "-"
+
+    # ✅ Format scan history
+        if v.scan_history:
+            scan_history_display = ", ".join([
+            f"{s.get('date')} ({s.get('username', 'System')})"
+            for s in v.scan_history
+        ])
+        else:
+            scan_history_display = "-"
+        export_data.append({
+        "Voucher Code": v.voucher_code,
+        "Guest Name": v.guest_name,
+        "Phone Number": v.phone_number,
+        "Room No": v.room_no,
+        "Check-in Date": v.check_in_date,
+        "Check-out Date": v.check_out_date,
+    "Valid Dates": valid_dates_display,
+    "Scan History": scan_history_display,
+        "Include Breakfast": "Yes" if v.include_breakfast else "No",
+        "Adults": v.adults,
+        "Kids": v.kids,
+        "Quantity": v.quantity,
+        "Scan Count": v.scan_count,
+        "Remaining Scans": v.remaining_scans(),
+
+        "Scanned By": v.scanned_users_display(),
+        # "Status": "Expired" if v.is_expired() else "Active",
+        "Created At": v.created_at,
+         "Redeemed At": v.redeemed_at.strftime("%Y-%m-%d %H:%M") if v.redeemed_at else "-",
+    })
+
+    df = pd.DataFrame(export_data)
+
 
     for col in df.select_dtypes(include=['datetimetz']).columns:
         df[col] = df[col].dt.tz_localize(None)
@@ -2082,10 +2150,13 @@ def breakfast_voucher_report(request):
         "breakfast_voucher_report.html",
         {
             "vouchers": vouchers,
-            "daily_checkins": daily_checkins,
-            "daily_checkouts": daily_checkouts,
-            "weekly_checkins": weekly_checkins,
-            "weekly_checkouts": weekly_checkouts,
+            "today_total": today_total,
+        "today_redeemed": today_redeemed,
+        "today_left": today_left,
+        "weekly_total": weekly_total,
+        "weekly_redeemed": weekly_redeemed,
+        "weekly_redeemed_percent":weekly_redeemed_percent,
+        "weekly_left": weekly_left,
             "from_date": from_date,
             "to_date": to_date,
             "today": today,
