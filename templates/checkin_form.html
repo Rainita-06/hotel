@@ -151,9 +151,21 @@
             <!-- Room Number -->
             <div>
               <label class="block text-gray-900 text-sm font-medium font-['Inter'] mb-2">Room Number</label>
-              <input type="text" name="room_no" required
-                     class="w-full h-12 px-4 bg-white rounded-lg border border-gray-200 text-gray-900 text-base font-normal leading-normal focus:ring-blue-500 focus:border-blue-500"
-                     placeholder="e.g., 205A">
+              <div class="relative">
+                <select name="room_no" required
+                       class="w-full h-12 px-4 bg-white rounded-lg border border-gray-200 text-gray-900 text-base font-normal leading-normal focus:ring-blue-500 focus:border-blue-500 appearance-none cursor-pointer">
+                  <option value="">Select Room</option>
+                  {% for room in available_rooms %}
+                    <option value="{{ room.room_no }}">{{ room.room_no }}{% if room.name %} - {{ room.name }}{% endif %}{% if room.floor %} (Floor {{ room.floor.floor_number }}){% endif %}</option>
+                  {% empty %}
+                    <option value="" disabled>No rooms available</option>
+                  {% endfor %}
+                </select>
+                <!-- Dropdown Arrow -->
+                <svg class="w-4 h-4 absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </div>
             </div>
 
             <!-- Email Address -->

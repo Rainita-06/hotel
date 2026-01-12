@@ -1991,12 +1991,22 @@ def create_voucher_checkin(request):
             
         })
 
+    # Get available rooms from Location model
+    available_rooms = Location.objects.filter(
+        status='active'
+    ).exclude(
+        room_no__isnull=True
+    ).exclude(
+        room_no=''
+    ).order_by('room_no')
+    
     return render(request, "checkin_form.html",{
         "daily_checkins": daily_checkins,
             "daily_checkouts": daily_checkouts,
             "weekly_checkins": weekly_checkins,
             "weekly_checkouts": weekly_checkouts,
             "today": today,
+            "available_rooms": available_rooms,
     })
 
 

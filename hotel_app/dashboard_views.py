@@ -3483,21 +3483,34 @@ def ticket_detail(request, ticket_id):
     floor = 'N/A'
     building = 'N/A'
     room_type = 'N/A'
+    
     # Use guest relationship if available, otherwise use requester_name
     if not guest_name and service_request.guest:
         guest_name = service_request.guest.full_name or requester_name
     elif not guest_name:
         guest_name = requester_name
     
-    if service_request.location:
-        location_name = getattr(service_request.location, 'name', 'Unknown Location')
-        room_number = getattr(service_request.location, 'room_no', room_number)
-        if hasattr(service_request.location, 'floor') and service_request.location.floor:
-            floor = f"{service_request.location.floor.floor_number} Floor"
-            if service_request.location.floor.building:
-                building = service_request.location.floor.building.name
-        if hasattr(service_request.location, 'type') and service_request.location.type:
-            room_type = service_request.location.type.name
+    # Try to get location from service_request.location first
+    location = service_request.location
+    
+    # If no location is set, try to find it by room_no
+    if not location and (service_request.room_no or guest_room_number):
+        room_to_search = service_request.room_no or guest_room_number
+        try:
+            location = Location.objects.filter(room_no=room_to_search).first()
+        except Exception:
+            location = None
+    
+    # Extract location details
+    if location:
+        location_name = getattr(location, 'name', 'Unknown Location')
+        room_number = getattr(location, 'room_no', room_number) or room_number
+        if hasattr(location, 'floor') and location.floor:
+            floor = f"{location.floor.floor_number} Floor"
+            if location.floor.building:
+                building = location.floor.building.name
+        if hasattr(location, 'type') and location.type:
+            room_type = location.type.name
 
     # ✅ If unmatched (Twilio message converted), guest_name & room_no still show
     # Check if we still don't have a guest name from the guest relationship
