@@ -6121,7 +6121,6 @@ def group_create(request):
         # Create Django Group (for User Profiles)
         from django.contrib.auth.models import Group
         from hotel_app.models import UserProfile
-        from hotel_app.signals import ROLE_TO_GROUP_MAPPING
         
         if Group.objects.filter(name=name).exists():
             errors["name"] = [f"Group '{name}' already exists."]
@@ -7727,13 +7726,19 @@ def get_ticket_suggestions_api(request):
 @login_required
 @require_permission([ADMINS_GROUP, STAFF_GROUP])
 def search_guests_api(request):
-    """Autocomplete endpoint for guest lookup by name or room number."""
+    """Autocomplete endpoint for guest lookup by name or room number.
+    
+    Searches both the Guest model (feedback guests) and Voucher model (check-in guests).
+    """
     if request.method != 'GET':
         return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
 
     query = (request.GET.get('q') or '').strip()
     results = []
+    seen_keys = set()  # To avoid duplicates
+    
     if query:
+        # Search in Guest model (feedback guests)
         guests = (
             Guest.objects.filter(
                 Q(full_name__icontains=query)
@@ -7743,13 +7748,39 @@ def search_guests_api(request):
             .order_by('-updated_at')[:10]
         )
         for guest in guests:
-            results.append({
-                'id': guest.id,
-                'name': guest.full_name or guest.guest_id or f'Guest {guest.pk}',
-                'room_number': guest.room_number or '',
-                'guest_id': guest.guest_id or '',
-                'phone': guest.phone or '',
-            })
+            key = f"{(guest.full_name or '').lower()}_{guest.room_number or ''}"
+            if key not in seen_keys:
+                seen_keys.add(key)
+                results.append({
+                    'id': guest.id,
+                    'name': guest.full_name or guest.guest_id or f'Guest {guest.pk}',
+                    'room_number': guest.room_number or '',
+                    'guest_id': guest.guest_id or '',
+                    'phone': guest.phone or '',
+                    'source': 'feedback',
+                })
+        
+        # Search in Voucher model (breakfast voucher check-in guests)
+        vouchers = (
+            Voucher.objects.filter(
+                Q(guest_name__icontains=query)
+                | Q(room_no__icontains=query)
+                | Q(phone_number__icontains=query)
+            )
+            .order_by('-created_at')[:10]
+        )
+        for voucher in vouchers:
+            key = f"{(voucher.guest_name or '').lower()}_{voucher.room_no or ''}"
+            if key not in seen_keys:
+                seen_keys.add(key)
+                results.append({
+                    'id': f'voucher_{voucher.id}',
+                    'name': voucher.guest_name or f'Guest (Room {voucher.room_no})',
+                    'room_number': voucher.room_no or '',
+                    'guest_id': '',
+                    'phone': voucher.phone_number or '',
+                    'source': 'checkin',
+                })
 
     return JsonResponse({'success': True, 'results': results})
 
