@@ -101,19 +101,32 @@
               </span>
             </td>
             <td class="px-6 py-4 text-right">
-              <div class="relative inline-block text-left">
-                <button type="button" id="actionsBtn-{{ dept.featured_group.id }}" onclick="toggleActionsMenu({{ dept.featured_group.id }})" class="inline-flex items-center justify-center rounded-md border border-gray-200 bg-white p-2 text-sm font-medium text-gray-800 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500">
-                  <img src="{% static 'images/manage_users/action.svg' %}" alt="Actions" class="h-4 w-4" />
-                </button>
-                <div id="actionsMenu-{{ dept.featured_group.id }}" class="absolute right-0 z-50 mt-2 hidden w-48 origin-top-right rounded-md border border-gray-200 bg-white shadow-lg focus:outline-none">
-                  <div class="py-1" role="menu" aria-orientation="vertical" aria-labelledby="actionsBtn-{{ dept.featured_group.id }}">
-                    <button role="menuitem" class="flex w-full items-center gap-3 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100" onclick="closeActionsMenu(); openMembersModal({{ dept.featured_group.id }})">View Members</button>
-                    <button role="menuitem" class="flex w-full items-center gap-3 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100" onclick="closeActionsMenu(); openAssignLeadModal({{ dept.featured_group.id }})">Assign Lead</button>
-                    <button role="menuitem" class="flex w-full items-center gap-3 px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50" onclick="closeActionsMenu(); confirmDeleteDepartment({{ dept.featured_group.id }}, '{{ dept.featured_group.name|escapejs }}')">Delete Department</button>
-                  </div>
-                </div>
-              </div>
-            </td>
+  <div class="relative inline-block text-left">
+    <button type="button" id="actionsBtn-{{ dept.featured_group.id }}" onclick="toggleActionsMenu({{ dept.featured_group.id }})" 
+            class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-500/20 active:bg-gray-100">
+      <img src="{% static 'images/manage_users/action.svg' %}" alt="Actions" class="h-4 w-4" />
+    </button>
+    
+    <div id="actionsMenu-{{ dept.featured_group.id }}" 
+         class="absolute right-0 z-50 mt-2 hidden w-52 origin-top-right rounded-xl border border-gray-100 bg-white py-1 shadow-[0_10px_38px_-10px_rgba(22,23,24,0.35),0_10px_20px_-15px_rgba(22,23,24,0.2)] ring-1 ring-black/5 focus:outline-none">
+      <div class="px-1 py-1" role="menu" aria-orientation="vertical" aria-labelledby="actionsBtn-{{ dept.featured_group.id }}">
+        <button role="menuitem" class="group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-sky-600" 
+                onclick="closeActionsMenu(); openMembersModal({{ dept.featured_group.id }})">
+          View Members
+        </button>
+        <button role="menuitem" class="group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-sky-600" 
+                onclick="closeActionsMenu(); openAssignLeadModal({{ dept.featured_group.id }})">
+          Assign Lead
+        </button>
+        <div class="my-1 h-px bg-gray-100"></div>
+        <button role="menuitem" class="group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium text-red-600 hover:bg-red-50" 
+                onclick="closeActionsMenu(); confirmDeleteDepartment({{ dept.featured_group.id }}, '{{ dept.featured_group.name|escapejs }}')">
+          Delete Department
+        </button>
+      </div>
+    </div>
+  </div>
+</td>
           </tr>
           {% empty %}
           <tr>
@@ -169,6 +182,8 @@
   </div>
 </div>
 
+
+
 <script>
 // NOTE: Redundant `getCookie`, `showModal`, and `closeModal` functions have been removed.
 // This script now relies on the global versions from `manage_users_base.html`.
@@ -221,7 +236,7 @@ document.addEventListener('click', (e) => {
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     closeActionsMenu();
-    ['membersModal', 'assignLeadModal', 'addDepartmentModal', 'deleteDepartmentModal'].forEach(id => {
+    ['membersModal', 'assignLeadModal', 'addDepartmentModal', 'deleteDeptModal'].forEach(id => {
       if (typeof closeModal === 'function') closeModal(id);
     });
   }
@@ -340,20 +355,175 @@ function submitAddDepartment(e) {
   });
 }
 
-// --------------- Members Modal ---------------
+// --------------- View Members Modal ---------------
 function openMembersModal(deptId) {
-  // Functions for other modals would go here, calling the global showModal
-  alert(`Viewing members for Department ID: ${deptId}`);
+  const container = document.getElementById('membersListContainer');
+  const subtitle = document.getElementById('membersModalSubtitle');
+  
+  container.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">Loading members...</p>';
+  subtitle.textContent = 'Loading...';
+  
+  if (typeof showModal === 'function') {
+    showModal('membersModal');
+  }
+  
+  fetch(`{% url "dashboard:api_department_members" dept_id=0 %}`.replace('/0/', `/${deptId}/`))
+    .then(response => response.json())
+    .then(data => {
+      subtitle.textContent = `${data.total || 0} member(s)`;
+      
+      if (!data.members || data.members.length === 0) {
+        container.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">No members in this department.</p>';
+        return;
+      }
+      
+      let html = '<ul class="divide-y divide-gray-100">';
+      data.members.forEach(member => {
+        html += `
+          <li class="flex items-center gap-4 py-3">
+            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-semibold">
+              ${(member.full_name || 'U').charAt(0).toUpperCase()}
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-medium text-gray-900 truncate">${member.full_name || 'Unknown'}</p>
+              <p class="text-sm text-gray-500 truncate">${member.email || 'No email'}</p>
+            </div>
+            <div class="text-xs text-gray-400">${member.phone || ''}</div>
+          </li>
+        `;
+      });
+      html += '</ul>';
+      container.innerHTML = html;
+    })
+    .catch(error => {
+      console.error('Error loading members:', error);
+      container.innerHTML = '<p class="text-sm text-red-500 text-center py-4">Failed to load members.</p>';
+    });
 }
 
-// --------------- Assign Lead ---------------
+// --------------- Assign Lead Modal ---------------
 function openAssignLeadModal(deptId) {
-  alert(`Assigning lead for Department ID: ${deptId}`);
+  const subtitle = document.getElementById('assignLeadModalSubtitle');
+  const select = document.getElementById('leadUserSelect');
+  const deptInput = document.getElementById('assignLeadDeptId');
+  const errorEl = document.getElementById('assignLeadError');
+  
+  errorEl.classList.add('hidden');
+  deptInput.value = deptId;
+  select.innerHTML = '<option value="">Loading users...</option>';
+  subtitle.textContent = 'Loading...';
+  
+  if (typeof showModal === 'function') {
+    showModal('assignLeadModal');
+  }
+  
+  // Load users for selection
+  fetch('{% url "dashboard:api_manage_users_filters" %}')
+    .then(response => response.json())
+    .then(data => {
+      select.innerHTML = '<option value="">Select a user...</option>';
+      if (data.users && data.users.length > 0) {
+        data.users.forEach(user => {
+          const opt = document.createElement('option');
+          opt.value = user.id;
+          opt.textContent = user.full_name || user.username;
+          select.appendChild(opt);
+        });
+        subtitle.textContent = `${data.users.length} user(s) available`;
+      } else {
+        subtitle.textContent = 'No users found';
+      }
+    })
+    .catch(error => {
+      console.error('Error loading users:', error);
+      select.innerHTML = '<option value="">Failed to load users</option>';
+      subtitle.textContent = 'Error';
+    });
+}
+
+function submitAssignLead() {
+  const deptId = document.getElementById('assignLeadDeptId').value;
+  const userId = document.getElementById('leadUserSelect').value;
+  const errorEl = document.getElementById('assignLeadError');
+  const btn = document.getElementById('assignLeadSubmitBtn');
+  
+  if (!userId) {
+    errorEl.textContent = 'Please select a user.';
+    errorEl.classList.remove('hidden');
+    return;
+  }
+  
+  btn.disabled = true;
+  errorEl.classList.add('hidden');
+  
+  const formData = new FormData();
+  formData.append('user_id', userId);
+  
+  fetch(`{% url "dashboard:assign_department_lead" dept_id=0 %}`.replace('/0/', `/${deptId}/`), {
+    method: 'POST',
+    headers: { 'X-CSRFToken': getCookie('csrftoken') },
+    body: formData
+  })
+  .then(response => {
+    if (!response.ok) throw new Error('Failed to assign lead');
+    return response.json();
+  })
+  .then(data => {
+    if (data.success) {
+      if (typeof closeModal === 'function') closeModal('assignLeadModal');
+      if (typeof showToast === 'function') showToast('Department lead assigned successfully!', 'success');
+      setTimeout(() => location.reload(), 700);
+    } else {
+      throw new Error(data.error || 'Failed to assign lead');
+    }
+  })
+  .catch(err => {
+    errorEl.textContent = err.message;
+    errorEl.classList.remove('hidden');
+  })
+  .finally(() => {
+    btn.disabled = false;
+  });
 }
 
 // --------------- Delete Department ---------------
 function confirmDeleteDepartment(deptId, deptName) {
-  alert(`Deleting department: ${deptName} (ID: ${deptId})`);
+  document.getElementById('deleteDeptId').value = deptId;
+  document.getElementById('deleteDeptName').textContent = deptName;
+  
+  if (typeof showModal === 'function') {
+    showModal('deleteDeptModal');
+  }
+}
+
+function executeDeleteDepartment() {
+  const deptId = document.getElementById('deleteDeptId').value;
+  const btn = document.getElementById('deleteDeptConfirmBtn');
+  
+  btn.disabled = true;
+  btn.textContent = 'Deleting...';
+  
+  const formData = new FormData();
+  
+  fetch(`{% url "dashboard:department_delete" dept_id=0 %}`.replace('/0/', `/${deptId}/`), {
+    method: 'POST',
+    headers: { 'X-CSRFToken': getCookie('csrftoken') },
+    body: formData
+  })
+  .then(response => {
+    if (response.redirected || response.ok) {
+      if (typeof closeModal === 'function') closeModal('deleteDeptModal');
+      if (typeof showToast === 'function') showToast('Department deleted successfully!', 'success');
+      setTimeout(() => location.reload(), 700);
+    } else {
+      throw new Error('Failed to delete department');
+    }
+  })
+  .catch(err => {
+    if (typeof showToast === 'function') showToast(err.message, 'error');
+    btn.disabled = false;
+    btn.textContent = 'Delete';
+  });
 }
 
 // --------------- Export ---------------

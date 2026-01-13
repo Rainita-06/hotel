@@ -105,6 +105,100 @@
   </div>
 </main>
 
+<!-- Department Members Modal -->
+<div id="membersModal" role="dialog" aria-modal="true" aria-labelledby="membersModalTitle"
+     class="fixed inset-0 z-[1000] hidden items-center justify-center p-4 backdrop-blur-md bg-black/30 transition-opacity duration-300 opacity-0"
+     onclick="closeModal('membersModal')">
+    <div data-modal-content class="w-full max-w-lg rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[95vh]"
+         onclick="event.stopPropagation()">
+        <div class="flex items-start justify-between p-5 border-b flex-shrink-0">
+            <h3 id="membersModalTitle" class="text-lg font-semibold text-gray-900">Department Members</h3>
+            <button type="button" onclick="closeModal('membersModal')" class="rounded-full p-1 text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Close">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div class="p-6 space-y-4 overflow-y-auto flex-grow">
+            <div class="flex items-center justify-between">
+                <p id="membersModalSubtitle" class="text-sm text-gray-500">Loading...</p>
+            </div>
+            <div id="membersListContainer" class="min-h-[200px]">
+                <p class="text-sm text-gray-500 text-center py-8">Loading members...</p>
+            </div>
+        </div>
+        <div class="flex items-center justify-end gap-3 p-5 border-t bg-gray-50 rounded-b-lg flex-shrink-0">
+            <button type="button" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50" onclick="closeModal('membersModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Assign Department Lead Modal -->
+<div id="assignLeadModal" role="dialog" aria-modal="true" aria-labelledby="assignLeadModalTitle"
+     class="fixed inset-0 z-[1000] hidden items-center justify-center p-4 backdrop-blur-md bg-black/30 transition-opacity duration-300 opacity-0"
+     onclick="closeModal('assignLeadModal')">
+    <div data-modal-content class="w-full max-w-lg rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[95vh]"
+         onclick="event.stopPropagation()">
+        <div class="flex items-start justify-between p-5 border-b flex-shrink-0">
+            <h3 id="assignLeadModalTitle" class="text-lg font-semibold text-gray-900">Assign Department Lead</h3>
+            <button type="button" onclick="closeModal('assignLeadModal')" class="rounded-full p-1 text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Close">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <form autocomplete="off" id="assignLeadForm" class="p-6 space-y-4 overflow-y-auto flex-grow">
+            <input type="hidden" id="assignLeadDeptId" name="dept_id" value="">
+            <div>
+                <p id="assignLeadModalSubtitle" class="text-sm text-gray-500 mb-4">Select a user to assign as the department lead.</p>
+            </div>
+            <div>
+                <label for="leadUserSelect" class="block text-sm font-medium text-gray-700">Select User</label>
+                <select id="leadUserSelect" name="user_id" required class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                    <option value="">Loading users...</option>
+                </select>
+            </div>
+            <div id="assignLeadError" class="hidden text-sm text-red-600"></div>
+        </form>
+        <div class="flex items-center justify-end gap-3 p-5 border-t bg-gray-50 rounded-b-lg flex-shrink-0">
+            <button type="button" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50" onclick="closeModal('assignLeadModal')">Cancel</button>
+            <button id="assignLeadSubmitBtn" type="button" class="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700" onclick="submitAssignLead()">Assign Lead</button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Department Modal -->
+<div id="deleteDeptModal" role="dialog" aria-modal="true" aria-labelledby="deleteDeptModalTitle"
+     class="fixed inset-0 z-[1000] hidden items-center justify-center p-4 backdrop-blur-md bg-black/30 transition-opacity duration-300 opacity-0"
+     onclick="closeModal('deleteDeptModal')">
+    <div data-modal-content class="w-full max-w-lg rounded-lg bg-white shadow-xl transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[95vh]"
+         onclick="event.stopPropagation()">
+        <div class="flex items-start justify-between p-5 border-b flex-shrink-0">
+            <h3 id="deleteDeptModalTitle" class="text-lg font-semibold text-gray-900">Delete Department</h3>
+            <button type="button" onclick="closeModal('deleteDeptModal')" class="rounded-full p-1 text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Close">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div class="p-6 space-y-4 overflow-y-auto flex-grow">
+            <div class="flex items-center gap-4 p-4 bg-red-50 rounded-lg border border-red-100">
+                <div class="flex-shrink-0">
+                    <div class="flex items-center justify-center h-10 w-10 rounded-full bg-red-100">
+                        <svg class="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    </div>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-700">Are you sure you want to delete this department?</p>
+                    <p id="deleteDeptName" class="text-sm font-semibold text-gray-900 mt-1">Department Name</p>
+                </div>
+            </div>
+            <div class="p-3 bg-gray-50 rounded-lg">
+                <p class="text-xs text-gray-500">This action cannot be undone. All users currently assigned to this department will be unassigned.</p>
+            </div>
+            <input type="hidden" id="deleteDeptId" value="">
+        </div>
+        <div class="flex items-center justify-end gap-3 p-5 border-t bg-gray-50 rounded-b-lg flex-shrink-0">
+            <button type="button" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50" onclick="closeModal('deleteDeptModal')">Cancel</button>
+            <button id="deleteDeptConfirmBtn" type="button" class="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700" onclick="executeDeleteDepartment()">Delete Department</button>
+        </div>
+    </div>
+</div>
+
 <div id="createGroupModal" role="dialog" aria-modal="true" aria-labelledby="createGroupTitle"
      class="fixed inset-0 z-[1000] hidden items-center justify-center p-4 backdrop-blur-md bg-black/30 transition-opacity duration-300 opacity-0"
      onclick="closeModal('createGroupModal')">
