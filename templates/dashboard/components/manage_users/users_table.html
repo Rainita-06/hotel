@@ -176,6 +176,7 @@ function toggleArrow(id){
   let totalPages = 1;
   let totalResults = 0;
   const state = { q: '', role: '', department: '', status: '', sort_by: '', sort_dir: 'asc' };
+  if(quickSearchInput) state.q = quickSearchInput.value.trim();
 
   function getCsrf(){
     const cookie = document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('csrftoken='));

@@ -26,14 +26,15 @@
       </div>
 
       <div class="flex items-center gap-4">
-        <div class="relative">
-          <input autocomplete="off" id="quick-search" type="text" name="q" placeholder="{{ search_placeholder|default:'Search users...' }}"
-                 autocomplete="off"
+        {% if active_tab != 'profiles' %}
+        <form method="GET" action="." class="relative">
+          <input autocomplete="off" id="quick-search" type="text" name="q" value="{{ q|default:'' }}" placeholder="{{ search_placeholder|default:'Search users...' }}"
                  class="w-64 h-10 pl-10 pr-3 rounded-lg border border-gray-200 bg-white text-base text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 font-['Inter']" />
-          <div class="absolute inset-y-0 left-0 flex items-center pl-3">
+          <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
             <img src="{% static 'images/dashboard/search.svg' %}" alt="Search" class="w-5 h-5" />
           </div>
-        </div>
+        </form>
+        {% endif %}
 
         <div class="relative inline-block text-left z-20" id="exportImportDropdown">
           <button type="button" id="exportImportButton"

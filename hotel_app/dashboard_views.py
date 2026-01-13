@@ -1759,6 +1759,17 @@ def manage_users_all(request):
     # Provide users queryset and related data to the template so the users table
     # can render real data server-side and be used by the client-side poller.
     users_qs = User.objects.all().select_related('userprofile').prefetch_related('groups')
+    # Filter by search string if present
+    q = request.GET.get('q', '').strip()
+    if q:
+        from django.db.models import Q
+        users_qs = users_qs.filter(
+            Q(username__icontains=q) |
+            Q(email__icontains=q) |
+            Q(first_name__icontains=q) |
+            Q(last_name__icontains=q)
+        )
+    
     total_users = users_qs.count()
     # Build role counts for the UI (best-effort)
     role_names = ['Staff', 'Manager', 'Concierge', 'Maintenance', 'Housekeeping', 'Super Admin']
@@ -1786,7 +1797,8 @@ def manage_users_all(request):
                users=users_qs,
                total_users=total_users,
                role_counts=role_counts,
-               departments=departments)
+               departments=departments,
+               q=q)
     return render(request, 'dashboard/users.html', ctx)
 
 
@@ -5615,6 +5627,12 @@ def manage_users_toggle_enabled(request, user_id):
 def dashboard_departments(request):
     # Keep existing department queryset for list rendering and metrics
     depts_qs = Department.objects.all().annotate(user_count=Count("userprofile")).order_by('name')
+    
+    # Filter by search string if present
+    q = request.GET.get('q', '').strip()
+    if q:
+        from django.db.models import Q
+        depts_qs = depts_qs.filter(Q(name__icontains=q) | Q(description__icontains=q))
     # Server-side status filter (optional): active / paused / archived
     status = request.GET.get('status', '').lower()
     if status:
@@ -5815,6 +5833,7 @@ def dashboard_departments(request):
         "title": 'Manage Departments',
         "subtitle": 'Manage hotel departments, heads, and staff assignments',
         "primary_label": "Add Department",
+        "q": q,
     }
     
     return render(request, "dashboard/manage_users_base.html", context)
@@ -8618,6 +8637,46 @@ def performance_dashboard(request):
         'selected_days': days,  # Pass selected days to template
     }
     
+    if request.GET.get('export') == 'csv':
+        import csv
+        from django.http import HttpResponse
+        
+        response = HttpResponse(content_type='text/csv')
+        today_str = timezone.now().strftime('%Y-%m-%d')
+        filename = f"Performance_Report_{today_str}.csv"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        writer = csv.writer(response)
+        writer.writerow(['Performance Report'])
+        writer.writerow(['Generated', today_str])
+        writer.writerow(['Period', f"Last {days} days"])
+        writer.writerow([])
+        
+        # Key Metrics
+        writer.writerow(['Key Metrics'])
+        writer.writerow(['Completion Rate', f"{completion_rate}%"])
+        writer.writerow(['SLA Breaches', sla_breaches])
+        writer.writerow(['Avg Response Time', avg_response_display])
+        writer.writerow(['Active Staff', active_staff])
+        writer.writerow([])
+        
+        # Staff Performance
+        writer.writerow(['Staff Performance'])
+        writer.writerow(['User', 'Department', 'Tickets Completed', 'Completion Rate', 'Avg Response', 'Breaches', 'Status'])
+        
+        for staff in staff_performance:
+            writer.writerow([
+                staff['user'].get_full_name() or staff['user'].username,
+                str(staff['department'].name) if staff['department'] else 'N/A',
+                staff['tickets_completed'],
+                f"{staff['completion_rate']}%",
+                staff['avg_response'],
+                staff['breaches'],
+                staff['status']
+            ])
+            
+        return response
+
     return render(request, 'dashboard/performance_dashboard.html', context)
 
 
