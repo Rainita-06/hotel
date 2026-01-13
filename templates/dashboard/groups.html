@@ -1,0 +1,1057 @@
+{% extends "dashboard/manage_users_base.html" %}
+{% load static %}
+
+{% block manage_content %}
+<div class="w-[1184px] min-h-screen bg-black/0 border-gray-200 mx-auto">
+
+  <div class="px-6 pt-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+
+      <div class="bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200 p-6">
+        <div class="flex items-center justify-between">
+          <div class="w-8 h-10 bg-sky-600/10 rounded-lg flex items-center justify-center">
+            <img src="{% static 'images/manage_users/total_groups.svg' %}" alt="Total Groups" class="w-4 h-4" />
+          </div>
+          {% if groups_delta > 0 %}
+            <div class="text-green-500 text-xs font-medium font-['Inter']">+{{ groups_delta }}</div>
+          {% elif groups_delta < 0 %}
+            <div class="text-red-500 text-xs font-medium font-['Inter']">{{ groups_delta }}</div>
+          {% else %}
+            <div class="text-gray-400 text-xs font-medium font-['Inter']">—</div>
+          {% endif %}
+        </div>
+        <div class="mt-6">
+          <div class="text-gray-900 text-2xl font-bold font-['Inter']">{{ total_groups }}</div>
+          <div class="text-gray-600 text-sm font-normal font-['Inter'] mt-1">Total Groups</div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200 p-6">
+        <div class="flex items-center justify-between">
+          <div class="w-9 h-10 bg-teal-500/10 rounded-lg flex items-center justify-center">
+            <img src="{% static 'images/manage_users/members_assigned.svg' %}" alt="Members Assigned" class="w-5 h-4" />
+          </div>
+          {% if group_members_delta > 0 %}
+            <div class="text-green-500 text-xs font-medium font-['Inter']">+{{ group_members_delta }}</div>
+          {% elif group_members_delta < 0 %}
+            <div class="text-red-500 text-xs font-medium font-['Inter']">{{ group_members_delta }}</div>
+          {% else %}
+            <div class="text-gray-400 text-xs font-medium font-['Inter']">—</div>
+          {% endif %}
+        </div>
+        <div class="mt-6">
+          <div class="text-gray-900 text-2xl font-bold font-['Inter']">{{ total_group_members }}</div>
+          <div class="text-gray-600 text-sm font-normal font-['Inter'] mt-1">Members Assigned</div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200 p-6">
+        <div class="flex items-center justify-between">
+          <div class="w-9 h-10 bg-yellow-400/10 rounded-lg flex items-center justify-center">
+            <img src="{% static 'images/manage_users/recent_additions.svg' %}" alt="Recent Additions" class="w-5 h-4" />
+          </div>
+          <div class="text-gray-600 text-xs font-normal font-['Inter']">{{ recent_additions_period|default:"24h" }}</div>
+        </div>
+        <div class="mt-6">
+          <div class="text-gray-900 text-2xl font-bold font-['Inter']">{{ recent_additions }}</div>
+          <div class="text-gray-600 text-sm font-normal font-['Inter'] mt-1">Recent Additions</div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200 p-6">
+        <div class="flex items-center justify-between">
+          <div class="w-7 h-10 bg-fuchsia-700/10 rounded-lg flex items-center justify-center">
+            <img src="{% static 'images/manage_users/bulk_notifications.svg' %}" alt="Bulk Notifications" class="w-3.5 h-4" />
+          </div>
+          <div class="text-sky-600 text-xs font-medium font-['Inter']">Active</div>
+        </div>
+        <div class="mt-6">
+          <div class="text-gray-900 text-2xl font-bold font-['Inter']">{{ active_groups }}</div>
+          <div class="text-gray-600 text-sm font-normal font-['Inter'] mt-1">Bulk Notifications</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="w-[1136px] bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200 mx-6 mt-6">
+    <div class="border-b border-gray-200 px-6 py-5">
+      <div class="flex items-center justify-between">
+        <div class="text-gray-900 text-lg font-semibold font-['Inter']">Department Groups</div>
+        <div class="flex items-center gap-3">
+          <button type="button" id="bulkNotifyAllBtn" class="h-9 bg-white rounded-lg border border-gray-200 flex items-center justify-center gap-2 px-4 hover:bg-sky-50 transition-all shadow-sm">
+            <span class="w-3.5 h-2.5">
+              <img src="{% static 'images/manage_users/notify.svg' %}" alt="Notify" />
+            </span>
+            <span class="text-sky-600 text-sm font-medium font-['Inter']">Bulk Notify All</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="px-6 py-6 space-y-6" id="departments-accordion">
+      {% for dept in departments %}
+      <div class="department-group w-full bg-transparent rounded-lg outline outline-1 outline-offset-[-1px] outline-gray-200 p-4 transition-all hover:bg-gray-50/50" id="department-group-{{ forloop.counter0 }}" data-dept-id="{{ dept.featured_group.id }}">
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex items-start gap-4">
+            <div class="w-11 h-12 {{ dept.featured_group.icon_bg|default:'bg-green-500/10' }} rounded-lg flex items-center justify-center overflow-hidden">
+              <img
+                class="h-6 w-6 dept-icon"
+                data-icon-name="{{ dept.featured_group.name|default:'Housekeeping' }}"
+                alt="{{ dept.featured_group.name|default:'Housekeeping' }} icon"
+                src="{% static 'images/manage_users/housekeeping.svg' %}"
+              />
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-2">
+                <div class="text-gray-900 text-lg font-semibold font-['Inter'] truncate">
+                  {{ dept.featured_group.name|default:"Housekeeping" }}
+                </div>
+                <div class="{{ dept.featured_group.tag_bg|default:'bg-green-500/10' }} rounded-full">
+                  <div class="px-2 py-0.5">
+                    <span class="text-{{ dept.featured_group.icon_color|default:'green-500' }} text-xs font-medium font-['Inter']">
+                      <span class="dept-members-count">{{ dept.featured_group.members_count|default:"42" }}</span> members
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div class="text-gray-600 text-sm font-normal font-['Inter'] mt-1">
+                {{ dept.featured_group.description|default:"Room cleaning, maintenance, and guest services" }}
+              </div>
+              <div class="flex items-center gap-4 text-neutral-500 text-xs font-normal font-['Inter'] mt-2">
+                <div>Supervisors: <span class="dept-supervisors-count">{{ dept.featured_group.supervisors_count|default:"6" }}</span></div>
+                <div>Staff: <span class="dept-staff-count">{{ dept.featured_group.staff_count|default:"36" }}</span></div>
+                <div>Last updated: <span class="dept-updated-at">{{ dept.featured_group.updated_at|default:"2h ago" }}</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <button type="button" class="w-32 h-8 bg-white rounded-lg border border-gray-200 flex items-center justify-center gap-2 dept-notify-btn hover:bg-sky-50 hover:border-sky-100 transition-colors shadow-sm" data-dept-id="{{ dept.featured_group.id }}" data-dept-name="{{ dept.featured_group.name|escapejs }}">
+              <span class="w-3.5 h-2.5">
+                <img src="{% static 'images/manage_users/notify.svg' %}" alt="Notify" />
+              </span>
+              <span class="text-sky-600 text-sm font-normal font-['Inter']">Notify Group</span>
+            </button>
+
+            <button
+              type="button"
+              class="w-8 h-8 rounded-lg flex items-center justify-center dept-accordion-toggle bg-transparent hover:bg-gray-100 border-none focus:outline-none transition-colors"
+              aria-expanded="false"
+              aria-controls="dept-content-{{ forloop.counter0 }}"
+              data-target="dept-content-{{ forloop.counter0 }}"
+              title="Toggle details"
+            >
+              <img src="{% static 'images/manage_users/open.svg' %}" alt="Open" class="h-4 w-4 open-icon" />
+              <img src="{% static 'images/manage_users/close.svg' %}" alt="Close" class="h-4 w-4 close-icon hidden" />
+            </button>
+          </div>
+        </div>
+
+        <div id="dept-content-{{ forloop.counter0 }}" class="mt-4 space-y-3 dept-accordion-content hidden border-t border-gray-100 pt-4">
+          {% for group in dept.groups|slice:":3" %}
+          <div class="group-item w-full p-3 bg-white rounded-lg border border-gray-100 flex items-center justify-between hover:border-gray-200 transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-2 h-2 {{ group.dot_bg|default:'bg-green-500' }} rounded-full ring-2 ring-green-100"></div>
+              <div class="text-gray-900 text-sm font-medium font-['Inter']">{{ group.name }}</div>
+              <div class="text-neutral-500 text-xs font-normal font-['Inter']">({{ group.members_count|default:"0" }} members)</div>
+            </div>
+            <div class="flex items-center gap-3">
+              <button type="button" class="text-sky-600 text-xs font-medium font-['Inter'] hover:underline" onclick="openGroupMembersModal({{ group.pk|default:0 }}, '{{ group.name|escapejs }}')">Manage Users</button>
+              <span class="text-gray-300">|</span>
+              <button type="button" class="text-gray-500 text-xs font-normal font-['Inter'] hover:text-gray-800" onclick="openGroupEdit({{ group.pk|default:0 }}, '{{ group.name|escapejs }}')">Edit Name</button>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- WhatsApp Notification Modal -->
+<div id="notifyModal" role="dialog" aria-modal="true" aria-labelledby="notifyModalTitle"
+     class="fixed inset-0 z-[1000] hidden items-center justify-center p-4 backdrop-blur-md bg-black/40 transition-all duration-300 opacity-0"
+     onclick="closeNotifyModal()">
+  
+  <div data-modal-content class="w-full max-w-lg bg-white rounded-2xl shadow-2xl transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[92vh] overflow-hidden"
+       onclick="event.stopPropagation()">
+       
+    <!-- Header with gradient accent -->
+    <div class="relative bg-gradient-to-br from-[#25D366]/5 to-green-50/50 border-b border-green-100/50">
+      <div class="flex items-start justify-between p-6">
+        <div class="flex items-start gap-4">
+          <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-[#25D366] to-[#1fae54] rounded-xl flex items-center justify-center shadow-lg shadow-green-500/20">
+            <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+            </svg>
+          </div>
+          <div>
+            <h3 id="notifyModalTitle" class="text-xl font-bold text-gray-900">WhatsApp Broadcast</h3>
+            <p id="notifyModalSubtitle" class="text-sm text-gray-600 mt-0.5">Send instant notifications to your team</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeNotifyModal()" class="rounded-full p-2 text-gray-400 hover:text-gray-600 hover:bg-white/50 transition-all duration-200">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="p-6 space-y-5 overflow-y-auto flex-grow bg-gray-50/30">
+      
+      <!-- Info Banner -->
+      <div class="flex gap-3 p-4 bg-gradient-to-r from-blue-50 to-sky-50 rounded-xl border border-sky-100">
+        <div class="flex-shrink-0 mt-0.5">
+          <svg class="w-5 h-5 text-sky-600" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+          </svg>
+        </div>
+        <p class="text-sm text-sky-900 leading-relaxed">
+          Messages will be delivered instantly via WhatsApp to all members' registered phone numbers.
+        </p>
+      </div>
+
+      <!-- Message Input -->
+      <div>
+        <label for="notifyMessage" class="block text-sm font-semibold text-gray-700 mb-2">Your Message</label>
+        <div class="relative">
+          <textarea 
+            id="notifyMessage" 
+            rows="6" 
+            class="block w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:border-sky-500 focus:outline-none focus:ring-4 focus:ring-sky-500/10 resize-none transition-all shadow-sm"
+            placeholder="Compose your announcement message here..."
+          ></textarea>
+          <div class="absolute bottom-3 right-3 flex items-center gap-3">
+            <span class="text-xs text-gray-500"><span id="charCount" class="font-semibold text-gray-700">0</span>/500</span>
+          </div>
+        </div>
+        <div class="flex justify-between items-center mt-2 px-1">
+          <p class="text-xs text-gray-500 flex items-center gap-1.5" id="recipientCount">
+            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>
+            Calculating recipients...
+          </p>
+        </div>
+      </div>
+      
+      <!-- Quick Templates -->
+      <div>
+        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-3">Quick Templates</label>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" class="template-btn group px-4 py-2 bg-white border-2 border-gray-200 rounded-lg text-xs font-medium text-gray-700 hover:border-sky-400 hover:bg-sky-50 hover:text-sky-700 transition-all shadow-sm hover:shadow" data-template="Please check the latest updates on the system.">
+            <span class="flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 opacity-60 group-hover:opacity-100" fill="currentColor" viewBox="0 0 20 20"><path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z"/><path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z"/></svg>
+              General Update
+            </span>
+          </button>
+          <button type="button" class="template-btn group px-4 py-2 bg-white border-2 border-gray-200 rounded-lg text-xs font-medium text-gray-700 hover:border-sky-400 hover:bg-sky-50 hover:text-sky-700 transition-all shadow-sm hover:shadow" data-template="Reminder: Please complete your pending tasks.">
+            <span class="flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 opacity-60 group-hover:opacity-100" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>
+              Task Reminder
+            </span>
+          </button>
+          <button type="button" class="template-btn group px-4 py-2 bg-white border-2 border-gray-200 rounded-lg text-xs font-medium text-gray-700 hover:border-sky-400 hover:bg-sky-50 hover:text-sky-700 transition-all shadow-sm hover:shadow" data-template="Meeting scheduled. Please confirm your availability.">
+            <span class="flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 opacity-60 group-hover:opacity-100" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/></svg>
+              Meeting Notice
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="flex items-center justify-end gap-3 px-6 py-4 border-t bg-gradient-to-br from-gray-50 to-white rounded-b-2xl">
+      <button type="button" class="rounded-lg border-2 border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all" onclick="closeNotifyModal()">Cancel</button>
+      <button type="button" id="sendNotifyBtn" class="rounded-lg bg-gradient-to-r from-[#25D366] to-[#1fae54] hover:from-[#20bd5a] hover:to-[#1a9c4a] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-green-500/30 hover:shadow-xl hover:shadow-green-500/40 transition-all flex items-center gap-2">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        <span>Send via WhatsApp</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Group Members Modal -->
+<div id="groupMembersModal" role="dialog" aria-modal="true" aria-labelledby="groupMembersTitle"
+     class="fixed inset-0 z-[1000] hidden items-center justify-center p-4 backdrop-blur-md bg-black/40 transition-all duration-300 opacity-0"
+     onclick="closeGroupMembersModal()">
+  
+  <div data-modal-content class="w-full max-w-lg bg-white rounded-2xl shadow-2xl transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[92vh] overflow-hidden"
+       onclick="event.stopPropagation()">
+    
+    <!-- Header with gradient accent -->
+    <div class="relative bg-gradient-to-br from-sky-50 to-indigo-50/30 border-b border-sky-100/50">
+      <div class="flex items-start justify-between p-6">
+        <div class="flex items-start gap-4">
+          <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-sky-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/20">
+            <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
+            </svg>
+          </div>
+          <div>
+            <h3 id="groupMembersTitle" class="text-xl font-bold text-gray-900">Group Members</h3>
+            <p class="text-sm text-gray-600 mt-0.5">Manage team access and permissions</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeGroupMembersModal()" class="rounded-full p-2 text-gray-400 hover:text-gray-600 hover:bg-white/50 transition-all duration-200">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div id="groupMembersBody" class="p-6 space-y-6 overflow-y-auto flex-grow bg-gray-50/30">
+      
+      <!-- Add Member Section -->
+      <div class="bg-white rounded-xl p-5 border-2 border-gray-100 shadow-sm">
+        <label class="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+          <svg class="w-4 h-4 text-sky-600" fill="currentColor" viewBox="0 0 20 20"><path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z"/></svg>
+          Add New Member
+        </label>
+        <div class="flex gap-2">
+          <div class="relative flex-1">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
+            <input 
+              autocomplete="off" 
+              id="addMemberUserSearch" 
+              class="block w-full rounded-lg border-2 border-gray-200 pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-sky-500 focus:outline-none focus:ring-4 focus:ring-sky-500/10 transition-all" 
+              placeholder="Search by name or email..." 
+            />
+            <input type="hidden" id="addMemberUserId" value="" />
+            <div id="userSearchResults" class="absolute z-20 mt-2 w-full bg-white shadow-xl rounded-lg border border-gray-200 hidden max-h-60 overflow-auto"></div>
+          </div>
+          <button id="addMemberBtn" class="rounded-lg bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-700 hover:to-sky-800 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-sky-500/30 hover:shadow-xl hover:shadow-sky-500/40 transition-all whitespace-nowrap flex items-center gap-2">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+            Add
+          </button>
+        </div>
+      </div>
+      
+      <!-- Members List -->
+      <div>
+        <div class="flex justify-between items-center mb-3 px-1">
+          <label class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+            <svg class="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>
+            Current Members
+          </label>
+          <span id="memberCount" class="px-3 py-1 bg-gradient-to-r from-sky-100 to-indigo-100 text-sky-700 rounded-full text-xs font-bold shadow-sm">0</span>
+        </div>
+        
+        <div class="border-2 border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm">
+          <div id="groupMembersList" class="divide-y divide-gray-100 max-h-[320px] overflow-y-auto">
+            <!-- Members will be loaded here -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="flex items-center justify-end gap-3 px-6 py-4 border-t bg-gradient-to-br from-gray-50 to-white rounded-b-2xl">
+      <button type="button" class="rounded-lg bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-700 hover:to-sky-800 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-sky-500/30 hover:shadow-xl hover:shadow-sky-500/40 transition-all" onclick="closeGroupMembersModal()">
+        Done
+      </button>
+    </div>
+  </div>
+</div>
+
+{% endblock manage_content %}
+
+{% block extra_js %}{{ block.super }}
+<style>
+  /* Custom scrollbar for better aesthetics in modals */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 20px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: #94a3b8;
+  }
+</style>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Static base path for icons
+    const BASE = "{% static 'images/manage_users/' %}";
+
+    const ICON_MAP = {
+      'housekeeping': 'housekeeping.svg',
+      'front office': 'front_office.svg',
+      'food & beverage': 'food_beverage.svg',
+      'food & beverages': 'food_beverage.svg',
+      'food and beverage': 'food_beverage.svg',
+      'food and beverages': 'food_beverage.svg',
+      'maintainence': 'maintainence.svg',
+      'maintenance': 'maintainence.svg',
+      'security': 'security.svg'
+    };
+
+    function normalizeName(name) {
+      return (name || '').toLowerCase().trim().replace(/\s+/g, ' ');
+    }
+
+    // Assign icons without infinite reloads; safe fallback
+    document.querySelectorAll('.dept-icon').forEach(function (img) {
+      const raw = img.getAttribute('data-icon-name') || '';
+      const key = normalizeName(raw);
+      const file = ICON_MAP[key] || 'housekeeping.svg'; 
+      img.onerror = function () {
+        this.onerror = null;
+        this.src = BASE + 'housekeeping.svg';
+      };
+      img.src = BASE + file;
+    });
+
+    // Accordion behavior
+    const toggles = document.querySelectorAll('.dept-accordion-toggle');
+
+    function collapse(btn) {
+      const targetId = btn.getAttribute('data-target');
+      const content = document.getElementById(targetId);
+      if (!content) return;
+      btn.setAttribute('aria-expanded', 'false');
+      content.classList.add('hidden');
+      const openIcon = btn.querySelector('.open-icon');
+      const closeIcon = btn.querySelector('.close-icon');
+      if (openIcon) openIcon.classList.remove('hidden');
+      if (closeIcon) closeIcon.classList.add('hidden');
+    }
+
+    function expand(btn) {
+      const targetId = btn.getAttribute('data-target');
+      const content = document.getElementById(targetId);
+      if (!content) return;
+      btn.setAttribute('aria-expanded', 'true');
+      content.classList.remove('hidden');
+      const openIcon = btn.querySelector('.open-icon');
+      const closeIcon = btn.querySelector('.close-icon');
+      if (openIcon) openIcon.classList.add('hidden');
+      if (closeIcon) closeIcon.classList.remove('hidden');
+    }
+
+    toggles.forEach(function (btn) {
+      btn.setAttribute('aria-expanded', 'false');
+      const targetId = btn.getAttribute('data-target');
+      const content = document.getElementById(targetId);
+      if (content && !content.classList.contains('hidden')) {
+        content.classList.add('hidden');
+      }
+      const openIcon = btn.querySelector('.open-icon');
+      const closeIcon = btn.querySelector('.close-icon');
+      if (openIcon) openIcon.classList.remove('hidden');
+      if (closeIcon) closeIcon.classList.add('hidden');
+
+      btn.addEventListener('click', function () {
+        const isExpanded = this.getAttribute('aria-expanded') === 'true';
+        if (isExpanded) {
+          collapse(this);
+        } else {
+          expand(this);
+        }
+      });
+    });
+
+    // --- Dynamic data & notify wiring ---
+    const csrftoken = (function getCSRF(){
+      const el = document.querySelector('input[name=csrfmiddlewaretoken]');
+      if(el) return el.value;
+      const cookieMatch = document.cookie.match(/csrftoken=([^;]+)/);
+      return cookieMatch ? cookieMatch[1] : '';
+    })();
+
+    function apiFetch(url, opts) {
+      opts = opts || {};
+      opts.headers = opts.headers || {};
+      if (opts.method && opts.method.toUpperCase() !== 'GET') {
+        opts.headers['X-CSRFToken'] = csrftoken;
+      }
+      opts.headers['Accept'] = 'application/json';
+      return fetch(url, opts).then(r => r.json());
+    }
+
+    // Fetch department members counts
+    document.querySelectorAll('.department-group[data-dept-id]').forEach(async function(el){
+      const deptId = el.getAttribute('data-dept-id');
+      if(!deptId) return;
+      try{
+        const resp = await apiFetch(`/dashboard/api/departments/${deptId}/members/`);
+        if(resp && resp.members){
+          const members = resp.members;
+          const membersCountEl = el.querySelector('.dept-members-count');
+          const supervisorsEl = el.querySelector('.dept-supervisors-count');
+          const staffEl = el.querySelector('.dept-staff-count');
+          const updatedEl = el.querySelector('.dept-updated-at');
+
+          if(membersCountEl) membersCountEl.textContent = members.length;
+          if(supervisorsEl) supervisorsEl.textContent = members.filter(m=>/supervisor|manager/i.test(m.full_name||'')).length || '0';
+          if(staffEl) staffEl.textContent = Math.max(0, members.length - (parseInt(supervisorsEl.textContent) || 0));
+          if(updatedEl) updatedEl.textContent = 'just now';
+        }
+      }catch(e){
+        // ignore errors 
+      }
+    });
+
+    // Bulk Notify All button
+    const bulkNotifyBtn = document.getElementById('bulkNotifyAllBtn');
+    if(bulkNotifyBtn){
+      bulkNotifyBtn.addEventListener('click', function(){
+        openNotifyModal('bulk', null, 'All Groups');
+      });
+    }
+
+    // Per-department notify buttons
+    document.querySelectorAll('.dept-notify-btn').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        const deptId = this.getAttribute('data-dept-id');
+        const deptName = this.getAttribute('data-dept-name') || 'Department';
+        openNotifyModal('department', deptId, deptName);
+      });
+    });
+
+    // --- Search Functionality ---
+    const quickSearchInput = document.getElementById('quick-search');
+    if (quickSearchInput) {
+      quickSearchInput.placeholder = 'Search groups...';
+      const departmentGroups = document.querySelectorAll('.department-group');
+      
+      function filterGroups(query) {
+        const searchTerm = query.toLowerCase().trim();
+        let visibleCount = 0;
+        
+        departmentGroups.forEach(function(groupEl) {
+          const groupNameEl = groupEl.querySelector('.text-gray-900.text-lg.font-semibold');
+          const groupDescEl = groupEl.querySelector('.text-gray-600.text-sm');
+          
+          const groupName = groupNameEl ? groupNameEl.textContent.toLowerCase() : '';
+          const groupDesc = groupDescEl ? groupDescEl.textContent.toLowerCase() : '';
+          
+          const subGroups = groupEl.querySelectorAll('.group-item .text-gray-900.text-sm.font-medium');
+          let subGroupMatch = false;
+          subGroups.forEach(function(subGroupEl) {
+            if (subGroupEl.textContent.toLowerCase().includes(searchTerm)) {
+              subGroupMatch = true;
+            }
+          });
+          
+          if (searchTerm === '' || groupName.includes(searchTerm) || groupDesc.includes(searchTerm) || subGroupMatch) {
+            groupEl.style.display = '';
+            visibleCount++;
+            if (subGroupMatch && searchTerm !== '') {
+              const toggleBtn = groupEl.querySelector('.dept-accordion-toggle');
+              if (toggleBtn && toggleBtn.getAttribute('aria-expanded') !== 'true') {
+                expand(toggleBtn);
+              }
+            }
+          } else {
+            groupEl.style.display = 'none';
+          }
+        });
+        
+        const accordionContainer = document.getElementById('departments-accordion');
+        let noResultsMsg = document.getElementById('no-search-results');
+        
+        if (visibleCount === 0 && searchTerm !== '') {
+          if (!noResultsMsg) {
+            noResultsMsg = document.createElement('div');
+            noResultsMsg.id = 'no-search-results';
+            noResultsMsg.className = 'text-center py-8 text-gray-500';
+            noResultsMsg.innerHTML = '<p class="text-lg font-medium">No groups found</p><p class="text-sm mt-1">Try adjusting your search term</p>';
+            accordionContainer.appendChild(noResultsMsg);
+          }
+          noResultsMsg.style.display = '';
+        } else if (noResultsMsg) {
+          noResultsMsg.style.display = 'none';
+        }
+      }
+      
+      let searchTimeout;
+      quickSearchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+          filterGroups(this.value);
+        }, 200);
+      });
+      
+      quickSearchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          filterGroups(this.value);
+        }
+        if (e.key === 'Escape') {
+          this.value = '';
+          filterGroups('');
+        }
+      });
+    }
+  });
+</script>
+
+<script>
+// --- Group Members Modal Functions ---
+let currentGroupId = null;
+let currentGroupName = null;
+
+function closeGroupMembersModal() {
+  const modal = document.getElementById('groupMembersModal');
+  const content = modal.querySelector('[data-modal-content]');
+  
+  // Animation out
+  content.classList.remove('scale-100', 'opacity-100');
+  content.classList.add('scale-95', 'opacity-0');
+  modal.classList.add('opacity-0');
+  
+  setTimeout(() => {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    document.getElementById('addMemberUserSearch').value = '';
+    document.getElementById('addMemberUserId').value = '';
+    document.getElementById('userSearchResults').classList.add('hidden');
+    currentGroupId = null;
+    currentGroupName = null;
+  }, 300);
+}
+
+function openGroupMembersModal(groupId, groupName){
+  currentGroupId = groupId;
+  currentGroupName = groupName;
+  
+  const modal = document.getElementById('groupMembersModal');
+  const content = modal.querySelector('[data-modal-content]');
+  const title = document.getElementById('groupMembersTitle');
+  const bodyList = document.getElementById('groupMembersList');
+  const memberCount = document.getElementById('memberCount');
+  
+  title.textContent = groupName || 'Group #' + groupId;
+  bodyList.innerHTML = `
+    <div class="flex flex-col items-center justify-center py-8 text-gray-400">
+       <svg class="animate-spin h-8 w-8 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+       </svg>
+       <span class="text-sm">Loading members...</span>
+    </div>`;
+  memberCount.textContent = '...';
+  
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  
+  // Animation in (slight delay to allow flex render)
+  setTimeout(() => {
+     modal.classList.remove('opacity-0');
+     content.classList.remove('scale-95', 'opacity-0');
+     content.classList.add('scale-100', 'opacity-100');
+  }, 10);
+
+  loadGroupMembers(groupId, groupName);
+  setupAddMemberButton(groupId, groupName);
+  setupUserSearch();
+}
+
+function loadGroupMembers(groupId, groupName) {
+  const bodyList = document.getElementById('groupMembersList');
+  const memberCount = document.getElementById('memberCount');
+  
+  fetch(`/dashboard/api/groups/${groupId}/members/`)
+    .then(r => r.json())
+    .then(j => {
+      const members = j.members || [];
+      memberCount.textContent = members.length + ' member' + (members.length !== 1 ? 's' : '');
+      
+      if(members.length === 0){
+        bodyList.innerHTML = `
+            <div class="text-center py-8">
+                <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-3">
+                    <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                </div>
+                <p class="text-sm text-gray-500">No members in this group yet.</p>
+            </div>
+        `;
+      } else {
+        bodyList.innerHTML = '';
+        members.forEach(m => {
+          const row = document.createElement('div');
+          row.className = 'flex items-center justify-between p-3 hover:bg-gray-50 transition-colors';
+          // Using a random pastel background for the avatar if no image
+          const initial = (m.username || m.full_name || 'U').charAt(0).toUpperCase();
+          row.innerHTML = `
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+              <div class="w-8 h-8 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                ${initial}
+              </div>
+              <div class="min-w-0">
+                <div class="text-sm font-medium text-gray-900 truncate">${escapeHtml(m.username || m.full_name || 'User #' + m.id)}</div>
+                <div class="text-xs text-gray-500 truncate">${escapeHtml(m.email || 'No email')}</div>
+              </div>
+            </div>
+            <button class="text-gray-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-md transition-all group" title="Remove User" onclick="removeMember(${groupId}, ${m.id}, '${escapeHtml(groupName)}')">
+               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            </button>
+          `;
+          bodyList.appendChild(row);
+        });
+      }
+    }).catch(() => { 
+      bodyList.innerHTML = '<p class="text-sm text-red-500 text-center py-4">Failed to load members.</p>';
+      memberCount.textContent = 'Error';
+    });
+}
+
+function setupAddMemberButton(groupId, groupName) {
+  document.getElementById('addMemberBtn').onclick = function(){
+    const uid = document.getElementById('addMemberUserId').value.trim();
+    const searchField = document.getElementById('addMemberUserSearch');
+    
+    if(!uid) {
+      // Simple shake animation on input
+      searchField.classList.add('ring-2', 'ring-red-300');
+      setTimeout(() => searchField.classList.remove('ring-2', 'ring-red-300'), 500);
+      searchField.focus();
+      return;
+    }
+    
+    const btn = this;
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
+    
+    fetch(`/dashboard/manage-users/groups/${groupId}/add-member/`, {
+      method: 'POST', 
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': getCookie('csrftoken')
+      }, 
+      body: `user_id=${encodeURIComponent(uid)}`
+    })
+    .then(r => r.json())
+    .then(j => { 
+      btn.disabled = false;
+      btn.innerHTML = originalText;
+      
+      if(j.success) { 
+        document.getElementById('addMemberUserSearch').value = '';
+        document.getElementById('addMemberUserId').value = '';
+        loadGroupMembers(groupId, groupName);
+        showNotifyToast('User added to group', 'success');
+      } else {
+        alert('Failed to add user: ' + (j.error || 'Unknown error'));
+      }
+    })
+    .catch(() => {
+      btn.disabled = false;
+      btn.innerHTML = originalText;
+      alert('Network error. Please try again.');
+    });
+  };
+}
+
+function setupUserSearch() {
+  const searchField = document.getElementById('addMemberUserSearch');
+  const resultsDiv = document.getElementById('userSearchResults');
+  
+  let debounceTimer = null;
+  
+  searchField.addEventListener('input', function() {
+    clearTimeout(debounceTimer);
+    const query = this.value.trim();
+    
+    if (query.length < 2) {
+      resultsDiv.classList.add('hidden');
+      return;
+    }
+    
+    debounceTimer = setTimeout(() => {
+      fetch(`/dashboard/api/manage-users/filters/?search=${encodeURIComponent(query)}`)
+        .then(r => r.json())
+        .then(data => {
+          resultsDiv.innerHTML = '';
+          let users = data.users || [];
+          
+          if (users.length === 0) {
+             resultsDiv.innerHTML = '<div class="px-4 py-3 text-sm text-gray-500 italic">No users found matching "' + escapeHtml(query) + '"</div>';
+          } else {
+            users.forEach(user => {
+              const div = document.createElement('div');
+              div.className = 'px-4 py-3 hover:bg-sky-50 cursor-pointer text-sm border-b last:border-b-0 border-gray-50 transition-colors';
+              div.innerHTML = `
+                <div class="font-medium text-gray-900">${escapeHtml(user.username || user.name || 'User')}</div>
+                <div class="text-xs text-gray-500">${escapeHtml(user.email || '')}</div>
+              `;
+              div.onclick = () => selectUser(user.id, user.username || user.name);
+              resultsDiv.appendChild(div);
+            });
+          }
+          resultsDiv.classList.remove('hidden');
+        })
+        .catch(() => {
+            // Error handling silent
+        });
+    }, 300);
+  });
+  
+  document.addEventListener('click', function(e) {
+    if (!searchField.contains(e.target) && !resultsDiv.contains(e.target)) {
+      resultsDiv.classList.add('hidden');
+    }
+  });
+}
+
+function selectUser(userId, userName) {
+  document.getElementById('addMemberUserId').value = userId;
+  document.getElementById('addMemberUserSearch').value = userName || 'User #' + userId;
+  document.getElementById('userSearchResults').classList.add('hidden');
+}
+
+function removeMember(groupId, userId, groupName){
+  if(!confirm('Remove this user from the group?')) return;
+  
+  fetch(`/dashboard/manage-users/groups/${groupId}/remove-member/`, {
+    method: 'POST', 
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-CSRFToken': getCookie('csrftoken')
+    }, 
+    body: `user_id=${encodeURIComponent(userId)}`
+  })
+  .then(r => r.json())
+  .then(j => { 
+    if(j.success) { 
+      loadGroupMembers(groupId, groupName || currentGroupName);
+      showNotifyToast('User removed', 'success');
+    } else {
+      alert('Failed to remove: ' + (j.error || 'Unknown error'));
+    }
+  })
+  .catch(() => alert('Network error'));
+}
+
+function openGroupEdit(groupId, groupName){
+  const newName = prompt('Rename group:', groupName);
+  if(!newName || !newName.trim() || newName === groupName) return;
+  
+  fetch(`/dashboard/groups/${groupId}/update/`, {
+    method: 'POST', 
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-CSRFToken': getCookie('csrftoken')
+    }, 
+    body: `name=${encodeURIComponent(newName.trim())}`
+  })
+  .then(r => {
+    if(r.ok) {
+      location.reload();
+    } else {
+      alert('Failed to update group.');
+    }
+  });
+}
+
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Close modal on escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeGroupMembersModal();
+    closeNotifyModal();
+  }
+});
+
+// --- WhatsApp Notification Modal Functions ---
+let currentNotifyType = null; 
+let currentNotifyDeptId = null;
+
+function openNotifyModal(type, deptId, groupName) {
+  currentNotifyType = type;
+  currentNotifyDeptId = deptId;
+  
+  const modal = document.getElementById('notifyModal');
+  const content = modal.querySelector('[data-modal-content]');
+  const title = document.getElementById('notifyModalTitle');
+  const subtitle = document.getElementById('notifyModalSubtitle');
+  const messageInput = document.getElementById('notifyMessage');
+  const recipientCount = document.getElementById('recipientCount');
+  const charCount = document.getElementById('charCount');
+  
+  // Reset form
+  messageInput.value = '';
+  charCount.textContent = '0';
+  
+  if (type === 'bulk') {
+    title.textContent = 'Send WhatsApp Notification';
+    subtitle.textContent = 'To: All Group Members';
+    recipientCount.textContent = 'Target: All registered members';
+  } else {
+    title.textContent = `Send WhatsApp Notification`;
+    subtitle.textContent = `To: ${groupName}`;
+    recipientCount.textContent = 'Calculating recipients...';
+    fetchDeptMemberCount(deptId);
+  }
+  
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  
+  // Animate in
+  setTimeout(() => {
+    modal.classList.remove('opacity-0');
+    content.classList.remove('scale-95', 'opacity-0');
+    content.classList.add('scale-100', 'opacity-100');
+  }, 10);
+  
+  messageInput.focus();
+}
+
+function closeNotifyModal() {
+  const modal = document.getElementById('notifyModal');
+  const content = modal.querySelector('[data-modal-content]');
+  
+  content.classList.remove('scale-100', 'opacity-100');
+  content.classList.add('scale-95', 'opacity-0');
+  modal.classList.add('opacity-0');
+  
+  setTimeout(() => {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    currentNotifyType = null;
+    currentNotifyDeptId = null;
+  }, 300);
+}
+
+async function fetchDeptMemberCount(deptId) {
+  const recipientCount = document.getElementById('recipientCount');
+  try {
+    const resp = await fetch(`/dashboard/api/departments/${deptId}/members/`);
+    const data = await resp.json();
+    const members = data.members || [];
+    recipientCount.textContent = `Target: ${members.length} registered member${members.length !== 1 ? 's' : ''}`;
+  } catch (e) {
+    recipientCount.textContent = 'Target: Unknown';
+  }
+}
+
+async function sendNotification() {
+  const message = document.getElementById('notifyMessage').value.trim();
+  const sendBtn = document.getElementById('sendNotifyBtn');
+  const originalContent = sendBtn.innerHTML;
+  
+  if (!message) {
+    showNotifyToast('Please enter a message', 'error');
+    document.getElementById('notifyMessage').focus();
+    return;
+  }
+  
+  sendBtn.disabled = true;
+  sendBtn.innerHTML = `
+    <svg class="animate-spin w-4 h-4" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+    Sending...
+  `;
+  
+  try {
+    let url = currentNotifyType === 'bulk' ? '/dashboard/api/groups/notify-all/' : `/dashboard/api/departments/${currentNotifyDeptId}/notify/`;
+    
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify({ message: message })
+    });
+    
+    const data = await resp.json();
+    
+    if (data.success || data.sent > 0) {
+      showNotifyToast(`Success! ${data.sent || 0} messages sent.`, 'success');
+      closeNotifyModal();
+    } else {
+      showNotifyToast(`Failed: ${data.error || 'Unknown error'}`, 'error');
+    }
+  } catch (e) {
+    showNotifyToast('Network error. Please try again.', 'error');
+  } finally {
+    sendBtn.disabled = false;
+    sendBtn.innerHTML = originalContent;
+  }
+}
+
+function showNotifyToast(message, type) {
+  const toast = document.createElement('div');
+  toast.className = `fixed bottom-4 right-4 z-[2000] px-4 py-3 rounded-lg shadow-xl transform transition-all duration-300 translate-y-full opacity-0 flex items-center gap-3 border ${
+    type === 'success' ? 'bg-white border-green-100 text-green-800' : 'bg-white border-red-100 text-red-800'
+  }`;
+  
+  const icon = type === 'success' 
+     ? '<div class="bg-green-100 rounded-full p-1"><svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></div>'
+     : '<div class="bg-red-100 rounded-full p-1"><svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></div>';
+
+  toast.innerHTML = `${icon}<span class="text-sm font-medium font-['Inter']">${message}</span>`;
+  document.body.appendChild(toast);
+  
+  requestAnimationFrame(() => {
+    toast.classList.remove('translate-y-full', 'opacity-0');
+  });
+  
+  setTimeout(() => {
+    toast.classList.add('translate-y-full', 'opacity-0');
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const messageInput = document.getElementById('notifyMessage');
+  const charCount = document.getElementById('charCount');
+  if (messageInput && charCount) {
+    messageInput.addEventListener('input', function() {
+      const len = this.value.length;
+      charCount.textContent = len;
+      charCount.className = len > 500 ? 'font-medium text-red-500' : 'font-medium text-gray-600';
+    });
+  }
+  
+  document.querySelectorAll('.template-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const template = this.getAttribute('data-template');
+      const msgInput = document.getElementById('notifyMessage');
+      if (msgInput && template) {
+        msgInput.value = template;
+        msgInput.dispatchEvent(new Event('input'));
+        msgInput.focus();
+      }
+    });
+  });
+  
+  const sendBtn = document.getElementById('sendNotifyBtn');
+  if (sendBtn) {
+    sendBtn.addEventListener('click', sendNotification);
+  }
+});
+</script>
+{% endblock extra_js %}
