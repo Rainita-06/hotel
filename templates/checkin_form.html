@@ -153,7 +153,7 @@
               <label class="block text-gray-900 text-sm font-medium font-['Inter'] mb-2">Room Number</label>
               <div class="relative" id="roomSearchContainer">
                 <!-- Visible Search Input -->
-                <input type="text" id="roomSearchInput" name="room_no"
+                <input type="text" id="roomSearchInput" name="name"
                        class="w-full h-12 px-4 bg-white rounded-lg border border-gray-200 text-gray-900 text-base font-normal leading-normal focus:ring-blue-500 focus:border-blue-500"
                        placeholder="Type to search room..." autocomplete="off" required>
                 
@@ -170,11 +170,11 @@
                     {% for room in available_rooms %}
                     <div class="room-option p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0"
                          data-id="{{ room.pk }}"
-                         data-room="{{ room.room_no }}"
+                         data-room="{{ room.name }}"
                          data-floor="{{ room.floor.floor_number|default:'-' }}"
                          data-building="{{ room.building.name|default:'-' }}">
                         <div class="flex justify-between items-center">
-                            <span class="font-medium text-gray-900 text-lg">{{ room.room_no }}</span>
+                            <span class="font-medium text-gray-900 text-lg">{{ room.name }}</span>
                             <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                                {% if room.building %}{{ room.building.name }}{% endif %} 
                                {% if room.floor %}• Floor {{ room.floor.floor_number }}{% endif %}
@@ -626,100 +626,52 @@ document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('roomSearchInput');
     const dropdown = document.getElementById('roomDropdown');
     const locationInput = document.getElementById('locationIdInput');
+    const options = document.querySelectorAll('.room-option');
+    const noRooms = document.getElementById('noRooms');
     const detailsDiv = document.getElementById('selectedRoomDetails');
     const buildingSpan = document.getElementById('detailBuilding');
     const floorSpan = document.getElementById('detailFloor');
-    const searchUrl = '{% url "dashboard:api_search_locations" %}';
 
     if (!searchInput || !dropdown) return;
 
-    // Debounce utility
-    function debounce(func, wait) {
-        let timeout;
-        return function(...args) {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => func.apply(this, args), wait);
-        };
-    }
-
-    // Function to render room options
-    function renderOptions(rooms) {
-        // Clear current options (except the no-rooms placeholder)
-        dropdown.innerHTML = '';
-        
-        if (rooms.length === 0) {
-           const noRooms = document.createElement('div');
-           noRooms.className = 'p-3 text-sm text-gray-500 text-center';
-           noRooms.textContent = 'No matching rooms';
-           dropdown.appendChild(noRooms);
-           return;
-        }
-
-        rooms.forEach(room => {
-            const div = document.createElement('div');
-            div.className = 'room-option p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0';
-            div.setAttribute('data-id', room.id);
-            div.setAttribute('data-room', room.room_no);
-            div.setAttribute('data-floor', room.floor);
-            div.setAttribute('data-building', room.building);
+    // Filter function
+    function filterRooms(query) {
+        query = query.toLowerCase();
+        let hasMatches = false;
+        options.forEach(option => {
+            const roomTxt = option.getAttribute('data-room').toLowerCase();
+            const floorTxt = option.getAttribute('data-floor').toLowerCase();
+            const buildTxt = option.getAttribute('data-building').toLowerCase();
             
-            div.innerHTML = `
-                <div class="flex justify-between items-center">
-                    <span class="font-medium text-gray-900 text-lg">${room.room_no}</span>
-                    <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                       ${room.building} • Floor ${room.floor}
-                    </span>
-                </div>
-            `;
-            dropdown.appendChild(div);
-        });
-    }
-
-    // Search function
-    const performSearch = debounce(async (query) => {
-        try {
-            const response = await fetch(`${searchUrl}?q=${encodeURIComponent(query)}`);
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success) {
-                    renderOptions(data.results);
-                    dropdown.classList.remove('hidden');
-                }
+            if(roomTxt.includes(query) || floorTxt.includes(query) || buildTxt.includes(query)) {
+                option.style.display = 'block';
+                hasMatches = true;
+            } else {
+                option.style.display = 'none';
             }
-        } catch (error) {
-            console.error('Error fetching rooms:', error);
-        }
-    }, 300);
+        });
+        
+        if (noRooms) noRooms.style.display = hasMatches ? 'none' : 'block';
+        dropdown.classList.remove('hidden');
+    }
 
     // Input events
     searchInput.addEventListener('input', (e) => {
-        const query = e.target.value.trim();
-        locationInput.value = ''; // Reset selected ID when typing
-        if (query.length > 0) {
-            performSearch(query);
-        } else {
-             // If empty, maybe show recent/all or hide? User wants "easier search", assuming typing.
-             // We can fetch default list or just hide. Let's fetch default.
-             performSearch('');
-        }
+        filterRooms(e.target.value);
+        locationInput.value = ''; 
     });
     
     searchInput.addEventListener('focus', () => {
-         // Load default list on focus if empty
-         if (!dropdown.hasChildNodes() || searchInput.value === '') {
-             performSearch(searchInput.value);
-         }
-         dropdown.classList.remove('hidden');
+        dropdown.classList.remove('hidden');
     });
 
-    // Event delegation for selecting an option
-    dropdown.addEventListener('click', function(e) {
-        const option = e.target.closest('.room-option');
-        if (option) {
-            const id = option.getAttribute('data-id');
-            const room = option.getAttribute('data-room');
-            const floor = option.getAttribute('data-floor');
-            const building = option.getAttribute('data-building');
+    // Select Option
+    options.forEach(option => {
+        option.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            const room = this.getAttribute('data-room');
+            const floor = this.getAttribute('data-floor');
+            const building = this.getAttribute('data-building');
 
             // Update visible input and hidden ID
             searchInput.value = room;
@@ -732,7 +684,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Hide dropdown
             dropdown.classList.add('hidden');
-        }
+        });
     });
 
     // Click outside to close

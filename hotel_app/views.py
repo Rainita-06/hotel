@@ -1897,12 +1897,12 @@ def create_voucher_checkin(request):
         # room_no = request.POST.get("room_no") # Deprecated, use location_id
         location_id = request.POST.get("location_id")
         location = None
-        room_no = request.POST.get("room_no") # Fallback or initial value
+        room_no = None # Fallback or initial value
 
         if location_id:
             try:
                 location = Location.objects.get(pk=location_id)
-                room_no = location.room_no # Enable sync with Location
+                room_no = location.name # Enable sync with Location
             except Location.DoesNotExist:
                 pass
         adults = int(request.POST.get("adults", 1))
@@ -2006,11 +2006,8 @@ def create_voucher_checkin(request):
     # Get available rooms from Location model
     available_rooms = Location.objects.filter(
         status='active'
-    ).exclude(
-        room_no__isnull=True
-    ).exclude(
-        room_no=''
-    ).order_by('room_no').select_related('floor', 'building')
+    
+    ).order_by('name').select_related('floor', 'building')
     
     return render(request, "checkin_form.html",{
         "daily_checkins": daily_checkins,
