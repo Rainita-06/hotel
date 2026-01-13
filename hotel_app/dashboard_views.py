@@ -7755,6 +7755,39 @@ def search_guests_api(request):
 
 
 @login_required
+def search_locations_api(request):
+    """
+    Search locations (rooms) by room number or name.
+    Returns JSON list of matching locations.
+    """
+    query = (request.GET.get('q') or '').strip()
+    
+    locations = Location.objects.filter(status='active').exclude(room_no__isnull=True).exclude(room_no='')
+    
+    if query:
+        locations = locations.filter(
+            Q(room_no__icontains=query) | 
+            Q(name__icontains=query) |
+            Q(floor__floor_name__icontains=query) |
+            Q(building__name__icontains=query)
+        )
+        
+    locations = locations.order_by('room_no')[:50]  # Limit results to 50
+    
+    results = []
+    for loc in locations:
+        results.append({
+            'id': loc.pk,
+            'room_no': loc.room_no,
+            'name': loc.name,
+            'building': loc.building.name if loc.building else '-',
+            'floor': loc.floor.floor_number if loc.floor else '-',
+        })
+        
+    return JsonResponse({'success': True, 'results': results})
+
+
+@login_required
 @require_permission([ADMINS_GROUP, STAFF_GROUP])
 def resolve_unmatched_request_api(request, unmatched_id):
     """API endpoint to resolve an unmatched request by creating a ticket and optionally adding keywords."""
