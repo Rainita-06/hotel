@@ -2002,11 +2002,17 @@ def create_voucher_checkin(request):
             "vouchers": vouchers,
             
         })
-
+    occupied_room_ids = Voucher.objects.filter(
+    check_in_date__lte=today,
+    check_out_date__gte=today,
+    is_used=False,
+    location__isnull=False
+).values_list('location_id', flat=True)
     # Get available rooms from Location model
     available_rooms = Location.objects.filter(
         status='active'
-    
+    ).exclude(
+    location_id__in=occupied_room_ids
     ).order_by('name').select_related('floor', 'building')
     
     return render(request, "checkin_form.html",{
@@ -2016,6 +2022,7 @@ def create_voucher_checkin(request):
             "weekly_checkouts": weekly_checkouts,
             "today": today,
             "available_rooms": available_rooms,
+            "occupied_room_ids":occupied_room_ids,
     })
 
 
