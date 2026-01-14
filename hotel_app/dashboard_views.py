@@ -41,6 +41,7 @@ from hotel_app.models import (
     SLAConfiguration,
     DepartmentRequestSLA,
     TwilioSettings,
+    LostAndFound,
     
     UnmatchedRequest,
     WhatsAppConversation,
@@ -251,6 +252,12 @@ _register_section_rules(['voucher_create', 'voucher_update', 'voucher_delete',
 
 _register_section_rules(['gym', 'gym_report'],
                         'gym', 'view')
+
+_register_section_rules(['lost_and_found_list', 'lost_and_found_detail'],
+                        'lost_and_found', 'view')
+_register_section_rules(['lost_and_found_create', 'lost_and_found_update', 
+                         'lost_and_found_accept', 'lost_and_found_broadcast'],
+                        'lost_and_found', 'edit')
 
 # Import export/import utilities
 from .export_import_utils import create_export_file, import_all_data, validate_import_data
@@ -7729,22 +7736,33 @@ def search_guests_api(request):
     """Autocomplete endpoint for guest lookup by name or room number.
     
     Searches both the Guest model (feedback guests) and Voucher model (check-in guests).
+    Only returns guests who are currently checked in (based on checkin/checkout dates).
     """
     if request.method != 'GET':
         return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
 
     query = (request.GET.get('q') or '').strip()
+    # Optional parameter to include all guests (not just checked-in)
+    include_all = request.GET.get('include_all', 'false').lower() == 'true'
     results = []
     seen_keys = set()  # To avoid duplicates
+    today = timezone.localdate()
     
     if query:
-        # Search in Guest model (feedback guests)
-        guests = (
-            Guest.objects.filter(
-                Q(full_name__icontains=query)
-                | Q(room_number__icontains=query)
-                | Q(guest_id__icontains=query)
+        # Search in Guest model (feedback guests) - only currently checked in
+        guest_filter = Q(full_name__icontains=query) | Q(room_number__icontains=query) | Q(guest_id__icontains=query)
+        
+        if not include_all:
+            # Filter for currently checked-in guests
+            guest_filter &= (
+                # Check using legacy date fields
+                (Q(checkin_date__lte=today) & Q(checkout_date__gte=today)) |
+                # Check using datetime fields
+                (Q(checkin_datetime__date__lte=today) & Q(checkout_datetime__date__gte=today))
             )
+        
+        guests = (
+            Guest.objects.filter(guest_filter)
             .order_by('-updated_at')[:10]
         )
         for guest in guests:
@@ -7758,15 +7776,22 @@ def search_guests_api(request):
                     'guest_id': guest.guest_id or '',
                     'phone': guest.phone or '',
                     'source': 'feedback',
+                    'is_checked_in': guest.is_checked_in() if hasattr(guest, 'is_checked_in') else True,
                 })
         
-        # Search in Voucher model (breakfast voucher check-in guests)
-        vouchers = (
-            Voucher.objects.filter(
-                Q(guest_name__icontains=query)
-                | Q(room_no__icontains=query)
-                | Q(phone_number__icontains=query)
+        # Search in Voucher model (breakfast voucher check-in guests) - only currently checked in
+        voucher_filter = Q(guest_name__icontains=query) | Q(room_no__icontains=query) | Q(phone_number__icontains=query)
+        
+        if not include_all:
+            # Filter for currently checked-in guests (check_in_date <= today <= check_out_date, not checked out)
+            voucher_filter &= (
+                Q(check_in_date__lte=today) & 
+                Q(check_out_date__gte=today) & 
+                Q(is_used=False)  # is_used=True means checked out
             )
+        
+        vouchers = (
+            Voucher.objects.filter(voucher_filter)
             .order_by('-created_at')[:10]
         )
         for voucher in vouchers:
@@ -7780,6 +7805,7 @@ def search_guests_api(request):
                     'guest_id': '',
                     'phone': voucher.phone_number or '',
                     'source': 'checkin',
+                    'is_checked_in': not voucher.is_used,
                 })
 
     return JsonResponse({'success': True, 'results': results})
@@ -10000,3 +10026,338 @@ def no_access_view(request):
     
     return render(request, 'dashboard/no_access.html', context)
 
+
+# ---- Lost and Found Views ----
+
+@login_required
+@require_section_permission('lost_and_found', 'view')
+def lost_and_found_list(request):
+    """
+    Display list of all lost and found items with filtering.
+    """
+    items = LostAndFound.objects.all().select_related(
+        'location', 'guest', 'voucher', 'assigned_department', 
+        'assigned_user', 'accepted_by', 'reported_by'
+    )
+    
+    # Apply filters
+    status_filter = request.GET.get('status', '')
+    item_type_filter = request.GET.get('item_type', '')
+    priority_filter = request.GET.get('priority', '')
+    search_query = request.GET.get('q', '')
+    
+    if status_filter:
+        items = items.filter(status=status_filter)
+    if item_type_filter:
+        items = items.filter(item_type=item_type_filter)
+    if priority_filter:
+        items = items.filter(priority=priority_filter)
+    if search_query:
+        items = items.filter(
+            Q(item_name__icontains=search_query) |
+            Q(item_description__icontains=search_query) |
+            Q(guest_name__icontains=search_query) |
+            Q(room_number__icontains=search_query)
+        )
+    
+    # Get statistics
+    stats = {
+        'total': LostAndFound.objects.count(),
+        'open': LostAndFound.objects.filter(status='open').count(),
+        'in_progress': LostAndFound.objects.filter(status='in_progress').count(),
+        'claimed': LostAndFound.objects.filter(status='claimed').count(),
+        'returned': LostAndFound.objects.filter(status='returned').count(),
+    }
+    
+    # Get all departments for assignment dropdown
+    departments = Department.objects.filter(is_active=True)
+    
+    # Get all active users for assignment
+    users = User.objects.filter(is_active=True).order_by('first_name', 'last_name')
+    
+    context = {
+        'items': items,
+        'stats': stats,
+        'departments': departments,
+        'users': users,
+        'status_choices': LostAndFound.STATUS_CHOICES,
+        'type_choices': LostAndFound.TYPE_CHOICES,
+        'priority_choices': LostAndFound.PRIORITY_CHOICES,
+        'status_filter': status_filter,
+        'item_type_filter': item_type_filter,
+        'priority_filter': priority_filter,
+        'search_query': search_query,
+    }
+    
+    return render(request, 'dashboard/lost_and_found.html', context)
+
+
+@login_required
+@require_section_permission('lost_and_found', 'view')
+def lost_and_found_detail(request, item_id):
+    """
+    Display details of a specific lost and found item.
+    """
+    item = get_object_or_404(LostAndFound, pk=item_id)
+    
+    context = {
+        'item': item,
+        'departments': Department.objects.filter(is_active=True),
+        'users': User.objects.filter(is_active=True).order_by('first_name', 'last_name'),
+        'status_choices': LostAndFound.STATUS_CHOICES,
+        'priority_choices': LostAndFound.PRIORITY_CHOICES,
+    }
+    
+    return render(request, 'dashboard/lost_and_found_detail.html', context)
+
+
+@login_required
+@require_section_permission('lost_and_found', 'edit')
+def lost_and_found_create(request):
+    """
+    Create a new lost and found item.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
+    
+    try:
+        # Get form data
+        item_type = request.POST.get('item_type', 'guest_lost')
+        item_name = request.POST.get('item_name', '').strip()
+        item_description = request.POST.get('item_description', '').strip()
+        item_category = request.POST.get('item_category', '').strip()
+        room_number = request.POST.get('room_number', '').strip()
+        found_location_description = request.POST.get('found_location_description', '').strip()
+        guest_name = request.POST.get('guest_name', '').strip()
+        guest_phone = request.POST.get('guest_phone', '').strip()
+        guest_email = request.POST.get('guest_email', '').strip()
+        priority = request.POST.get('priority', 'normal')
+        broadcast = request.POST.get('broadcast') == 'true'
+        
+        # Validation
+        if not item_name:
+            return JsonResponse({'success': False, 'error': 'Item name is required'}, status=400)
+        
+        # Get location if room number provided
+        location = None
+        if room_number:
+            location = Location.objects.filter(
+                Q(name__iexact=room_number) | Q(room_number__iexact=room_number)
+            ).first()
+        
+        # Get guest if available
+        guest = None
+        guest_id = request.POST.get('guest_id')
+        if guest_id:
+            try:
+                guest = Guest.objects.get(pk=guest_id)
+            except Guest.DoesNotExist:
+                pass
+        
+        # Get voucher if available (for items left in rooms)
+        voucher = None
+        voucher_id = request.POST.get('voucher_id')
+        if voucher_id:
+            try:
+                voucher = Voucher.objects.get(pk=voucher_id)
+            except Voucher.DoesNotExist:
+                pass
+        
+        # Create the lost and found item
+        item = LostAndFound.objects.create(
+            item_type=item_type,
+            item_name=item_name,
+            item_description=item_description or None,
+            item_category=item_category or None,
+            location=location,
+            room_number=room_number or None,
+            found_location_description=found_location_description or None,
+            guest=guest,
+            guest_name=guest_name or None,
+            guest_phone=guest_phone or None,
+            guest_email=guest_email or None,
+            voucher=voucher,
+            priority=priority,
+            reported_by=request.user,
+        )
+        
+        # Broadcast if requested
+        if broadcast:
+            item.broadcast_to_all()
+        
+        return JsonResponse({
+            'success': True, 
+            'message': 'Lost and found item created successfully',
+            'item_id': item.pk
+        })
+        
+    except Exception as e:
+        logger.error(f"Error creating lost and found item: {e}")
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+@require_section_permission('lost_and_found', 'edit')
+def lost_and_found_update(request, item_id):
+    """
+    Update a lost and found item.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
+    
+    try:
+        item = get_object_or_404(LostAndFound, pk=item_id)
+        
+        # Update fields
+        action = request.POST.get('action')
+        
+        if action == 'update_status':
+            new_status = request.POST.get('status')
+            notes = request.POST.get('notes', '').strip()
+            
+            if new_status in dict(LostAndFound.STATUS_CHOICES):
+                item.status = new_status
+                if notes:
+                    item.resolution_notes = notes
+                
+                # Update timestamps based on status
+                if new_status == 'claimed':
+                    item.claimed_at = timezone.now()
+                elif new_status == 'returned':
+                    item.returned_at = timezone.now()
+                elif new_status == 'closed':
+                    item.closed_at = timezone.now()
+                
+                item.save()
+                return JsonResponse({'success': True, 'message': 'Status updated'})
+        
+        elif action == 'assign':
+            department_id = request.POST.get('department_id')
+            user_id = request.POST.get('user_id')
+            
+            if department_id:
+                item.assigned_department = Department.objects.get(pk=department_id)
+            if user_id:
+                item.assigned_user = User.objects.get(pk=user_id)
+            
+            item.save()
+            return JsonResponse({'success': True, 'message': 'Assignment updated'})
+        
+        elif action == 'mark_found':
+            storage_location = request.POST.get('storage_location', '').strip()
+            item.mark_found(user=request.user, storage_location=storage_location or None)
+            return JsonResponse({'success': True, 'message': 'Item marked as found'})
+        
+        elif action == 'update_details':
+            # Update basic details
+            item.item_name = request.POST.get('item_name', item.item_name)
+            item.item_description = request.POST.get('item_description', item.item_description)
+            item.item_category = request.POST.get('item_category', item.item_category)
+            item.priority = request.POST.get('priority', item.priority)
+            item.storage_location = request.POST.get('storage_location', item.storage_location)
+            item.save()
+            return JsonResponse({'success': True, 'message': 'Details updated'})
+        
+        return JsonResponse({'success': False, 'error': 'Invalid action'}, status=400)
+        
+    except Exception as e:
+        logger.error(f"Error updating lost and found item: {e}")
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+@require_section_permission('lost_and_found', 'edit')
+def lost_and_found_accept(request, item_id):
+    """
+    Accept a lost and found task.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
+    
+    try:
+        item = get_object_or_404(LostAndFound, pk=item_id)
+        
+        if item.status != 'open':
+            return JsonResponse({
+                'success': False, 
+                'error': 'This item has already been accepted or resolved'
+            }, status=400)
+        
+        item.accept_task(request.user)
+        
+        return JsonResponse({
+            'success': True, 
+            'message': 'Task accepted successfully',
+            'accepted_by': request.user.get_full_name() or request.user.username
+        })
+        
+    except Exception as e:
+        logger.error(f"Error accepting lost and found task: {e}")
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+@require_section_permission('lost_and_found', 'edit')
+def lost_and_found_broadcast(request, item_id):
+    """
+    Broadcast a lost item notification to all users.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
+    
+    try:
+        item = get_object_or_404(LostAndFound, pk=item_id)
+        
+        if item.is_broadcast:
+            return JsonResponse({
+                'success': False, 
+                'error': 'This item has already been broadcast'
+            }, status=400)
+        
+        item.broadcast_to_all()
+        
+        return JsonResponse({
+            'success': True, 
+            'message': 'Notification broadcast to all staff'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error broadcasting lost and found item: {e}")
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+@require_section_permission('lost_and_found', 'view')
+def lost_and_found_search_guests_api(request):
+    """
+    Search for checked-in guests for lost and found items.
+    Returns only currently checked-in guests.
+    """
+    query = request.GET.get('q', '').strip()
+    results = []
+    
+    if query and len(query) >= 2:
+        today = timezone.now().date()
+        
+        # Search in Voucher model for currently checked-in guests
+        vouchers = Voucher.objects.filter(
+            Q(guest_name__icontains=query) | Q(room_no__icontains=query),
+            check_in_date__lte=today,
+            check_out_date__gte=today,
+            is_used=False
+        ).order_by('-created_at')[:10]
+        
+        for voucher in vouchers:
+            results.append({
+                'id': f'voucher_{voucher.id}',
+                'voucher_id': voucher.id,
+                'name': voucher.guest_name,
+                'room': voucher.room_no,
+                'phone': voucher.phone_number,
+                'email': voucher.email,
+                'type': 'voucher',
+                'check_in': voucher.check_in_date.strftime('%d %b %Y') if voucher.check_in_date else '',
+                'check_out': voucher.check_out_date.strftime('%d %b %Y') if voucher.check_out_date else '',
+            })
+    
+    return JsonResponse({'success': True, 'results': results})

@@ -139,4 +139,13 @@ urlpatterns = [
     path('api/twilio/test-connection/', dashboard_views.test_twilio_connection, name='api_twilio_test_connection'),
     path('api/twilio/save-field/', dashboard_views.save_twilio_setting, name='api_twilio_save_field'),
     path('api/twilio/send-test-message/', dashboard_views.send_test_twilio_message, name='api_twilio_send_test_message'),
+    
+    # Lost and Found
+    path('lost-and-found/', dashboard_views.lost_and_found_list, name='lost_and_found'),
+    path('lost-and-found/<int:item_id>/', dashboard_views.lost_and_found_detail, name='lost_and_found_detail'),
+    path('api/lost-and-found/create/', dashboard_views.lost_and_found_create, name='api_lost_and_found_create'),
+    path('api/lost-and-found/<int:item_id>/update/', dashboard_views.lost_and_found_update, name='api_lost_and_found_update'),
+    path('api/lost-and-found/<int:item_id>/accept/', dashboard_views.lost_and_found_accept, name='api_lost_and_found_accept'),
+    path('api/lost-and-found/<int:item_id>/broadcast/', dashboard_views.lost_and_found_broadcast, name='api_lost_and_found_broadcast'),
+    path('api/lost-and-found/search-guests/', dashboard_views.lost_and_found_search_guests_api, name='api_lost_and_found_search_guests'),
 ]

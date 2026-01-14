@@ -1919,6 +1919,7 @@ def create_voucher_checkin(request):
         include_breakfast = request.POST.get("include_breakfast") == "on"
 
 
+
         # ==========================================================
         # ✅ ✅ ✅ CASE 1: BREAKFAST OFF → NORMAL CHECK-IN ONLY
         # ==========================================================
@@ -1936,6 +1937,11 @@ def create_voucher_checkin(request):
                 check_in_date=check_in_date,
                 check_out_date=check_out_date,
             )
+            
+            # ✅ Mark the room/location as occupied
+            if location:
+                location.is_occupied = True
+                location.save(update_fields=['is_occupied'])
 
             # ✅ Redirect to NORMAL success page
             return render(request, "checkin_success.html", {
@@ -1960,6 +1966,11 @@ def create_voucher_checkin(request):
             check_out_date=check_out_date,
             include_breakfast=True,
         )
+        
+        # ✅ Mark the room/location as occupied
+        if location:
+            location.is_occupied = True
+            location.save(update_fields=['is_occupied'])
 
         landing_url = reverse("voucher_landing", args=[voucher.voucher_code])
         scan_url = reverse("scan_voucher", args=[voucher.voucher_code])
@@ -2009,8 +2020,10 @@ def create_voucher_checkin(request):
     location__isnull=False
 ).values_list('location_id', flat=True)
     # Get available rooms from Location model
+    # Filter by status='active', is_occupied=False, and exclude rooms currently occupied via vouchers
     available_rooms = Location.objects.filter(
-        status='active'
+        status='active',
+        is_occupied=False  # Only show rooms not marked as occupied
     ).exclude(
     location_id__in=occupied_room_ids
     ).order_by('name').select_related('floor', 'building')
@@ -2227,6 +2240,7 @@ from .models import Voucher
 def mark_checkout(request, voucher_id):
     """
     Mark a voucher as checked out (set today's date as checkout).
+    Also marks the associated room (Location) as not occupied.
     """
     try:
         voucher = Voucher.objects.get(id=voucher_id)
@@ -2239,6 +2253,11 @@ def mark_checkout(request, voucher_id):
     voucher.check_out_date = today
     voucher.is_used = True   # ✅ THIS IS REQUIRED FOR GREEN STATUS
     voucher.save()
+    
+    # ✅ Mark the room/location as no longer occupied
+    if voucher.location:
+        voucher.location.is_occupied = False
+        voucher.location.save(update_fields=['is_occupied'])
 
     # ✅ For AJAX tests
     if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.method == "POST":

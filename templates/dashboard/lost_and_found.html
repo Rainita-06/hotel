@@ -1,0 +1,625 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+{% load dashboard2_extras %}
+
+{% block extra_css %}
+<style>
+    html {
+        scroll-behavior: smooth;
+    }
+    
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-slide-in-up {
+        opacity: 0;
+        animation: slideInUp 0.6s ease-out forwards;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    
+    .status-open { background: #fef3c7; color: #92400e; }
+    .status-in_progress { background: #dbeafe; color: #1e40af; }
+    .status-claimed { background: #d1fae5; color: #065f46; }
+    .status-returned { background: #cffafe; color: #0e7490; }
+    .status-disposed { background: #f3f4f6; color: #4b5563; }
+    .status-closed { background: #e5e7eb; color: #374151; }
+    
+    .priority-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.375rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    
+    .priority-low { background: #e5e7eb; color: #374151; }
+    .priority-normal { background: #dbeafe; color: #1e40af; }
+    .priority-high { background: #fed7aa; color: #9a3412; }
+    .priority-urgent { background: #fecaca; color: #991b1b; }
+    
+    .item-type-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.375rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    
+    .type-guest_left { background: #fae8ff; color: #86198f; }
+    .type-guest_lost { background: #ffedd5; color: #9a3412; }
+    .type-staff_found { background: #dcfce7; color: #166534; }
+
+    .autocomplete-list {
+        position: absolute;
+        z-index: 50;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 0.5rem;
+        margin-top: 0.25rem;
+        max-height: 12rem;
+        overflow-y: auto;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    }
+
+    .autocomplete-item {
+        padding: 0.5rem 0.75rem;
+        cursor: pointer;
+    }
+
+    .autocomplete-item:hover {
+        background: #eff6ff;
+    }
+    
+    .stat-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+</style>
+{% endblock extra_css %}
+
+{% block content %}
+<div class="w-full max-w-[1184px] mx-auto bg-transparent">
+
+    <!-- Header -->
+    <div class="w-full h-20 bg-white border-b border-gray-200 flex items-center px-6">
+        <div class="w-full flex justify-between items-center">
+            <div>
+                <h1 class="text-gray-900 text-2xl font-bold font-['Inter']">Lost & Found</h1>
+                <p class="text-gray-600 text-sm font-normal font-['Inter']">Track and manage lost items reported by guests and staff</p>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <form autocomplete="off" id="searchForm" method="get" class="relative flex items-center gap-2">
+                    <div class="relative">
+                        <img src="{% static 'images/tickets/search.svg' %}" alt="Search Icon" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" />
+                        <input autocomplete="off" type="text" name="q" placeholder="Search items..." value="{{ search_query|default:'' }}" class="w-64 h-10 pl-10 pr-4 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                    </div>
+                    <button type="submit" class="h-10 px-4 bg-sky-600 text-white font-medium rounded-lg hover:bg-sky-700 transition-colors">
+                        Search
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="p-6">
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+            <div class="stat-card bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">Total Items</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ stats.total }}</p>
+                    </div>
+                    <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">Open</p>
+                        <p class="text-2xl font-bold text-yellow-600">{{ stats.open }}</p>
+                    </div>
+                    <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">In Progress</p>
+                        <p class="text-2xl font-bold text-blue-600">{{ stats.in_progress }}</p>
+                    </div>
+                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">Claimed</p>
+                        <p class="text-2xl font-bold text-green-600">{{ stats.claimed }}</p>
+                    </div>
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">Returned</p>
+                        <p class="text-2xl font-bold text-cyan-600">{{ stats.returned }}</p>
+                    </div>
+                    <div class="w-12 h-12 bg-cyan-100 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-gray-900 text-lg font-semibold font-['Inter']">Lost & Found Items</h2>
+                <button id="openCreateModal" class="h-10 px-4 bg-sky-600 rounded-lg text-white flex items-center justify-center gap-2 hover:bg-sky-700 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Report Item</span>
+                </button>
+            </div>
+            
+            <!-- Filters -->
+            <div class="flex flex-wrap gap-4 mb-6">
+                <select id="statusFilter" class="h-10 px-4 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                    <option value="">All Status</option>
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                
+                <select id="typeFilter" class="h-10 px-4 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                    <option value="">All Types</option>
+                    {% for value, label in type_choices %}
+                    <option value="{{ value }}" {% if item_type_filter == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                
+                <select id="priorityFilter" class="h-10 px-4 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                    <option value="">All Priorities</option>
+                    {% for value, label in priority_choices %}
+                    <option value="{{ value }}" {% if priority_filter == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                
+                <button id="applyFilters" class="h-10 px-4 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                    Apply Filters
+                </button>
+            </div>
+            
+            <!-- Items Table -->
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-gray-200">
+                            <th class="text-left py-3 px-4 text-gray-600 text-sm font-medium">Item</th>
+                            <th class="text-left py-3 px-4 text-gray-600 text-sm font-medium">Type</th>
+                            <th class="text-left py-3 px-4 text-gray-600 text-sm font-medium">Guest/Room</th>
+                            <th class="text-left py-3 px-4 text-gray-600 text-sm font-medium">Status</th>
+                            <th class="text-left py-3 px-4 text-gray-600 text-sm font-medium">Priority</th>
+                            <th class="text-left py-3 px-4 text-gray-600 text-sm font-medium">Reported</th>
+                            <th class="text-left py-3 px-4 text-gray-600 text-sm font-medium">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                            <td class="py-4 px-4">
+                                <div>
+                                    <p class="text-gray-900 font-medium">{{ item.item_name }}</p>
+                                    {% if item.item_category %}
+                                    <p class="text-gray-500 text-sm">{{ item.item_category }}</p>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="py-4 px-4">
+                                <span class="item-type-badge type-{{ item.item_type }}">
+                                    {{ item.get_item_type_display }}
+                                </span>
+                            </td>
+                            <td class="py-4 px-4">
+                                <div>
+                                    {% if item.guest_name %}
+                                    <p class="text-gray-900 text-sm">{{ item.guest_name }}</p>
+                                    {% endif %}
+                                    {% if item.room_number %}
+                                    <p class="text-gray-500 text-sm">Room {{ item.room_number }}</p>
+                                    {% elif item.found_location_description %}
+                                    <p class="text-gray-500 text-sm">{{ item.found_location_description }}</p>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="py-4 px-4">
+                                <span class="status-badge status-{{ item.status }}">
+                                    {{ item.get_status_display }}
+                                </span>
+                            </td>
+                            <td class="py-4 px-4">
+                                <span class="priority-badge priority-{{ item.priority }}">
+                                    {{ item.get_priority_display }}
+                                </span>
+                            </td>
+                            <td class="py-4 px-4">
+                                <div>
+                                    <p class="text-gray-900 text-sm">{{ item.reported_at|date:"d M Y" }}</p>
+                                    <p class="text-gray-500 text-xs">{{ item.reported_at|time:"H:i" }}</p>
+                                </div>
+                            </td>
+                            <td class="py-4 px-4">
+                                <div class="flex items-center gap-2">
+                                    <a href="{% url 'dashboard:lost_and_found_detail' item.id %}" class="text-sky-600 hover:text-sky-800 text-sm font-medium">
+                                        View
+                                    </a>
+                                    {% if item.status == 'open' %}
+                                    <button onclick="acceptItem({{ item.id }})" class="text-green-600 hover:text-green-800 text-sm font-medium">
+                                        Accept
+                                    </button>
+                                    {% endif %}
+                                    {% if not item.is_broadcast %}
+                                    <button onclick="broadcastItem({{ item.id }})" class="text-orange-600 hover:text-orange-800 text-sm font-medium">
+                                        Broadcast
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="py-12 text-center">
+                                <div class="flex flex-col items-center">
+                                    <svg class="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                    </svg>
+                                    <p class="text-gray-500 text-lg font-medium">No items found</p>
+                                    <p class="text-gray-400 text-sm">Start by reporting a lost or found item</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Item Modal -->
+<div id="createItemModal" class="fixed inset-0 z-50 hidden">
+    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="closeModal()"></div>
+    <div class="fixed inset-0 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-semibold text-gray-900">Report Lost/Found Item</h2>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">&times;</button>
+                </div>
+            </div>
+            
+            <form id="createItemForm" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Item Type *</label>
+                    <select name="item_type" required class="w-full h-10 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
+                        {% for value, label in type_choices %}
+                        <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Item Name *</label>
+                    <input type="text" name="item_name" required placeholder="e.g., Black Wallet, iPhone 14, Passport" class="w-full h-10 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea name="item_description" rows="3" placeholder="Describe the item in detail..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"></textarea>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <select name="item_category" class="w-full h-10 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
+                        <option value="">Select category</option>
+                        <option value="Electronics">Electronics</option>
+                        <option value="Clothing">Clothing</option>
+                        <option value="Documents">Documents</option>
+                        <option value="Jewelry">Jewelry</option>
+                        <option value="Bags">Bags</option>
+                        <option value="Keys">Keys</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Room Number</label>
+                        <input type="text" name="room_number" placeholder="e.g., 101" class="w-full h-10 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                        <select name="priority" class="w-full h-10 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
+                            {% for value, label in priority_choices %}
+                            <option value="{{ value }}" {% if value == 'normal' %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Found Location</label>
+                    <input type="text" name="found_location_description" placeholder="e.g., Near pool, In lobby, Restaurant" class="w-full h-10 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                </div>
+                
+                <div class="border-t border-gray-200 pt-4">
+                    <h3 class="text-sm font-medium text-gray-900 mb-3">Guest Information (Optional)</h3>
+                    <div class="space-y-3">
+                        <div class="relative">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Guest Name</label>
+                            <input type="text" name="guest_name" id="guestNameInput" placeholder="Search guest..." class="w-full h-10 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                            <div id="guestAutocomplete" class="autocomplete-list hidden"></div>
+                            <input type="hidden" name="voucher_id" id="voucherIdInput" />
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                                <input type="text" name="guest_phone" placeholder="+1234567890" class="w-full h-10 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                <input type="email" name="guest_email" placeholder="guest@email.com" class="w-full h-10 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" name="broadcast" id="broadcastCheckbox" class="w-4 h-4 text-sky-600 border-gray-300 rounded focus:ring-sky-500" />
+                    <label for="broadcastCheckbox" class="text-sm text-gray-700">🔔 Broadcast to all staff immediately</label>
+                </div>
+                
+                <div class="flex justify-end gap-3 pt-4">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-6 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors">
+                        Report Item
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+    const csrfToken = '{{ csrf_token }}';
+    
+    // Modal functions
+    function openModal() {
+        document.getElementById('createItemModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeModal() {
+        document.getElementById('createItemModal').classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+    
+    document.getElementById('openCreateModal').addEventListener('click', openModal);
+    
+    // Form submission
+    document.getElementById('createItemForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        formData.set('broadcast', document.getElementById('broadcastCheckbox').checked ? 'true' : 'false');
+        
+        try {
+            const response = await fetch("{% url 'dashboard:api_lost_and_found_create' %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                },
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                alert('Item reported successfully!');
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Failed to report item'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        }
+    });
+    
+    // Accept item
+    async function acceptItem(itemId) {
+        if (!confirm('Accept this lost and found task?')) return;
+        
+        try {
+            const response = await fetch(`/dashboard/api/lost-and-found/${itemId}/accept/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                alert('Task accepted successfully!');
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Failed to accept task'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        }
+    }
+    
+    // Broadcast item
+    async function broadcastItem(itemId) {
+        if (!confirm('Broadcast this item to all staff?')) return;
+        
+        try {
+            const response = await fetch(`/dashboard/api/lost-and-found/${itemId}/broadcast/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                alert('Item broadcast to all staff!');
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Failed to broadcast item'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        }
+    }
+    
+    // Filters
+    document.getElementById('applyFilters').addEventListener('click', function() {
+        const status = document.getElementById('statusFilter').value;
+        const type = document.getElementById('typeFilter').value;
+        const priority = document.getElementById('priorityFilter').value;
+        
+        const params = new URLSearchParams();
+        if (status) params.set('status', status);
+        if (type) params.set('item_type', type);
+        if (priority) params.set('priority', priority);
+        
+        const searchInput = document.querySelector('input[name="q"]');
+        if (searchInput && searchInput.value) {
+            params.set('q', searchInput.value);
+        }
+        
+        window.location.href = '?' + params.toString();
+    });
+    
+    // Guest autocomplete
+    let autocompleteTimeout = null;
+    const guestNameInput = document.getElementById('guestNameInput');
+    const guestAutocomplete = document.getElementById('guestAutocomplete');
+    const voucherIdInput = document.getElementById('voucherIdInput');
+    
+    guestNameInput.addEventListener('input', function() {
+        const query = this.value.trim();
+        
+        clearTimeout(autocompleteTimeout);
+        
+        if (query.length < 2) {
+            guestAutocomplete.classList.add('hidden');
+            return;
+        }
+        
+        autocompleteTimeout = setTimeout(async () => {
+            try {
+                const response = await fetch(`{% url 'dashboard:api_lost_and_found_search_guests' %}?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                
+                if (data.success && data.results.length > 0) {
+                    guestAutocomplete.innerHTML = data.results.map(result => `
+                        <div class="autocomplete-item" 
+                             onclick="selectGuest('${result.name}', ${result.voucher_id}, '${result.room}', '${result.phone || ''}', '${result.email || ''}')">
+                            <div class="font-medium">${result.name}</div>
+                            <div class="text-sm text-gray-500">Room ${result.room} | ${result.check_in} - ${result.check_out}</div>
+                        </div>
+                    `).join('');
+                    guestAutocomplete.classList.remove('hidden');
+                } else {
+                    guestAutocomplete.classList.add('hidden');
+                }
+            } catch (error) {
+                console.error('Autocomplete error:', error);
+            }
+        }, 300);
+    });
+    
+    function selectGuest(name, voucherId, room, phone, email) {
+        guestNameInput.value = name;
+        voucherIdInput.value = voucherId;
+        
+        // Fill in room and contact info
+        document.querySelector('input[name="room_number"]').value = room || '';
+        document.querySelector('input[name="guest_phone"]').value = phone || '';
+        document.querySelector('input[name="guest_email"]').value = email || '';
+        
+        guestAutocomplete.classList.add('hidden');
+    }
+    
+    // Close autocomplete on outside click
+    document.addEventListener('click', function(e) {
+        if (!guestNameInput.contains(e.target) && !guestAutocomplete.contains(e.target)) {
+            guestAutocomplete.classList.add('hidden');
+        }
+    });
+</script>
+{% endblock extra_js %}

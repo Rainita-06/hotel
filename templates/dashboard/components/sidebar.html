@@ -35,7 +35,7 @@
     </div>
 
     <!-- Management Section - Show if user has ANY management permission -->
-    {% if user|has_section_permission:'users.view' or user|has_section_permission:'locations.view' or user|has_section_permission:'breakfast_voucher.view' or user|has_section_permission:'tickets.view' or user|has_section_permission:'requests.view' or user|has_section_permission:'sla.view' or user|has_section_permission:'messaging.view' or user|has_section_permission:'gym.view' or user|has_section_permission:'integrations.view' %}
+    {% if user|has_section_permission:'users.view' or user|has_section_permission:'locations.view' or user|has_section_permission:'breakfast_voucher.view' or user|has_section_permission:'tickets.view' or user|has_section_permission:'requests.view' or user|has_section_permission:'sla.view' or user|has_section_permission:'messaging.view' or user|has_section_permission:'gym.view' or user|has_section_permission:'lost_and_found.view' or user|has_section_permission:'integrations.view' %}
     <div>
       <div class="px-3 py-1 text-gray-400 text-xs font-semibold tracking-tight">
         Management
@@ -126,6 +126,16 @@
           <span class="font-medium">Gym</span>
         </a>
         {% endwith %}
+        {% endif %}
+
+        {% if user|has_section_permission:'lost_and_found.view' %}
+        <a href="{% url 'dashboard:lost_and_found' %}"
+          class="flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.view_name == 'dashboard:lost_and_found' or request.resolver_match.view_name == 'dashboard:lost_and_found_detail' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-gray-100 {% endif %}">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+          </svg>
+          <span class="font-medium">Lost & Found</span>
+        </a>
         {% endif %}
 
         {% if user|has_section_permission:'integrations.view' %}

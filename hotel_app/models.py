@@ -2247,6 +2247,7 @@ class Section(models.Model):
             ('feedback', 'Feedback', 'Feedback/Reviews section'),
             ('breakfast_voucher', 'Breakfast Voucher', 'Breakfast Voucher section'),
             ('dashboard', 'Dashboard', 'Dashboard overview section'),
+            ('lost_and_found', 'Lost and Found', 'Lost and Found section'),
         ]
         
         created_sections = []
@@ -2261,3 +2262,167 @@ class Section(models.Model):
             )
             created_sections.append(section)
         return created_sections
+
+
+# ---- Lost and Found ----
+
+class LostAndFound(models.Model):
+    """
+    Model for tracking lost and found items.
+    
+    This supports:
+    1. Items forgotten by guests in rooms (reported by staff)
+    2. Lost items reported by guests (can be broadcast to all staff)
+    3. Found items reported by staff
+    """
+    TYPE_CHOICES = [
+        ('guest_left', 'Guest Left Item in Room'),
+        ('guest_lost', 'Guest Lost Item'),
+        ('staff_found', 'Staff Found Item'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('open', 'Open'),
+        ('in_progress', 'In Progress'),
+        ('claimed', 'Claimed'),
+        ('returned', 'Returned to Guest'),
+        ('disposed', 'Disposed'),
+        ('closed', 'Closed'),
+    ]
+    
+    PRIORITY_CHOICES = [
+        ('low', 'Low'),
+        ('normal', 'Normal'),
+        ('high', 'High'),
+        ('urgent', 'Urgent'),
+    ]
+
+    # Basic Information
+    item_type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='guest_lost')
+    item_name = models.CharField(max_length=200)
+    item_description = models.TextField(blank=True, null=True)
+    item_category = models.CharField(max_length=100, blank=True, null=True)  # e.g., Electronics, Clothing, Documents
+    
+    # Location Information
+    location = models.ForeignKey('Location', on_delete=models.SET_NULL, null=True, blank=True, related_name='lost_items')
+    room_number = models.CharField(max_length=50, blank=True, null=True)
+    found_location_description = models.CharField(max_length=255, blank=True, null=True)  # e.g., "Near pool", "In lobby"
+    
+    # Guest Information (for guest-reported lost items)
+    guest = models.ForeignKey('Guest', on_delete=models.SET_NULL, null=True, blank=True, related_name='lost_items')
+    guest_name = models.CharField(max_length=160, blank=True, null=True)
+    guest_phone = models.CharField(max_length=20, blank=True, null=True)
+    guest_email = models.EmailField(blank=True, null=True)
+    
+    # Voucher reference (for items left in rooms during checkout)
+    voucher = models.ForeignKey('Voucher', on_delete=models.SET_NULL, null=True, blank=True, related_name='lost_items')
+    
+    # Status and Priority
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='normal')
+    
+    # Assignment
+    assigned_department = models.ForeignKey('Department', on_delete=models.SET_NULL, null=True, blank=True, related_name='lost_found_items')
+    assigned_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_lost_items')
+    accepted_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='accepted_lost_items')
+    
+    # Broadcasting
+    is_broadcast = models.BooleanField(default=False, help_text="If true, notification is sent to all users/departments")
+    broadcast_at = models.DateTimeField(null=True, blank=True)
+    
+    # Timestamps
+    reported_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='reported_lost_items')
+    reported_at = models.DateTimeField(auto_now_add=True)
+    accepted_at = models.DateTimeField(null=True, blank=True)
+    found_at = models.DateTimeField(null=True, blank=True)
+    claimed_at = models.DateTimeField(null=True, blank=True)
+    returned_at = models.DateTimeField(null=True, blank=True)
+    closed_at = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    # Resolution
+    resolution_notes = models.TextField(blank=True, null=True)
+    
+    # Storage Information (for found items)
+    storage_location = models.CharField(max_length=200, blank=True, null=True)  # Where the item is stored
+    
+    class Meta:
+        db_table = 'lost_and_found'
+        ordering = ['-reported_at']
+        verbose_name = 'Lost and Found Item'
+        verbose_name_plural = 'Lost and Found Items'
+    
+    def __str__(self):
+        return f"{self.item_name} ({self.get_status_display()})"
+    
+    def accept_task(self, user):
+        """Accept the lost and found task."""
+        self.accepted_by = user
+        self.accepted_at = timezone.now()
+        self.status = 'in_progress'
+        self.save()
+    
+    def mark_found(self, user=None, storage_location=None):
+        """Mark item as found."""
+        self.found_at = timezone.now()
+        if storage_location:
+            self.storage_location = storage_location
+        self.status = 'in_progress'
+        self.save()
+    
+    def mark_claimed(self, notes=None):
+        """Mark item as claimed by the owner."""
+        self.claimed_at = timezone.now()
+        self.status = 'claimed'
+        if notes:
+            self.resolution_notes = notes
+        self.save()
+    
+    def mark_returned(self, notes=None):
+        """Mark item as returned to guest."""
+        self.returned_at = timezone.now()
+        self.status = 'returned'
+        if notes:
+            self.resolution_notes = notes
+        self.save()
+    
+    def close(self, notes=None):
+        """Close the lost and found record."""
+        self.closed_at = timezone.now()
+        self.status = 'closed'
+        if notes:
+            self.resolution_notes = notes
+        self.save()
+    
+    def broadcast_to_all(self):
+        """Broadcast notification to all users about this lost item."""
+        from .utils import create_bulk_notifications
+        
+        if not self.is_broadcast:
+            self.is_broadcast = True
+            self.broadcast_at = timezone.now()
+            self.save(update_fields=['is_broadcast', 'broadcast_at'])
+            
+            # Get all active users
+            all_users = User.objects.filter(is_active=True)
+            
+            if self.item_type == 'guest_lost':
+                title = f"🔍 Lost Item Alert: {self.item_name}"
+                message = f"A guest has reported a lost item: {self.item_name}. "
+            else:
+                title = f"📦 Found Item: {self.item_name}"
+                message = f"An item has been found: {self.item_name}. "
+            
+            if self.room_number:
+                message += f"Related to room {self.room_number}. "
+            if self.found_location_description:
+                message += f"Location: {self.found_location_description}. "
+            message += "Please check if you can help locate/return this item."
+            
+            create_bulk_notifications(
+                recipients=all_users,
+                title=title,
+                message=message,
+                notification_type='info',
+                related_object=self
+            )

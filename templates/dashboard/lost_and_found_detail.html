@@ -1,0 +1,609 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+{% load dashboard2_extras %}
+
+{% block extra_css %}
+<style>
+    .detail-card {
+        background: white;
+        border-radius: 1rem;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    }
+    
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+    
+    .status-open { background: #fef3c7; color: #92400e; }
+    .status-in_progress { background: #dbeafe; color: #1e40af; }
+    .status-claimed { background: #d1fae5; color: #065f46; }
+    .status-returned { background: #cffafe; color: #0e7490; }
+    .status-disposed { background: #f3f4f6; color: #4b5563; }
+    .status-closed { background: #e5e7eb; color: #374151; }
+    
+    .priority-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+    
+    .priority-low { background: #e5e7eb; color: #374151; }
+    .priority-normal { background: #dbeafe; color: #1e40af; }
+    .priority-high { background: #fed7aa; color: #9a3412; }
+    .priority-urgent { background: #fecaca; color: #991b1b; }
+    
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        color: #6b7280;
+        font-size: 0.875rem;
+    }
+    
+    .info-value {
+        color: #1f2937;
+        font-weight: 500;
+        font-size: 0.875rem;
+    }
+    
+    .action-btn {
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+    
+    .action-btn-primary {
+        background: #0284c7;
+        color: white;
+    }
+    
+    .action-btn-primary:hover {
+        background: #0369a1;
+    }
+    
+    .action-btn-success {
+        background: #059669;
+        color: white;
+    }
+    
+    .action-btn-success:hover {
+        background: #047857;
+    }
+    
+    .action-btn-warning {
+        background: #f59e0b;
+        color: white;
+    }
+    
+    .action-btn-warning:hover {
+        background: #d97706;
+    }
+    
+    .action-btn-secondary {
+        background: #f3f4f6;
+        color: #374151;
+    }
+    
+    .action-btn-secondary:hover {
+        background: #e5e7eb;
+    }
+    
+    .timeline-item {
+        position: relative;
+        padding-left: 2rem;
+        padding-bottom: 1.5rem;
+    }
+    
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: 0.5rem;
+        top: 0.5rem;
+        width: 0.5rem;
+        height: 0.5rem;
+        background: #0284c7;
+        border-radius: 50%;
+    }
+    
+    .timeline-item::after {
+        content: '';
+        position: absolute;
+        left: 0.6875rem;
+        top: 1.25rem;
+        width: 2px;
+        height: calc(100% - 1rem);
+        background: #e5e7eb;
+    }
+    
+    .timeline-item:last-child::after {
+        display: none;
+    }
+</style>
+{% endblock extra_css %}
+
+{% block content %}
+<div class="w-full max-w-[1184px] mx-auto bg-transparent">
+
+    <!-- Header -->
+    <div class="w-full h-20 bg-white border-b border-gray-200 flex items-center px-6">
+        <div class="w-full flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <a href="{% url 'dashboard:lost_and_found' %}" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                </a>
+                <div>
+                    <h1 class="text-gray-900 text-2xl font-bold font-['Inter']">{{ item.item_name }}</h1>
+                    <p class="text-gray-600 text-sm font-normal font-['Inter']">
+                        Reported {{ item.reported_at|date:"d M Y, H:i" }} by {{ item.reported_by.get_full_name|default:item.reported_by.username }}
+                    </p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <span class="status-badge status-{{ item.status }}">
+                    {{ item.get_status_display }}
+                </span>
+                <span class="priority-badge priority-{{ item.priority }}">
+                    {{ item.get_priority_display }} Priority
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Main Content -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Item Details -->
+            <div class="detail-card p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Item Details</h2>
+                
+                <div class="space-y-1">
+                    <div class="info-row">
+                        <span class="info-label">Item Type</span>
+                        <span class="info-value">{{ item.get_item_type_display }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Category</span>
+                        <span class="info-value">{{ item.item_category|default:"—" }}</span>
+                    </div>
+                    {% if item.item_description %}
+                    <div class="py-4">
+                        <span class="info-label block mb-2">Description</span>
+                        <p class="text-gray-700">{{ item.item_description }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Location Information -->
+            <div class="detail-card p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Location Information</h2>
+                
+                <div class="space-y-1">
+                    {% if item.room_number %}
+                    <div class="info-row">
+                        <span class="info-label">Room Number</span>
+                        <span class="info-value">{{ item.room_number }}</span>
+                    </div>
+                    {% endif %}
+                    {% if item.location %}
+                    <div class="info-row">
+                        <span class="info-label">Location</span>
+                        <span class="info-value">
+                            {{ item.location.name }}
+                            {% if item.location.floor %} - {{ item.location.floor.name }}{% endif %}
+                            {% if item.location.building %} - {{ item.location.building.name }}{% endif %}
+                        </span>
+                    </div>
+                    {% endif %}
+                    {% if item.found_location_description %}
+                    <div class="info-row">
+                        <span class="info-label">Found Location</span>
+                        <span class="info-value">{{ item.found_location_description }}</span>
+                    </div>
+                    {% endif %}
+                    {% if item.storage_location %}
+                    <div class="info-row">
+                        <span class="info-label">Storage Location</span>
+                        <span class="info-value">{{ item.storage_location }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Guest Information -->
+            {% if item.guest_name or item.guest_phone or item.guest_email or item.voucher %}
+            <div class="detail-card p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Guest Information</h2>
+                
+                <div class="space-y-1">
+                    {% if item.guest_name %}
+                    <div class="info-row">
+                        <span class="info-label">Guest Name</span>
+                        <span class="info-value">{{ item.guest_name }}</span>
+                    </div>
+                    {% endif %}
+                    {% if item.guest_phone %}
+                    <div class="info-row">
+                        <span class="info-label">Phone</span>
+                        <span class="info-value">{{ item.guest_phone }}</span>
+                    </div>
+                    {% endif %}
+                    {% if item.guest_email %}
+                    <div class="info-row">
+                        <span class="info-label">Email</span>
+                        <span class="info-value">{{ item.guest_email }}</span>
+                    </div>
+                    {% endif %}
+                    {% if item.voucher %}
+                    <div class="info-row">
+                        <span class="info-label">Check-in/out</span>
+                        <span class="info-value">
+                            {{ item.voucher.check_in_date|date:"d M Y" }} - {{ item.voucher.check_out_date|date:"d M Y" }}
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Resolution Notes -->
+            {% if item.resolution_notes %}
+            <div class="detail-card p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Resolution Notes</h2>
+                <p class="text-gray-700">{{ item.resolution_notes }}</p>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="space-y-6">
+            <!-- Quick Actions -->
+            <div class="detail-card p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+                
+                <div class="space-y-3">
+                    {% if item.status == 'open' %}
+                    <button onclick="acceptItem()" class="w-full action-btn action-btn-success flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Accept Task
+                    </button>
+                    {% endif %}
+                    
+                    {% if not item.is_broadcast %}
+                    <button onclick="broadcastItem()" class="w-full action-btn action-btn-warning flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                        </svg>
+                        Broadcast to All Staff
+                    </button>
+                    {% else %}
+                    <div class="w-full action-btn action-btn-secondary flex items-center justify-center gap-2 cursor-not-allowed">
+                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Already Broadcast
+                    </div>
+                    {% endif %}
+                    
+                    {% if item.status == 'in_progress' %}
+                    <button onclick="updateStatus('claimed')" class="w-full action-btn action-btn-primary flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Mark as Claimed
+                    </button>
+                    <button onclick="updateStatus('returned')" class="w-full action-btn action-btn-success flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
+                        </svg>
+                        Mark as Returned
+                    </button>
+                    {% endif %}
+                    
+                    {% if item.status != 'closed' and item.status != 'returned' %}
+                    <button onclick="updateStatus('closed')" class="w-full action-btn action-btn-secondary flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                        Close Case
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Assignment -->
+            <div class="detail-card p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Assignment</h2>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-2">Assigned Department</label>
+                        <select id="departmentSelect" class="w-full h-10 px-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 text-sm">
+                            <option value="">Not Assigned</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept.id }}" {% if item.assigned_department and item.assigned_department.id == dept.id %}selected{% endif %}>
+                                {{ dept.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-2">Assigned User</label>
+                        <select id="userSelect" class="w-full h-10 px-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 text-sm">
+                            <option value="">Not Assigned</option>
+                            {% for user in users %}
+                            <option value="{{ user.id }}" {% if item.assigned_user and item.assigned_user.id == user.id %}selected{% endif %}>
+                                {{ user.get_full_name|default:user.username }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <button onclick="updateAssignment()" class="w-full action-btn action-btn-primary">
+                        Update Assignment
+                    </button>
+                </div>
+                
+                {% if item.accepted_by %}
+                <div class="mt-4 pt-4 border-t border-gray-200">
+                    <p class="text-sm text-gray-600">
+                        <span class="font-medium">Accepted by:</span> 
+                        {{ item.accepted_by.get_full_name|default:item.accepted_by.username }}
+                    </p>
+                    {% if item.accepted_at %}
+                    <p class="text-sm text-gray-500">{{ item.accepted_at|date:"d M Y, H:i" }}</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Timeline -->
+            <div class="detail-card p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Timeline</h2>
+                
+                <div class="space-y-0">
+                    <div class="timeline-item">
+                        <p class="text-sm font-medium text-gray-900">Item Reported</p>
+                        <p class="text-xs text-gray-500">{{ item.reported_at|date:"d M Y, H:i" }}</p>
+                    </div>
+                    
+                    {% if item.is_broadcast %}
+                    <div class="timeline-item">
+                        <p class="text-sm font-medium text-gray-900">Broadcast to Staff</p>
+                        <p class="text-xs text-gray-500">{{ item.broadcast_at|date:"d M Y, H:i" }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if item.accepted_at %}
+                    <div class="timeline-item">
+                        <p class="text-sm font-medium text-gray-900">Task Accepted</p>
+                        <p class="text-xs text-gray-500">{{ item.accepted_at|date:"d M Y, H:i" }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if item.found_at %}
+                    <div class="timeline-item">
+                        <p class="text-sm font-medium text-gray-900">Item Found</p>
+                        <p class="text-xs text-gray-500">{{ item.found_at|date:"d M Y, H:i" }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if item.claimed_at %}
+                    <div class="timeline-item">
+                        <p class="text-sm font-medium text-gray-900">Item Claimed</p>
+                        <p class="text-xs text-gray-500">{{ item.claimed_at|date:"d M Y, H:i" }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if item.returned_at %}
+                    <div class="timeline-item">
+                        <p class="text-sm font-medium text-gray-900">Returned to Guest</p>
+                        <p class="text-xs text-gray-500">{{ item.returned_at|date:"d M Y, H:i" }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if item.closed_at %}
+                    <div class="timeline-item">
+                        <p class="text-sm font-medium text-gray-900">Case Closed</p>
+                        <p class="text-xs text-gray-500">{{ item.closed_at|date:"d M Y, H:i" }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notes Modal -->
+<div id="notesModal" class="fixed inset-0 z-50 hidden">
+    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="closeNotesModal()"></div>
+    <div class="fixed inset-0 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-semibold text-gray-900">Add Notes</h2>
+                    <button onclick="closeNotesModal()" class="text-gray-400 hover:text-gray-600">&times;</button>
+                </div>
+            </div>
+            
+            <form id="notesForm" class="p-6 space-y-4">
+                <input type="hidden" id="pendingStatus" value="" />
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Resolution Notes</label>
+                    <textarea id="notesInput" rows="4" placeholder="Add notes about this resolution..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"></textarea>
+                </div>
+                
+                <div class="flex justify-end gap-3">
+                    <button type="button" onclick="closeNotesModal()" class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-6 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700">
+                        Update Status
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+    const csrfToken = '{{ csrf_token }}';
+    const itemId = {{ item.id }};
+    
+    async function acceptItem() {
+        if (!confirm('Accept this lost and found task?')) return;
+        
+        try {
+            const response = await fetch(`/dashboard/api/lost-and-found/${itemId}/accept/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                alert('Task accepted successfully!');
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Failed to accept task'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        }
+    }
+    
+    async function broadcastItem() {
+        if (!confirm('Broadcast this item to all staff?')) return;
+        
+        try {
+            const response = await fetch(`/dashboard/api/lost-and-found/${itemId}/broadcast/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                alert('Item broadcast to all staff!');
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Failed to broadcast item'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        }
+    }
+    
+    function updateStatus(status) {
+        document.getElementById('pendingStatus').value = status;
+        document.getElementById('notesModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeNotesModal() {
+        document.getElementById('notesModal').classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+    
+    document.getElementById('notesForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const status = document.getElementById('pendingStatus').value;
+        const notes = document.getElementById('notesInput').value;
+        
+        try {
+            const formData = new FormData();
+            formData.append('action', 'update_status');
+            formData.append('status', status);
+            formData.append('notes', notes);
+            
+            const response = await fetch(`/dashboard/api/lost-and-found/${itemId}/update/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                },
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                alert('Status updated successfully!');
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Failed to update status'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        }
+    });
+    
+    async function updateAssignment() {
+        const departmentId = document.getElementById('departmentSelect').value;
+        const userId = document.getElementById('userSelect').value;
+        
+        try {
+            const formData = new FormData();
+            formData.append('action', 'assign');
+            if (departmentId) formData.append('department_id', departmentId);
+            if (userId) formData.append('user_id', userId);
+            
+            const response = await fetch(`/dashboard/api/lost-and-found/${itemId}/update/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                },
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                alert('Assignment updated successfully!');
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Failed to update assignment'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        }
+    }
+</script>
+{% endblock extra_js %}
