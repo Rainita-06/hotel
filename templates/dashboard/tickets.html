@@ -880,7 +880,7 @@ document.addEventListener('DOMContentLoaded', function() {
             requestTypeSuggestions.classList.add('hidden');
         }
     });
-    
+    const rawGuestId = document.getElementById('guestId').value;
     const submitTicketBtn = document.getElementById('submitCreateTicket');
     if (submitTicketBtn) { 
         submitTicketBtn.addEventListener('click', () => { 
@@ -891,7 +891,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 category: selectedRequestType ? selectedRequestType.name : '', 
                 priority: selectedPriority, 
                 description: document.getElementById('description').value.trim(),
-                guest_id: document.getElementById('guestId').value || null 
+                guest_id: rawGuestId && !isNaN(rawGuestId)
+        ? parseInt(rawGuestId, 10)
+        : null 
             }; 
             if (!ticketData.guest_name || !ticketData.room_number || !ticketData.department || !ticketData.category || !ticketData.priority) { 
                 // Use toast notification instead of alert
