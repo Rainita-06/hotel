@@ -2,12 +2,13 @@
 // Firebase configuration - Replace with your actual Firebase config
 // TODO: Update these values with your Firebase project configuration
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT_ID.appspot.com",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyC_00jdAaoy8YuwhD6vqwc2bK55PZ_eouY",
+    authDomain: "guestconnect2.firebaseapp.com",
+    projectId: "guestconnect2",
+    storageBucket: "guestconnect2.firebasestorage.app",
+    messagingSenderId: "1059307478512",
+    appId: "1:1059307478512:web:836d6a30116854271bd135",
+    measurementId: "G-080L2D262S"
 };
 
 // VAPID key from environment
