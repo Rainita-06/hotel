@@ -194,6 +194,10 @@ TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN', '')
 TWILIO_WHATSAPP_FROM = os.environ.get('TWILIO_WHATSAPP_FROM', '')
 TWILIO_TEST_TO_NUMBER = os.environ.get('TWILIO_TEST_TO_NUMBER', '')
 
+# Firebase Configuration
+FIREBASE_VAPID_KEY = os.environ.get('FIREBASE_VAPID_KEY', '')
+
+
 # Django REST Framework Configuration
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [

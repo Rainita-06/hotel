@@ -2426,3 +2426,52 @@ class LostAndFound(models.Model):
                 notification_type='info',
                 related_object=self
             )
+
+
+# ---- Firebase Cloud Messaging (FCM) ----
+
+class FCMToken(models.Model):
+    """
+    Store Firebase Cloud Messaging tokens for push notifications.
+    Each user can have multiple tokens (multiple devices/browsers).
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='fcm_tokens'
+    )
+    token = models.CharField(max_length=255, unique=True, help_text='FCM registration token', db_index=True)
+    device_type = models.CharField(
+
+        max_length=20,
+        choices=[
+            ('web', 'Web Browser'),
+            ('android', 'Android'),
+            ('ios', 'iOS'),
+        ],
+        default='web'
+    )
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    last_used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'fcm_token'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'is_active']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.device_type} ({self.token[:20]}...)"
+
+    def mark_as_used(self):
+        """Update the last_used_at timestamp"""
+        self.last_used_at = timezone.now()
+        self.save(update_fields=['last_used_at'])
+
+    def deactivate(self):
+        """Deactivate this token"""
+        self.is_active = False
+        self.save(update_fields=['is_active'])

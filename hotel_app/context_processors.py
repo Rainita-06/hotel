@@ -47,4 +47,5 @@ def nav_permissions(request):
         "USERS_GROUP": getattr(settings, "USERS_GROUP", "Users"),
         "user_role": user_role,
         "section_permissions": section_permissions,
+        "FIREBASE_VAPID_KEY": getattr(settings, "FIREBASE_VAPID_KEY", ""),
     }

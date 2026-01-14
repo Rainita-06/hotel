@@ -16,6 +16,16 @@
   
   <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="{% static 'manifest.json' %}">
+  <meta name="theme-color" content="#0284C7">
+  
+  <!-- Apple Touch Icon -->
+  <link rel="apple-touch-icon" href="{% static 'images/icon-192.png' %}">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="GuestConnect">
 
   <!-- Local Tailwind CSS -->
    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
@@ -23,6 +33,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   {% block extra_css %}{% endblock %}
+
 </head>
 <body class="bg-gray-50 text-gray-900 font-['Inter']">
   <!-- CSRF token for JavaScript -->
@@ -64,6 +75,41 @@
     {% block content %}{% endblock %}
   </main>
 
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js"></script>
+
+  <!-- Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      // Register main service worker
+      navigator.serviceWorker.register('/static/sw.js')
+        .then(registration => {
+          console.log('[SW] Main service worker registered:', registration);
+        })
+        .catch(error => {
+          console.error('[SW] Main service worker registration failed:', error);
+        });
+
+      // Register Firebase messaging service worker
+      navigator.serviceWorker.register('/static/firebase-messaging-sw.js')
+        .then(registration => {
+          console.log('[SW] Firebase messaging service worker registered:', registration);
+        })
+        .catch(error => {
+          console.error('[SW] Firebase messaging service worker registration failed:', error);
+        });
+    }
+  </script>
+
+  <!-- Firebase Initialization -->
+  <script>
+    // Pass VAPID key from Django to JavaScript
+    const FIREBASE_VAPID_KEY = "{{ FIREBASE_VAPID_KEY }}";
+  </script>
+  <script src="{% static 'js/firebase-init.js' %}"></script>
+
   {% block extra_js %}{% endblock %}
+
 </body>
 </html>
