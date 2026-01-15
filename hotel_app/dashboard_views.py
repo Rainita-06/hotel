@@ -20,7 +20,10 @@ from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from django.contrib.auth import get_user_model
 import os
 import logging
+import csv
 from django.core.serializers.json import DjangoJSONEncoder
+
+logger = logging.getLogger(__name__)
 
 # Import all models from hotel_app
 from hotel_app.models import (
@@ -10095,6 +10098,67 @@ def lost_and_found_list(request):
 
 @login_required
 @require_section_permission('lost_and_found', 'view')
+def lost_and_found_export(request):
+    """
+    Export lost and found items to CSV.
+    """
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="lost_and_found_report.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow([
+        'ID', 'Item Name', 'Type', 'Description', 'Category', 'Status', 'Priority', 
+        'Location', 'Room', 'Guest Name', 'Reported By', 'Reported At', 
+        'Assigned To', 'Resolution Notes'
+    ])
+
+    items = LostAndFound.objects.all().select_related(
+        'location', 'guest', 'assigned_user', 'reported_by'
+    )
+    
+    # Apply filters
+    status_filter = request.GET.get('status', '')
+    item_type_filter = request.GET.get('item_type', '')
+    priority_filter = request.GET.get('priority', '')
+    search_query = request.GET.get('q', '')
+    
+    if status_filter:
+        items = items.filter(status=status_filter)
+    if item_type_filter:
+        items = items.filter(item_type=item_type_filter)
+    if priority_filter:
+        items = items.filter(priority=priority_filter)
+    if search_query:
+        items = items.filter(
+            Q(item_name__icontains=search_query) |
+            Q(item_description__icontains=search_query) |
+            Q(guest_name__icontains=search_query) |
+            Q(room_number__icontains=search_query)
+        )
+
+    for item in items:
+        writer.writerow([
+            item.id,
+            item.item_name,
+            item.get_item_type_display(),
+            item.item_description or '',
+            item.item_category or '',
+            item.get_status_display(),
+            item.get_priority_display(),
+            item.location.name if item.location else '',
+            item.room_number or '',
+            item.guest_name or '',
+            item.reported_by.get_full_name() if item.reported_by else '',
+            item.reported_at.strftime('%Y-%m-%d %H:%M:%S'),
+            item.assigned_user.get_full_name() if item.assigned_user else '',
+            item.resolution_notes or ''
+        ])
+
+    return response
+
+
+@login_required
+@require_section_permission('lost_and_found', 'view')
 def lost_and_found_detail(request, item_id):
     """
     Display details of a specific lost and found item.
@@ -10143,7 +10207,7 @@ def lost_and_found_create(request):
         location = None
         if room_number:
             location = Location.objects.filter(
-                Q(name__iexact=room_number) | Q(room_number__iexact=room_number)
+                Q(name__iexact=room_number) | Q(room_no__iexact=room_number)
             ).first()
         
         # Get guest if available

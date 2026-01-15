@@ -142,6 +142,7 @@ urlpatterns = [
     
     # Lost and Found
     path('lost-and-found/', dashboard_views.lost_and_found_list, name='lost_and_found'),
+    path('lost-and-found/export/', dashboard_views.lost_and_found_export, name='lost_and_found_export'),
     path('lost-and-found/<int:item_id>/', dashboard_views.lost_and_found_detail, name='lost_and_found_detail'),
     path('api/lost-and-found/create/', dashboard_views.lost_and_found_create, name='api_lost_and_found_create'),
     path('api/lost-and-found/<int:item_id>/update/', dashboard_views.lost_and_found_update, name='api_lost_and_found_update'),
