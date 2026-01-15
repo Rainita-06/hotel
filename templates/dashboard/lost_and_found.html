@@ -93,11 +93,65 @@
     
     .stat-card {
         transition: transform 0.2s ease, box-shadow 0.2s ease;
+        cursor: pointer;
     }
     
     .stat-card:hover {
         transform: translateY(-2px);
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stat-card.active {
+        ring: 2px;
+        ring-color: #0ea5e9;
+        border-color: #0ea5e9;
+    }
+    
+    /* Status dropdown styles */
+    .status-dropdown {
+        position: relative;
+        display: inline-block;
+    }
+    
+    .status-dropdown-content {
+        display: none;
+        position: absolute;
+        right: 0;
+        background-color: white;
+        min-width: 160px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        border-radius: 0.5rem;
+        border: 1px solid #e5e7eb;
+        overflow: hidden;
+    }
+    
+    .status-dropdown-content.show {
+        display: block;
+    }
+    
+    .status-dropdown-item {
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        transition: background-color 0.15s;
+    }
+    
+    .status-dropdown-item:hover {
+        background-color: #f3f4f6;
+    }
+    
+    /* Table row hover actions */
+    .table-row-actions {
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+    
+    tr:hover .table-row-actions {
+        opacity: 1;
     }
 </style>
 {% endblock extra_css %}
@@ -130,7 +184,7 @@
     <div class="p-6">
         <!-- Statistics Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-            <div class="stat-card bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+            <div class="stat-card bg-white rounded-xl shadow-sm border border-gray-200 p-4 {% if not status_filter %}ring-2 ring-sky-500{% endif %}" data-action="total">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-gray-600 text-sm font-medium">Total Items</p>
@@ -144,7 +198,7 @@
                 </div>
             </div>
             
-            <div class="stat-card bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+            <div class="stat-card bg-white rounded-xl shadow-sm border border-gray-200 p-4 {% if status_filter == 'open' %}ring-2 ring-yellow-500{% endif %}" data-status="open">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-gray-600 text-sm font-medium">Open</p>
@@ -158,7 +212,7 @@
                 </div>
             </div>
             
-            <div class="stat-card bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+            <div class="stat-card bg-white rounded-xl shadow-sm border border-gray-200 p-4 {% if status_filter == 'in_progress' %}ring-2 ring-blue-500{% endif %}" data-status="in_progress">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-gray-600 text-sm font-medium">In Progress</p>
@@ -172,7 +226,7 @@
                 </div>
             </div>
             
-            <div class="stat-card bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+            <div class="stat-card bg-white rounded-xl shadow-sm border border-gray-200 p-4 {% if status_filter == 'claimed' %}ring-2 ring-green-500{% endif %}" data-status="claimed">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-gray-600 text-sm font-medium">Claimed</p>
@@ -186,7 +240,7 @@
                 </div>
             </div>
             
-            <div class="stat-card bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+            <div class="stat-card bg-white rounded-xl shadow-sm border border-gray-200 p-4 {% if status_filter == 'returned' %}ring-2 ring-cyan-500{% endif %}" data-status="returned">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-gray-600 text-sm font-medium">Returned</p>
@@ -247,6 +301,15 @@
                 <button id="applyFilters" class="h-10 px-4 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
                     Apply Filters
                 </button>
+                
+                {% if status_filter or item_type_filter or priority_filter or search_query %}
+                <a href="{% url 'dashboard:lost_and_found' %}" class="h-10 px-4 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                    Clear Filters
+                </a>
+                {% endif %}
             </div>
             
             <!-- Items Table -->
@@ -265,10 +328,12 @@
                     </thead>
                     <tbody>
                         {% for item in items %}
-                        <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                        <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors" data-item-id="{{ item.id }}">
                             <td class="py-4 px-4">
                                 <div>
-                                    <p class="text-gray-900 font-medium">{{ item.item_name }}</p>
+                                    <a href="{% url 'dashboard:lost_and_found_detail' item.id %}" class="text-gray-900 font-medium hover:text-sky-600 transition-colors">
+                                        {{ item.item_name }}
+                                    </a>
                                     {% if item.item_category %}
                                     <p class="text-gray-500 text-sm">{{ item.item_category }}</p>
                                     {% endif %}
@@ -292,9 +357,31 @@
                                 </div>
                             </td>
                             <td class="py-4 px-4">
-                                <span class="status-badge status-{{ item.status }}">
-                                    {{ item.get_status_display }}
-                                </span>
+                                <div class="status-dropdown">
+                                    <button type="button" class="status-badge status-{{ item.status }} cursor-pointer hover:opacity-80 flex items-center gap-1" onclick="toggleStatusDropdown({{ item.id }})">
+                                        {{ item.get_status_display }}
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </button>
+                                    <div id="statusDropdown-{{ item.id }}" class="status-dropdown-content">
+                                        <div class="status-dropdown-item" onclick="updateItemStatus({{ item.id }}, 'open')">
+                                            <span class="w-2 h-2 rounded-full bg-yellow-500"></span> Open
+                                        </div>
+                                        <div class="status-dropdown-item" onclick="updateItemStatus({{ item.id }}, 'in_progress')">
+                                            <span class="w-2 h-2 rounded-full bg-blue-500"></span> In Progress
+                                        </div>
+                                        <div class="status-dropdown-item" onclick="updateItemStatus({{ item.id }}, 'claimed')">
+                                            <span class="w-2 h-2 rounded-full bg-green-500"></span> Claimed
+                                        </div>
+                                        <div class="status-dropdown-item" onclick="updateItemStatus({{ item.id }}, 'returned')">
+                                            <span class="w-2 h-2 rounded-full bg-cyan-500"></span> Returned
+                                        </div>
+                                        <div class="status-dropdown-item" onclick="updateItemStatus({{ item.id }}, 'closed')">
+                                            <span class="w-2 h-2 rounded-full bg-gray-500"></span> Closed
+                                        </div>
+                                    </div>
+                                </div>
                             </td>
                             <td class="py-4 px-4">
                                 <span class="priority-badge priority-{{ item.priority }}">
@@ -312,15 +399,17 @@
                                     <a href="{% url 'dashboard:lost_and_found_detail' item.id %}" class="text-sky-600 hover:text-sky-800 text-sm font-medium">
                                         View
                                     </a>
-                                    {% if item.status == 'open' %}
-                                    <button onclick="acceptItem({{ item.id }})" class="text-green-600 hover:text-green-800 text-sm font-medium">
-                                        Accept
-                                    </button>
-                                    {% endif %}
                                     {% if not item.is_broadcast %}
                                     <button onclick="broadcastItem({{ item.id }})" class="text-orange-600 hover:text-orange-800 text-sm font-medium">
                                         Broadcast
                                     </button>
+                                    {% else %}
+                                    <span class="text-green-600 text-xs">
+                                        <svg class="w-4 h-4 inline" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        Broadcasted
+                                    </span>
                                     {% endif %}
                                 </div>
                             </td>
@@ -353,7 +442,7 @@
             <div class="p-6 border-b border-gray-200">
                 <div class="flex justify-between items-center">
                     <h2 class="text-xl font-semibold text-gray-900">Report Lost/Found Item</h2>
-                    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">&times;</button>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
                 </div>
             </div>
             
@@ -465,6 +554,8 @@
     function closeModal() {
         document.getElementById('createItemModal').classList.add('hidden');
         document.body.style.overflow = '';
+        // Reset form
+        document.getElementById('createItemForm').reset();
     }
     
     document.getElementById('openCreateModal').addEventListener('click', openModal);
@@ -488,41 +579,64 @@
             const data = await response.json();
             
             if (data.success) {
-                alert('Item reported successfully!');
-                location.reload();
+                closeModal();
+                showToast('Item reported successfully!', 'success');
+                setTimeout(() => location.reload(), 1500);
             } else {
-                alert('Error: ' + (data.error || 'Failed to report item'));
+                showToast('Error: ' + (data.error || 'Failed to report item'), 'error');
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('An error occurred. Please try again.');
+            showToast('An error occurred. Please try again.', 'error');
         }
     });
     
-    // Accept item
-    async function acceptItem(itemId) {
-        if (!confirm('Accept this lost and found task?')) return;
+    // Status dropdown toggle
+    function toggleStatusDropdown(itemId) {
+        // Close all other dropdowns first
+        document.querySelectorAll('.status-dropdown-content.show').forEach(dropdown => {
+            dropdown.classList.remove('show');
+        });
         
+        const dropdown = document.getElementById(`statusDropdown-${itemId}`);
+        dropdown.classList.toggle('show');
+    }
+    
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.status-dropdown')) {
+            document.querySelectorAll('.status-dropdown-content.show').forEach(dropdown => {
+                dropdown.classList.remove('show');
+            });
+        }
+    });
+    
+    // Update item status
+    async function updateItemStatus(itemId, newStatus) {
         try {
-            const response = await fetch(`/dashboard/api/lost-and-found/${itemId}/accept/`, {
+            const formData = new FormData();
+            formData.append('action', 'update_status');
+            formData.append('status', newStatus);
+            
+            const response = await fetch(`/dashboard/api/lost-and-found/${itemId}/update/`, {
                 method: 'POST',
                 headers: {
-                    'X-CSRFToken': csrfToken,
-                    'Content-Type': 'application/json'
-                }
+                    'X-CSRFToken': csrfToken
+                },
+                body: formData
             });
             
             const data = await response.json();
             
             if (data.success) {
-                alert('Task accepted successfully!');
-                location.reload();
+                showToast('Status updated successfully!', 'success');
+                setTimeout(() => location.reload(), 1000);
             } else {
-                alert('Error: ' + (data.error || 'Failed to accept task'));
+                showToast('Error: ' + (data.error || 'Failed to update status'), 'error');
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('An error occurred. Please try again.');
+            showToast('An error occurred. Please try again.', 'error');
         }
     }
     
@@ -542,19 +656,19 @@
             const data = await response.json();
             
             if (data.success) {
-                alert('Item broadcast to all staff!');
-                location.reload();
+                showToast('Item broadcast to all staff!', 'success');
+                setTimeout(() => location.reload(), 1000);
             } else {
-                alert('Error: ' + (data.error || 'Failed to broadcast item'));
+                showToast('Error: ' + (data.error || 'Failed to broadcast item'), 'error');
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('An error occurred. Please try again.');
+            showToast('An error occurred. Please try again.', 'error');
         }
     }
     
-    // Filters
-    document.getElementById('applyFilters').addEventListener('click', function() {
+    // Filters logic
+    function applyFilters() {
         const status = document.getElementById('statusFilter').value;
         const type = document.getElementById('typeFilter').value;
         const priority = document.getElementById('priorityFilter').value;
@@ -570,6 +684,22 @@
         }
         
         window.location.href = '?' + params.toString();
+    }
+
+    document.getElementById('applyFilters').addEventListener('click', applyFilters);
+    
+    // Make stat cards clickable
+    document.querySelectorAll('.stat-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const status = this.getAttribute('data-status');
+            if (status) {
+                const urlParams = new URLSearchParams(window.location.search);
+                urlParams.set('status', status);
+                window.location.href = '?' + urlParams.toString();
+            } else if (this.getAttribute('data-action') === 'total') {
+                window.location.href = window.location.pathname; // Clear filters
+            }
+        });
     });
     
     // Guest autocomplete

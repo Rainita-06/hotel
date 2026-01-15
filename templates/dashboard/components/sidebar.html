@@ -130,8 +130,8 @@
 
         {% if user|has_section_permission:'lost_and_found.view' %}
         <a href="{% url 'dashboard:lost_and_found' %}"
-          class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 hover:translate-x-1 {% if request.resolver_match.view_name == 'dashboard:lost_and_found' or request.resolver_match.view_name == 'dashboard:lost_and_found_detail' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-amber-50 hover:text-amber-600 {% endif %}">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          class="group flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 hover:translate-x-1 {% if request.resolver_match.view_name == 'dashboard:lost_and_found' or request.resolver_match.view_name == 'dashboard:lost_and_found_detail' %} text-sky-600 bg-sky-100 {% else %} text-gray-700 hover:bg-amber-50 hover:text-amber-600 {% endif %}">
+          <svg class="w-5 h-5 {% if request.resolver_match.view_name == 'dashboard:lost_and_found' or request.resolver_match.view_name == 'dashboard:lost_and_found_detail' %}text-sky-600{% else %}text-gray-500 group-hover:text-amber-600{% endif %} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
           </svg>
           <span class="font-medium">Lost & Found</span>

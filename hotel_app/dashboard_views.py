@@ -10266,6 +10266,7 @@ def lost_and_found_create(request):
 def lost_and_found_update(request, item_id):
     """
     Update a lost and found item.
+    Handles both FormData and JSON request bodies.
     """
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
@@ -10273,12 +10274,18 @@ def lost_and_found_update(request, item_id):
     try:
         item = get_object_or_404(LostAndFound, pk=item_id)
         
-        # Update fields
-        action = request.POST.get('action')
+        # Handle both FormData and JSON body
+        if request.content_type == 'application/json':
+            import json
+            data = json.loads(request.body)
+        else:
+            data = request.POST
+        
+        action = data.get('action')
         
         if action == 'update_status':
-            new_status = request.POST.get('status')
-            notes = request.POST.get('notes', '').strip()
+            new_status = data.get('status')
+            notes = data.get('notes', '').strip() if data.get('notes') else ''
             
             if new_status in dict(LostAndFound.STATUS_CHOICES):
                 item.status = new_status
@@ -10286,7 +10293,13 @@ def lost_and_found_update(request, item_id):
                     item.resolution_notes = notes
                 
                 # Update timestamps based on status
-                if new_status == 'claimed':
+                if new_status == 'in_progress':
+                    if not item.found_at:
+                        item.found_at = timezone.now()
+                    if not item.accepted_at:
+                        item.accepted_at = timezone.now()
+                        item.accepted_by = request.user
+                elif new_status == 'claimed':
                     item.claimed_at = timezone.now()
                 elif new_status == 'returned':
                     item.returned_at = timezone.now()
@@ -10294,11 +10307,13 @@ def lost_and_found_update(request, item_id):
                     item.closed_at = timezone.now()
                 
                 item.save()
-                return JsonResponse({'success': True, 'message': 'Status updated'})
+                return JsonResponse({'success': True, 'message': f'Status updated to {item.get_status_display()}'})
+            else:
+                return JsonResponse({'success': False, 'error': 'Invalid status'}, status=400)
         
         elif action == 'assign':
-            department_id = request.POST.get('department_id')
-            user_id = request.POST.get('user_id')
+            department_id = data.get('department_id')
+            user_id = data.get('user_id')
             
             if department_id:
                 item.assigned_department = Department.objects.get(pk=department_id)
@@ -10309,17 +10324,17 @@ def lost_and_found_update(request, item_id):
             return JsonResponse({'success': True, 'message': 'Assignment updated'})
         
         elif action == 'mark_found':
-            storage_location = request.POST.get('storage_location', '').strip()
+            storage_location = data.get('storage_location', '').strip() if data.get('storage_location') else ''
             item.mark_found(user=request.user, storage_location=storage_location or None)
             return JsonResponse({'success': True, 'message': 'Item marked as found'})
         
         elif action == 'update_details':
             # Update basic details
-            item.item_name = request.POST.get('item_name', item.item_name)
-            item.item_description = request.POST.get('item_description', item.item_description)
-            item.item_category = request.POST.get('item_category', item.item_category)
-            item.priority = request.POST.get('priority', item.priority)
-            item.storage_location = request.POST.get('storage_location', item.storage_location)
+            item.item_name = data.get('item_name', item.item_name)
+            item.item_description = data.get('item_description', item.item_description)
+            item.item_category = data.get('item_category', item.item_category)
+            item.priority = data.get('priority', item.priority)
+            item.storage_location = data.get('storage_location', item.storage_location)
             item.save()
             return JsonResponse({'success': True, 'message': 'Details updated'})
         
@@ -10328,6 +10343,7 @@ def lost_and_found_update(request, item_id):
     except Exception as e:
         logger.error(f"Error updating lost and found item: {e}")
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
 
 
 @login_required
