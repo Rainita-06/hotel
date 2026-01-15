@@ -12,6 +12,9 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework.authtoken.views import obtain_auth_token
 from hotel_app.views import LocationFamilyViewSet, LocationViewSet
+from django.http import HttpResponse
+from django.views.decorators.cache import cache_control
+import os
 
 router = DefaultRouter()
 router.register(r'location-families', LocationFamilyViewSet, basename='locationfamily')
@@ -38,7 +41,45 @@ def logout_view(request):
     response['Expires'] = '0'
     return response
 
+# Service worker views - must be served from root for proper scope
+@cache_control(max_age=0, no_cache=True, no_store=True, must_revalidate=True)
+def firebase_messaging_sw(request):
+    """Serve Firebase messaging service worker from root."""
+    sw_path = os.path.join(settings.BASE_DIR, 'static', 'firebase-messaging-sw.js')
+    try:
+        with open(sw_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        return HttpResponse(content, content_type='application/javascript')
+    except FileNotFoundError:
+        return HttpResponse('// Service worker not found', content_type='application/javascript', status=404)
+
+@cache_control(max_age=0, no_cache=True, no_store=True, must_revalidate=True)
+def service_worker(request):
+    """Serve main service worker from root."""
+    sw_path = os.path.join(settings.BASE_DIR, 'static', 'sw.js')
+    try:
+        with open(sw_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        return HttpResponse(content, content_type='application/javascript')
+    except FileNotFoundError:
+        return HttpResponse('// Service worker not found', content_type='application/javascript', status=404)
+
+def manifest_json(request):
+    """Serve PWA manifest from root."""
+    manifest_path = os.path.join(settings.BASE_DIR, 'static', 'manifest.json')
+    try:
+        with open(manifest_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        return HttpResponse(content, content_type='application/manifest+json')
+    except FileNotFoundError:
+        return HttpResponse('{}', content_type='application/manifest+json', status=404)
+
 urlpatterns = [
+    # PWA Service Workers and Manifest (must be at root)
+    path('firebase-messaging-sw.js', firebase_messaging_sw, name='firebase-messaging-sw'),
+    path('sw.js', service_worker, name='service-worker'),
+    path('manifest.json', manifest_json, name='manifest-json'),
+    
     path('admin/', admin.site.urls),
     path('', RedirectView.as_view(url='/dashboard/', permanent=False), name='home'),
     

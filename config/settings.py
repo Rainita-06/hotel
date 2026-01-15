@@ -102,6 +102,7 @@ CSRF_TRUSTED_ORIGINS = [
     "https://*.trycloudflare.com",
     "https://loose-palmer-automobiles-marks.trycloudflare.com",
     'https://*.ngrok-free.app',
+    "https://c73229c29c95.ngrok-free.app",
 ]
 
 # settings.py
