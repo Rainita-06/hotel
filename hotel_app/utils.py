@@ -90,7 +90,7 @@ def generate_guest_details_qr_base64(guest, size='xxlarge'):
 # Notification utility functions
 def create_notification(recipient, title, message, notification_type='info', related_object=None):
     """
-    Create a notification for a user
+    Create a notification for a user AND send Firebase push notification
     
     Args:
         recipient: User object to receive the notification
@@ -110,11 +110,41 @@ def create_notification(recipient, title, message, notification_type='info', rel
         notification_data['related_object_id'] = related_object.id
         notification_data['related_object_type'] = related_object.__class__.__name__
     
-    return Notification.objects.create(**notification_data)
+    # Create in-app notification
+    notification = Notification.objects.create(**notification_data)
+    
+    # Try to send Firebase push notification
+    try:
+        from .fcm_utils import send_push_notification_to_user
+        
+        # Prepare data for Firebase
+        fcm_data = {
+            'notification_id': str(notification.id),
+            'type': notification_type,
+        }
+        
+        if related_object:
+            fcm_data['related_object_id'] = str(related_object.id)
+            fcm_data['related_object_type'] = related_object.__class__.__name__
+        
+        # Send Firebase push notification
+        send_push_notification_to_user(
+            user=recipient,
+            title=title,
+            body=message,
+            data=fcm_data
+        )
+    except Exception as e:
+        # If Firebase fails, log it but don't fail the notification creation
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.debug(f"Could not send Firebase push notification: {e}")
+    
+    return notification
 
 def create_bulk_notifications(recipients, title, message, notification_type='info', related_object=None):
     """
-    Create notifications for multiple users
+    Create notifications for multiple users AND send Firebase push notifications
     
     Args:
         recipients: List or QuerySet of User objects
@@ -138,7 +168,36 @@ def create_bulk_notifications(recipients, title, message, notification_type='inf
         
         notifications.append(Notification(**notification_data))
     
-    return Notification.objects.bulk_create(notifications)
+    # Create all in-app notifications
+    created_notifications = Notification.objects.bulk_create(notifications)
+    
+    # Try to send Firebase push notifications
+    try:
+        from .fcm_utils import send_push_notification_to_users
+        
+        # Prepare data for Firebase
+        fcm_data = {
+            'type': notification_type,
+        }
+        
+        if related_object:
+            fcm_data['related_object_id'] = str(related_object.id)
+            fcm_data['related_object_type'] = related_object.__class__.__name__
+        
+        # Send Firebase push notifications to all recipients
+        send_push_notification_to_users(
+            users=recipients,
+            title=title,
+            body=message,
+            data=fcm_data
+        )
+    except Exception as e:
+        # If Firebase fails, log it but don't fail the notification creation
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.debug(f"Could not send Firebase push notifications: {e}")
+    
+    return created_notifications
 
 def mark_notification_as_read(notification_id, user):
     """

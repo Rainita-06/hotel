@@ -1311,6 +1311,7 @@ def dashboard2_view(request):
         active_guests_change = current_active_guests - yesterday_active_guests
         active_guests_change_direction = "up" if active_guests_change > 0 else "down" if active_guests_change < 0 else "none"
     except Exception:
+        current_active_guests = 0
         active_guests_change = 0
         active_guests_change_direction = "none"
 
@@ -1440,7 +1441,7 @@ def dashboard2_view(request):
         'avg_response_time': avg_response_display,
         'staff_efficiency': staff_efficiency_pct,
         'active_gym_members': active_gym_members,
-        'active_guests': occupancy_today,
+        'active_guests': current_active_guests if 'current_active_guests' in locals() else 0,
         # Dynamic comparison data for primary stats cards
         'active_tickets_change': abs(active_tickets_change) if 'active_tickets_change' in locals() else 12,
         'active_tickets_change_direction': active_tickets_change_direction if 'active_tickets_change_direction' in locals() else "up",
@@ -10070,7 +10071,7 @@ def lost_and_found_list(request):
     }
     
     # Get all departments for assignment dropdown
-    departments = Department.objects.filter(is_active=True)
+    departments = Department.objects.all().order_by('name')
     
     # Get all active users for assignment
     users = User.objects.filter(is_active=True).order_by('first_name', 'last_name')
@@ -10102,7 +10103,7 @@ def lost_and_found_detail(request, item_id):
     
     context = {
         'item': item,
-        'departments': Department.objects.filter(is_active=True),
+        'departments': Department.objects.all().order_by('name'),
         'users': User.objects.filter(is_active=True).order_by('first_name', 'last_name'),
         'status_choices': LostAndFound.STATUS_CHOICES,
         'priority_choices': LostAndFound.PRIORITY_CHOICES,
