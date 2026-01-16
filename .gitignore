@@ -74,3 +74,8 @@ yarn-error.log
 
 # Other project-specific files
 run_process.txt
+
+# Firebase Admin SDK - Service Account Key
+# NEVER commit this file - contains sensitive credentials!
+firebase-service-account.json
+guestconnect2-*.json

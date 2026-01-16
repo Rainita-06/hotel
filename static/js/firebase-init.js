@@ -33,12 +33,38 @@ async function registerServiceWorker() {
     }
 
     try {
+        // Check if we're in standalone mode (PWA installed)
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+            window.navigator.standalone ||
+            document.referrer.includes('android-app://');
+
+        if (isStandalone) {
+            console.log('[FCM] Running in PWA standalone mode');
+        }
+
         // Use the main service worker (sw.js) which now includes Firebase logic
         // This avoids conflicts between multiple service workers on the same scope
         swRegistration = await navigator.serviceWorker.register('/sw.js', {
-            scope: '/'
+            scope: '/',
+            updateViaCache: 'none' // Always check for updates on Android
         });
-        console.log('[FCM] Service worker registered:', swRegistration);
+
+        console.log('[FCM] Service worker registered:', swRegistration.scope);
+
+        // Wait for the service worker to be active
+        if (swRegistration.installing) {
+            console.log('[FCM] Service worker installing...');
+        } else if (swRegistration.waiting) {
+            console.log('[FCM] Service worker waiting...');
+        } else if (swRegistration.active) {
+            console.log('[FCM] Service worker active');
+        }
+
+        // Check for updates on Android PWA
+        if (isStandalone) {
+            swRegistration.update();
+        }
+
         return swRegistration;
     } catch (error) {
         console.error('[FCM] Service worker registration failed:', error);
@@ -54,6 +80,15 @@ async function requestNotificationPermission() {
             console.log('[FCM] Notifications not supported');
             showNotificationStatus('Notifications are not supported in this browser', 'error');
             return null;
+        }
+
+        // Check if we're running as a PWA
+        const isPWA = window.matchMedia('(display-mode: standalone)').matches ||
+            window.navigator.standalone ||
+            document.referrer.includes('android-app://');
+
+        if (isPWA) {
+            console.log('[FCM] Running as installed PWA - notifications should work!');
         }
 
         // Check if we're on localhost - FCM push doesn't work on localhost
@@ -138,6 +173,13 @@ async function saveFCMToken(token) {
             return false;
         }
 
+        // Detect if running as installed PWA on Android
+        const isAndroidPWA = window.matchMedia('(display-mode: standalone)').matches ||
+            window.navigator.standalone ||
+            /android/i.test(navigator.userAgent);
+        
+        const deviceType = isAndroidPWA ? 'android' : 'web';
+        
         const response = await fetch('/api/notification/save-fcm-token/', {
             method: 'POST',
             headers: {
@@ -146,7 +188,7 @@ async function saveFCMToken(token) {
             },
             body: JSON.stringify({
                 token: token,
-                device_type: 'web'
+                device_type: deviceType
             })
         });
 
@@ -213,6 +255,29 @@ function showNotificationStatus(message, type = 'info') {
     }, 4000);
 }
 
+// Set up token refresh handling
+function setupTokenRefresh() {
+    if (!messaging) return;
+
+    // Listen for token refresh
+    messaging.onTokenRefresh(async () => {
+        console.log('[FCM] Token refresh detected');
+        try {
+            const newToken = await messaging.getToken({
+                vapidKey: VAPID_KEY,
+                serviceWorkerRegistration: swRegistration
+            });
+
+            if (newToken) {
+                console.log('[FCM] New token obtained:', newToken.substring(0, 20) + '...');
+                await saveFCMToken(newToken);
+            }
+        } catch (error) {
+            console.error('[FCM] Token refresh failed:', error);
+        }
+    });
+}
+
 // Handle foreground messages
 function handleForegroundMessages() {
     if (!messaging) return;
@@ -220,21 +285,37 @@ function handleForegroundMessages() {
     messaging.onMessage((payload) => {
         console.log('[FCM] Foreground message received:', payload);
 
-        const notificationTitle = payload.notification?.title || 'GuestConnect';
-        const notificationBody = payload.notification?.body || 'You have a new notification';
+        const notificationData = payload.notification || {};
+        const customData = payload.data || {};
+
+        const notificationTitle = notificationData.title || customData.title || 'GuestConnect';
+        const notificationBody = notificationData.body || customData.body || 'You have a new notification';
 
         // Show system notification if permission granted
         if (Notification.permission === 'granted') {
             const notificationOptions = {
                 body: notificationBody,
-                icon: '/static/images/icon-192.png',
+                icon: customData.icon || '/static/images/icon-192.png',
                 badge: '/static/images/icon-192.png',
-                vibrate: [200, 100, 200],
-                data: payload.data,
-                tag: 'guestconnect-notification'
+                vibrate: [200, 100, 200, 100, 200],
+                data: customData,
+                tag: customData.tag || 'guestconnect-' + Date.now(),
+                requireInteraction: true, // Important for Android
+                renotify: true,
+                silent: false,
+                timestamp: Date.now()
             };
 
-            new Notification(notificationTitle, notificationOptions);
+            const notification = new Notification(notificationTitle, notificationOptions);
+
+            // Handle notification click in foreground
+            notification.onclick = function (event) {
+                event.preventDefault();
+                const url = customData.url || customData.link || '/dashboard/';
+                window.focus();
+                window.location.href = url;
+                notification.close();
+            };
         }
 
         // Also display in UI
@@ -312,6 +393,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.log('[FCM] Notifications already granted, getting token...');
                 requestNotificationPermission();
             }
+
+            // Set up token refresh
+            setupTokenRefresh();
         } catch (error) {
             console.error('[FCM] Initialization error:', error);
         }

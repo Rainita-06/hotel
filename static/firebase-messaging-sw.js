@@ -24,38 +24,94 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
     console.log('[firebase-messaging-sw.js] Received background message ', payload);
 
-    const notificationTitle = payload.notification.title || 'GuestConnect Notification';
+    // Extract notification data with fallbacks
+    const notificationData = payload.notification || {};
+    const customData = payload.data || {};
+
+    const notificationTitle = notificationData.title || customData.title || 'GuestConnect Notification';
     const notificationOptions = {
-        body: payload.notification.body || 'You have a new notification',
-        icon: '/static/images/icon-192.png',
+        body: notificationData.body || customData.body || 'You have a new notification',
+        icon: customData.icon || '/static/images/icon-192.png',
         badge: '/static/images/icon-192.png',
-        vibrate: [200, 100, 200],
-        data: payload.data,
+        vibrate: [200, 100, 200, 100, 200],
+        data: customData,
+        tag: customData.tag || 'guestconnect-' + Date.now(),
+        requireInteraction: true, // Critical for Android - keeps notification visible
+        renotify: true,
+        silent: false,
         actions: [
             {
                 action: 'open',
-                title: 'Open App'
+                title: 'Open App',
+                icon: '/static/images/icon-192.png'
             },
             {
                 action: 'close',
-                title: 'Close'
+                title: 'Dismiss'
             }
-        ]
+        ],
+        image: customData.image || null,
+        timestamp: Date.now()
     };
 
-    self.registration.showNotification(notificationTitle, notificationOptions);
+    return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
 // Handle notification clicks
 self.addEventListener('notificationclick', (event) => {
-    console.log('[firebase-messaging-sw.js] Notification clicked', event);
+    console.log('[firebase-messaging-sw.js] Notification clicked', event.action, event.notification.data);
 
     event.notification.close();
 
-    if (event.action === 'open' || !event.action) {
-        // Open the app
-        event.waitUntil(
-            clients.openWindow('/')
-        );
+    if (event.action === 'close') {
+        // User dismissed the notification
+        return;
     }
+
+    // Determine the URL to open
+    const urlToOpen = new URL(
+        event.notification.data?.url ||
+        event.notification.data?.link ||
+        '/',
+        self.location.origin
+    ).href;
+
+    event.waitUntil(
+        clients.matchAll({
+            type: 'window',
+            includeUncontrolled: true
+        })
+            .then(clientList => {
+                // First, try to find an existing window with the exact URL
+                for (const client of clientList) {
+                    if (client.url === urlToOpen && 'focus' in client) {
+                        return client.focus();
+                    }
+                }
+
+                // Then, try to find any window with the app
+                for (const client of clientList) {
+                    if ('focus' in client) {
+                        // Navigate to the target URL and focus
+                        return client.focus().then(() => {
+                            if (client.navigate) {
+                                return client.navigate(urlToOpen);
+                            }
+                        });
+                    }
+                }
+
+                // No existing window found, open a new one
+                if (clients.openWindow) {
+                    return clients.openWindow(urlToOpen);
+                }
+            })
+            .catch(error => {
+                console.error('[firebase-messaging-sw.js] Error handling notification click:', error);
+                // Fallback: try to open window anyway
+                if (clients.openWindow) {
+                    return clients.openWindow(urlToOpen);
+                }
+            })
+    );
 });

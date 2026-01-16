@@ -17,3 +17,4 @@ sentence-transformers==5.2.0
 faiss-cpu==1.13.2
 firebase-admin==7.1.0
 python-dotenv==1.1.1
+firebase==4.0.1

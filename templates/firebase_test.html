@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Notification Test - GuestConnect</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .status-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .status-row:last-child {
+            margin-bottom: 0;
+        }
+        
+        .status-label {
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .status-value {
+            font-family: 'Courier New', monospace;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 13px;
+        }
+        
+        .status-granted {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-denied {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-default {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-yes {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-no {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .token-display {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 10px;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+        
+        .log-container {
+            background: #1e1e1e;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .log-entry {
+            color: #d4d4d4;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin-bottom: 5px;
+            line-height: 1.5;
+        }
+        
+        .log-success {
+            color: #4ec9b0;
+        }
+        
+        .log-error {
+            color: #f48771;
+        }
+        
+        .log-info {
+            color: #569cd6;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔔 Firebase Notification Test</h1>
+        <p class="subtitle">GuestConnect - Android PWA Verification</p>
+        
+        <div id="httpsWarning" class="alert alert-warning" style="display: none;">
+            ⚠️ <strong>Warning:</strong> You're not on HTTPS. Firebase push notifications require HTTPS to work.
+            Use ngrok or deploy to a secure server.
+        </div>
+        
+        <div id="pwaDetection" class="alert alert-info" style="display: none;"></div>
+        
+        <div class="status-card">
+            <h3 style="margin-bottom: 15px; color: #333;">System Status</h3>
+            
+            <div class="status-row">
+                <span class="status-label">Permission:</span>
+                <span class="status-value" id="permissionStatus">Checking...</span>
+            </div>
+            
+            <div class="status-row">
+                <span class="status-label">Service Worker:</span>
+                <span class="status-value" id="swStatus">Checking...</span>
+            </div>
+            
+            <div class="status-row">
+                <span class="status-label">Push Manager:</span>
+                <span class="status-value" id="pushStatus">Checking...</span>
+            </div>
+            
+            <div class="status-row">
+                <span class="status-label">PWA Mode:</span>
+                <span class="status-value" id="pwaStatus">Checking...</span>
+            </div>
+            
+            <div class="status-row">
+                <span class="status-label">FCM Token:</span>
+                <span class="status-value" id="tokenStatus">Not requested</span>
+            </div>
+        </div>
+        
+        <button class="btn btn-primary" id="requestPermission">
+            🔔 Request Notification Permission
+        </button>
+        
+        <button class="btn btn-success" id="testNotification" disabled>
+            📧 Send Test Notification
+        </button>
+        
+        <button class="btn btn-secondary" id="copyToken" disabled>
+            📋 Copy FCM Token
+        </button>
+        
+        <div id="tokenDisplay" style="display: none;">
+            <h4 style="margin-top: 20px; color: #333;">Your FCM Token:</h4>
+            <div class="token-display" id="tokenValue"></div>
+            <small style="color: #666; display: block; margin-top: 10px;">
+                Use this token to send test notifications from Firebase Console
+            </small>
+        </div>
+        
+        <div class="log-container" id="logContainer">
+            <div class="log-entry">📝 Initializing test page...</div>
+        </div>
+    </div>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js"></script>
+    
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyC_00jdAaoy8YuwhD6vqwc2bK55PZ_eouY",
+            authDomain: "guestconnect2.firebaseapp.com",
+            projectId: "guestconnect2",
+            storageBucket: "guestconnect2.firebasestorage.app",
+            messagingSenderId: "1059307478512",
+            appId: "1:1059307478512:web:836d6a30116854271bd135",
+            measurementId: "G-080L2D262S"
+        };
+        
+        const VAPID_KEY = "BEYA1eUQj0p-jbNICerO-xDiLkzh2SmGfreimhXk5S_bMKDHyyZJoBki2bDnNo237eY5XlYpHRdbPQLzwqPNfyo";
+        
+        let messaging = null;
+        let currentToken = null;
+        let swRegistration = null;
+        
+        // Logging functions
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('logContainer');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            console.log(message);
+        }
+        
+        function updateStatus(elementId, value, className) {
+            const element = document.getElementById(elementId);
+            element.textContent = value;
+            element.className = `status-value ${className}`;
+        }
+        
+        // Check system capabilities
+        function checkSystem() {
+            // Check HTTPS
+            if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+                document.getElementById('httpsWarning').style.display = 'block';
+                log('⚠️ Not on HTTPS - notifications may not work', 'error');
+            }
+            
+            // Check PWA mode
+            const isPWA = window.matchMedia('(display-mode: standalone)').matches ||
+                         window.navigator.standalone ||
+                         document.referrer.includes('android-app://');
+            
+            updateStatus('pwaStatus', isPWA ? 'Yes' : 'No', isPWA ? 'status-yes' : 'status-no');
+            
+            if (isPWA) {
+                const alert = document.getElementById('pwaDetection');
+                alert.textContent = '✅ Running as installed PWA - Perfect for testing!';
+                alert.style.display = 'block';
+                log('✅ Detected PWA standalone mode', 'success');
+            } else {
+                log('ℹ️ Running in browser mode', 'info');
+            }
+            
+            // Check permission
+            if ('Notification' in window) {
+                const permission = Notification.permission;
+                const statusClass = permission === 'granted' ? 'status-granted' :
+                                  permission === 'denied' ? 'status-denied' : 'status-default';
+                updateStatus('permissionStatus', permission, statusClass);
+                log(`Permission status: ${permission}`, permission === 'granted' ? 'success' : 'info');
+            }
+            
+            // Check Service Worker
+            if ('serviceWorker' in navigator) {
+                updateStatus('swStatus', 'Supported', 'status-yes');
+                log('✅ Service Worker supported', 'success');
+            } else {
+                updateStatus('swStatus', 'Not Supported', 'status-no');
+                log('❌ Service Worker not supported', 'error');
+            }
+            
+            // Check Push Manager
+            if ('PushManager' in window) {
+                updateStatus('pushStatus', 'Supported', 'status-yes');
+                log('✅ Push Manager supported', 'success');
+            } else {
+                updateStatus('pushStatus', 'Not Supported', 'status-no');
+                log('❌ Push Manager not supported', 'error');
+            }
+        }
+        
+        // Initialize Firebase
+        async function initFirebase() {
+            try {
+                firebase.initializeApp(firebaseConfig);
+                messaging = firebase.messaging();
+                log('✅ Firebase initialized', 'success');
+                
+                // Register service worker
+                swRegistration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+                log('✅ Service worker registered', 'success');
+                updateStatus('swStatus', 'Active', 'status-yes');
+                
+                await navigator.serviceWorker.ready;
+                log('✅ Service worker ready', 'success');
+                
+                return true;
+            } catch (error) {
+                log(`❌ Firebase init failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        // Request permission and get token
+        async function requestPermission() {
+            try {
+                const permission = await Notification.requestPermission();
+                updateStatus('permissionStatus', permission, 
+                           permission === 'granted' ? 'status-granted' : 'status-denied');
+                
+                if (permission === 'granted') {
+                    log('✅ Permission granted!', 'success');
+                    
+                    // Get token
+                    const token = await messaging.getToken({
+                        vapidKey: VAPID_KEY,
+                        serviceWorkerRegistration: swRegistration
+                    });
+                    
+                    if (token) {
+                        currentToken = token;
+                        log('✅ FCM token received!', 'success');
+                        updateStatus('tokenStatus', 'Received', 'status-yes');
+                        
+                        // Show token
+                        document.getElementById('tokenValue').textContent = token;
+                        document.getElementById('tokenDisplay').style.display = 'block';
+                        document.getElementById('copyToken').disabled = false;
+                        document.getElementById('testNotification').disabled = false;
+                        
+                        log(`Token: ${token.substring(0, 30)}...`, 'info');
+                    } else {
+                        log('❌ No token received', 'error');
+                    }
+                } else {
+                    log('❌ Permission denied', 'error');
+                }
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Send test notification
+        function sendTestNotification() {
+            if (!('Notification' in window)) {
+                log('❌ Notifications not supported', 'error');
+                return;
+            }
+            
+            const title = 'Test Notification from GuestConnect';
+            const options = {
+                body: 'This is a local test notification. Firebase push notifications will look similar!',
+                icon: '/static/images/icon-192.png',
+                badge: '/static/images/icon-192.png',
+                vibrate: [200, 100, 200, 100, 200],
+                requireInteraction: true,
+                tag: 'test-' + Date.now()
+            };
+            
+            new Notification(title, options);
+            log('📧 Test notification sent!', 'success');
+        }
+        
+        // Copy token to clipboard
+        function copyToken() {
+            navigator.clipboard.writeText(currentToken).then(() => {
+                log('📋 Token copied to clipboard!', 'success');
+                const btn = document.getElementById('copyToken');
+                const originalText = btn.textContent;
+                btn.textContent = '✓ Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+        
+        // Event listeners
+        document.getElementById('requestPermission').addEventListener('click', requestPermission);
+        document.getElementById('testNotification').addEventListener('click', sendTestNotification);
+        document.getElementById('copyToken').addEventListener('click', copyToken);
+        
+        // Initialize on load
+        window.addEventListener('load', async () => {
+            log('🚀 Starting system check...', 'info');
+            checkSystem();
+            await initFirebase();
+            log('✅ System check complete!', 'success');
+            log('👆 Click "Request Notification Permission" to start', 'info');
+        });
+    </script>
+</body>
+</html>
