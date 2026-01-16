@@ -82,22 +82,13 @@
   <!-- Service Worker Registration -->
   <script>
     if ('serviceWorker' in navigator) {
-      // Register main service worker
-      navigator.serviceWorker.register('/static/sw.js')
+      // Register main service worker which handles both PWA functionality and Firebase messaging
+      navigator.serviceWorker.register('/sw.js', { scope: '/' })
         .then(registration => {
-          console.log('[SW] Main service worker registered:', registration);
+          console.log('[SW] Main service worker registered with Firebase support:', registration.scope);
         })
         .catch(error => {
           console.error('[SW] Main service worker registration failed:', error);
-        });
-
-      // Register Firebase messaging service worker
-      navigator.serviceWorker.register('/static/firebase-messaging-sw.js')
-        .then(registration => {
-          console.log('[SW] Firebase messaging service worker registered:', registration);
-        })
-        .catch(error => {
-          console.error('[SW] Firebase messaging service worker registration failed:', error);
         });
     }
   </script>
