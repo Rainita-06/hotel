@@ -528,8 +528,43 @@
                     <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Description</label><textarea id="description" rows="4" placeholder="Describe the issue or request..." class="w-full p-3 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none"></textarea>
                 </div>
                 <div>
-                    <label for="attachments" class="block text-sm font-medium text-gray-700 mb-1">Attachments (Optional)</label><div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md"><div class="space-y-1 text-center"><img src="{% static 'images/tickets/file.svg' %}" class="mx-auto h-12 w-12 text-gray-400" alt="File upload icon"><div class="flex text-sm text-gray-600"><label for="file-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-sky-600 hover:text-sky-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-sky-500"><span>Upload photos or voice note</span><input autocomplete="off" id="file-upload" name="file-upload" type="file" class="sr-only"></label></div><p class="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p></div></div>
-                </div>
+                    <label for="attachments" class="block text-sm font-medium text-gray-700 mb-1">
+    Attachments (Optional)
+</label>
+
+<div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-sky-400 transition">
+    <div class="space-y-2 text-center">
+        <img src="{% static 'images/tickets/file.svg' %}"
+             class="mx-auto h-12 w-12 text-gray-400"
+             alt="File upload icon">
+
+        <div class="flex text-sm text-gray-600 justify-center">
+            <label for="attachments"
+                   class="relative cursor-pointer bg-white rounded-md font-medium text-sky-600 hover:text-sky-500
+                          focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-sky-500">
+                <span>Upload photos or videos</span>
+                <input
+                    autocomplete="off"
+                    id="attachments"
+                    name="attachments"
+                    type="file"
+                    multiple
+                    accept=".jpg,.jpeg,.png,.mp4"
+                    class="sr-only">
+            </label>
+        </div>
+
+        <p class="text-xs text-gray-500">
+            JPG, JPEG, PNG, MP4 · Max 50MB each
+        </p>
+
+        <!-- Selected files preview -->
+        <ul id="attachmentPreview" class="text-xs text-gray-700 mt-2 space-y-1"></ul>
+    </div>
+</div>
+
+
+                
             </form>
             <div class="flex justify-end items-center gap-4 p-6 border-t border-gray-200 bg-gray-50 rounded-b-lg flex-shrink-0">
                 <button id="cancelCreateTicket" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50">Cancel</button>
@@ -883,59 +918,83 @@ document.addEventListener('DOMContentLoaded', function() {
     const rawGuestId = document.getElementById('guestId').value;
     const submitTicketBtn = document.getElementById('submitCreateTicket');
     if (submitTicketBtn) { 
-        submitTicketBtn.addEventListener('click', () => { 
-            const ticketData = { 
-                guest_name: document.getElementById('guestName').value.trim(), 
-                room_number: document.getElementById('roomNumber').value.trim(), 
-                department: document.getElementById('department').value, 
-                category: selectedRequestType ? selectedRequestType.name : '', 
-                priority: selectedPriority, 
-                description: document.getElementById('description').value.trim(),
-                guest_id: rawGuestId && !isNaN(rawGuestId)
-        ? parseInt(rawGuestId, 10)
-        : null 
-            }; 
-            if (!ticketData.guest_name || !ticketData.room_number || !ticketData.department || !ticketData.category || !ticketData.priority) { 
-                // Use toast notification instead of alert
-                showToast('Please fill in all required fields: Guest Name, Room Number, Department, Request Type, and Priority.', 'error');
-                return; 
-            } 
-            
-            // Create ticket directly without confirmation
-            fetch('{% url "dashboard:api_create_ticket" %}', { 
-                method: 'POST', 
-                headers: { 
-                    'Content-Type': 'application/json', 
-                    'X-CSRFToken': getCookie('csrftoken') 
-                }, 
-                body: JSON.stringify(ticketData) 
-            })
-            .then(response => response.json())
-            .then(data => { 
-                if (data.success) { 
-                    // Use toast notification instead of alert
-                    showToast('Ticket created successfully!', 'success');
-                    // Close the modal and reset form
-                    closeModal(modal, modalContent);
-                    if (modalForm) modalForm.reset();
-                    selectedPriority = '';
-                    selectedRequestType = null;
-                    document.querySelectorAll('.priority-btn').forEach(btn => btn.classList.remove('ring-2', 'ring-offset-2', 'ring-sky-500'));
-                    document.getElementById('requestType').value = '';
-                    document.getElementById('requestTypeSuggestions').innerHTML = '';
-                    document.getElementById('requestTypeSuggestions').classList.add('hidden');
-                    location.reload(); 
-                } else { 
-                    // Use toast notification for errors
-                    showToast('Error creating ticket: ' + (data.error || 'Unknown error'), 'error');
-                } 
-            })
-            .catch(error => { 
-                console.error('Error:', error); 
-                // Use toast notification for errors
-                showToast('An error occurred. Please try again.', 'error');
-            });
-        });
+        submitTicketBtn.addEventListener('click', () => {
+
+    const guestName = document.getElementById('guestName').value.trim();
+    const roomNumber = document.getElementById('roomNumber').value.trim();
+    const department = document.getElementById('department').value;
+    const category = selectedRequestType ? selectedRequestType.name : '';
+    const description = document.getElementById('description').value.trim();
+    const guestIdRaw = document.getElementById('guestId').value;
+
+    // ✅ REQUIRED FIELD VALIDATION (MISSING BEFORE)
+    if (!guestName || !roomNumber || !department || !category || !selectedPriority) {
+        showToast(
+            'Please fill all required fields: Guest Name, Room Number, Department, Request Type, Priority',
+            'error'
+        );
+        return;
+    }
+
+    const formData = new FormData();
+
+    formData.append('guest_name', guestName);
+    formData.append('room_number', roomNumber);
+    formData.append('department', department);
+    formData.append('category', category);
+    formData.append('priority', selectedPriority);
+    formData.append('description', description);
+
+    // ✅ SAFE guest_id handling
+    if (guestIdRaw && !isNaN(guestIdRaw)) {
+        formData.append('guest_id', parseInt(guestIdRaw, 10));
+    }
+
+    // ✅ MULTIPLE FILE UPLOAD (CORRECT)
+    const fileInput = document.querySelector('input[name="attachments"]');
+    if (fileInput && fileInput.files.length > 0) {
+        for (let i = 0; i < fileInput.files.length; i++) {
+            formData.append('attachments', fileInput.files[i]);
+        }
+    }
+
+    fetch('{% url "dashboard:api_create_ticket" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken') // ❗ DO NOT set Content-Type
+        },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Ticket created successfully!', 'success');
+
+            // ✅ RESET UI (MISSING BEFORE)
+            if (modalForm) modalForm.reset();
+            selectedPriority = '';
+            selectedRequestType = null;
+
+            document.querySelectorAll('.priority-btn')
+                .forEach(btn => btn.classList.remove('ring-2', 'ring-offset-2', 'ring-sky-500'));
+
+            document.getElementById('requestType').value = '';
+            document.getElementById('requestTypeSuggestions').innerHTML = '';
+            document.getElementById('requestTypeSuggestions').classList.add('hidden');
+
+            closeCreateTicketModal();
+            location.reload();
+        } else {
+            showToast(data.error || 'Failed to create ticket', 'error');
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        showToast('Server error. Please try again.', 'error');
+    });
+});
+
+      
     }
     
     // --- UNMATCHED REQUESTS RESOLUTION ---
@@ -1387,6 +1446,75 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     };
 });
+
+const attachmentInput = document.getElementById('attachments');
+const previewList = document.getElementById('attachmentPreview');
+
+// Master file store
+let selectedFiles = new DataTransfer();
+
+function renderPreview() {
+    previewList.innerHTML = '';
+
+    Array.from(selectedFiles.files).forEach((file, index) => {
+        const li = document.createElement('li');
+        li.className = "flex items-center justify-between gap-3 p-2 border rounded-lg";
+
+        li.innerHTML = `
+            <div class="flex items-center gap-2">
+                <span>📎</span>
+                <span class="text-sm">
+                    ${file.name}
+                    <span class="text-gray-500">
+                        (${(file.size / 1024 / 1024).toFixed(2)} MB)
+                    </span>
+                </span>
+            </div>
+            <button
+                type="button"
+                class="text-red-500 hover:text-red-700 text-sm font-medium"
+                data-index="${index}"
+            >
+                ✕
+            </button>
+        `;
+
+        previewList.appendChild(li);
+    });
+}
+
+if (attachmentInput) {
+    attachmentInput.addEventListener('change', (e) => {
+        Array.from(e.target.files).forEach(file => {
+            selectedFiles.items.add(file);
+        });
+
+        // Sync input with master list
+        attachmentInput.files = selectedFiles.files;
+
+        renderPreview();
+    });
+}
+
+// Remove file
+previewList.addEventListener('click', (e) => {
+    if (e.target.tagName === 'BUTTON') {
+        const removeIndex = parseInt(e.target.dataset.index, 10);
+
+        const newDataTransfer = new DataTransfer();
+        Array.from(selectedFiles.files).forEach((file, index) => {
+            if (index !== removeIndex) {
+                newDataTransfer.items.add(file);
+            }
+        });
+
+        selectedFiles = newDataTransfer;
+        attachmentInput.files = selectedFiles.files;
+
+        renderPreview();
+    }
+});
+
 </script>
 
 <!-- Toast Notification Container -->

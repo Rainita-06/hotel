@@ -96,33 +96,57 @@
             </section>
 
             <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 lg:p-6">
-                <h3 class="text-base font-semibold text-gray-900 mb-4">Attachments</h3>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {% comment %} For now, we're showing static attachments as examples {% endcomment %}
-                    {% comment %} In a real implementation, this would be dynamic based on actual attachments {% endcomment %}
-                    <a href="#" class="border border-gray-200 rounded-lg p-3 flex items-center gap-3 hover:bg-gray-50">
-                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0"><svg class="w-6 h-6 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></div>
-                        <div>
-                            <p class="text-sm lg:text-base font-medium text-gray-900 truncate">thermostat_display.jpg</p>
-                            <p class="text-xs lg:text-sm text-gray-500">245 KB</p>
-                        </div>
-                    </a>
-                    <a href="#" class="border border-gray-200 rounded-lg p-3 flex items-center gap-3 hover:bg-gray-50">
-                        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0"><svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></div>
-                        <div>
-                            <p class="text-sm lg:text-base font-medium text-gray-900 truncate">ac_unit_video.mp4</p>
-                            <p class="text-xs lg:text-sm text-gray-500">12.3 MB</p>
-                        </div>
-                    </a>
-                </div>
-                {% comment %} In a real implementation, we would check for actual attachments and show this message if none exist {% endcomment %}
-                {% if False %}
-                <div class="text-center py-8 text-gray-500">
-                    <p>No attachments</p>
-                </div>
-                {% endif %}
-            </section>
-            
+    <h3 class="text-base font-semibold text-gray-900 mb-4">Attachments</h3>
+
+    {% if attachments %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {% for att in attachments %}
+                <a href="{{ att.file.url }}"
+                   target="_blank"
+                   class="border border-gray-200 rounded-lg p-3 flex items-center gap-3 hover:bg-gray-50">
+
+                    <!-- ICON -->
+                    <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0
+                        {% if att.file_type == 'image' %}
+                            bg-blue-100
+                        {% else %}
+                            bg-green-100
+                        {% endif %}
+                    ">
+                        {% if att.file_type == 'image' %}
+                            <!-- Image Icon -->
+                            <svg class="w-6 h-6 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M4 16l4.586-4.586A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                        {% else %}
+                            <!-- Video Icon -->
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                        {% endif %}
+                    </div>
+
+                    <!-- FILE INFO -->
+                    <div class="min-w-0">
+                        <p class="text-sm lg:text-base font-medium text-gray-900 truncate">
+                            {{ att.file.name|cut:"tickets/" }}
+                        </p>
+                        <p class="text-xs lg:text-sm text-gray-500">
+                            {{ att.size|filesizeformat }}
+                        </p>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-8 text-gray-500">
+            <p>No attachments</p>
+        </div>
+    {% endif %}
+</section>
+
             <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 lg:p-6">
                 <h3 class="text-base font-semibold text-gray-900 mb-4">Activity Log</h3>
                 <ul class="space-y-4">

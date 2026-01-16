@@ -960,6 +960,70 @@ class TicketComment(models.Model):
         user_name = self.user.get_full_name() if self.user else 'Unknown'
         return f'Comment by {user_name} on Ticket #{self.ticket.pk}'
 
+# hotel_app/models.py
+
+from django.db import models
+from django.conf import settings
+from PIL import Image
+import os
+import uuid
+import os
+
+def ticket_attachment_path(instance, filename):
+    ext = filename.split('.')[-1]
+    unique_name = f"{uuid.uuid4().hex}.{ext}"
+    return os.path.join("tickets", str(instance.ticket.id), unique_name)
+
+
+
+class TicketAttachment(models.Model):
+    FILE_IMAGE = "image"
+    FILE_VIDEO = "video"
+
+    FILE_TYPE_CHOICES = [
+        (FILE_IMAGE, "Image"),
+        (FILE_VIDEO, "Video"),
+    ]
+
+    ticket = models.ForeignKey(
+        "ServiceRequest",
+        on_delete=models.CASCADE,
+        related_name="attachments"
+    )
+    file = models.FileField(upload_to=ticket_attachment_path)
+    file_type = models.CharField(max_length=10, choices=FILE_TYPE_CHOICES)
+    size = models.PositiveIntegerField()
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True
+    )
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
+        # ✅ Compress images only
+        if self.file_type == self.FILE_IMAGE:
+            self.compress_image()
+
+    def compress_image(self):
+        img_path = self.file.path
+        img = Image.open(img_path)
+
+        if img.mode in ("RGBA", "P"):
+            img = img.convert("RGB")
+
+        img.save(
+            img_path,
+            format="JPEG",
+            optimize=True,
+            quality=70  # ⭐ compression level
+        )
+    
+
+    def __str__(self):
+        return f"Attachment for Ticket #{self.ticket.id}"
 
 class WhatsAppConversation(models.Model):
     """Track per-phone WhatsApp conversation state for workflow handling."""

@@ -3558,6 +3558,8 @@ def ticket_detail(request, ticket_id):
     
     # Get the service request
     service_request = get_object_or_404(ServiceRequest, id=ticket_id)
+    attachments = service_request.attachments.all()
+
     
     # Check SLA breaches to ensure status is up to date
     service_request.check_sla_breaches()
@@ -3874,6 +3876,7 @@ def ticket_detail(request, ticket_id):
         'sla_progress_percent': sla_progress_percent,
         'resolution_notes': service_request.resolution_notes,  # Pass resolution notes to template
         'internal_comments': internal_comments,  # Pass internal comments to template
+        'attachments':attachments,
     }
     
     return render(request, 'dashboard/ticket_detail.html', context)
@@ -6706,6 +6709,7 @@ def analytics_dashboard(request):
 @login_required
 @require_permission([ADMINS_GROUP, STAFF_GROUP])
 def create_ticket_api(request):
+    from hotel_app.models import TicketAttachment
     """API endpoint to create a new ticket with department routing."""
     if request.method == 'POST':
         try:
@@ -6716,19 +6720,42 @@ def create_ticket_api(request):
             # Log the request for debugging
             logging.basicConfig(level=logging.DEBUG)
             logger = logging.getLogger(__name__)
-            logger.debug(f"Received ticket creation request: {request.body}")
+            # logger.debug(f"Received ticket creation request: {request.body}")
             
-            data = json.loads(request.body.decode('utf-8'))
-            logger.debug(f"Parsed data: {data}")
+            # data = json.loads(request.body.decode('utf-8'))
+            # logger.debug(f"Parsed data: {data}")
             
             # Extract data from request
-            guest_name = (data.get('guest_name') or '').strip()
-            room_number = (data.get('room_number') or '').strip()
-            department_name = data.get('department')
-            category = data.get('category')
-            priority = data.get('priority')
-            description = data.get('description')
-            guest_id = data.get('guest_id')
+            # guest_name = (data.get('guest_name') or '').strip()
+            # room_number = (data.get('room_number') or '').strip()
+            # department_name = data.get('department')
+            # category = data.get('category')
+            # priority = data.get('priority')
+            # description = data.get('description')
+            # guest_id = data.get('guest_id')
+            guest_name = (request.POST.get('guest_name') or '').strip()
+            room_number = (request.POST.get('room_number') or '').strip()
+            department_name = request.POST.get('department')
+            category = request.POST.get('category')
+            priority = request.POST.get('priority')
+            description = request.POST.get('description')
+            guest_id = request.POST.get('guest_id')
+            files = request.FILES.getlist("attachments")
+            ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "mp4"]
+            MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
+
+            for file in files:
+                ext = file.name.split('.')[-1].lower()
+                if ext not in ALLOWED_EXTENSIONS:
+                    return JsonResponse(
+                        {'error': f'File {file.name} has an invalid extension. Only JPG, JPEG, PNG and MP4 files are allowed.'},
+                        status=400
+                    )
+                if file.size > MAX_FILE_SIZE:
+                    return JsonResponse(
+                        {'error': f'File {file.name} exceeds the 50MB size limit.'},
+                        status=400
+                    )
 
             guest = None
             if guest_id:
@@ -6814,6 +6841,7 @@ def create_ticket_api(request):
                         .first()
                     )
             
+            
             # Create service request
             service_request = ServiceRequest.objects.create(
                 request_type=request_type,
@@ -6833,6 +6861,19 @@ def create_ticket_api(request):
                 service_request,
                 guest=guest,
             )
+            
+
+            for file in files:
+                ext = file.name.split(".")[-1].lower()
+                file_type = "video" if ext == "mp4" else "image"
+
+                TicketAttachment.objects.create(
+        ticket=service_request,
+        file=file,
+        file_type=file_type,
+        size=file.size,
+        uploaded_by=request.user
+    )
             
             return JsonResponse({
                 'success': True,
