@@ -14,11 +14,8 @@
     }
     
     .status-open { background: #fef3c7; color: #92400e; }
-    .status-in_progress { background: #dbeafe; color: #1e40af; }
-    .status-claimed { background: #d1fae5; color: #065f46; }
-    .status-returned { background: #cffafe; color: #0e7490; }
-    .status-disposed { background: #f3f4f6; color: #4b5563; }
-    .status-closed { background: #e5e7eb; color: #374151; }
+    .status-found { background: #dbeafe; color: #1e40af; }
+    .status-returned { background: #d1fae5; color: #065f46; }
     
     .priority-badge {
         display: inline-flex;
@@ -267,6 +264,31 @@
                                     <p class="text-xs text-gray-500">Building</p>
                                 </div>
                             </div>
+                            {% elif item.building %}
+                            <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21h18M9 8h6M9 12h6M9 16h6M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-900">{{ item.building }}</p>
+                                    <p class="text-xs text-gray-500">Building</p>
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% if item.floor %}
+                            <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2h9v9h-9V2zm0 12h9v9h-9v-9zM3 2h9v9H3V2zm0 12h9v9H3v-9z"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-900">{{ item.floor }}</p>
+                                    <p class="text-xs text-gray-500">Floor</p>
+                                </div>
+                            </div>
                             {% endif %}
                         </div>
                     </div>
@@ -463,44 +485,20 @@
                     {% endif %}
                     
                     {% if item.status == 'open' %}
-                    <button id="markFoundBtn" class="action-btn w-full bg-purple-600 text-white hover:bg-purple-700" data-item-id="{{ item.id }}">
+                    <button id="markFoundBtn" class="action-btn w-full bg-blue-600 text-white hover:bg-blue-700" data-item-id="{{ item.id }}">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                         Mark as Found
                     </button>
                     {% endif %}
                     
-                    {% if item.status == 'in_progress' %}
-                    <button id="markClaimedBtn" class="action-btn w-full bg-green-600 text-white hover:bg-green-700" data-item-id="{{ item.id }}">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        Mark as Claimed
-                    </button>
-                    <button id="markReturnedBtn" class="action-btn w-full bg-cyan-600 text-white hover:bg-cyan-700" data-item-id="{{ item.id }}">
+                    {% if item.status == 'found' %}
+                    <button id="markReturnedBtn" class="action-btn w-full bg-green-600 text-white hover:bg-green-700" data-item-id="{{ item.id }}">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
                         </svg>
                         Mark as Returned
-                    </button>
-                    {% endif %}
-                    
-                    {% if item.status == 'claimed' %}
-                    <button id="markReturnedBtn" class="action-btn w-full bg-cyan-600 text-white hover:bg-cyan-700" data-item-id="{{ item.id }}">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
-                        </svg>
-                        Mark as Returned
-                    </button>
-                    {% endif %}
-                    
-                    {% if item.status != 'closed' and item.status != 'returned' %}
-                    <button id="closeItemBtn" class="action-btn w-full bg-gray-600 text-white hover:bg-gray-700" data-item-id="{{ item.id }}">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                        Close Case
                     </button>
                     {% endif %}
                 </div>
@@ -598,17 +596,19 @@
     <footer class="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 p-4 lg:hidden z-50">
         <div class="grid grid-cols-2 gap-2">
             {% if item.status == 'open' %}
-            <button id="markFoundBtn_mobile" class="col-span-2 action-btn bg-purple-600 text-white hover:bg-purple-700" data-item-id="{{ item.id }}">
+            <button id="markFoundBtn_mobile" class="col-span-2 action-btn bg-blue-600 text-white hover:bg-blue-700" data-item-id="{{ item.id }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
                 Mark Found
             </button>
-            {% endif %}
-            
-            {% if item.status == 'in_progress' %}
-            <button id="markClaimedBtn_mobile" class="action-btn bg-green-600 text-white hover:bg-green-700" data-item-id="{{ item.id }}">Claimed</button>
-            <button id="markReturnedBtn_mobile" class="action-btn bg-cyan-600 text-white hover:bg-cyan-700" data-item-id="{{ item.id }}">Returned</button>
+            {% elif item.status == 'found' %}
+            <button id="markReturnedBtn_mobile" class="col-span-2 action-btn bg-green-600 text-white hover:bg-green-700" data-item-id="{{ item.id }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
+                </svg>
+                Returned
+            </button>
             {% endif %}
         </div>
     </footer>
@@ -762,10 +762,8 @@
             }
         });
         
-        setupListener('markFoundBtn', () => handleStatusUpdate('in_progress', 'Mark as Found'));
-        setupListener('markClaimedBtn', () => handleStatusUpdate('claimed', 'Mark as Claimed'));
+        setupListener('markFoundBtn', () => handleStatusUpdate('found', 'Mark as Found'));
         setupListener('markReturnedBtn', () => handleStatusUpdate('returned', 'Mark as Returned'));
-        setupListener('closeItemBtn', () => handleStatusUpdate('closed', 'Close Case'));
         
         // Update Status Button
         document.getElementById('updateStatusBtn')?.addEventListener('click', function() {

@@ -34,11 +34,8 @@
     }
     
     .status-open { background: #fef3c7; color: #92400e; }
-    .status-in_progress { background: #dbeafe; color: #1e40af; }
-    .status-claimed { background: #d1fae5; color: #065f46; }
-    .status-returned { background: #cffafe; color: #0e7490; }
-    .status-disposed { background: #f3f4f6; color: #4b5563; }
-    .status-closed { background: #e5e7eb; color: #374151; }
+    .status-found { background: #dbeafe; color: #1e40af; }
+    .status-returned { background: #d1fae5; color: #065f46; }
     
     .priority-badge {
         display: inline-flex;
@@ -183,7 +180,7 @@
 
     <div class="p-6">
         <!-- Statistics Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div class="stat-card bg-white rounded-xl shadow-sm border border-gray-200 p-4 {% if not status_filter %}ring-2 ring-sky-500{% endif %}" data-action="total">
                 <div class="flex items-center justify-between">
                     <div>
@@ -212,42 +209,28 @@
                 </div>
             </div>
             
-            <div class="stat-card bg-white rounded-xl shadow-sm border border-gray-200 p-4 {% if status_filter == 'in_progress' %}ring-2 ring-blue-500{% endif %}" data-status="in_progress">
+            <div class="stat-card bg-white rounded-xl shadow-sm border border-gray-200 p-4 {% if status_filter == 'found' %}ring-2 ring-blue-500{% endif %}" data-status="found">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-gray-600 text-sm font-medium">In Progress</p>
-                        <p class="text-2xl font-bold text-blue-600">{{ stats.in_progress }}</p>
+                        <p class="text-gray-600 text-sm font-medium">Found</p>
+                        <p class="text-2xl font-bold text-blue-600">{{ stats.found }}</p>
                     </div>
                     <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                         <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                     </div>
                 </div>
             </div>
             
-            <div class="stat-card bg-white rounded-xl shadow-sm border border-gray-200 p-4 {% if status_filter == 'claimed' %}ring-2 ring-green-500{% endif %}" data-status="claimed">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-600 text-sm font-medium">Claimed</p>
-                        <p class="text-2xl font-bold text-green-600">{{ stats.claimed }}</p>
-                    </div>
-                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="stat-card bg-white rounded-xl shadow-sm border border-gray-200 p-4 {% if status_filter == 'returned' %}ring-2 ring-cyan-500{% endif %}" data-status="returned">
+            <div class="stat-card bg-white rounded-xl shadow-sm border border-gray-200 p-4 {% if status_filter == 'returned' %}ring-2 ring-green-500{% endif %}" data-status="returned">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-gray-600 text-sm font-medium">Returned</p>
-                        <p class="text-2xl font-bold text-cyan-600">{{ stats.returned }}</p>
+                        <p class="text-2xl font-bold text-green-600">{{ stats.returned }}</p>
                     </div>
-                    <div class="w-12 h-12 bg-cyan-100 rounded-full flex items-center justify-center">
-                        <svg class="w-6 h-6 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
                         </svg>
                     </div>
@@ -368,17 +351,11 @@
                                         <div class="status-dropdown-item" onclick="updateItemStatus({{ item.id }}, 'open')">
                                             <span class="w-2 h-2 rounded-full bg-yellow-500"></span> Open
                                         </div>
-                                        <div class="status-dropdown-item" onclick="updateItemStatus({{ item.id }}, 'in_progress')">
-                                            <span class="w-2 h-2 rounded-full bg-blue-500"></span> In Progress
-                                        </div>
-                                        <div class="status-dropdown-item" onclick="updateItemStatus({{ item.id }}, 'claimed')">
-                                            <span class="w-2 h-2 rounded-full bg-green-500"></span> Claimed
+                                        <div class="status-dropdown-item" onclick="updateItemStatus({{ item.id }}, 'found')">
+                                            <span class="w-2 h-2 rounded-full bg-blue-500"></span> Found
                                         </div>
                                         <div class="status-dropdown-item" onclick="updateItemStatus({{ item.id }}, 'returned')">
-                                            <span class="w-2 h-2 rounded-full bg-cyan-500"></span> Returned
-                                        </div>
-                                        <div class="status-dropdown-item" onclick="updateItemStatus({{ item.id }}, 'closed')">
-                                            <span class="w-2 h-2 rounded-full bg-gray-500"></span> Closed
+                                            <span class="w-2 h-2 rounded-full bg-green-500"></span> Returned
                                         </div>
                                     </div>
                                 </div>
@@ -480,19 +457,29 @@
                     </select>
                 </div>
                 
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Room Number</label>
+                    <input type="text" name="room_number" placeholder="e.g., 101" class="w-full h-10 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                </div>
+                
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Room Number</label>
-                        <input type="text" name="room_number" placeholder="e.g., 101" class="w-full h-10 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Building</label>
+                        <input type="text" name="building" placeholder="e.g., Main Building" class="w-full h-10 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500" />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Priority</label>
-                        <select name="priority" class="w-full h-10 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
-                            {% for value, label in priority_choices %}
-                            <option value="{{ value }}" {% if value == 'normal' %}selected{% endif %}>{{ label }}</option>
-                            {% endfor %}
-                        </select>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Floor</label>
+                        <input type="text" name="floor" placeholder="e.g., 1st Floor" class="w-full h-10 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500" />
                     </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                    <select name="priority" class="w-full h-10 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
+                        {% for value, label in priority_choices %}
+                        <option value="{{ value }}" {% if value == 'normal' %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
                 
                 <div>

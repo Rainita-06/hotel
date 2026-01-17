@@ -1001,26 +1001,27 @@ class TicketAttachment(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
+        # Compress the file before first save
+        if not self.pk and self.file:  # Only compress on creation, not updates
+            from hotel_app.file_compression import compress_file
+            
+            try:
+                # Compress the file
+                compressed_file = compress_file(self.file, self.file_type)
+                
+                # Update the file field with compressed version
+                self.file = compressed_file
+                
+                # Update the size after compression
+                if hasattr(compressed_file, 'size'):
+                    self.size = compressed_file.size
+                    
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error compressing file: {e}. Saving original file.")
+        
         super().save(*args, **kwargs)
-
-        # ✅ Compress images only
-        if self.file_type == self.FILE_IMAGE:
-            self.compress_image()
-
-    def compress_image(self):
-        img_path = self.file.path
-        img = Image.open(img_path)
-
-        if img.mode in ("RGBA", "P"):
-            img = img.convert("RGB")
-
-        img.save(
-            img_path,
-            format="JPEG",
-            optimize=True,
-            quality=70  # ⭐ compression level
-        )
-    
 
     def __str__(self):
         return f"Attachment for Ticket #{self.ticket.id}"
@@ -2347,11 +2348,8 @@ class LostAndFound(models.Model):
     
     STATUS_CHOICES = [
         ('open', 'Open'),
-        ('in_progress', 'In Progress'),
-        ('claimed', 'Claimed'),
+        ('found', 'Found'),
         ('returned', 'Returned to Guest'),
-        ('disposed', 'Disposed'),
-        ('closed', 'Closed'),
     ]
     
     PRIORITY_CHOICES = [
@@ -2370,6 +2368,8 @@ class LostAndFound(models.Model):
     # Location Information
     location = models.ForeignKey('Location', on_delete=models.SET_NULL, null=True, blank=True, related_name='lost_items')
     room_number = models.CharField(max_length=50, blank=True, null=True)
+    building = models.CharField(max_length=100, blank=True, null=True)
+    floor = models.CharField(max_length=50, blank=True, null=True)
     found_location_description = models.CharField(max_length=255, blank=True, null=True)  # e.g., "Near pool", "In lobby"
     
     # Guest Information (for guest-reported lost items)
@@ -2423,7 +2423,7 @@ class LostAndFound(models.Model):
         """Accept the lost and found task."""
         self.accepted_by = user
         self.accepted_at = timezone.now()
-        self.status = 'in_progress'
+        self.status = 'found'
         self.save()
     
     def mark_found(self, user=None, storage_location=None):
@@ -2431,7 +2431,7 @@ class LostAndFound(models.Model):
         self.found_at = timezone.now()
         if storage_location:
             self.storage_location = storage_location
-        self.status = 'in_progress'
+        self.status = 'found'
         self.save()
     
     def mark_claimed(self, notes=None):

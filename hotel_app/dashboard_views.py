@@ -10109,8 +10109,7 @@ def lost_and_found_list(request):
     stats = {
         'total': LostAndFound.objects.count(),
         'open': LostAndFound.objects.filter(status='open').count(),
-        'in_progress': LostAndFound.objects.filter(status='in_progress').count(),
-        'claimed': LostAndFound.objects.filter(status='claimed').count(),
+        'found': LostAndFound.objects.filter(status='found').count(),
         'returned': LostAndFound.objects.filter(status='returned').count(),
     }
     
@@ -10233,6 +10232,8 @@ def lost_and_found_create(request):
         item_description = request.POST.get('item_description', '').strip()
         item_category = request.POST.get('item_category', '').strip()
         room_number = request.POST.get('room_number', '').strip()
+        building = request.POST.get('building', '').strip()
+        floor = request.POST.get('floor', '').strip()
         found_location_description = request.POST.get('found_location_description', '').strip()
         guest_name = request.POST.get('guest_name', '').strip()
         guest_phone = request.POST.get('guest_phone', '').strip()
@@ -10277,6 +10278,8 @@ def lost_and_found_create(request):
             item_category=item_category or None,
             location=location,
             room_number=room_number or None,
+            building=building or None,
+            floor=floor or None,
             found_location_description=found_location_description or None,
             guest=guest,
             guest_name=guest_name or None,
@@ -10334,18 +10337,14 @@ def lost_and_found_update(request, item_id):
                     item.resolution_notes = notes
                 
                 # Update timestamps based on status
-                if new_status == 'in_progress':
+                if new_status == 'found':
                     if not item.found_at:
                         item.found_at = timezone.now()
                     if not item.accepted_at:
                         item.accepted_at = timezone.now()
                         item.accepted_by = request.user
-                elif new_status == 'claimed':
-                    item.claimed_at = timezone.now()
                 elif new_status == 'returned':
                     item.returned_at = timezone.now()
-                elif new_status == 'closed':
-                    item.closed_at = timezone.now()
                 
                 item.save()
                 return JsonResponse({'success': True, 'message': f'Status updated to {item.get_status_display()}'})
@@ -10376,6 +10375,8 @@ def lost_and_found_update(request, item_id):
             item.item_category = data.get('item_category', item.item_category)
             item.priority = data.get('priority', item.priority)
             item.storage_location = data.get('storage_location', item.storage_location)
+            item.building = data.get('building', item.building)
+            item.floor = data.get('floor', item.floor)
             item.save()
             return JsonResponse({'success': True, 'message': 'Details updated'})
         
