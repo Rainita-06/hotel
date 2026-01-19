@@ -489,7 +489,33 @@
             </div>
             <form autocomplete="off" class="p-6 space-y-6 overflow-y-auto flex-grow" onsubmit="return false;">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                   
                     <div>
+    <label for="roomNumber" class="block text-sm font-medium text-gray-700 mb-1">
+        Room Number
+    </label>
+
+    <div class="relative">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <img src="{% static 'images/tickets/room.svg' %}" 
+                 alt="Room Icon" 
+                 class="h-5 w-5 text-gray-400" />
+        </div>
+
+        <input autocomplete="off"
+               type="text"
+               id="roomNumber"
+               placeholder="Enter room number"
+               class="w-full h-11 pl-10 pr-4 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500">
+
+        <!-- ✅ ADD THIS (same as guestSuggestions) -->
+        <div id="roomSuggestions"
+             class="absolute z-20 mt-1 w-full bg-white shadow-lg rounded-md hidden max-h-60 overflow-auto border border-gray-200">
+        </div>
+    </div>
+</div>
+
+                 <div>
                         <label for="guestName" class="block text-sm font-medium text-gray-700 mb-1">Guest Name</label>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -499,12 +525,7 @@
                             <input type="hidden" id="guestId" value="">
                             <div id="guestSuggestions" class="absolute z-20 mt-1 w-full bg-white shadow-lg rounded-md hidden max-h-60 overflow-auto border border-gray-200"></div>
                         </div>
-                    </div>
-                    <div>
-                        <label for="roomNumber" class="block text-sm font-medium text-gray-700 mb-1">Room Number</label>
-                        <div class="relative"><div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><img src="{% static 'images/tickets/room.svg' %}" alt="Room Icon" class="h-5 w-5 text-gray-400" /></div><input autocomplete="off" type="text" id="roomNumber" placeholder="Enter room number" class="w-full h-11 pl-10 pr-4 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500"></div>
-                    </div>
-                </div>
+                    </div></div>
                 <div>
                     <label for="department" class="block text-sm font-medium text-gray-700 mb-1">Department</label>
                     <div class="relative"><div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><img src="{% static 'images/tickets/department.svg' %}" alt="Department Icon" class="h-5 w-5 text-gray-400" /></div><select id="department" class="w-full h-11 pl-10 pr-4 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 appearance-none"><option value="">Select department</option>{% for dept in departments %}<option value="{{ dept.name }}">{{ dept.name }}</option>{% endfor %}</select><div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"><svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></div></div>
@@ -1238,112 +1259,168 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // --- GUEST AUTOCOMPLETE FOR MANUAL TICKET CREATION ---
+    const roomSuggestions = document.getElementById('roomSuggestions');
+
     const guestNameInput = document.getElementById('guestName');
-    const guestSuggestions = document.getElementById('guestSuggestions');
-    const guestIdInput = document.getElementById('guestId');
-    const roomNumberInput = document.getElementById('roomNumber');
+const guestSuggestions = document.getElementById('guestSuggestions');
+const guestIdInput = document.getElementById('guestId');
+const roomNumberInput = document.getElementById('roomNumber');
 
-    function clearGuestSelection() {
-        if (guestIdInput) {
-            guestIdInput.value = '';
-        }
+/* ---------------- Helpers ---------------- */
+
+function clearGuestSelection() {
+    if (guestIdInput) {
+        guestIdInput.value = '';
     }
+}
 
-    function hideGuestSuggestions() {
-        if (guestSuggestions) {
-            guestSuggestions.innerHTML = '';
-            guestSuggestions.classList.add('hidden');
-        }
-    }
-
-    function populateGuestSuggestions(items) {
-        if (!guestSuggestions) {
-            return;
-        }
+function hideGuestSuggestions() {
+    if (guestSuggestions) {
         guestSuggestions.innerHTML = '';
-        if (!items.length) {
+        guestSuggestions.classList.add('hidden');
+    }
+    if (roomSuggestions) {
+        roomSuggestions.innerHTML = '';
+        roomSuggestions.classList.add('hidden');
+    }
+}
+
+/* ---------------- Populate Suggestions (SAME UI) ---------------- */
+
+function populateGuestSuggestions(items, container) {
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    if (!items.length) {
+        container.classList.add('hidden');
+        return;
+    }
+
+    items.forEach(item => {
+        const option = document.createElement('div');
+        option.className =
+            'px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm flex flex-col';
+
+        option.innerHTML = `
+            <span class="font-medium text-gray-900">${item.name}</span>
+            <span class="text-xs text-gray-500">
+                ${item.room_number ? `Room ${item.room_number}` : 'No room on file'}
+            </span>
+        `;
+
+        option.addEventListener('click', () => {
+            guestNameInput.value = item.name;
+            if (guestIdInput) guestIdInput.value = item.id;
+
+            if (roomNumberInput && item.room_number) {
+                roomNumberInput.value = item.room_number;
+                roomNumberInput.dataset.userEdited = 'false';
+            }
+
             hideGuestSuggestions();
-            return;
-        }
-
-        items.forEach(item => {
-            const option = document.createElement('div');
-            option.className = 'px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm flex flex-col';
-            option.innerHTML = `
-                <span class="font-medium text-gray-900">${item.name}</span>
-                <span class="text-xs text-gray-500">${item.room_number ? `Room ${item.room_number}` : 'No room on file'}</span>
-            `;
-            option.addEventListener('click', () => {
-                guestNameInput.value = item.name;
-                if (guestIdInput) {
-                    guestIdInput.value = item.id;
-                }
-                if (roomNumberInput) {
-                    if (item.room_number) {
-                        roomNumberInput.value = item.room_number;
-                    }
-                    roomNumberInput.dataset.userEdited = 'false';
-                }
-                hideGuestSuggestions();
-            });
-            guestSuggestions.appendChild(option);
         });
 
-        guestSuggestions.classList.remove('hidden');
-    }
-
-    function fetchGuestSuggestions(query) {
-        const url = `{% url 'dashboard:api_search_guests' %}?q=${encodeURIComponent(query)}`;
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    populateGuestSuggestions(data.results || []);
-                } else {
-                    hideGuestSuggestions();
-                }
-            })
-            .catch(() => hideGuestSuggestions());
-    }
-
-    if (roomNumberInput && !roomNumberInput.dataset.userEdited) {
-        roomNumberInput.dataset.userEdited = 'false';
-    }
-
-    if (guestNameInput) {
-        guestNameInput.addEventListener('input', () => {
-            clearGuestSelection();
-            const query = guestNameInput.value.trim();
-            if (roomNumberInput && !roomNumberInput.dataset.userEdited) {
-                roomNumberInput.value = '';
-            }
-            if (query.length < 2) {
-                hideGuestSuggestions();
-                return;
-            }
-            fetchGuestSuggestions(query);
-        });
-
-        guestNameInput.addEventListener('focus', () => {
-            const query = guestNameInput.value.trim();
-            if (query.length >= 2) {
-                fetchGuestSuggestions(query);
-            }
-        });
-    }
-
-    document.addEventListener('click', (event) => {
-        if (guestSuggestions && !guestSuggestions.contains(event.target) && event.target !== guestNameInput) {
-            hideGuestSuggestions();
-        }
+        container.appendChild(option);
     });
 
-    if (roomNumberInput) {
-        roomNumberInput.addEventListener('input', () => {
-            roomNumberInput.dataset.userEdited = 'true';
-            clearGuestSelection();
-        });
+    container.classList.remove('hidden');
+}
+
+/* ---------------- Fetch Suggestions (USED BY BOTH) ---------------- */
+
+function fetchGuestSuggestions(query, targetContainer) {
+    const url = `{% url 'dashboard:api_search_guests' %}?q=${encodeURIComponent(query)}`;
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                populateGuestSuggestions(data.results || [], targetContainer);
+            } else {
+                hideGuestSuggestions();
+            }
+        })
+        .catch(() => hideGuestSuggestions());
+}
+
+
+/* ---------------- Init ---------------- */
+
+if (roomNumberInput && !roomNumberInput.dataset.userEdited) {
+    roomNumberInput.dataset.userEdited = 'false';
+}
+
+/* ---------------- Guest Name → Room No (EXISTING) ---------------- */
+
+if (guestNameInput) {
+    guestNameInput.addEventListener('input', () => {
+        clearGuestSelection();
+        const query = guestNameInput.value.trim();
+
+        if (roomNumberInput && !roomNumberInput.dataset.userEdited) {
+            roomNumberInput.value = '';
+        }
+
+        if (query.length < 2) {
+            hideGuestSuggestions();
+            return;
+        }
+
+        fetchGuestSuggestions(query);
+    });
+
+    guestNameInput.addEventListener('input', () => {
+    const query = guestNameInput.value.trim();
+    if (query.length < 2) {
+        hideGuestSuggestions();
+        return;
     }
+    fetchGuestSuggestions(query, guestSuggestions);
+});
+
+}
+
+/* ---------------- Room No → Guest Name (NEW, SAME FORMAT) ---------------- */
+
+if (roomNumberInput) {
+    roomNumberInput.addEventListener('input', () => {
+        roomNumberInput.dataset.userEdited = 'true';
+        clearGuestSelection();
+
+        const query = roomNumberInput.value.trim();
+
+        if (query.length < 1) {
+            hideGuestSuggestions();
+            return;
+        }
+
+        // 🔁 SAME dropdown, SAME API, SAME UI
+        fetchGuestSuggestions(query);
+    });
+roomNumberInput.addEventListener('input', () => {
+    const query = roomNumberInput.value.trim();
+    if (query.length < 1) {
+        hideGuestSuggestions();
+        return;
+    }
+    fetchGuestSuggestions(query, roomSuggestions);
+});
+
+}
+
+/* ---------------- Click Outside ---------------- */
+
+document.addEventListener('click', (event) => {
+    if (
+        guestSuggestions &&
+        !guestSuggestions.contains(event.target) &&
+        event.target !== guestNameInput &&
+        event.target !== roomNumberInput
+    ) {
+        hideGuestSuggestions();
+    }
+});
 
     window.resolveUnmatched = function(unmatchedId) {
         const deptSelect = document.getElementById(`dept-${unmatchedId}`);

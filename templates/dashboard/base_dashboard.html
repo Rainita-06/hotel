@@ -190,6 +190,7 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body class="bg-gray-50 font-inter">
+    {% block sidebar %}
     <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
     
     <div class="flex h-screen bg-gray-100">
@@ -247,7 +248,7 @@
         </div>
     </div>
 </header>
-
+{% endblock %}
             
             <main class="flex-1 overflow-x-hidden overflow-y-auto main-content">
                 {% block content %}

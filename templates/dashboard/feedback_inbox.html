@@ -193,18 +193,40 @@
         </div>
         <form autocomplete="off" method="post" action="{% url 'dashboard:feedback_inbox' %}" class="p-6 space-y-6 overflow-y-auto flex-grow">
             {% csrf_token %}
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" data-aos="fade-up" data-aos-once="true">
-                <div>
-                    <label for="guest_name" class="block text-sm font-medium text-gray-700 mb-1">Guest Name</label>
-                    <input autocomplete="off" type="text" name="guest_name" id="guest_name" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500" placeholder="Enter guest name" required>
-                </div>
-                <div>
+            
+            <!-- 
+               Z-INDEX FIX:
+               1. Grid container gets 'relative z-20' to float above ratings.
+               2. Rating container gets 'relative z-0' to stay below.
+            -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-20" data-aos="fade-up" data-aos-once="true">
+                
+               
+
+                <!-- Room Number Input -->
+                <div class="relative group">
                     <label for="room_number" class="block text-sm font-medium text-gray-700 mb-1">Room Number</label>
                     <input autocomplete="off" type="text" name="room_number" id="room_number" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500" placeholder="Enter room number" required>
+                    
+                    <!-- Room Suggestions Dropdown -->
+                    <div id="roomSuggestions" 
+                         class="suggestions-list absolute left-0 right-0 top-full z-50 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-xl hidden max-h-60 overflow-y-auto">
+                    </div>
+                </div>
+                 <!-- Guest Name Input -->
+                <div class="relative group">
+                    <label for="guest_name" class="block text-sm font-medium text-gray-700 mb-1">Guest Name</label>
+                    <input autocomplete="off" type="text" name="guest_name" id="guest_name" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500" placeholder="Enter guest name" required>
+                    
+                    <!-- Guest Suggestions Dropdown -->
+                    <div id="guestSuggestions" 
+                         class="suggestions-list absolute left-0 right-0 top-full z-50 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-xl hidden max-h-60 overflow-y-auto">
+                    </div>
                 </div>
             </div>
 
-            <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm" data-aos="fade-up" data-aos-once="true">
+            <!-- Rating Section (z-0 to sit behind dropdowns) -->
+            <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm relative z-0" data-aos="fade-up" data-aos-once="true">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">How would you rate your overall experience?</h3>
                 <div class="flex flex-wrap justify-center gap-4 sm:gap-6 md:gap-8">
                     <div class="rating-option rating-option-emoji text-center cursor-pointer p-2 rounded-lg" data-rating-group="overall" data-rating-value="1" title="Poor" data-aos="zoom-in" data-aos-delay="0"><span class="text-4xl">😞</span><p class="text-xs text-gray-500 mt-1">Poor</p></div>
@@ -216,7 +238,8 @@
                 <input autocomplete="off" type="hidden" name="overall_rating" id="overall_rating" required>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Other Ratings (z-0) -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 relative z-0">
                 <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm" data-aos="fade-up" data-aos-once="true">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">How clean was your room?</h3>
                     <div class="grid grid-cols-3 gap-3">
@@ -237,7 +260,7 @@
                 </div>
             </div>
 
-            <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm" data-aos="fade-up" data-aos-once="true">
+            <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm relative z-0" data-aos="fade-up" data-aos-once="true">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Would you recommend us to others?</h3>
                 <div class="grid grid-cols-2 gap-3">
                     <button type="button" class="rating-option p-3 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50" data-rating-group="recommend" data-rating-value="yes">Yes</button>
@@ -246,12 +269,12 @@
                 <input autocomplete="off" type="hidden" name="recommend" id="recommend">
             </div>
             
-            <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm" data-aos="fade-up" data-aos-delay="50" data-aos-once="true">
+            <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm relative z-0" data-aos="fade-up" data-aos-delay="50" data-aos-once="true">
                 <label for="comment" class="text-lg font-semibold text-gray-900 mb-4 block">Tell us more about your experience <span class="text-gray-500 font-normal">(optional)</span></label>
                 <textarea name="comment" id="comment" rows="5" class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500" placeholder="Write your comments here..."></textarea>
             </div>
             
-            <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-lg flex-shrink-0 -mx-6 -mb-6" data-aos="fade-up" data-aos-once="true">
+            <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-lg flex-shrink-0 -mx-6 -mb-6 relative z-0" data-aos="fade-up" data-aos-once="true">
                 <button type="button" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50" onclick="window.FeedbackModal.close('feedbackModal')">Cancel</button>
                 <button type="submit" class="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 shadow-sm">Submit Feedback</button>
             </div>
@@ -362,6 +385,106 @@ document.addEventListener('DOMContentLoaded', function() {
     if (searchInput) {
         searchInput.addEventListener('input', updateExportLink);
     }
+});
+document.addEventListener('DOMContentLoaded', function () {
+
+    const guestInput = document.getElementById('guest_name');
+    const roomInput = document.getElementById('room_number');
+    const guestSuggestions = document.getElementById('guestSuggestions');
+    const roomSuggestions = document.getElementById('roomSuggestions');
+
+    // Only run if elements exist
+    if (!guestInput || !roomInput || !guestSuggestions || !roomSuggestions) return;
+
+    function hideAllSuggestions() {
+        guestSuggestions.classList.add('hidden');
+        roomSuggestions.classList.add('hidden');
+        guestSuggestions.innerHTML = '';
+        roomSuggestions.innerHTML = '';
+    }
+
+    function renderSuggestions(results, container, type) {
+        container.innerHTML = '';
+        
+        if (!results || results.length === 0) {
+            container.classList.add('hidden');
+            return;
+        }
+
+        results.forEach(item => {
+            const div = document.createElement('div');
+            // Styling for the list items
+            div.className = "px-4 py-2 hover:bg-sky-50 cursor-pointer text-sm border-b border-gray-100 last:border-0 transition-colors";
+            
+            // Format Content
+            if (type === 'room') {
+                div.innerHTML = `
+                    <div class="font-medium text-gray-900">${item.room_number || 'N/A'}</div>
+                    <div class="text-xs text-gray-500">${item.name}</div>
+                `;
+            } else {
+                div.innerHTML = `
+                    <div class="font-medium text-gray-900">${item.name}</div>
+                    <div class="text-xs text-gray-500">${item.room_number ? 'Room ' + item.room_number : 'No Room'}</div>
+                `;
+            }
+
+            // Click Handler
+            div.addEventListener('click', () => {
+                guestInput.value = item.name;
+                if (item.room_number) {
+                    roomInput.value = item.room_number;
+                }
+                hideAllSuggestions();
+            });
+
+            container.appendChild(div);
+        });
+
+        container.classList.remove('hidden');
+    }
+
+    function fetchSuggestions(query, container, type) {
+        if (query.length < 1) {
+            hideAllSuggestions();
+            return;
+        }
+
+        // Adjust API URL if needed
+        fetch(`{% url 'dashboard:api_search_guests' %}?q=${encodeURIComponent(query)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.results) {
+                    renderSuggestions(data.results, container, type);
+                } else {
+                    hideAllSuggestions();
+                }
+            })
+            .catch(() => hideAllSuggestions());
+    }
+
+    // --- Event Listeners ---
+
+    // 1. Room Input
+    roomInput.addEventListener('input', function() {
+        guestSuggestions.classList.add('hidden'); 
+        fetchSuggestions(this.value.trim(), roomSuggestions, 'room');
+    });
+
+    // 2. Guest Name Input
+    guestInput.addEventListener('input', function() {
+        roomSuggestions.classList.add('hidden'); 
+        fetchSuggestions(this.value.trim(), guestSuggestions, 'guest');
+    });
+
+    // 3. Click Outside to Close
+    document.addEventListener('click', function(e) {
+        if (!guestInput.contains(e.target) && !guestSuggestions.contains(e.target) &&
+            !roomInput.contains(e.target) && !roomSuggestions.contains(e.target)) {
+            hideAllSuggestions();
+        }
+    });
+
 });
 </script>
 {% endblock %}
