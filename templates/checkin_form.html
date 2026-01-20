@@ -75,9 +75,18 @@
           </div>
         </div>
       </div></div>
+     <!-- Toast Message (Top Right) -->
+<div id="toast"
+     class="fixed top-5 right-5 z-[9999] hidden
+            bg-red-600 text-white px-5 py-3 rounded-lg shadow-lg
+            text-sm font-medium flex items-center gap-2">
+    ⚠️ Please select a room number in dropdown
+</div>
+
+
     <!-- Form Content -->
     <div class="p-4 sm:p-8">
-      <form method="POST" autocomplete="off">
+      <form method="POST" autocomplete="off" id="checkinForm">
         {% csrf_token %}
         
         <!-- Main Form Grid: 1 column on mobile, 2 columns on medium+ -->
@@ -694,5 +703,26 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+function showToast(message) {
+    const toast = document.getElementById("toast");
+    toast.textContent = message;
+    toast.classList.remove("hidden");
+
+    // Auto hide after 3 seconds
+    setTimeout(() => {
+        toast.classList.add("hidden");
+    }, 3000);
+}
+
+document.getElementById("checkinForm").addEventListener("submit", function (e) {
+    const roomId = document.getElementById("locationIdInput").value;
+
+    if (!roomId) {
+        e.preventDefault(); // stop form submit
+        showToast("Please select a room number in dropdown");
+    }
+});
+
 </script>
 {% endblock %}

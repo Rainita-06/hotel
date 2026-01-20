@@ -1896,6 +1896,9 @@ def create_voucher_checkin(request):
         guest_name = request.POST.get("guest_name")
         # room_no = request.POST.get("room_no") # Deprecated, use location_id
         location_id = request.POST.get("location_id")
+        if not location_id:
+            messages.error(request, "Please select room number in dropdown")
+            return redirect(request.path)
         location = None
         room_no = None # Fallback or initial value
 
@@ -1905,6 +1908,7 @@ def create_voucher_checkin(request):
                 room_no = location.name # Enable sync with Location
             except Location.DoesNotExist:
                 pass
+        
         adults = int(request.POST.get("adults", 1))
         kids = int(request.POST.get("kids", 0))
         quantity = int(request.POST.get("quantity", 0))
@@ -2722,9 +2726,13 @@ def member_list(request):
     search = request.GET.get("search")
     for m in members:
         if m.qr_code_image:
-            m.qr_code_full_url = (m.qr_code_image.url)
+            qr = (f"{request.scheme}://{request.get_host()}{m.qr_code_image.url}"
+    if ":" in request.get_host()  # host contains port → docker/live
+    else f"{settings.SITE_BASE_URL}{m.qr_code_image.url}"
+)
         else:
-            m.qr_code_full_url = None
+            qr = None
+        m.qr_code_full_url=qr
     if search:
         members = members.filter(
             Q(full_name__icontains=search) | Q(customer_code__icontains=search)
@@ -2747,7 +2755,7 @@ def member_list(request):
         df.to_excel(response, index=False)
         return response
 
-    return render(request, "member_list.html", {"members": members,"page_obj":page_obj,"entries":entries_per_page,"search":search})
+    return render(request, "member_list.html", {"members": members,"page_obj":page_obj,"entries":entries_per_page,"search":search,"qr":qr})
 # views.py
 
 # from django.shortcuts import render, get_object_or_404

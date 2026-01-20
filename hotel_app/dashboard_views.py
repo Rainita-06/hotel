@@ -1297,27 +1297,36 @@ def dashboard2_view(request):
     
     # Active Guests change (+23 check-ins)
     try:
-        # Calculate current active guests
-        current_active_guests = Guest.objects.filter(
-            Q(checkin_date__lte=today, checkout_date__gte=today) |
-            Q(checkin_datetime__date__lte=today, checkout_datetime__date__gte=today)
-        ).count()
-        
-        # Calculate active guests from yesterday
-        yesterday = today - datetime.timedelta(days=1)
-        yesterday_active_guests = Guest.objects.filter(
-            Q(checkin_date__lte=yesterday, checkout_date__gte=yesterday) |
-            Q(checkin_datetime__date__lte=yesterday, checkout_datetime__date__gte=yesterday)
-        ).count()
-        
-        # Calculate change in absolute numbers
+    # ACTIVE guests TODAY
+        current_active_guests = Voucher.objects.filter(
+        check_in_date__lte=today,
+        check_out_date__gt=today,
+        location__isnull=False
+    ).count()
+
+    # ACTIVE guests YESTERDAY
+        yesterday_active_guests = Voucher.objects.filter(
+        check_in_date__lte=yesterday,
+        check_out_date__gt=yesterday,
+        location__isnull=False
+    ).count()
+
+    # Difference
         active_guests_change = current_active_guests - yesterday_active_guests
-        active_guests_change_direction = "up" if active_guests_change > 0 else "down" if active_guests_change < 0 else "none"
-    except Exception:
+
+        active_guests_change_direction = (
+        "up" if active_guests_change > 0 else
+        "down" if active_guests_change < 0 else
+        "none"
+    )
+
+    except Exception as e:
+        # print("Active guest error:", e)
         current_active_guests = 0
         active_guests_change = 0
         active_guests_change_direction = "none"
 
+    # print(current_active_guests, active_guests_change, active_guests_change_direction)
     try:
     # Get all departments and count tickets per department
         dept_qs = Department.objects.all()

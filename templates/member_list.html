@@ -166,7 +166,7 @@
     </a> -->
 
     <!-- WhatsApp Button -->
-    <a href="https://wa.me/{{m.country_code}}{{ m.phone}}?text=Hi%20{{m.full_name}},%20here%20is%20your%20Gym%20QR%20Code:%20{{ qr|urlencode }}"
+    <a href="https://wa.me/{{m.country_code}}{{ m.phone}}?text=Hi%20{{m.full_name}},%20here%20is%20your%20Gym%20QR%20Code:%20{{ m.qr_code_full_url|urlencode }}"
        target="_blank"
        title="Send via WhatsApp"
        class="text-green-500 hover:text-red-600 transition-colors">
