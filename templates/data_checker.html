@@ -78,9 +78,21 @@
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <script>
+let gymScanner = null;
+let gymScanLocked = false;
+const GYM_SCAN_DELAY = 5000; 
 // ✅ GYM QR SCANNER LOGIC
 function onGymScanSuccess(decodedText) {
+    if (gymScanLocked) return; // 🚫 prevent rapid re-scan
+    gymScanLocked = true;
+
     console.log("✅ Gym Member QR detected:", decodedText);
+
+    // 🛑 Stop scanner immediately
+    if (gymScanner) {
+        gymScanner.clear();
+    }
+
     fetch(`/api/members/validate/?code=${encodeURIComponent(decodedText)}`)
         .then(response => response.json())
         .then(data => {
@@ -95,39 +107,59 @@ function onGymScanSuccess(decodedText) {
                 box.classList.add("bg-red-100", "text-red-700", "border", "border-red-300");
             }
 
+            // Hide message
             setTimeout(() => {
                 box.classList.add("hidden");
                 box.innerHTML = "";
-                box.className = "mt-4 p-3 rounded-lg text-center hidden";
             }, 8000);
+
+            // ⏳ Restart scanner after 1 minute
+            setTimeout(() => {
+                gymScanLocked = false;
+                startGymScanner();
+            }, GYM_SCAN_DELAY);
         })
-        .catch(err => console.error("Error validating member:", err));
+        .catch(err => {
+            console.error("Error validating member:", err);
+            gymScanLocked = false;
+            startGymScanner();
+        });
 }
-
-// ✅ Variables
-let gymScanner;
-
-// ✅ Start button logic
-document.getElementById("startScanBtn").addEventListener("click", () => {
+function startGymScanner() {
     const reader = document.getElementById("gym-reader");
+
     reader.classList.remove("hidden");
     document.getElementById("startScanBtn").classList.add("hidden");
     document.getElementById("stopScanBtn").classList.remove("hidden");
 
-    gymScanner = new Html5QrcodeScanner("gym-reader", { fps: 3, qrbox: { width: 250, height: 250 } });
-    gymScanner.render(onGymScanSuccess);
-});
+    gymScanner = new Html5QrcodeScanner(
+        "gym-reader",
+        { fps: 3, qrbox: { width: 250, height: 250 } },
+        false
+    );
 
-// ✅ Stop button logic
+    gymScanner.render(onGymScanSuccess);
+}
+
+// ✅ Variables
+
+
+// ✅ Start button logic
+document.getElementById("startScanBtn").addEventListener("click", () => {
+    gymScanLocked = false;
+    startGymScanner();
+});
 document.getElementById("stopScanBtn").addEventListener("click", () => {
     if (gymScanner) {
         gymScanner.clear().then(() => {
+            gymScanLocked = false;
             document.getElementById("gym-reader").classList.add("hidden");
             document.getElementById("stopScanBtn").classList.add("hidden");
             document.getElementById("startScanBtn").classList.remove("hidden");
-        }).catch(err => console.error("Error stopping scanner:", err));
+        });
     }
 });
+
 
 // ✅ Auto-hide manual check result box
 setTimeout(function() {

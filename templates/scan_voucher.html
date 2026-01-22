@@ -73,9 +73,18 @@
 <!-- QR Scripts -->
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script>
+let scanner;
+let scanLocked = false;   // prevents multiple scans
+const SCAN_DELAY = 5000; // 5sec
 // Logic to handle scanning and local storage
 function onScanSuccess(decodedText, decodedResult) {
-  // Prevent duplicate rapid scans if needed, or just process
+  if (scanLocked) return; // 🚫 block rapid re-scan
+
+  scanLocked = true;
+
+  // 🛑 Stop camera immediately
+  scanner.clear();
+
   fetch(`/api/vouchers/validate/?code=${decodedText}`)
     .then(response => response.json())
     .then(data => {
@@ -87,23 +96,51 @@ function onScanSuccess(decodedText, decodedResult) {
       if (data.message && data.message.toLowerCase().includes("expired")) status = "Expired";
       else if (data.success) status = "Success";
 
-      // Styling based on result
       resultBox.className = "mt-4 text-center text-sm font-medium p-3 rounded-lg transition-all border";
-      if (status === "Success") resultBox.classList.add("bg-green-100", "text-green-800", "border-green-200");
-      else if (status === "Expired") resultBox.classList.add("bg-red-100", "text-red-800", "border-red-200");
-      else resultBox.classList.add("bg-yellow-100", "text-yellow-800", "border-yellow-200");
+      if (status === "Success")
+        resultBox.classList.add("bg-green-100", "text-green-800", "border-green-200");
+      else if (status === "Expired")
+        resultBox.classList.add("bg-red-100", "text-red-800", "border-red-200");
+      else
+        resultBox.classList.add("bg-yellow-100", "text-yellow-800", "border-yellow-200");
 
-      addRecentScan(data.guest_name || "Unknown", data.room_no || "-", data.quantity || "0", status);
+      addRecentScan(
+        data.guest_name || "Unknown",
+        data.room_no || "-",
+        data.quantity || "0",
+        status
+      );
 
       setTimeout(() => {
         resultBox.classList.add("hidden");
       }, 3000);
+
+      // ⏳ Restart scanning after 1 minute
+      setTimeout(() => {
+        scanLocked = false;
+        startScanner();
+      }, SCAN_DELAY);
     })
-    .catch(err => console.error(err));
+    .catch(err => {
+      console.error(err);
+      scanLocked = false;
+      startScanner();
+    });
 }
 
-let scanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
-scanner.render(onScanSuccess);
+
+function startScanner() {
+  scanner = new Html5QrcodeScanner(
+    "reader",
+    { fps: 10, qrbox: 250 },
+    false
+  );
+  scanner.render(onScanSuccess);
+}
+
+// Start on load
+startScanner();
+
 
 function addRecentScan(name, room, pax, status) {
   const container = document.getElementById("recentScans");
