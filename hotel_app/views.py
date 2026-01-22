@@ -2006,6 +2006,7 @@ def create_voucher_checkin(request):
         )
 
         qr = qr_absolute_url
+        
 
         return render(request, "voucher_success.html", {
             "voucher": voucher,
@@ -2238,13 +2239,13 @@ from .models import Voucher
 
 #     # ✅ For normal browser request
 #     return redirect("breakfast_voucher_report")
-
 @login_required
 @require_section_permission('breakfast_voucher', 'change')
 def mark_checkout(request, voucher_id):
     """
-    Mark a voucher as checked out (set today's date as checkout).
-    Also marks the associated room (Location) as not occupied.
+    Mark a voucher as checked out.
+    Also marks the associated room as not occupied.
+    Automatically deletes QR code image from storage and DB.
     """
     try:
         voucher = Voucher.objects.get(id=voucher_id)
@@ -2253,19 +2254,30 @@ def mark_checkout(request, voucher_id):
 
     today = now().date()
 
-    # ✅ FORCE SAME-DAY CHECKOUT
+    # ✅ Mark voucher as checked out
     voucher.check_out_date = today
-    voucher.is_used = True   # ✅ THIS IS REQUIRED FOR GREEN STATUS
-    voucher.save()
-    
-    # ✅ Mark the room/location as no longer occupied
+    voucher.is_used = True
+
+    # ✅ Delete QR code image from storage and DB
+    if voucher.qr_code_image:
+        # Delete the actual file from storage
+        voucher.qr_code_image.delete(save=False)
+        # Clear the database field
+        voucher.qr_code_image = None
+
+    # ✅ Optional: clear QR code field (base64)
+    voucher.qr_code = None
+
+    voucher.save(update_fields=['check_out_date', 'is_used', 'qr_code_image', 'qr_code'])
+
+    # ✅ Mark room/location as not occupied
     if voucher.location:
         voucher.location.is_occupied = False
         voucher.location.save(update_fields=['is_occupied'])
 
-    # ✅ For AJAX tests
+    # ✅ AJAX response
     if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.method == "POST":
-        return JsonResponse({"message": "Check-out marked successfully."}, status=200)
+        return JsonResponse({"message": "Check-out marked successfully, QR deleted."}, status=200)
 
     # ✅ Normal browser flow
     return redirect("breakfast_voucher_report")
