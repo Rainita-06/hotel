@@ -157,6 +157,7 @@ urlpatterns = [
     path("export_locations_csv/",views.export_locations_csv,name="export_locations_csv"),
 
     path("ajax/get-types/", views.get_types_by_family, name="get_types_by_family"),
+path("clear-experience-message/", views.clear_experience_message, name="clear_experience_message"),
 
     
     path("bulk_import_buildings/",views.bulk_import_buildings,name="bulk_import_buildings"),

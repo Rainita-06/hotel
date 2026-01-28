@@ -191,7 +191,7 @@
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
-        <form autocomplete="off" method="post" action="{% url 'dashboard:feedback_inbox' %}" class="p-6 space-y-6 overflow-y-auto flex-grow">
+        <form id="feedbackForm" autocomplete="off" method="post" action="{% url 'dashboard:feedback_inbox' %}" class="p-6 space-y-6 overflow-y-auto flex-grow">
             {% csrf_token %}
             
             <!-- 
@@ -259,7 +259,14 @@
                     <input autocomplete="off" type="hidden" name="staff_rating" id="staff_rating">
                 </div>
             </div>
-
+<div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm" data-aos="fade-up" data-aos-delay="50" data-aos-once="true">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Facilities you have Enjoyed</h3>
+                    <div class="flex gap-4">
+    <label><input type="checkbox" name="facilities" value="Pool"> Pool</label>
+    <label><input type="checkbox" name="facilities" value="Mini Zoo"> Mini Zoo</label>
+    <label><input type="checkbox" name="facilities" value="Spa"> Spa</label>
+</div>
+</div>
             <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-sm relative z-0" data-aos="fade-up" data-aos-once="true">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Would you recommend us to others?</h3>
                 <div class="grid grid-cols-2 gap-3">
@@ -280,6 +287,38 @@
             </div>
         </form>
     </div>
+</div>
+{% if request.session.experience_message %}
+<div id="experienceModal"
+     class="fixed inset-0 z-[2000] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+    
+    <div class="bg-white w-full max-w-lg rounded-xl shadow-2xl p-6 text-center animate-fade-in">
+        <div class="mx-auto mb-4 w-14 h-14 flex items-center justify-center rounded-full bg-green-100">
+            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" stroke-width="2"
+                 viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M5 13l4 4L19 7"/>
+            </svg>
+        </div>
+
+        <h2 class="text-xl font-bold text-gray-900 mb-2">
+            Experience Summary Generated
+        </h2>
+
+        <p class="text-gray-700 text-sm leading-relaxed mb-6">
+            {{ request.session.experience_message }}
+        </p>
+
+        <button onclick="closeExperienceModal()"
+                class="inline-flex justify-center rounded-md bg-sky-600 px-6 py-2 text-sm font-medium text-white hover:bg-sky-700 shadow">
+            Got it
+        </button>
+    </div>
+</div>
+{% endif %}
+<div id="formErrorPopup"
+     class="hidden fixed top-6 right-6 z-[3000] bg-red-600 text-white px-5 py-3 rounded-lg shadow-xl text-sm">
+    All required fields must be filled
 </div>
 
 <script src="{% static 'vendor/aos/aos.js' %}"></script>
@@ -486,5 +525,80 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
 });
+
+function closeExperienceModal() {
+    const modal = document.getElementById("experienceModal");
+    if (modal) modal.remove();
+
+    // Clear session message (optional safety)
+    fetch("{% url 'clear_experience_message' %}", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}"
+        }
+    });
+}
+document.addEventListener('DOMContentLoaded', function () {
+
+    const form = document.getElementById('feedbackForm');
+    if (!form) return;
+
+    form.addEventListener('submit', function (e) {
+
+        const guestName = document.getElementById('guest_name')?.value.trim();
+        const roomNumber = document.getElementById('room_number')?.value.trim();
+
+        const overallRating = document.getElementById('overall_rating')?.value;
+        const cleanlinessRating = document.getElementById('cleanliness_rating')?.value;
+        const staffRating = document.getElementById('staff_rating')?.value;
+        const recommend = document.getElementById('recommend')?.value;
+
+        // ❌ CHECK ALL REQUIRED FIELDS
+        if (
+            !guestName ||
+            !roomNumber ||
+            !overallRating ||
+            !cleanlinessRating ||
+            !staffRating ||
+            !recommend
+        ) {
+            e.preventDefault(); // stop submit
+            showFormError("Please fill all required fields");
+
+            highlightMissing([
+                ['guest_name', guestName],
+                ['room_number', roomNumber],
+                ['overall_rating', overallRating],
+                ['cleanliness_rating', cleanlinessRating],
+                ['staff_rating', staffRating],
+                ['recommend', recommend],
+            ]);
+
+            return false;
+        }
+    });
+
+    function showFormError(message) {
+        const popup = document.getElementById('formErrorPopup');
+        if (!popup) return;
+
+        popup.innerText = message;
+        popup.classList.remove('hidden');
+
+        setTimeout(() => {
+            popup.classList.add('hidden');
+        }, 3000);
+    }
+
+    function highlightMissing(fields) {
+        fields.forEach(([id, value]) => {
+            const el = document.getElementById(id);
+            if (!value && el) {
+                el.classList.add('ring-2', 'ring-red-500');
+            }
+        });
+    }
+});
 </script>
+
 {% endblock %}

@@ -1560,6 +1560,7 @@ class Review(models.Model):
     comment = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
+    facilities = models.JSONField(default=list, blank=True)
 
     def __str__(self):
         return f"Review #{self.pk}: {self.rating} stars"

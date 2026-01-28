@@ -8053,11 +8053,12 @@ def feedback_inbox(request):
     from .models import Review, Guest
     from .forms import FeedbackForm
     from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-    
+    form = FeedbackForm() 
 
     # Handle form submission for new feedback
     if request.method == 'POST':
         # Get form data
+        form = FeedbackForm(request.POST)
         guest_name = request.POST.get('guest_name', '')
         room_number = request.POST.get('room_number', '')
         overall_rating = request.POST.get('overall_rating', 0)
@@ -8065,6 +8066,8 @@ def feedback_inbox(request):
         staff_rating = request.POST.get('staff_rating', 0)
         recommend = request.POST.get('recommend', '')
         comment = request.POST.get('comment', '')
+        facilities = request.POST.getlist('facilities')
+
         
         # Validate required fields
         if not guest_name or not room_number or not overall_rating:
@@ -8098,8 +8101,24 @@ def feedback_inbox(request):
                 Review.objects.create(
                     guest=guest,
                     rating=overall_rating,
-                    comment=full_comment
+                    comment=full_comment,
+                    facilities=facilities
                 )
+                engine = ExperienceIntelligence()
+
+                experience_message = engine.generate_feedback(
+    guest_name=guest_name,
+    overall_rating=int(overall_rating),
+    cleanliness_rating=int(cleanliness_rating),
+    staff_rating=int(staff_rating),
+    recommend=recommend,
+    facilities=facilities,
+    comment=comment
+)
+
+                request.session["experience_message"] = experience_message
+
+             
                 
                 messages.success(request, 'Feedback added successfully!')
                 return redirect('dashboard:feedback_inbox')
@@ -8182,6 +8201,245 @@ def feedback_inbox(request):
     }
     
     return render(request, 'dashboard/feedback_inbox.html', context)
+
+# import random
+
+# class ExperienceIntelligence:
+#     """
+#     Sentence-generation engine for guest feedback.
+#     Generates natural language summaries based on ratings and fields.
+#     """
+
+#     overall_templates = {
+#         "positive": [
+#             "They were very satisfied with their overall stay.",
+#             "The guest enjoyed their experience thoroughly.",
+#             "Overall, they had a pleasant and memorable visit."
+#         ],
+#         "neutral": [
+#             "Their overall experience was average.",
+#             "The guest felt the stay was acceptable but not outstanding.",
+#             "Overall, the visit was fine but left room for improvement."
+#         ],
+#         "negative": [
+#             "They were disappointed with their overall stay.",
+#             "The guest felt their experience did not meet expectations.",
+#             "Overall, they were unhappy with the visit."
+#         ]
+#     }
+
+#     cleanliness_templates = {
+#         "positive": [
+#             "Room cleanliness was praised.",
+#             "They found the room spotless and well maintained.",
+#             "Cleanliness exceeded their expectations."
+#         ],
+#         "neutral": [
+#             "Cleanliness was acceptable but could be improved.",
+#             "The guest felt the room was reasonably clean.",
+#             "Cleanliness was average, neither excellent nor poor."
+#         ],
+#         "negative": [
+#             "They found cleanliness below expectations.",
+#             "The guest was dissatisfied with the room’s hygiene.",
+#             "Cleanliness was a major concern during their stay."
+#         ]
+#     }
+
+#     staff_templates = {
+#         "positive": [
+#             "Staff service was highlighted positively.",
+#             "They appreciated the helpful and friendly staff.",
+#             "The guest praised the professionalism of the staff."
+#         ],
+#         "neutral": [
+#             "Staff service was okay.",
+#             "They felt the staff did their job adequately.",
+#             "Staff interactions were fine but not remarkable."
+#         ],
+#         "negative": [
+#             "They were unhappy with staff service.",
+#             "The guest felt the staff were unhelpful.",
+#             "Staff service did not meet their expectations."
+#         ]
+#     }
+
+#     recommend_templates = {
+#         "yes": [
+#             "They would recommend our hotel to others.",
+#             "The guest is likely to suggest our property to friends and family.",
+#             "They expressed willingness to recommend us."
+#         ],
+#         "no": [
+#             "They would not recommend our hotel.",
+#             "The guest is unlikely to suggest our property to others.",
+#             "They mentioned they wouldn’t recommend us."
+#         ]
+#     }
+
+#     @staticmethod
+#     def pick_template(templates, sentiment):
+#         return random.choice(templates[sentiment])
+
+#     @staticmethod
+#     def rating_to_sentiment(rating):
+#         rating = int(rating)
+#         if rating >= 4:
+#             return "positive"
+#         elif rating == 3:
+#             return "neutral"
+#         else:
+#             return "negative"
+
+#     def generate_feedback(self, guest_name, overall_rating, cleanliness_rating,
+#                           staff_rating, recommend, facilities, comment):
+#         sentences = []
+
+#         # Intro
+#         sentences.append(f"{guest_name} shared their experience with us.")
+
+#         # Overall
+#         sentences.append(self.pick_template(self.overall_templates,
+#                                             self.rating_to_sentiment(overall_rating)))
+
+#         # Cleanliness
+#         sentences.append(self.pick_template(self.cleanliness_templates,
+#                                             self.rating_to_sentiment(cleanliness_rating)))
+
+#         # Staff
+#         sentences.append(self.pick_template(self.staff_templates,
+#                                             self.rating_to_sentiment(staff_rating)))
+
+#         # Recommendation
+#         rec_key = "yes" if str(recommend).lower() in ["yes", "true", "recommended"] else "no"
+#         sentences.append(random.choice(self.recommend_templates[rec_key]))
+
+#         # Facilities
+#         if facilities:
+#             sentences.append("Facilities Enjoyed: " + ", ".join(facilities) + ".")
+
+#         # Guest comment
+#         if comment:
+#             sentences.append(f"Additional note: {comment}")
+
+#         return " ".join(sentences)
+import random
+
+class ExperienceIntelligence:
+
+    verbs = {
+        "positive": ["enjoyed", "appreciated", "loved", "was pleased with"],
+        "neutral": ["found", "felt", "experienced"],
+        "negative": ["was disappointed by", "was unhappy with", "felt let down by"]
+    }
+
+    adjectives = {
+        "positive": ["excellent", "great", "pleasant", "satisfying"],
+        "neutral": ["average", "decent", "acceptable"],
+        "negative": ["poor", "unsatisfactory", "below expectations"]
+    }
+
+    connectors = [
+        "during their stay",
+        "overall",
+        "throughout the visit",
+        "for the most part"
+    ]
+
+    staff_traits = {
+        "positive": ["friendly", "helpful", "professional", "courteous"],
+        "neutral": ["adequate", "responsive"],
+        "negative": ["unhelpful", "unresponsive", "unprofessional"]
+    }
+
+    cleanliness_states = {
+        "positive": ["well maintained", "spotless", "very clean"],
+        "neutral": ["reasonably clean", "fairly maintained"],
+        "negative": ["not clean enough", "poorly maintained"]
+    }
+
+    @staticmethod
+    def rating_to_sentiment(rating):
+        rating = int(rating)
+        if rating >= 4:
+            return "positive"
+        elif rating == 3:
+            return "neutral"
+        else:
+            return "negative"
+
+    def sentence(self, subject, sentiment, aspect, extra=None):
+        # ✅ Recommendation does NOT need sentiment
+        if aspect == "recommend":
+            return (
+                "They indicated they would recommend the hotel to others."
+                if extra == "yes"
+                else "They mentioned they may not recommend the hotel at this time."
+            )
+
+        # ✅ Safe sentiment-based generation
+        verb = random.choice(self.verbs[sentiment])
+        adj = random.choice(self.adjectives[sentiment])
+        connector = random.choice(self.connectors)
+
+        if aspect == "overall":
+            return f"{subject} {verb} an {adj} experience {connector}."
+
+        if aspect == "cleanliness":
+            state = random.choice(self.cleanliness_states[sentiment])
+            return f"The room was described as {state}, which felt {adj}."
+
+        if aspect == "staff":
+            trait = random.choice(self.staff_traits[sentiment])
+            return f"Staff members appeared {trait}, shaping the guest’s impression."
+
+    def generate_feedback(
+        self,
+        guest_name,
+        overall_rating,
+        cleanliness_rating,
+        staff_rating,
+        recommend,
+        facilities,
+        comment
+    ):
+        sentences = []
+
+        sentences.append(f"{guest_name} shared feedback regarding their stay.")
+
+        sentences.append(self.sentence(
+            guest_name,
+            self.rating_to_sentiment(overall_rating),
+            "overall"
+        ))
+
+        sentences.append(self.sentence(
+            guest_name,
+            self.rating_to_sentiment(cleanliness_rating),
+            "cleanliness"
+        ))
+
+        sentences.append(self.sentence(
+            guest_name,
+            self.rating_to_sentiment(staff_rating),
+            "staff"
+        ))
+
+        rec_key = "yes" if str(recommend).lower() in ["yes", "true", "recommended"] else "no"
+        sentences.append(self.sentence(guest_name, None, "recommend", rec_key))
+
+        if facilities:
+            sentences.append(
+                f" Facilities Enjoyed such as {', '.join(facilities)}."
+            )
+
+        if comment:
+            sentences.append(f"They also noted: “{comment}”")
+
+        return " ".join(sentences)
+
+
+
 
 
 @login_required

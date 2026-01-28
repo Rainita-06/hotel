@@ -5405,3 +5405,8 @@ from .models import (
 
 #     return redirect("review_unclassified_tickets")
 
+from django.http import JsonResponse
+
+def clear_experience_message(request):
+    request.session.pop("experience_message", None)
+    return JsonResponse({"success": True})
