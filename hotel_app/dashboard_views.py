@@ -8543,7 +8543,7 @@ def export_feedback(request):
     
     writer = csv.writer(response)
     # Write header row
-    writer.writerow(['ID', 'Date', 'Guest Name', 'Room Number', 'Rating', 'Sentiment', 'Feedback', 'Keywords'])
+    writer.writerow(['ID', 'Date', 'Guest Name', 'Room Number', 'Rating', 'Sentiment', 'Feedback', 'Keywords','Facilities'])
     
     # Write data rows
     for review in reviews:
@@ -8561,7 +8561,20 @@ def export_feedback(request):
             common_words = ['service', 'staff', 'room', 'food', 'clean', 'location', 'wifi', 'pool', 'spa', 'breakfast']
             comment_lower = review.comment.lower()
             keywords = [word for word in common_words if word in comment_lower]
-        
+        # Extract facilities safely
+        facilities = ''
+
+        if hasattr(review, 'facilities') and review.facilities:
+    # ManyToManyField
+            if hasattr(review.facilities, 'all'):
+                facilities = ', '.join([f.name for f in review.facilities.all()])
+    # List / JSONField
+            elif isinstance(review.facilities, (list, tuple)):
+                facilities = ', '.join(review.facilities)
+    # String field
+            else:
+                facilities = str(review.facilities)
+
         writer.writerow([
             review.id,
             review.created_at.strftime('%Y-%m-%d %H:%M'),
@@ -8570,7 +8583,8 @@ def export_feedback(request):
             review.rating,
             sentiment,
             review.comment or '',
-            ', '.join(keywords)
+            ', '.join(keywords),
+            facilities
         ])
     
     return response
