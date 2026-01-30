@@ -8115,8 +8115,17 @@ def feedback_inbox(request):
     facilities=facilities,
     comment=comment
 )
-
+                guest_msg = engine.guest_voice(
+            overall_rating=request.POST["overall_rating"],
+            cleanliness_rating=request.POST["cleanliness_rating"],
+            staff_rating=request.POST["staff_rating"],
+            recommend=recommend,
+            facilities=facilities,
+            comment=request.POST.get("comment")
+        )
                 request.session["experience_message"] = experience_message
+                request.session["guest_message"] = guest_msg
+                request.session['experience_rating'] = int(overall_rating)
 
              
                 
@@ -8369,13 +8378,33 @@ class ExperienceIntelligence:
             return "negative"
 
     def sentence(self, subject, sentiment, aspect, extra=None):
-        # ✅ Recommendation does NOT need sentiment
+    
+
+    # Recommendation phrases - polished and natural
+        recommend_phrases = {
+        "positive": [
+            "This hotel is a good option if you're visiting the area.",
+            "I think staying here could be a convenient choice.",
+            "It seems like a comfortable place to stay.",
+            "This hotel could work well for your visit."
+            "I would definitely recommend this hotel to others.",
+            "I highly recommend this hotel to anyone visiting.",
+            "I strongly suggest staying here.",
+            "I would not hesitate to recommend this hotel."
+        ],
+        "negative": [
+            "I might not recommend this hotel at this time.",
+            "I would be cautious about recommending this hotel.",
+            "I may not suggest this hotel to others.",
+            "I don't feel confident recommending this hotel."
+        ]
+    }
+
+    # If aspect is recommendation
         if aspect == "recommend":
-            return (
-                "They indicated they would recommend the hotel to others."
-                if extra == "yes"
-                else "They mentioned they may not recommend the hotel at this time."
-            )
+            key = "positive" if extra == "yes" else "negative"
+            return random.choice(recommend_phrases[key])
+
 
         # ✅ Safe sentiment-based generation
         verb = random.choice(self.verbs[sentiment])
@@ -8437,6 +8466,49 @@ class ExperienceIntelligence:
             sentences.append(f"They also noted: “{comment}”")
 
         return " ".join(sentences)
+
+
+
+    # ---------- GUEST VOICE (1st PERSON) ----------
+    def guest_voice(
+        self,
+        overall_rating,
+        cleanliness_rating,
+        staff_rating,
+        recommend,
+        facilities,
+        comment
+    ):
+        """Guest-first-person version with multiple sentences"""
+        sentences = []
+
+        # Overall
+        sentiment = self.rating_to_sentiment(overall_rating)
+        sentences.append(self.sentence("I", sentiment, "overall"))
+
+        # Cleanliness
+        sentiment = self.rating_to_sentiment(cleanliness_rating)
+        sentences.append(self.sentence("I", sentiment, "cleanliness"))
+
+        # Staff
+        sentiment = self.rating_to_sentiment(staff_rating)
+        sentences.append(self.sentence("I", sentiment, "staff"))
+
+        # Recommendation
+        rec_key = "yes" if str(recommend).lower() in ["yes", "true", "recommended"] else "no"
+        sentences.append(self.sentence("I", None, "recommend", rec_key))
+
+        # Facilities
+        if facilities:
+            sentences.append(f"I enjoyed facilities such as {', '.join(facilities)}.")
+
+        # Additional comment
+        if comment:
+            sentences.append(f"I also want to mention: “{comment}”")
+
+        # Combine all sentences into a natural paragraph
+        return " ".join(sentences)
+
 
 
 
