@@ -102,48 +102,25 @@ def delete_notification(request, notification_id):
 
 @api_view(['POST'])
 @authentication_classes([SessionAuthentication, TokenAuthentication])
+# @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def save_fcm_token(request):
-    """
-    Save Firebase Cloud Messaging token for the current user
-    """
     token = request.data.get('token')
     device_type = request.data.get('device_type', 'web')
-    
+
     if not token:
-        return Response(
-            {'error': 'Token is required'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    
-    # Get or create the FCM token for this user
-    fcm_token, created = FCMToken.objects.get_or_create(
+        return Response({'error': 'Token required'}, status=400)
+
+    obj, _ = FCMToken.objects.get_or_create(
         token=token,
-        defaults={
-            'user': request.user,
-            'device_type': device_type,
-            'is_active': True
-        }
+        defaults={'user': request.user, 'device_type': device_type}
     )
-    
-    # If token already exists but for a different user, update it
-    if not created and fcm_token.user != request.user:
-        fcm_token.user = request.user
-        fcm_token.save()
-    
-    # Reactivate if it was deactivated
-    if not fcm_token.is_active:
-        fcm_token.is_active = True
-        fcm_token.save(update_fields=['is_active'])
-    
-    # Mark as used
-    fcm_token.mark_as_used()
-    
-    return Response({
-        'status': 'success',
-        'message': 'FCM token saved successfully',
-        'created': created
-    })
+
+    obj.user = request.user
+    obj.is_active = True
+    obj.mark_as_used()
+
+    return Response({'status': 'ok'})
 
 
 @api_view(['POST'])

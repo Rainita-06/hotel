@@ -158,7 +158,7 @@ urlpatterns = [
 
     path("ajax/get-types/", views.get_types_by_family, name="get_types_by_family"),
 path("clear-experience-message/", views.clear_experience_message, name="clear_experience_message"),
-
+ path("api/save-fcm-token/",views.save_fcm_token, name="save_fcm_token"),
     
     path("bulk_import_buildings/",views.bulk_import_buildings,name="bulk_import_buildings"),
     path("bulk_import_floors/",views.bulk_import_floors,name="bulk_import_floors"),

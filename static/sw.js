@@ -8,13 +8,14 @@ const DYNAMIC_CACHE_NAME = 'guestconnect-dynamic-v5';
 
 // --- FIREBASE CONFIGURATION ---
 const firebaseConfig = {
-    apiKey: "AIzaSyC_00jdAaoy8YuwhD6vqwc2bK55PZ_eouY",
-    authDomain: "guestconnect2.firebaseapp.com",
-    projectId: "guestconnect2",
-    storageBucket: "guestconnect2.firebasestorage.app",
-    messagingSenderId: "1059307478512",
-    appId: "1:1059307478512:web:836d6a30116854271bd135",
-    measurementId: "G-080L2D262S"
+   apiKey: "AIzaSyCfgY8622WSb-iYlTip2M02tPGwRJzQltM",
+  authDomain: "guestconnect2-341a2.firebaseapp.com",
+  projectId: "guestconnect2-341a2",
+  storageBucket: "guestconnect2-341a2.firebasestorage.app",
+  messagingSenderId: "301374504112",
+  appId: "1:301374504112:web:83a455ec8eb98bbc5fcf75",
+  measurementId: "G-X0X2SP8BKS"
+
 };
 
 // Initialize Firebase

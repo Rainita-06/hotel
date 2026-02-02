@@ -5410,3 +5410,31 @@ from django.http import JsonResponse
 def clear_experience_message(request):
     request.session.pop("experience_message", None)
     return JsonResponse({"success": True})
+
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+import json
+from .models import FCMToken
+
+@csrf_exempt
+@login_required
+def save_fcm_token(request):
+    data = json.loads(request.body)
+    token = data.get("token")
+    device_type = data.get("device_type", "web")
+
+    if not token:
+        return JsonResponse({"error": "Token missing"}, status=400)
+
+    FCMToken.objects.update_or_create(
+        token=token,
+        defaults={
+            "user": request.user,
+            "device_type": device_type,
+            "is_active": True,
+        },
+    )
+
+    return JsonResponse({"status": "saved"})
+
