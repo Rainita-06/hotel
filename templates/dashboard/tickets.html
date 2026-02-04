@@ -501,7 +501,8 @@
                  alt="Room Icon" 
                  class="h-5 w-5 text-gray-400" />
         </div>
-
+<input type="hidden" id="guestPhone" value="">
+<input type="hidden" id="guestCountryCode" value="">
         <input autocomplete="off"
                type="text"
                id="roomNumber"
@@ -958,7 +959,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     const formData = new FormData();
-
+    const phone = document.getElementById('guestPhone').value;
+    const countryCode = document.getElementById('guestCountryCode').value;
     formData.append('guest_name', guestName);
     formData.append('room_number', roomNumber);
     formData.append('department', department);
@@ -970,7 +972,13 @@ document.addEventListener('DOMContentLoaded', function() {
     if (guestIdRaw && !isNaN(guestIdRaw)) {
         formData.append('guest_id', parseInt(guestIdRaw, 10));
     }
+    if (phone) {
+    const fullPhone = countryCode
+        ? `+${countryCode}${phone}`
+        : phone;
 
+    formData.append('phone_number', fullPhone);
+}
     // ✅ MULTIPLE FILE UPLOAD (CORRECT)
     const fileInput = document.querySelector('input[name="attachments"]');
     if (fileInput && fileInput.files.length > 0) {
@@ -1317,6 +1325,12 @@ function populateGuestSuggestions(items, container) {
                 roomNumberInput.value = item.room_number;
                 roomNumberInput.dataset.userEdited = 'false';
             }
+            if (item.phone) {
+        document.getElementById('guestPhone').value = item.phone;
+    }
+             if (item.country_code) {
+        document.getElementById('guestCountryCode').value = item.country_code;
+    }
 
             hideGuestSuggestions();
         });

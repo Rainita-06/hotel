@@ -6750,6 +6750,7 @@ def create_ticket_api(request):
             description = request.POST.get('description')
             guest_id = request.POST.get('guest_id')
             files = request.FILES.getlist("attachments")
+            phone_number = request.POST.get('phone_number')
             ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "mp4"]
             MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
 
@@ -6857,7 +6858,13 @@ def create_ticket_api(request):
                 location=location,
                 requester_user=request.user,
                 guest=guest,
+                guest_name=(
+        guest.full_name
+        if guest and guest.full_name
+        else guest_name
+    ),
                 department=department,
+                phone_number=phone_number,
                 priority=model_priority,
                 status='pending',
                 notes=description,
