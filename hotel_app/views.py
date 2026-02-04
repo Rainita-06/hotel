@@ -1346,7 +1346,7 @@ def upload_type_image(request, type_id):
         os.makedirs(upload_dir, exist_ok=True)
         type_obj.save()
         messages.success(request, "Image uploaded successfully!")
-    return redirect("type_add")  # update if URL name differs
+    return redirect("types_list")  # update if URL name differs
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
 from .models import LocationFamily
