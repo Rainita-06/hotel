@@ -2734,7 +2734,7 @@ def member_detail(request, member_id):
 
 def member_list(request):
     members = GymMember.objects.all().order_by("-created_at")
-
+    qr=None
     search = request.GET.get("search")
     for m in members:
         if m.qr_code_image:
