@@ -5332,7 +5332,7 @@ def department_create(request):
             return JsonResponse({
                 "success": True, 
                 "department": {
-                    "id": dept.id, 
+                    "id": dept.department_id, 
                     "name": dept.name,
                     "logo_url": dept.logo.url if dept.logo else None
                 }
@@ -6004,7 +6004,7 @@ def department_create(request):
             return JsonResponse({
                 "success": True, 
                 "department": {
-                    "id": dept.id, 
+                    "id": dept.department_id, 
                     "name": dept.name,
                     "logo_url": dept.logo.url if dept.logo else None
                 }
