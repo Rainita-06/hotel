@@ -1,6 +1,52 @@
 {% load static humanize %}
 <div class="w-full max-w-[1184px] mx-auto">
   <!-- Filters + Bulk Actions -->
+   <!-- <div class="px-6 pt-6"> -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      
+      <div class="bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200 p-6">
+        <div class="flex items-center justify-between">
+          <div class="w-7 h-10 bg-fuchsia-700/10 rounded-lg flex items-center justify-center">
+            <img src="{% static 'images/manage_users/members_assigned.svg' %}" alt="Users" class="w-3.5 h-4" />
+          </div>
+          <div class="text-sky-600 text-xs font-medium font-['Inter']"></div>
+        </div>
+        <div class="mt-6">
+          <div  id="dashboard-total-users" class="text-gray-900 text-2xl font-bold font-['Inter']">{{ total_users }}</div>
+          <div class="text-gray-600 text-sm font-normal font-['Inter'] mt-1">Total Users</div>
+        </div></div>
+        <div class="bg-white rounded-xl shadow outline outline-1 outline-gray-200 p-6">
+  <div class="flex items-center justify-between">
+    <div class="w-7 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+      <img src="{% static 'images/manage_users/members_assigned.svg' %}" class="w-4 h-4" />
+    </div>
+  </div>
+  <div class="mt-6">
+    <div id="dashboard-active-users" class="text-gray-900 text-2xl font-bold">
+      {{ active_users }}
+    </div>
+    <div class="text-gray-600 text-sm mt-1">Active Users</div>
+  </div>
+</div>
+
+<div class="bg-white rounded-xl shadow outline outline-1 outline-gray-200 p-6">
+  <div class="flex items-center justify-between">
+    <div class="w-7 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+      <img src="{% static 'images/manage_users/members_assigned.svg' %}" class="w-4 h-4" />
+    </div>
+  </div>
+  <div class="mt-6">
+    <div id="dashboard-inactive-users" class="text-gray-900 text-2xl font-bold">
+      {{ inactive_users }}
+    </div>
+    <div class="text-gray-600 text-sm mt-1">Inactive Users</div>
+  </div>
+</div>
+
+      </div>
+<!-- </div> -->
+   <!-- </div> -->
+
   <div class="bg-white rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-gray-200 mt-6">
     <div class="px-6 py-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
       <div class="flex flex-wrap items-center gap-4">
@@ -158,6 +204,9 @@ function toggleArrow(id){
   const rowsEl = document.getElementById('manage-users-rows');
   const usersShowingEl = document.getElementById('users-showing');
   const usersTotalCountEl = document.getElementById('users-total-count');
+  const dashboardTotalUsersEl = document.getElementById('dashboard-total-users');
+  const dashboardActiveUsersEl = document.getElementById('dashboard-active-users');
+const dashboardInactiveUsersEl = document.getElementById('dashboard-inactive-users');
   const paginationContainer = document.getElementById('pagination-container');
   const bulkEnableBtn = document.getElementById('bulk-enable');
   const bulkDisableBtn = document.getElementById('bulk-disable');
@@ -354,6 +403,17 @@ function toggleArrow(id){
     if(usersTotalCountEl){ 
       usersTotalCountEl.innerHTML = `Users (${totalResults}) <span id="selected-count-display">0</span> selected`;
     }
+    if (dashboardTotalUsersEl) {
+    dashboardTotalUsersEl.textContent = totalResults;
+}
+    if (dashboardActiveUsersEl) {
+    dashboardActiveUsersEl.textContent = data.active_users||0;
+}
+
+    if (dashboardInactiveUsersEl) {
+    dashboardInactiveUsersEl.textContent = data.inactive_users||0;
+}
+    
 
     if(usersShowingEl){
       const start = totalResults===0 ? 0 : ((currentPage-1)*pageSize)+1;

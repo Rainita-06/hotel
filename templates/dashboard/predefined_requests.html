@@ -49,10 +49,10 @@
                     <input autocomplete="off" type="text" id="searchInput" placeholder="Search requests..." class="w-64 h-10 px-4 pl-10 bg-white rounded-lg border border-gray-200 text-gray-900 text-base font-normal font-['Inter'] leading-normal focus:outline-none focus:ring-2 focus:ring-sky-600 focus:border-transparent" />                     
                     <img src="{% static 'images/dashboard/search.svg' %}" alt="search" class="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none">                 
                 </div>                 
-                <button id="primary-action-btn" class="h-10 px-4 py-2 bg-sky-600 hover:bg-sky-700 rounded-lg flex items-center gap-2 transition-colors">                     
+                <!-- <button id="primary-action-btn" class="h-10 px-4 py-2 bg-sky-600 hover:bg-sky-700 rounded-lg flex items-center gap-2 transition-colors">                     
                     <img src="{% static 'images/manage_users/plus.svg' %}" alt="plus" class="w-3.5 h-3.5">                     
                     <span class="whitespace-nowrap text-white text-base font-normal font-['Inter']">New Request</span>                 
-                </button>                 
+                </button>                  -->
                 <button id="secondary-action-btn" class="w-10 h-10 bg-white hover:bg-gray-50 rounded-lg border border-gray-200 flex items-center justify-center transition-colors hidden">                     
                     <img src="{% static 'images/manage_users/filter.svg' %}" alt="filter" class="w-4 h-4">                 
                 </button>             
@@ -304,8 +304,8 @@
         const mainDescription = document.getElementById('main-description');
         const breadcrumbActive = document.getElementById('breadcrumb-active');
         const headerSearchContainer = document.getElementById('header-search-container');
-        const primaryActionBtn = document.getElementById('primary-action-btn');
-        const primaryActionBtnText = primaryActionBtn.querySelector('span');
+        // const primaryActionBtn = document.getElementById('primary-action-btn');
+        // const primaryActionBtnText = primaryActionBtn.querySelector('span');
         const secondaryActionBtn = document.getElementById('secondary-action-btn');
         const navTabBtns = document.querySelectorAll('.nav-tab-btn'); 
 

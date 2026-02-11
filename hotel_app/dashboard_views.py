@@ -1750,6 +1750,8 @@ def manage_users(request):
     # can render real data server-side and be used by the client-side poller.
     users_qs = User.objects.all().select_related('userprofile').prefetch_related('groups')
     total_users = users_qs.count()
+    active_users = users_qs.filter(userprofile__enabled=True).count()
+    inactive_users = users_qs.filter(userprofile__enabled=False).count()
     # Build role counts for the UI (best-effort)
     role_names = ['Staff', 'Manager', 'Concierge', 'Maintenance', 'Housekeeping', 'Super Admin']
     role_counts = {}
@@ -1769,7 +1771,9 @@ def manage_users(request):
     context = {
         'total_users': total_users,
         'role_counts': role_counts,
-        'guest_feedback': feedback_data_list
+        'guest_feedback': feedback_data_list,
+        'active_users': active_users,
+        'inactive_users': inactive_users,
     }
     return render(request, "dashboard/users.html", context)
 
@@ -1883,6 +1887,8 @@ def manage_users_api_users(request, user_id=None):
     page = int(request.GET.get('page', 1))
     page_size = int(request.GET.get('page_size', 10))
     total_count = qs.count()
+    active_count = qs.filter(userprofile__enabled=True).count()
+    inactive_count = qs.filter(userprofile__enabled=False).count()
     total_pages = 1
     page_obj_list = qs
     if Paginator:
@@ -1928,7 +1934,8 @@ def manage_users_api_users(request, user_id=None):
             'last_active_human': human,
         })
 
-    return JsonResponse({'users': users, 'total': total_count, 'page': page, 'page_size': page_size, 'total_pages': total_pages})
+    return JsonResponse({'users': users, 'total': total_count, 'page': page, 'page_size': page_size, 'total_pages': total_pages,"active_users": active_count,
+    "inactive_users": inactive_count,})
 
 
 @login_required
