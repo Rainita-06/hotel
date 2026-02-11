@@ -85,6 +85,8 @@ docker exec hotel_web_gcp python manage.py init_sections
 log $YELLOW "Initializing departments..."
 docker exec hotel_web_gcp python manage.py init_departments
 
+log $YELLOW "Step 3: Creating default admin user (admin:admin)..."
+docker exec hotel_web_gcp python manage.py shell -c "from django.contrib.auth.models import User, Group; from hotel_app.models import UserProfile, Department; user, created = User.objects.get_or_create(username='admin', defaults={'email': 'admin@example.com'}); user.set_password('admin'); user.is_superuser = True; user.is_staff = True; user.save(); user.groups.clear(); admin_group = Group.objects.get(name='Admins'); user.groups.add(admin_group) if admin_group else None; print('Admin user created/updated and added to Admins group:', user.username); dept = Department.objects.first(); profile, p_created = UserProfile.objects.get_or_create(user=user, defaults={'full_name': 'Administrator', 'phone': '+1234567890', 'title': 'System Administrator', 'department': dept, 'role': 'admin'}); print('Admin profile:', profile.full_name)"
 # -------------------------------
 # DONE
 # -------------------------------
@@ -92,3 +94,7 @@ log $GREEN "========================================"
 log $GREEN "Deployment completed successfully!"
 log $GREEN "========================================"
 log $CYAN "Access the app at http://localhost:80"
+log $YELLOW "Available Credentials:"
+log $GREEN "    Superuser admin"
+log $GREEN  "   Username:admin"
+log $GREEN "    Password:admin"

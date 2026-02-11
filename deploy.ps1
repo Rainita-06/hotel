@@ -140,6 +140,10 @@ docker exec hotel_web_gcp python manage.py init_sections
 Write-Color "Initializing departments..." $YELLOW
 docker exec hotel_web_gcp python manage.py init_departments
 
+# STEP 3: Create admin user and add to Admins group
+    Write-Host "Step 3: Creating default admin user (admin:admin)..." -ForegroundColor Yellow
+    docker exec hotel_web_gcp python manage.py shell -c "from django.contrib.auth.models import User, Group; from hotel_app.models import UserProfile, Department; user, created = User.objects.get_or_create(username='admin', defaults={'email': 'admin@example.com'}); user.set_password('admin'); user.is_superuser = True; user.is_staff = True; user.save(); user.groups.clear(); admin_group = Group.objects.get(name='Admins'); user.groups.add(admin_group); print('Admin user created/updated and added to Admins group:', user.username); dept = Department.objects.first(); profile, p_created = UserProfile.objects.get_or_create(user=user, defaults={'full_name': 'Administrator', 'phone': '+1234567890', 'title': 'System Administrator', 'department': dept, 'role': 'admin'}); print('Admin profile:', profile.full_name)"
+    
 # -------------------------------
 # DONE
 # -------------------------------
@@ -147,3 +151,9 @@ Write-Color "========================================" $GREEN
 Write-Color "Deployment completed successfully!" $GREEN
 Write-Color "========================================" $GREEN
 Write-Color "Access the app at http://localhost:80" $CYAN
+Write-Host "" -ForegroundColor Yellow
+    Write-Host "Available Credentials:" -ForegroundColor Yellow
+    Write-Host "  Superuser Admin:" -ForegroundColor White
+    Write-Host "    Username: admin" -ForegroundColor Green
+    Write-Host "    Password: admin" -ForegroundColor Green
+    Write-Host "" -ForegroundColor White

@@ -31,7 +31,7 @@
 
 <div class="bg-white rounded-xl shadow outline outline-1 outline-gray-200 p-6">
   <div class="flex items-center justify-between">
-    <div class="w-7 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+    <div class="w-7 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
       <img src="{% static 'images/manage_users/members_assigned.svg' %}" class="w-4 h-4" />
     </div>
   </div>
@@ -40,6 +40,19 @@
       {{ inactive_users }}
     </div>
     <div class="text-gray-600 text-sm mt-1">Inactive Users</div>
+  </div>
+</div>
+<div class="bg-white rounded-xl shadow outline outline-1 outline-gray-200 p-6">
+  <div class="flex items-center justify-between">
+    <div class="w-7 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+      <img src="{% static 'images/manage_users/total_groups.svg' %}" class="w-4 h-4" />
+    </div>
+  </div>
+  <div class="mt-6">
+    <div id="dashboard-total-departments" class="text-gray-900 text-2xl font-bold">
+      {{ total_departments }}
+    </div>
+    <div class="text-gray-600 text-sm mt-1">Total Assigned Departments</div>
   </div>
 </div>
 
@@ -207,6 +220,7 @@ function toggleArrow(id){
   const dashboardTotalUsersEl = document.getElementById('dashboard-total-users');
   const dashboardActiveUsersEl = document.getElementById('dashboard-active-users');
 const dashboardInactiveUsersEl = document.getElementById('dashboard-inactive-users');
+const dashboardTotalDepartmentsEl = document.getElementById('dashboard-total-departments');
   const paginationContainer = document.getElementById('pagination-container');
   const bulkEnableBtn = document.getElementById('bulk-enable');
   const bulkDisableBtn = document.getElementById('bulk-disable');
@@ -412,6 +426,9 @@ const dashboardInactiveUsersEl = document.getElementById('dashboard-inactive-use
 
     if (dashboardInactiveUsersEl) {
     dashboardInactiveUsersEl.textContent = data.inactive_users||0;
+}
+    if (dashboardTotalDepartmentsEl) {
+    dashboardTotalDepartmentsEl.textContent = data.total_departments || 0;
 }
     
 

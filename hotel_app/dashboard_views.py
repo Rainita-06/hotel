@@ -1752,6 +1752,18 @@ def manage_users(request):
     total_users = users_qs.count()
     active_users = users_qs.filter(userprofile__enabled=True).count()
     inactive_users = users_qs.filter(userprofile__enabled=False).count()
+    department_counts = (
+        Department.objects
+        .annotate(user_count=Count('userprofile'))
+        .order_by('name')
+    )
+
+    total_departments = (
+    qs.filter(userprofile__department__isnull=False)
+      .values('userprofile__department')
+      .distinct()
+      .count()
+)
     # Build role counts for the UI (best-effort)
     role_names = ['Staff', 'Manager', 'Concierge', 'Maintenance', 'Housekeeping', 'Super Admin']
     role_counts = {}
@@ -1774,6 +1786,8 @@ def manage_users(request):
         'guest_feedback': feedback_data_list,
         'active_users': active_users,
         'inactive_users': inactive_users,
+        'total_departments':total_departments,
+        "department_counts": department_counts,
     }
     return render(request, "dashboard/users.html", context)
 
@@ -1889,6 +1903,13 @@ def manage_users_api_users(request, user_id=None):
     total_count = qs.count()
     active_count = qs.filter(userprofile__enabled=True).count()
     inactive_count = qs.filter(userprofile__enabled=False).count()
+    total_departments = (
+    qs.filter(userprofile__department__isnull=False)
+      .values('userprofile__department')
+      .distinct()
+      .count()
+)
+    
     total_pages = 1
     page_obj_list = qs
     if Paginator:
@@ -1935,7 +1956,7 @@ def manage_users_api_users(request, user_id=None):
         })
 
     return JsonResponse({'users': users, 'total': total_count, 'page': page, 'page_size': page_size, 'total_pages': total_pages,"active_users": active_count,
-    "inactive_users": inactive_count,})
+    "inactive_users": inactive_count,'total_departments':total_departments})
 
 
 @login_required
