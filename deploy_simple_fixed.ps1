@@ -140,6 +140,7 @@ else {
     Write-Host "Step 4: Creating test users..." -ForegroundColor Yellow
     docker exec hotel_web python manage.py sample_tickets
     docker exec hotel_web python manage.py sample_gym,feed
+    docker exec hotel_web python manage.py seed_locations
     docker exec hotel_web python manage.py create_test_users
     
     Write-Host "" -ForegroundColor Green

@@ -592,257 +592,257 @@ import os
 #     print("📍 Locations Created: 6")
 
 #     print("\n✔ SUCCESS → 6 Buildings | 6 Floors | 6 Families | 6 Types | 6 Locations Ready!\n")
-import os
-import requests
-from django.core.files.base import ContentFile
-from django.db.models.signals import post_migrate
-from django.dispatch import receiver
+# import os
+# import requests
+# from django.core.files.base import ContentFile
+# from django.db.models.signals import post_migrate
+# from django.dispatch import receiver
 
-from .models import Building, Floor, LocationFamily, LocationType, Location
+# from .models import Building, Floor, LocationFamily, LocationType, Location
 
-import os
-import random
-import requests
-from django.core.files.base import ContentFile
-from django.db.models.signals import post_migrate
-from django.dispatch import receiver
-from .models import Building, Floor, LocationFamily, LocationType, Location
-
-
-# -----------------------------------------------------
-# GLOBAL HOTEL IMAGES (361×192)
-# -----------------------------------------------------
-BUILDING_IMAGE_URLS = [
-    "https://images.pexels.com/photos/261146/pexels-photo-261146.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
-    "https://images.pexels.com/photos/258154/pexels-photo-258154.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
-    "https://images.pexels.com/photos/271689/pexels-photo-271689.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
-    "https://images.pexels.com/photos/3586960/pexels-photo-3586960.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
-    "https://images.pexels.com/photos/261102/pexels-photo-261102.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
-    "https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
-]
-TYPE_IMAGE_URLS = [
-    "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
-    "https://images.pexels.com/photos/261395/pexels-photo-261395.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
-    "https://images.pexels.com/photos/189296/pexels-photo-189296.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
-    "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
-    "https://images.pexels.com/photos/261411/pexels-photo-261411.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
-    "https://images.pexels.com/photos/271618/pexels-photo-271618.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
-]
-# -----------------------------------------------------
-# GLOBAL LOCATION FAMILY IMAGES (361×192)
-# -----------------------------------------------------
-FAMILY_IMAGE_URLS = [
-    "https://images.pexels.com/photos/262048/pexels-photo-262048.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
-    "https://images.pexels.com/photos/262978/pexels-photo-262978.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
-    "https://images.pexels.com/photos/261395/pexels-photo-261395.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
-    "https://images.pexels.com/photos/189296/pexels-photo-189296.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
-    "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
-    "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
-]
-def assign_random_family_image(family_obj):
-    try:
-        url = random.choice(FAMILY_IMAGE_URLS)
-        filename = url.split("/")[-1].split("?")[0]
-
-        # Ensure folder exists: MEDIA_ROOT/location_families
-        folder_path = os.path.join(settings.MEDIA_ROOT, "location_family")
-        os.makedirs(folder_path, exist_ok=True)
-
-        response = requests.get(url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
-        if response.status_code == 200:
-            family_obj.image.save(
-                f"location_families/{filename}",
-                ContentFile(response.content),
-                save=True
-            )
-            print(f"Auto-image assigned → Family: {family_obj.name}")
-        else:
-            print(f"Failed to download family image: {url}")
-
-    except Exception as e:
-        print(f"Family image assign error: {e}")
+# import os
+# import random
+# import requests
+# from django.core.files.base import ContentFile
+# from django.db.models.signals import post_migrate
+# from django.dispatch import receiver
+# from .models import Building, Floor, LocationFamily, LocationType, Location
 
 
-# -----------------------------------------------------
-# FUNCTION → Assign random hotel image
-# -----------------------------------------------------
-from django.conf import settings
+# # -----------------------------------------------------
+# # GLOBAL HOTEL IMAGES (361×192)
+# # -----------------------------------------------------
+# BUILDING_IMAGE_URLS = [
+#     "https://images.pexels.com/photos/261146/pexels-photo-261146.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+#     "https://images.pexels.com/photos/258154/pexels-photo-258154.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+#     "https://images.pexels.com/photos/271689/pexels-photo-271689.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+#     "https://images.pexels.com/photos/3586960/pexels-photo-3586960.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+#     "https://images.pexels.com/photos/261102/pexels-photo-261102.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+#     "https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+# ]
+# TYPE_IMAGE_URLS = [
+#     "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+#     "https://images.pexels.com/photos/261395/pexels-photo-261395.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+#     "https://images.pexels.com/photos/189296/pexels-photo-189296.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+#     "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+#     "https://images.pexels.com/photos/261411/pexels-photo-261411.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+#     "https://images.pexels.com/photos/271618/pexels-photo-271618.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+# ]
+# # -----------------------------------------------------
+# # GLOBAL LOCATION FAMILY IMAGES (361×192)
+# # -----------------------------------------------------
+# FAMILY_IMAGE_URLS = [
+#     "https://images.pexels.com/photos/262048/pexels-photo-262048.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+#     "https://images.pexels.com/photos/262978/pexels-photo-262978.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+#     "https://images.pexels.com/photos/261395/pexels-photo-261395.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+#     "https://images.pexels.com/photos/189296/pexels-photo-189296.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+#     "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+#     "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg?auto=compress&cs=tinysrgb&w=361&h=192",
+# ]
+# def assign_random_family_image(family_obj):
+#     try:
+#         url = random.choice(FAMILY_IMAGE_URLS)
+#         filename = url.split("/")[-1].split("?")[0]
 
-def assign_random_image(building_obj):
-    try:
-        url = random.choice(BUILDING_IMAGE_URLS)
-        filename = url.split("/")[-1].split("?")[0]
+#         # Ensure folder exists: MEDIA_ROOT/location_families
+#         folder_path = os.path.join(settings.MEDIA_ROOT, "location_family")
+#         os.makedirs(folder_path, exist_ok=True)
 
-        # Ensure folder exists: MEDIA_ROOT/building_images
-        folder_path = os.path.join(settings.MEDIA_ROOT, "building_images")
-        os.makedirs(folder_path, exist_ok=True)
+#         response = requests.get(url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
+#         if response.status_code == 200:
+#             family_obj.image.save(
+#                 f"location_families/{filename}",
+#                 ContentFile(response.content),
+#                 save=True
+#             )
+#             print(f"Auto-image assigned → Family: {family_obj.name}")
+#         else:
+#             print(f"Failed to download family image: {url}")
 
-        response = requests.get(url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
-        if response.status_code == 200:
-
-            # Save inside building_images/
-            building_obj.image.save(
-                f"building_images/{filename}",   # <--- REQUIRED FOR CORRECT PATH
-                ContentFile(response.content),
-                save=True
-            )
-
-            print(f"Auto-image assigned → {building_obj.name}")
-        else:
-            print(f"Failed to download: {url}")
-
-    except Exception as e:
-        print(f"Image assign error: {e}")
+#     except Exception as e:
+#         print(f"Family image assign error: {e}")
 
 
-def assign_random_type_image(type_obj):
-    try:
-        url = random.choice(TYPE_IMAGE_URLS)
-        filename = url.split("/")[-1].split("?")[0]
+# # -----------------------------------------------------
+# # FUNCTION → Assign random hotel image
+# # -----------------------------------------------------
+# from django.conf import settings
 
-        folder_path = os.path.join(settings.MEDIA_ROOT, "location_types")
-        os.makedirs(folder_path, exist_ok=True)
+# def assign_random_image(building_obj):
+#     try:
+#         url = random.choice(BUILDING_IMAGE_URLS)
+#         filename = url.split("/")[-1].split("?")[0]
 
-        response = requests.get(url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
-        if response.status_code == 200:
-            type_obj.image.save(
-                f"type_images/{filename}",
-                ContentFile(response.content),
-                save=True
-            )
-            print(f"Auto-image assigned → {type_obj.name}")
-    except Exception as e:
-        print(f"Type image assign error: {e}")
-# -----------------------------------------------------
-# MAIN POST-MIGRATE SIGNAL
-# -----------------------------------------------------
-from django.db.models.signals import post_migrate
-from django.dispatch import receiver
+#         # Ensure folder exists: MEDIA_ROOT/building_images
+#         folder_path = os.path.join(settings.MEDIA_ROOT, "building_images")
+#         os.makedirs(folder_path, exist_ok=True)
 
-@receiver(post_migrate)
-def create_basic_location_data(sender, **kwargs):
+#         response = requests.get(url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
+#         if response.status_code == 200:
 
-    if sender.name != "hotel_app":
-        return
+#             # Save inside building_images/
+#             building_obj.image.save(
+#                 f"building_images/{filename}",   # <--- REQUIRED FOR CORRECT PATH
+#                 ContentFile(response.content),
+#                 save=True
+#             )
 
-    print("\n Auto-generating Base Location Set (6X Format)…\n")
+#             print(f"Auto-image assigned → {building_obj.name}")
+#         else:
+#             print(f"Failed to download: {url}")
 
-    # -----------------------------------------------------
-    # 1️⃣ BUILDINGS
-    # -----------------------------------------------------
-    building_names = [
-        ("Main Building", "Primary building"),
-        ("Royal Residency", "Luxury stay"),
-        ("Garden Block", "Nature view rooms"),
-        ("Sky Tower", "Top view suites"),
-        ("Heritage Wing", "Classic architecture"),
-        ("Elite Chamber", "VIP exclusive block"),
-    ]
+#     except Exception as e:
+#         print(f"Image assign error: {e}")
 
-    buildings = []
 
-    for name, desc in building_names:
-        building, created = Building.objects.get_or_create(
-            name=name,
-            defaults={"description": desc}
-        )
+# def assign_random_type_image(type_obj):
+#     try:
+#         url = random.choice(TYPE_IMAGE_URLS)
+#         filename = url.split("/")[-1].split("?")[0]
 
-        print(f" {name} → {'CREATED' if created else 'Already Exists'}")
+#         folder_path = os.path.join(settings.MEDIA_ROOT, "location_types")
+#         os.makedirs(folder_path, exist_ok=True)
 
-        if not building.image:
-            assign_random_image(building)
+#         response = requests.get(url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
+#         if response.status_code == 200:
+#             type_obj.image.save(
+#                 f"type_images/{filename}",
+#                 ContentFile(response.content),
+#                 save=True
+#             )
+#             print(f"Auto-image assigned → {type_obj.name}")
+#     except Exception as e:
+#         print(f"Type image assign error: {e}")
+# # -----------------------------------------------------
+# # MAIN POST-MIGRATE SIGNAL
+# # -----------------------------------------------------
+# from django.db.models.signals import post_migrate
+# from django.dispatch import receiver
 
-        buildings.append(building)
+# @receiver(post_migrate)
+# def create_basic_location_data(sender, **kwargs):
 
-    # -----------------------------------------------------
-    # 2️⃣ FLOORS (SAFE + UNIQUE)
-    # -----------------------------------------------------
-    floors = []
+#     if sender.name != "hotel_app":
+#         return
 
-    for idx, b in enumerate(buildings, start=1):
-        floor, created = Floor.objects.get_or_create(
-            building=b,
-            floor_name=f"Floor {idx}",
-            defaults={"floor_number": idx}
-        )
+#     print("\n Auto-generating Base Location Set (6X Format)…\n")
 
-        print(
-            f" Floor {idx} ({b.name}) → {'CREATED' if created else 'Already Exists'}"
-        )
+#     # -----------------------------------------------------
+#     # 1️⃣ BUILDINGS
+#     # -----------------------------------------------------
+#     building_names = [
+#         ("Main Building", "Primary building"),
+#         ("Royal Residency", "Luxury stay"),
+#         ("Garden Block", "Nature view rooms"),
+#         ("Sky Tower", "Top view suites"),
+#         ("Heritage Wing", "Classic architecture"),
+#         ("Elite Chamber", "VIP exclusive block"),
+#     ]
 
-        floors.append(floor)
+#     buildings = []
 
-    # -----------------------------------------------------
-    # 3️⃣ FAMILIES
-    # -----------------------------------------------------
-    family_names = [
-        "Guest Room",
-        "Service Area",
-        "Executive",
-        "Premium",
-        "Dining",
-        "General Utility",
-    ]
+#     for name, desc in building_names:
+#         building, created = Building.objects.get_or_create(
+#             name=name,
+#             defaults={"description": desc}
+#         )
 
-    families = []
+#         print(f" {name} → {'CREATED' if created else 'Already Exists'}")
 
-    for name in family_names:
-        family, created = LocationFamily.objects.get_or_create(name=name)
+#         if not building.image:
+#             assign_random_image(building)
 
-        print(f" {name} → {'CREATED' if created else 'Already Exists'}")
+#         buildings.append(building)
 
-        if not family.image:
-            assign_random_family_image(family)
+#     # -----------------------------------------------------
+#     # 2️⃣ FLOORS (SAFE + UNIQUE)
+#     # -----------------------------------------------------
+#     floors = []
 
-        families.append(family)
+#     for idx, b in enumerate(buildings, start=1):
+#         floor, created = Floor.objects.get_or_create(
+#             building=b,
+#             floor_name=f"Floor {idx}",
+#             defaults={"floor_number": idx}
+#         )
 
-    # -----------------------------------------------------
-    # 4️⃣ TYPES (Family-bound UNIQUE)
-    # -----------------------------------------------------
-    type_names = [
-        "Deluxe Room",
-        "Suite Room",
-        "Lobby",
-        "Dining Hall",
-        "Executive Suite",
-        "Conference Hall",
-    ]
+#         print(
+#             f" Floor {idx} ({b.name}) → {'CREATED' if created else 'Already Exists'}"
+#         )
 
-    types = []
+#         floors.append(floor)
 
-    for i, type_name in enumerate(type_names):
-        type_obj, created = LocationType.objects.get_or_create(
-            name=type_name,
-            family=families[i]
-        )
+#     # -----------------------------------------------------
+#     # 3️⃣ FAMILIES
+#     # -----------------------------------------------------
+#     family_names = [
+#         "Guest Room",
+#         "Service Area",
+#         "Executive",
+#         "Premium",
+#         "Dining",
+#         "General Utility",
+#     ]
 
-        print(
-            f" {type_name} → {'CREATED' if created else 'Already Exists'}"
-        )
+#     families = []
 
-        if not type_obj.image:
-            assign_random_type_image(type_obj)
+#     for name in family_names:
+#         family, created = LocationFamily.objects.get_or_create(name=name)
 
-        types.append(type_obj)
+#         print(f" {name} → {'CREATED' if created else 'Already Exists'}")
 
-    # -----------------------------------------------------
-    # 5️⃣ LOCATIONS (FULLY SAFE)
-    # -----------------------------------------------------
-    for i, b in enumerate(buildings):
-        location, created = Location.objects.get_or_create(
-            name=str(101 + i),
-            building=b,
-            floor=floors[i],
-            family=types[i].family,
-            type=types[i]
-        )
+#         if not family.image:
+#             assign_random_family_image(family)
 
-        print(
-            f" Location {location.name} ({b.name}) → "
-            f"{'CREATED' if created else 'Already Exists'}"
-        )
+#         families.append(family)
 
-    print(
-        "\n SUCCESS → Buildings | Floors | Families | Types | Locations are READY "
+#     # -----------------------------------------------------
+#     # 4️⃣ TYPES (Family-bound UNIQUE)
+#     # -----------------------------------------------------
+#     type_names = [
+#         "Deluxe Room",
+#         "Suite Room",
+#         "Lobby",
+#         "Dining Hall",
+#         "Executive Suite",
+#         "Conference Hall",
+#     ]
+
+#     types = []
+
+#     for i, type_name in enumerate(type_names):
+#         type_obj, created = LocationType.objects.get_or_create(
+#             name=type_name,
+#             family=families[i]
+#         )
+
+#         print(
+#             f" {type_name} → {'CREATED' if created else 'Already Exists'}"
+#         )
+
+#         if not type_obj.image:
+#             assign_random_type_image(type_obj)
+
+#         types.append(type_obj)
+
+#     # -----------------------------------------------------
+#     # 5️⃣ LOCATIONS (FULLY SAFE)
+#     # -----------------------------------------------------
+#     for i, b in enumerate(buildings):
+#         location, created = Location.objects.get_or_create(
+#             name=str(101 + i),
+#             building=b,
+#             floor=floors[i],
+#             family=types[i].family,
+#             type=types[i]
+#         )
+
+#         print(
+#             f" Location {location.name} ({b.name}) → "
+#             f"{'CREATED' if created else 'Already Exists'}"
+#         )
+
+#     print(
+#         "\n SUCCESS → Buildings | Floors | Families | Types | Locations are READY "
         
-    )
+#     )
