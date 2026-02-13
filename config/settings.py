@@ -103,6 +103,10 @@ CSRF_TRUSTED_ORIGINS = [
     "https://loose-palmer-automobiles-marks.trycloudflare.com",
     'https://*.ngrok-free.app',
     "https://c73229c29c95.ngrok-free.app",
+    "http://34.101.199.115",
+    "http://34.101.199.115:8080",
+    "http://vichotel.duckdns.org",    "https://vichotel.duckdns.org",
+
 ]
 
 # settings.py
@@ -176,7 +180,7 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 
-SITE_BASE_URL = "http://localhost:8080" #for production use domain.com for whatsapp sharing
+SITE_BASE_URL = "https://vichotel.duckdns.org" #for production use domain.com for whatsapp sharing
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
