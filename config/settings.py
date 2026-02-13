@@ -180,8 +180,11 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 
-SITE_BASE_URL = "https://vichotel.duckdns.org" #for production use domain.com for whatsapp sharing
-
+# SITE_BASE_URL = "https://vichotel.duckdns.org" #for production use domain.com for whatsapp sharing
+SITE_BASE_URL = os.environ.get(
+    "SITE_BASE_URL",
+    "http://localhost:8000"  # default for dev
+)
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_URL = '/login/'
