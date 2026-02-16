@@ -379,10 +379,18 @@
 <script>
 // Function to handle back navigation properly
 function goBack() {
-    // Fallback if browser refuses to go back (e.g., no history entry)
-    window.location.href = "/dashboard/tickets/";
-    
+    const referrer = document.referrer;
+
+    if (referrer.includes("/dashboard/my-tickets/")) {
+        window.location.href = "/dashboard/my-tickets/";
+    } else if (referrer.includes("/dashboard/tickets/")) {
+        window.location.href = "/dashboard/tickets/";
+    } else {
+        // fallback
+        window.location.href = "/dashboard/tickets/";
+    }
 }
+
 
 document.addEventListener('DOMContentLoaded', function() {
     // Helper function to get CSRF token
