@@ -5428,13 +5428,13 @@ def save_fcm_token(request):
         return JsonResponse({"error": "Token missing"}, status=400)
 
     FCMToken.objects.update_or_create(
-    user=request.user,
-    device_type=device_type,
-    defaults={
-        "token": token,
-        "is_active": True,
-    },
-)
+    token=token,
+        defaults={
+            "user": request.user,
+            "device_type": device_type,
+            "is_active": True,
+        },
+    )
 
 
     return JsonResponse({"status": "saved"})
