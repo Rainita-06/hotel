@@ -111,10 +111,15 @@ def save_fcm_token(request):
     if not token:
         return Response({'error': 'Token required'}, status=400)
 
-    obj, _ = FCMToken.objects.get_or_create(
-        token=token,
-        defaults={'user': request.user, 'device_type': device_type}
-    )
+    obj, _ = FCMToken.objects.update_or_create(
+    user=request.user,
+    device_type=device_type,
+    defaults={
+        "token": token,
+        "is_active": True,
+    },
+)
+
 
     obj.user = request.user
     obj.is_active = True

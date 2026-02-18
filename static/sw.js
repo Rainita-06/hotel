@@ -18,48 +18,7 @@ const firebaseConfig = {
 
 };
 
-// Initialize Firebase
-try {
-    firebase.initializeApp(firebaseConfig);
-    const messaging = firebase.messaging();
 
-    // Handle background messages via Firebase
-    messaging.onBackgroundMessage((payload) => {
-        console.log('[sw.js] Received background message ', payload);
-
-        // Extract notification data with fallbacks
-        const notificationData = payload.notification || {};
-        const customData = payload.data || {};
-
-        const notificationTitle = notificationData.title || customData.title || 'GuestConnect Notification';
-
-        const notificationOptions = {
-            body: notificationData.body || customData.body || 'You have a new notification',
-            icon: customData.icon || '/static/images/icon-192.png',
-            badge: '/static/images/icon-192.png',
-            vibrate: [200, 100, 200, 100, 200],
-            data: customData,
-            tag: customData.tag || 'guestconnect-' + Date.now(), // Unique tag to avoid duplicates
-            requireInteraction: true, // Critical for Android - keeps notification visible
-            renotify: true, // Re-alert user even if tag is same
-            silent: false, // Ensure sound/vibration
-            actions: [
-                { action: 'open', title: 'Open', icon: '/static/images/icon-192.png' },
-                { action: 'close', title: 'Dismiss' }
-            ],
-            // Android-specific optimizations
-            image: customData.image || null,
-            timestamp: Date.now()
-        };
-
-        return self.registration.showNotification(notificationTitle, notificationOptions);
-    });
-
-    console.log('[sw.js] Firebase messaging initialized successfully');
-} catch (error) {
-    console.error('[sw.js] Firebase init error:', error);
-    // Still allow service worker to function without Firebase
-}
 
 // Static assets to cache on install
 const STATIC_ASSETS = [

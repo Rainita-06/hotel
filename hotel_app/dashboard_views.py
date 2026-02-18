@@ -6899,7 +6899,7 @@ def create_ticket_api(request):
             )
             
             # Notify department staff
-            service_request.notify_department_staff()
+            # service_request.notify_department_staff()
 
             guest_notified = _send_ticket_acknowledgement(
                 service_request,
