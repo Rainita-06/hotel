@@ -95,7 +95,7 @@
                     </div>                     
                     <div class="flex gap-2 mt-auto">                         
                         <button class="create-btn flex-1 h-9 bg-white hover:bg-sky-50 rounded-lg border border-sky-600 text-sky-600 text-sm font-medium font-['Inter'] transition-colors">Create</button>                         
-                        <button class="action-btn w-10 h-9 bg-white hover:bg-gray-50 rounded-lg border border-gray-200 flex items-center justify-center transition-colors"><img src="{% static 'images/manage_users/action.svg' %}" alt="actions" class="w-3 h-3.5"></button>                     
+                        <!-- <button class="action-btn w-10 h-9 bg-white hover:bg-gray-50 rounded-lg border border-gray-200 flex items-center justify-center transition-colors"><img src="{% static 'images/manage_users/action.svg' %}" alt="actions" class="w-3 h-3.5"></button>                      -->
                     </div>                 
                 </div>                 
                 {% endfor %}             
@@ -153,16 +153,45 @@
 
                 <!-- Room Number -->
                 <div class="relative group">
-                    <label for="roomNumber" class="block text-sm font-medium text-gray-700 mb-1">Room Number</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <img src="{% static 'images/tickets/room.svg' %}" alt="Room Icon" class="h-5 w-5 text-gray-400" />
-                        </div>
-                        <input autocomplete="off" type="text" id="roomNumber" placeholder="Enter room number" class="w-full h-11 pl-10 pr-4 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500">
-                        <!-- Room Suggestions -->
-                        <div id="roomSuggestions" class="absolute z-20 mt-1 w-full bg-white shadow-lg rounded-md hidden max-h-60 overflow-auto border border-gray-200"></div>
-                    </div>
-                </div>
+                    
+  <label for="roomNumber" class="block text-sm font-medium text-gray-700 mb-1">
+      Room Number
+  </label>
+
+  <div class="relative">
+      <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <img src="{% static 'images/tickets/room.svg' %}" alt="Room Icon" class="h-5 w-5 text-gray-400" />
+      </div>
+
+      <input type="hidden" id="guestPhone" value="">
+      <input type="hidden" id="guestCountryCode" value="">
+      <input type="hidden" id="locationId" name="location_id" value="">
+
+      <input autocomplete="off"
+             type="text"
+             id="roomNumber"
+             placeholder="Enter room number"
+             class="w-full h-11 pl-10 pr-4 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500">
+
+      <div id="roomSuggestions"
+           class="absolute z-20 mt-1 w-full bg-white shadow-lg rounded-md hidden max-h-60 overflow-auto border border-gray-200">
+      </div>
+  </div>
+
+  <div id="selectedRoomDetails"
+       class="hidden mt-3 p-3 bg-blue-50 rounded-lg border border-blue-100 transition-all duration-300">
+      <div class="flex gap-6 text-sm items-center">
+          <div>
+              <span class="block text-gray-500 text-xs uppercase">Building</span>
+              <span class="font-semibold text-gray-900" id="detailBuilding">-</span>
+          </div>
+
+          <div>
+              <span class="block text-gray-500 text-xs uppercase">Floor</span>
+              <span class="font-semibold text-gray-900" id="detailFloor">-</span>
+          </div>
+      </div>
+  </div></div>
                 <!-- Guest Name -->
                 <div class="relative group">
                     <label for="guestName" class="block text-sm font-medium text-gray-700 mb-1">Guest Name</label>
@@ -537,79 +566,136 @@
          });
 
         // 4. AUTOCOMPLETE LOGIC (GUEST & ROOM)
-        const guestNameInput = document.getElementById('guestName');
-        const guestSuggestions = document.getElementById('guestSuggestions');
-        const guestIdInput = document.getElementById('guestId');
         const roomNumberInput = document.getElementById('roomNumber');
-        const roomSuggestions = document.getElementById('roomSuggestions');
+const roomSuggestions = document.getElementById('roomSuggestions');
 
-        function hideAllSuggestions() {
-            if(guestSuggestions) {
-                guestSuggestions.innerHTML = '';
-                guestSuggestions.classList.add('hidden');
-            }
-            if(roomSuggestions) {
-                roomSuggestions.innerHTML = '';
-                roomSuggestions.classList.add('hidden');
-            }
-        }
+const locationIdInput = document.getElementById('locationId');
+const selectedRoomDetailsDiv = document.getElementById('selectedRoomDetails');
+const detailBuildingSpan = document.getElementById('detailBuilding');
+const detailFloorSpan = document.getElementById('detailFloor');
 
-        // Shared Render Function
-        function renderSuggestions(results, container, type) {
-            container.innerHTML = '';
-            if (!results || results.length === 0) {
-                container.classList.add('hidden');
-                return;
-            }
+const guestNameInput = document.getElementById('guestName');
+const guestIdInput = document.getElementById('guestId');
+const guestPhoneInput = document.getElementById('guestPhone');
+const guestCountryCodeInput = document.getElementById('guestCountryCode');
 
-            results.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm flex flex-col border-b border-gray-100 last:border-b-0';
-                
-                if (type === 'room') {
-                    div.innerHTML = `<span class="font-medium text-gray-900">${item.room_number || 'N/A'}</span><span class="text-xs text-gray-500">${item.name}</span>`;
-                } else {
-                    div.innerHTML = `<span class="font-medium text-gray-900">${item.name}</span><span class="text-xs text-gray-500">${item.room_number ? `Room ${item.room_number}` : 'No room'}</span>`;
-                }
+function clearRoomDetails() {
+  if (locationIdInput) locationIdInput.value = '';
+  if (detailBuildingSpan) detailBuildingSpan.textContent = '-';
+  if (detailFloorSpan) detailFloorSpan.textContent = '-';
+  if (selectedRoomDetailsDiv) selectedRoomDetailsDiv.classList.add('hidden');
+}
 
-                div.addEventListener('click', () => {
-                    guestNameInput.value = item.name;
-                    if(guestIdInput) guestIdInput.value = item.id;
-                    if(roomNumberInput && item.room_number) roomNumberInput.value = item.room_number;
-                    hideAllSuggestions();
-                });
-                container.appendChild(div);
-            });
-            container.classList.remove('hidden');
-        }
+function clearGuestDetails() {
+  if (guestIdInput) guestIdInput.value = '';
+  if (guestNameInput) guestNameInput.value = '';
+  if (guestPhoneInput) guestPhoneInput.value = '';
+  if (guestCountryCodeInput) guestCountryCodeInput.value = '';
+}
 
-        function fetchSuggestions(query, container, type) {
-            if (query.length < 1) { hideAllSuggestions(); return; }
-            fetch(`{% url 'dashboard:api_search_guests' %}?q=${encodeURIComponent(query)}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.results) {
-                        renderSuggestions(data.results, container, type);
-                    } else {
-                        hideAllSuggestions();
-                    }
-                })
-                .catch(() => hideAllSuggestions());
-        }
+function hideRoomSuggestions() {
+  if (!roomSuggestions) return;
+  roomSuggestions.innerHTML = '';
+  roomSuggestions.classList.add('hidden');
+}
 
-        if (guestNameInput) {
-            guestNameInput.addEventListener('input', function() {
-                roomSuggestions.classList.add('hidden');
-                fetchSuggestions(this.value.trim(), guestSuggestions, 'guest');
-            });
-        }
+function renderRoomSuggestions(items) {
+  if (!roomSuggestions) return;
+  roomSuggestions.innerHTML = '';
 
-        if (roomNumberInput) {
-            roomNumberInput.addEventListener('input', function() {
-                guestSuggestions.classList.add('hidden');
-                fetchSuggestions(this.value.trim(), roomSuggestions, 'room');
-            });
-        }
+  if (!items || items.length === 0) {
+    hideRoomSuggestions();
+    return;
+  }
+
+  items.forEach(item => {
+    const option = document.createElement('div');
+    option.className = 'px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm flex flex-col';
+
+    const roomLabel = item.room_no ? `Room ${item.room_no}` : (item.name || 'Room');
+    const meta = `${item.building || '-'} • Floor ${item.floor || '-'}`;
+
+    option.innerHTML = `
+      <span class="font-medium text-gray-900">${roomLabel}</span>
+      <span class="text-xs text-gray-500">${meta}</span>
+    `;
+
+    option.addEventListener('click', () => {
+      // 1) Fill room + location
+      roomNumberInput.value = item.room_no || '';
+      if (locationIdInput) locationIdInput.value = item.location_id || '';
+
+      // 2) Show building/floor
+      if (detailBuildingSpan) detailBuildingSpan.textContent = item.building || '-';
+      if (detailFloorSpan) detailFloorSpan.textContent = item.floor || '-';
+      if (selectedRoomDetailsDiv) selectedRoomDetailsDiv.classList.remove('hidden');
+
+      // 3) Auto fill guest (if backend found one)
+      if (item.guest) {
+        if (guestNameInput) guestNameInput.value = item.guest.name || '';
+        if (guestIdInput) guestIdInput.value = item.guest.id || '';
+        if (guestPhoneInput) guestPhoneInput.value = item.guest.phone || '';
+        if (guestCountryCodeInput) guestCountryCodeInput.value = item.guest.country_code || '';
+      } else {
+        // If no guest found for that room, keep guestName as typed by user or clear it
+        // Choose behavior you prefer:
+        // clearGuestDetails();
+      }
+
+      hideRoomSuggestions();
+    });
+
+    roomSuggestions.appendChild(option);
+  });
+
+  roomSuggestions.classList.remove('hidden');
+}
+
+function fetchRoomGuestLookup(query) {
+  const url = `{% url 'dashboard:api_room_guest_lookup' %}?q=${encodeURIComponent(query)}`;
+  fetch(url)
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        renderRoomSuggestions(data.results || []);
+      } else {
+        hideRoomSuggestions();
+      }
+    })
+    .catch(() => hideRoomSuggestions());
+}
+
+if (roomNumberInput) {
+  roomNumberInput.addEventListener('input', () => {
+    const query = roomNumberInput.value.trim();
+
+    // User is typing: clear selected location + building/floor
+    clearRoomDetails();
+
+    // Don't force-clear guest name while typing room; only overwrite when selecting suggestion
+    if (query.length < 1) {
+      hideRoomSuggestions();
+      return;
+    }
+
+    fetchRoomGuestLookup(query);
+  });
+
+  roomNumberInput.addEventListener('focus', () => {
+    const query = roomNumberInput.value.trim();
+    if (query.length >= 1) {
+      fetchRoomGuestLookup(query);
+    }
+  });
+}
+
+// Close dropdown on outside click
+document.addEventListener('click', (e) => {
+  if (!roomNumberInput || !roomSuggestions) return;
+  if (!roomNumberInput.contains(e.target) && !roomSuggestions.contains(e.target)) {
+    hideRoomSuggestions();
+  }
+});
 
         // 4B. REQUEST TYPE AUTOCOMPLETE
         const requestTypeInput = document.getElementById('requestType');
@@ -728,6 +814,16 @@
                  const department = document.getElementById('department').value;
                  const description = document.getElementById('description').value.trim();
                  const guestId = document.getElementById('guestId').value || '';
+                 const guestPhone = document.getElementById('guestPhone').value.trim();
+const guestCountryCode = document.getElementById('guestCountryCode').value.trim();
+
+let fullPhone = '';
+
+if (guestCountryCode && guestPhone) {
+    fullPhone = guestCountryCode + guestPhone;
+} else if (guestPhone) {
+    fullPhone = guestPhone;
+}
  
                  // Validation
                  if (!guestName || !roomNumber || !department || !categoryValue || !selectedPriority) {
@@ -743,6 +839,7 @@
                  formData.append('category', categoryValue);
                  formData.append('priority', selectedPriority);
                  formData.append('description', description);
+                 formData.append('phone_number', fullPhone);
                  if (guestId && !isNaN(guestId)) {
         formData.append('guest_id', parseInt(guestId, 10));
     }

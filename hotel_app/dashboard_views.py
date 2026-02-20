@@ -733,45 +733,45 @@ def dashboard_view(request):
     try:
         if getattr(settings, 'DEBUG', False) and (total_users == 0 or Guest.objects.count() == 0):
             # Create demo department
-            demo_dept, _ = Department.objects.get_or_create(name='Demo Department')
+            # demo_dept, _ = Department.objects.get_or_create(name='Demo Department')
 
-            # Create a demo user
-            try:
-                demo_user = User.objects.create_user(username='demo_user', password='password123', email='demo@example.com')
-            except Exception:
-                # If user exists or cannot be created, fetch any existing user
-                demo_user = User.objects.first()
+            # # Create a demo user
+            # try:
+            #     demo_user = User.objects.create_user(username='demo_user', password='password123', email='demo@example.com')
+            # except Exception:
+            #     # If user exists or cannot be created, fetch any existing user
+            #     demo_user = User.objects.first()
 
-            # Create building/floor/location
-            from hotel_app.models import Building, Floor, LocationType, LocationFamily, Booking
-            building, _ = Building.objects.get_or_create(name='Main Building')
-            floor, _ = Floor.objects.get_or_create(building=building, floor_number=1)
-            ltype, _ = LocationType.objects.get_or_create(name='Guest Room')
-            lfamily, _ = LocationFamily.objects.get_or_create(name='Rooms')
-            location, _ = Location.objects.get_or_create(building=building, floor=floor, room_no='101', defaults={'name': 'Room 101', 'type': ltype, 'family': lfamily, 'capacity': 2})
+            # # Create building/floor/location
+            # from hotel_app.models import Building, Floor, LocationType, LocationFamily, Booking
+            # building, _ = Building.objects.get_or_create(name='Main Building')
+            # floor, _ = Floor.objects.get_or_create(building=building, floor_number=1)
+            # ltype, _ = LocationType.objects.get_or_create(name='Guest Room')
+            # lfamily, _ = LocationFamily.objects.get_or_create(name='Rooms')
+            # location, _ = Location.objects.get_or_create(building=building, floor=floor, room_no='101', defaults={'name': 'Room 101', 'type': ltype, 'family': lfamily, 'capacity': 2})
 
-            # Create demo guest
-            guest, _ = Guest.objects.get_or_create(full_name='Demo Guest', defaults={
-                'email': 'guest@example.com',
-                'room_number': '101',
-                'checkin_date': today - datetime.timedelta(days=1),
-                'checkout_date': today + datetime.timedelta(days=1),
-            })
+            # # Create demo guest
+            # guest, _ = Guest.objects.get_or_create(full_name='Demo Guest', defaults={
+            #     'email': 'guest@example.com',
+            #     'room_number': '101',
+            #     'checkin_date': today - datetime.timedelta(days=1),
+            #     'checkout_date': today + datetime.timedelta(days=1),
+            # })
 
             # Booking
-            try:
-                booking, _ = Booking.objects.get_or_create(guest=guest, room_number='101', defaults={'check_in': timezone.now() - datetime.timedelta(days=1), 'check_out': timezone.now() + datetime.timedelta(days=1)})
-            except Exception:
-                booking = None
+            # try:
+            #     booking, _ = Booking.objects.get_or_create(guest=guest, room_number='101', defaults={'check_in': timezone.now() - datetime.timedelta(days=1), 'check_out': timezone.now() + datetime.timedelta(days=1)})
+            # except Exception:
+            #     booking = None
 
             # Voucher
-            try:
-                if booking:
-                    Voucher.objects.get_or_create(booking=booking, guest=guest, defaults={'guest_name': guest.full_name, 'room_number': '101', 'check_in_date': guest.checkin_date, 'check_out_date': guest.checkout_date, 'status': 'active', 'quantity': 1})
-                else:
-                    Voucher.objects.get_or_create(guest=guest, defaults={'guest_name': guest.full_name, 'room_number': '101', 'check_in_date': guest.checkin_date, 'check_out_date': guest.checkout_date, 'status': 'active', 'quantity': 1})
-            except Exception:
-                pass
+            # try:
+            #     if booking:
+            #         Voucher.objects.get_or_create(booking=booking, guest=guest, defaults={'guest_name': guest.full_name, 'room_number': '101', 'check_in_date': guest.checkin_date, 'check_out_date': guest.checkout_date, 'status': 'active', 'quantity': 1})
+            #     else:
+            #         Voucher.objects.get_or_create(guest=guest, defaults={'guest_name': guest.full_name, 'room_number': '101', 'check_in_date': guest.checkin_date, 'check_out_date': guest.checkout_date, 'status': 'active', 'quantity': 1})
+            # except Exception:
+            #     pass
 
             # Complaint
             try:
@@ -780,10 +780,10 @@ def dashboard_view(request):
                 pass
 
             # Review
-            try:
-                Review.objects.get_or_create(guest=guest, defaults={'rating': 4, 'comment': 'Demo review'})
-            except Exception:
-                pass
+            # try:
+            #     Review.objects.get_or_create(guest=guest, defaults={'rating': 4, 'comment': 'Demo review'})
+            # except Exception:
+            #     pass
 
             # Recompute counts
             total_users = User.objects.count()
@@ -3733,7 +3733,7 @@ def ticket_detail(request, ticket_id):
             department_name = service_request.request_type.request_family.name
     
     # Format created time
-    created_time = service_request.created_at.strftime("%b %d, %H:%M") if service_request.created_at else "Unknown"
+    created_time = timezone.localtime(service_request.created_at) if service_request.created_at else "Unknown"
     
     # Get notification count (for now, we'll simulate this with a static value)
     # In a real implementation, this would come from a notification model
@@ -4574,21 +4574,21 @@ def create_sample_service_requests():
         request_types.append(rt)
     
     # Create sample locations if they don't exist
-    locations_data = [
-        {'name': 'Room 101', 'room_no': '101'},
-        {'name': 'Room 205', 'room_no': '205'},
-        {'name': 'Room 304', 'room_no': '304'},
-        {'name': 'Room 412', 'room_no': '412'},
-        {'name': 'Lobby', 'room_no': 'Lobby'},
-    ]
+    # locations_data = [
+    #     {'name': 'Room 101', 'room_no': '101'},
+    #     {'name': 'Room 205', 'room_no': '205'},
+    #     {'name': 'Room 304', 'room_no': '304'},
+    #     {'name': 'Room 412', 'room_no': '412'},
+    #     {'name': 'Lobby', 'room_no': 'Lobby'},
+    # ]
     
-    locations = []
-    for loc_data in locations_data:
-        loc, created = Location.objects.get_or_create(
-            name=loc_data['name'],
-            defaults={'room_no': loc_data['room_no']}
-        )
-        locations.append(loc)
+    # locations = []
+    # for loc_data in locations_data:
+    #     loc, created = Location.objects.get_or_create(
+    #         name=loc_data['name'],
+    #         defaults={'room_no': loc_data['room_no']}
+    #     )
+    #     locations.append(loc)
     
     # Get some users (use existing ones or create new ones)
     users = list(User.objects.all())
@@ -4785,21 +4785,21 @@ def create_sample_service_requests():
         request_types.append(rt)
     
     # Create sample locations if they don't exist
-    locations_data = [
-        {'name': 'Room 101', 'room_no': '101'},
-        {'name': 'Room 205', 'room_no': '205'},
-        {'name': 'Room 304', 'room_no': '304'},
-        {'name': 'Room 412', 'room_no': '412'},
-        {'name': 'Lobby', 'room_no': 'Lobby'},
-    ]
+    # locations_data = [
+    #     {'name': 'Room 101', 'room_no': '101'},
+    #     {'name': 'Room 205', 'room_no': '205'},
+    #     {'name': 'Room 304', 'room_no': '304'},
+    #     {'name': 'Room 412', 'room_no': '412'},
+    #     {'name': 'Lobby', 'room_no': 'Lobby'},
+    # ]
     
-    locations = []
-    for loc_data in locations_data:
-        loc, created = Location.objects.get_or_create(
-            name=loc_data['name'],
-            defaults={'room_no': loc_data['room_no']}
-        )
-        locations.append(loc)
+    # locations = []
+    # for loc_data in locations_data:
+    #     loc, created = Location.objects.get_or_create(
+    #         name=loc_data['name'],
+    #         defaults={'room_no': loc_data['room_no']}
+    #     )
+    #     locations.append(loc)
     
     # Get some users (use existing ones or create new ones)
     users = list(User.objects.all())
@@ -6829,15 +6829,17 @@ def create_ticket_api(request):
             
             # Handle the case where multiple locations exist with the same room_no
             # We'll use the first one or create a new one if none exists
-            location = Location.objects.filter(room_no=room_number).first()
-            if not location:
-                location, _ = Location.objects.get_or_create(
-                    room_no=room_number,
-                    defaults={
-                        'name': f'Room {room_number}',
-                        'building': building
-                    }
-                )            
+            location = None
+            if not location and room_number:
+             location = (
+                Location.objects
+                .select_related("floor__building", "building")
+                .filter(
+                    Q(room_no__iexact=room_number) |
+                    Q(name__iexact=room_number)
+                )
+                .first()
+            )           
             # Get or create request type
             request_type, _ = RequestType.objects.get_or_create(
                 name=category,
@@ -6885,6 +6887,7 @@ def create_ticket_api(request):
                 request_type=request_type,
                 location=location,
                 requester_user=request.user,
+                room_no=room_number,
                 guest=guest,
                 guest_name=(
         guest.full_name
@@ -6930,6 +6933,172 @@ def create_ticket_api(request):
             return JsonResponse({'error': str(e)}, status=500)
     
     return JsonResponse({'error': 'Method not allowed'}, status=405)
+# @login_required
+# @require_permission([ADMINS_GROUP, STAFF_GROUP])
+# def create_ticket_api(request):
+
+#     if request.method != 'POST':
+#         return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+#     try:
+#         from hotel_app.models import (
+#             ServiceRequest,
+#             RequestType,
+#             Location,
+#             Department,
+#             Guest,
+#             TicketAttachment
+#         )
+
+#         # ==============================
+#         # GET FORM DATA
+#         # ==============================
+#         guest_name = (request.POST.get('guest_name') or '').strip()
+#         room_number = (request.POST.get('room_number') or '').strip()
+#         location_id = request.POST.get("location_id")   # ✅ IMPORTANT
+#         department_name = request.POST.get('department')
+#         category = request.POST.get('category')
+#         priority = request.POST.get('priority')
+#         description = request.POST.get('description')
+#         guest_id = request.POST.get('guest_id')
+#         phone_number = request.POST.get('phone_number')
+#         files = request.FILES.getlist("attachments")
+
+#         # ==============================
+#         # VALIDATION
+#         # ==============================
+#         if not guest_name or not room_number or not department_name or not category or not priority:
+#             return JsonResponse({'error': 'Missing required fields'}, status=400)
+
+#         # ==============================
+#         # GET LOCATION (USE location_id)
+#         # ==============================
+#         location = None
+
+#         if location_id:
+#             location = (
+#                 Location.objects
+#                 .select_related("floor__building", "building")
+#                 .filter(pk=location_id)
+#                 .first()
+#             )
+
+#         # Fallback (only if location_id missing)
+#         if not location and room_number:
+#             location = (
+#                 Location.objects
+#                 .select_related("floor__building", "building")
+#                 .filter(
+#                     Q(room_no__iexact=room_number) |
+#                     Q(name__iexact=room_number)
+#                 )
+#                 .first()
+#             )
+
+#         if not location:
+#             return JsonResponse(
+#                 {'error': 'Selected room location not found.'},
+#                 status=400
+#             )
+
+#         # ==============================
+#         # GET GUEST
+#         # ==============================
+#         guest = None
+
+#         if guest_id:
+#             guest = Guest.objects.filter(pk=guest_id).first()
+
+#         if not guest and room_number:
+#             guest = (
+#                 Guest.objects
+#                 .filter(room_number__iexact=room_number)
+#                 .order_by('-updated_at')
+#                 .first()
+#             )
+
+#         # ==============================
+#         # GET DEPARTMENT
+#         # ==============================
+#         department = Department.objects.filter(name=department_name).first()
+#         if not department:
+#             return JsonResponse({'error': 'Department not found'}, status=400)
+
+#         # ==============================
+#         # REQUEST TYPE
+#         # ==============================
+#         request_type, _ = RequestType.objects.get_or_create(name=category)
+
+#         # ==============================
+#         # PRIORITY MAPPING
+#         # ==============================
+#         priority_mapping = {
+#             'Critical': 'critical',
+#             'High': 'high',
+#             'Medium': 'normal',
+#             'Normal': 'normal',
+#             'Low': 'low',
+#         }
+#         model_priority = priority_mapping.get(priority, 'normal')
+
+#         # ==============================
+#         # CREATE TICKET
+#         # ==============================
+#         service_request = ServiceRequest.objects.create(
+#             request_type=request_type,
+#             location=location,
+#             requester_user=request.user,
+#             guest=guest,
+#             guest_name=guest.full_name if guest and guest.full_name else guest_name,
+#             department=department,
+#             phone_number=phone_number,
+#             priority=model_priority,
+#             room_no=room_number,
+#             status='pending',
+#             notes=description,
+#         )
+
+#         # ==============================
+#         # ATTACHMENTS
+#         # ==============================
+#         ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "mp4"]
+#         MAX_FILE_SIZE = 50 * 1024 * 1024
+
+#         for file in files:
+#             ext = file.name.split(".")[-1].lower()
+
+#             if ext not in ALLOWED_EXTENSIONS:
+#                 return JsonResponse({'error': 'Invalid file type'}, status=400)
+
+#             if file.size > MAX_FILE_SIZE:
+#                 return JsonResponse({'error': 'File too large'}, status=400)
+
+#             file_type = "video" if ext == "mp4" else "image"
+
+#             TicketAttachment.objects.create(
+#                 ticket=service_request,
+#                 file=file,
+#                 file_type=file_type,
+#                 size=file.size,
+#                 uploaded_by=request.user
+#             )
+
+#         # ==============================
+#         # ACKNOWLEDGEMENT
+#         # ==============================
+#         guest_notified = _send_ticket_acknowledgement(
+#             service_request,
+#             guest=guest,
+#         )
+
+#         return JsonResponse({
+#             'success': True,
+#             'ticket_id': service_request.id,
+#             'guest_notified': guest_notified,
+#         })
+
+#     except Exception as e:
+#         return JsonResponse({'error': str(e)}, status=500)
 
 
 @login_required
@@ -7932,6 +8101,167 @@ def search_locations_api(request):
         
     return JsonResponse({'success': True, 'results': results})
 
+
+
+@login_required
+@require_permission([ADMINS_GROUP, STAFF_GROUP])
+def api_room_guest_lookup(request):
+    if request.method != "GET":
+        return JsonResponse({"success": False, "error": "Method not allowed"}, status=405)
+
+    query = (request.GET.get("q") or "").strip()
+    include_all = request.GET.get("include_all", "false").lower() == "true"
+    today = timezone.localdate()
+
+    results = []
+    seen_keys = set()
+
+    if not query:
+        return JsonResponse({"success": True, "results": []})
+
+    # ==============================
+    # LOCATION HELPER
+    # ==============================
+    def location_for_room(room_no: str):
+        if not room_no:
+            return None
+
+        rn = room_no.strip()
+
+        qs = (
+            Location.objects
+            .filter(status="active")
+            .select_related("floor__building", "building")
+        )
+
+        # Exact match first
+        loc = qs.filter(room_no__iexact=rn).first()
+        if loc:
+            return loc
+
+        # Name match
+        loc = qs.filter(name__iexact=rn).first()
+        if loc:
+            return loc
+
+        # Partial match
+        return qs.filter(
+            Q(room_no__icontains=rn) | Q(name__icontains=rn)
+        ).first()
+
+    # ==============================
+    # SAFE LOCATION EXTRACTION
+    # ==============================
+    def extract_location_data(loc, room_no):
+        building_name = "-"
+        floor_number = "-"
+        location_name = f"Room {room_no}" if room_no else ""
+
+        if not loc:
+            return location_name, building_name, floor_number
+
+        location_name = loc.name or location_name
+
+        # ✅ BUILDING
+        if loc.building:
+            building_name = loc.building.name
+
+        # If building is not set directly but exists via floor
+        elif loc.floor and loc.floor.building:
+            building_name = loc.floor.building.name
+
+        # ✅ FLOOR
+        if loc.floor:
+            floor_number = str(loc.floor.floor_number)
+
+        return location_name, building_name, floor_number
+
+    # ==============================
+    # 1) SEARCH GUEST MODEL
+    # ==============================
+    guest_filter = (
+        Q(full_name__icontains=query) |
+        Q(room_number__icontains=query) |
+        Q(guest_id__icontains=query)
+    )
+
+    if not include_all:
+        guest_filter &= (
+            (Q(checkin_date__lte=today) & Q(checkout_date__gte=today)) |
+            (Q(checkin_datetime__date__lte=today) & Q(checkout_datetime__date__gte=today))
+        )
+
+    guests = Guest.objects.filter(guest_filter).order_by("-updated_at")[:10]
+
+    for guest in guests:
+        room_no = (guest.room_number or "").strip()
+        key = f"guest_{guest.pk}_{room_no}".lower()
+        if key in seen_keys:
+            continue
+        seen_keys.add(key)
+
+        loc = location_for_room(room_no)
+        location_name, building_name, floor_number = extract_location_data(loc, room_no)
+
+        results.append({
+            "room_no": room_no,
+            "location_id": loc.pk if loc else None,
+            "name": location_name,
+            "building": building_name,
+            "floor": floor_number,
+            "guest": {
+                "id": guest.id,
+                "name": guest.full_name or guest.guest_id or f"Guest {guest.pk}",
+                "phone": getattr(guest, "phone", "") or "",
+                "country_code": getattr(guest, "country_code", "") or "",
+                "source": "feedback",
+            }
+        })
+
+    # ==============================
+    # 2) SEARCH VOUCHER MODEL
+    # ==============================
+    voucher_filter = (
+        Q(guest_name__icontains=query) |
+        Q(room_no__icontains=query) |
+        Q(phone_number__icontains=query)
+    )
+
+    if not include_all:
+        voucher_filter &= (
+            Q(check_in_date__lte=today) &
+            Q(check_out_date__gte=today) &
+            Q(is_used=False)
+        )
+
+    vouchers = Voucher.objects.filter(voucher_filter).order_by("-created_at")[:10]
+
+    for voucher in vouchers:
+        room_no = (voucher.room_no or "").strip()
+        key = f"voucher_{voucher.pk}_{room_no}".lower()
+        if key in seen_keys:
+            continue
+        seen_keys.add(key)
+
+        loc = location_for_room(room_no)
+        location_name, building_name, floor_number = extract_location_data(loc, room_no)
+
+        results.append({
+            "room_no": room_no,
+            "location_id": loc.pk if loc else None,
+            "name": location_name,
+            "building": building_name,
+            "floor": floor_number,
+            "guest": {
+                "id": f"voucher_{voucher.id}",
+                "name": voucher.guest_name or f"Guest (Room {room_no})",
+                "phone": voucher.phone_number or "",
+                "country_code": getattr(voucher, "country_code", "") or "",
+                "source": "checkin",
+            }
+        })
+
+    return JsonResponse({"success": True, "results": results})
 
 @login_required
 @require_permission([ADMINS_GROUP, STAFF_GROUP])

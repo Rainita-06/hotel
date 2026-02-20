@@ -83,7 +83,7 @@
     </div>
 
     <div id="tabs" class="flex border-b border-gray-200 mb-6" role="tablist" data-aos="fade-down" data-aos-delay="100">
-        <a href="#generalSlaSection" class="tab-link py-3 px-4 text-base font-medium border-b-2 hover:text-gray-900 hover:border-gray-300" role="tab" aria-controls="generalSlaSection">General SLA</a>
+        <!-- <a href="#generalSlaSection" class="tab-link py-3 px-4 text-base font-medium border-b-2 hover:text-gray-900 hover:border-gray-300"  aria-controls="generalSlaSection">General SLA</a> -->
         <a href="#departmentSlaSection" class="tab-link py-3 px-4 text-base font-medium border-b-2 hover:text-gray-900 hover:border-gray-300" role="tab" aria-controls="departmentSlaSection">Department SLA</a>
         
        
@@ -91,7 +91,7 @@
     </div>
 
     <div id="toastContainer" class="fixed top-5 right-5 z-50 space-y-3"></div>
-
+<!-- 
     <div id="generalSlaSection" class="tab-content hidden bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6" role="tabpanel">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
             <div class="flex items-center gap-3">
@@ -134,7 +134,7 @@
         <div class="mt-4 flex justify-end">
             <button id="resetDefaultsBtn" class="text-sm text-gray-600 hover:text-gray-900 underline">Reset to Default Values</button>
         </div>
-    </div>
+    </div> -->
 
     <div id="departmentSlaSection" class="tab-content hidden bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6" role="tabpanel">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
@@ -290,7 +290,7 @@
         </div>
     </div>
     
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-12">
+    <!-- <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-12">
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6" data-aos="fade-up">
             <div class="flex justify-between items-center"><div class="text-gray-900 text-base font-semibold">SLA Compliance Rate</div><div class="px-2 py-1 bg-green-100 rounded-full text-green-800 text-xs font-medium">94%</div></div><div class="mt-5"><div class="flex justify-between items-center"><div class="text-gray-600 text-sm">Tickets meeting SLA</div><div class="text-green-600 text-lg font-bold">94%</div></div><div class="w-full h-2 mt-3 bg-gray-200 rounded-full overflow-hidden"><div class="w-[94%] h-2 bg-green-500"></div></div></div>
         </div>
@@ -300,7 +300,7 @@
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6" data-aos="fade-up" data-aos-delay="200">
             <div class="flex justify-between items-center"><div class="text-gray-900 text-base font-semibold">Active Breaches</div><div class="px-2 py-1 bg-red-100 rounded-full text-red-800 text-xs font-medium">3 Active</div></div><div class="mt-4 space-y-3"><div class="flex justify-between items-center"><div class="text-gray-600 text-sm">Critical</div><div class="text-red-500 text-lg font-bold">1</div></div><div class="flex justify-between items-center"><div class="text-gray-600 text-sm">Warning</div><div class="text-yellow-500 text-lg font-bold">2</div></div></div>
         </div>
-    </div>
+    </div> -->
 </div>
 {% endblock %}
 
@@ -364,7 +364,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         const urlParams = new URLSearchParams(window.location.search);
-        const initialTabId = urlParams.get('tab') || 'generalSlaSection';
+        const initialTabId = urlParams.get('tab') || 'departmentSlaSection';
         setActiveTab(initialTabId, false);
     }
     

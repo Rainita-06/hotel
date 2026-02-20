@@ -46,7 +46,7 @@ urlpatterns = [
     path('reviews/<int:review_id>/update/', dashboard_views.review_update, name='review_update'),
     path('reviews/<int:review_id>/delete/', dashboard_views.review_delete, name='review_delete'),
     
-    
+    path("api/room-guest-lookup/", dashboard_views.api_room_guest_lookup, name="api_room_guest_lookup"),
     # New Voucher System URLs
     path('voucher-analytics/', dashboard_views.voucher_analytics, name='voucher_analytics'),
     path('guests/', dashboard_views.dashboard_guests, name='guests'),
