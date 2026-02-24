@@ -3686,7 +3686,7 @@ def ticket_detail(request, ticket_id):
     if not guest_name and service_request.guest:
         guest_name = service_request.guest.full_name or requester_name
     elif not guest_name:
-        guest_name = requester_name
+        guest_name = ""
     
     # Try to get location from service_request.location first
     location = service_request.location
@@ -6809,7 +6809,7 @@ def create_ticket_api(request):
                     room_number = guest.room_number
             
             # Validate required fields
-            if not guest_name or not room_number or not department_name or not category or not priority:
+            if  not room_number or not department_name or not category or not priority:
                 return JsonResponse({'error': 'Missing required fields'}, status=400)
             
             # Get or create location
@@ -8103,6 +8103,165 @@ def search_locations_api(request):
 
 
 
+# @login_required
+# @require_permission([ADMINS_GROUP, STAFF_GROUP])
+# def api_room_guest_lookup(request):
+#     if request.method != "GET":
+#         return JsonResponse({"success": False, "error": "Method not allowed"}, status=405)
+
+#     query = (request.GET.get("q") or "").strip()
+#     include_all = request.GET.get("include_all", "false").lower() == "true"
+#     today = timezone.localdate()
+
+#     results = []
+#     seen_keys = set()
+
+#     if not query:
+#         return JsonResponse({"success": True, "results": []})
+
+#     # ==============================
+#     # LOCATION HELPER
+#     # ==============================
+#     def location_for_room(room_no: str):
+#         if not room_no:
+#             return None
+
+#         rn = room_no.strip()
+
+#         qs = (
+#             Location.objects
+#             .filter(status="active")
+#             .select_related("floor__building", "building")
+#         )
+
+#         # Exact match first
+#         loc = qs.filter(room_no__iexact=rn).first()
+#         if loc:
+#             return loc
+
+#         # Name match
+#         loc = qs.filter(name__iexact=rn).first()
+#         if loc:
+#             return loc
+
+#         # Partial match
+#         return qs.filter(
+#             Q(room_no__icontains=rn) | Q(name__icontains=rn)
+#         ).first()
+
+#     # ==============================
+#     # SAFE LOCATION EXTRACTION
+#     # ==============================
+#     def extract_location_data(loc, room_no):
+#         building_name = "-"
+#         floor_number = "-"
+#         location_name = f"Room {room_no}" if room_no else ""
+
+#         if not loc:
+#             return location_name, building_name, floor_number
+
+#         location_name = loc.name or location_name
+
+#         # ✅ BUILDING
+#         if loc.building:
+#             building_name = loc.building.name
+
+#         # If building is not set directly but exists via floor
+#         elif loc.floor and loc.floor.building:
+#             building_name = loc.floor.building.name
+
+#         # ✅ FLOOR
+#         if loc.floor:
+#             floor_number = str(loc.floor.floor_number)
+
+#         return location_name, building_name, floor_number
+
+#     # ==============================
+#     # 1) SEARCH GUEST MODEL
+#     # ==============================
+#     guest_filter = (
+#         Q(full_name__icontains=query) |
+#         Q(room_number__icontains=query) |
+#         Q(guest_id__icontains=query)
+#     )
+
+#     if not include_all:
+#         guest_filter &= (
+#             (Q(checkin_date__lte=today) & Q(checkout_date__gte=today)) |
+#             (Q(checkin_datetime__date__lte=today) & Q(checkout_datetime__date__gte=today))
+#         )
+
+#     guests = Guest.objects.filter(guest_filter).order_by("-updated_at")[:10]
+
+#     for guest in guests:
+#         room_no = (guest.room_number or "").strip()
+#         key = f"guest_{guest.pk}_{room_no}".lower()
+#         if key in seen_keys:
+#             continue
+#         seen_keys.add(key)
+
+#         loc = location_for_room(room_no)
+#         location_name, building_name, floor_number = extract_location_data(loc, room_no)
+
+#         results.append({
+#             "room_no": room_no,
+#             "location_id": loc.pk if loc else None,
+#             "name": location_name,
+#             "building": building_name,
+#             "floor": floor_number,
+#             "guest": {
+#                 "id": guest.id,
+#                 "name": guest.full_name or guest.guest_id or f"Guest {guest.pk}",
+#                 "phone": getattr(guest, "phone", "") or "",
+#                 "country_code": getattr(guest, "country_code", "") or "",
+#                 "source": "feedback",
+#             }
+#         })
+
+#     # ==============================
+#     # 2) SEARCH VOUCHER MODEL
+#     # ==============================
+#     voucher_filter = (
+#         Q(guest_name__icontains=query) |
+#         Q(room_no__icontains=query) |
+#         Q(phone_number__icontains=query)
+#     )
+
+#     if not include_all:
+#         voucher_filter &= (
+#             Q(check_in_date__lte=today) &
+#             Q(check_out_date__gte=today) &
+#             Q(is_used=False)
+#         )
+
+#     vouchers = Voucher.objects.filter(voucher_filter).order_by("-created_at")[:10]
+
+#     for voucher in vouchers:
+#         room_no = (voucher.room_no or "").strip()
+#         key = f"voucher_{voucher.pk}_{room_no}".lower()
+#         if key in seen_keys:
+#             continue
+#         seen_keys.add(key)
+
+#         loc = location_for_room(room_no)
+#         location_name, building_name, floor_number = extract_location_data(loc, room_no)
+
+#         results.append({
+#             "room_no": room_no,
+#             "location_id": loc.pk if loc else None,
+#             "name": location_name,
+#             "building": building_name,
+#             "floor": floor_number,
+#             "guest": {
+#                 "id": f"voucher_{voucher.id}",
+#                 "name": voucher.guest_name or f"Guest (Room {room_no})",
+#                 "phone": voucher.phone_number or "",
+#                 "country_code": getattr(voucher, "country_code", "") or "",
+#                 "source": "checkin",
+#             }
+#         })
+
+#     return JsonResponse({"success": True, "results": results})
 @login_required
 @require_permission([ADMINS_GROUP, STAFF_GROUP])
 def api_room_guest_lookup(request):
@@ -8110,9 +8269,7 @@ def api_room_guest_lookup(request):
         return JsonResponse({"success": False, "error": "Method not allowed"}, status=405)
 
     query = (request.GET.get("q") or "").strip()
-    include_all = request.GET.get("include_all", "false").lower() == "true"
     today = timezone.localdate()
-
     results = []
     seen_keys = set()
 
@@ -8127,7 +8284,6 @@ def api_room_guest_lookup(request):
             return None
 
         rn = room_no.strip()
-
         qs = (
             Location.objects
             .filter(status="active")
@@ -8152,45 +8308,27 @@ def api_room_guest_lookup(request):
     # ==============================
     # SAFE LOCATION EXTRACTION
     # ==============================
-    def extract_location_data(loc, room_no):
+    def extract_location_data(loc):
         building_name = "-"
         floor_number = "-"
-        location_name = f"Room {room_no}" if room_no else ""
 
         if not loc:
-            return location_name, building_name, floor_number
+            return building_name, floor_number
 
-        location_name = loc.name or location_name
-
-        # ✅ BUILDING
         if loc.building:
             building_name = loc.building.name
-
-        # If building is not set directly but exists via floor
         elif loc.floor and loc.floor.building:
             building_name = loc.floor.building.name
 
-        # ✅ FLOOR
         if loc.floor:
             floor_number = str(loc.floor.floor_number)
 
-        return location_name, building_name, floor_number
+        return building_name, floor_number
 
     # ==============================
-    # 1) SEARCH GUEST MODEL
+    # 1) SEARCH GUEST MODEL (all guests, no check-in filter)
     # ==============================
-    guest_filter = (
-        Q(full_name__icontains=query) |
-        Q(room_number__icontains=query) |
-        Q(guest_id__icontains=query)
-    )
-
-    if not include_all:
-        guest_filter &= (
-            (Q(checkin_date__lte=today) & Q(checkout_date__gte=today)) |
-            (Q(checkin_datetime__date__lte=today) & Q(checkout_datetime__date__gte=today))
-        )
-
+    guest_filter = Q(room_number__icontains=query)
     guests = Guest.objects.filter(guest_filter).order_by("-updated_at")[:10]
 
     for guest in guests:
@@ -8201,17 +8339,15 @@ def api_room_guest_lookup(request):
         seen_keys.add(key)
 
         loc = location_for_room(room_no)
-        location_name, building_name, floor_number = extract_location_data(loc, room_no)
+        building_name, floor_number = extract_location_data(loc)
 
         results.append({
             "room_no": room_no,
             "location_id": loc.pk if loc else None,
-            "name": location_name,
             "building": building_name,
             "floor": floor_number,
             "guest": {
                 "id": guest.id,
-                "name": guest.full_name or guest.guest_id or f"Guest {guest.pk}",
                 "phone": getattr(guest, "phone", "") or "",
                 "country_code": getattr(guest, "country_code", "") or "",
                 "source": "feedback",
@@ -8219,21 +8355,9 @@ def api_room_guest_lookup(request):
         })
 
     # ==============================
-    # 2) SEARCH VOUCHER MODEL
+    # 2) SEARCH VOUCHER MODEL (all vouchers, no check-in filter)
     # ==============================
-    voucher_filter = (
-        Q(guest_name__icontains=query) |
-        Q(room_no__icontains=query) |
-        Q(phone_number__icontains=query)
-    )
-
-    if not include_all:
-        voucher_filter &= (
-            Q(check_in_date__lte=today) &
-            Q(check_out_date__gte=today) &
-            Q(is_used=False)
-        )
-
+    voucher_filter = Q(room_no__icontains=query)
     vouchers = Voucher.objects.filter(voucher_filter).order_by("-created_at")[:10]
 
     for voucher in vouchers:
@@ -8244,18 +8368,19 @@ def api_room_guest_lookup(request):
         seen_keys.add(key)
 
         loc = location_for_room(room_no)
-        location_name, building_name, floor_number = extract_location_data(loc, room_no)
-
+        building_name, floor_number = extract_location_data(loc)
+        is_checked_in = ( voucher.check_in_date and voucher.check_out_date and voucher.check_in_date <= today < voucher.check_out_date ) 
+        guest_name = voucher.guest_name if is_checked_in else getattr(voucher, "requester_name", "")
+        phone_number=voucher.phone_number if is_checked_in else getattr(voucher, "-", "")
         results.append({
             "room_no": room_no,
             "location_id": loc.pk if loc else None,
-            "name": location_name,
             "building": building_name,
             "floor": floor_number,
             "guest": {
                 "id": f"voucher_{voucher.id}",
-                "name": voucher.guest_name or f"Guest (Room {room_no})",
-                "phone": voucher.phone_number or "",
+                "phone": phone_number,
+                "name": guest_name,
                 "country_code": getattr(voucher, "country_code", "") or "",
                 "source": "checkin",
             }

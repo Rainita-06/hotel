@@ -162,7 +162,8 @@
       <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <img src="{% static 'images/tickets/room.svg' %}" alt="Room Icon" class="h-5 w-5 text-gray-400" />
       </div>
-
+  <input type="hidden" id="guestName" value=""> <!-- Hidden, not shown to user -->
+    <input type="hidden" id="guestId" value="">
       <input type="hidden" id="guestPhone" value="">
       <input type="hidden" id="guestCountryCode" value="">
       <input type="hidden" id="locationId" name="location_id" value="">
@@ -193,7 +194,7 @@
       </div>
   </div></div>
                 <!-- Guest Name -->
-                <div class="relative group">
+                <!-- <div class="relative group">
                     <label for="guestName" class="block text-sm font-medium text-gray-700 mb-1">Guest Name</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -201,10 +202,10 @@
                         </div>
                         <input autocomplete="off" type="text" id="guestName" placeholder="Search guest name..." class="w-full h-11 pl-10 pr-4 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500" />
                         <input type="hidden" id="guestId" value="">
-                        <!-- Guest Suggestions -->
+                     
                         <div id="guestSuggestions" class="absolute z-20 mt-1 w-full bg-white shadow-lg rounded-md hidden max-h-60 overflow-auto border border-gray-200"></div>
                     </div>
-                </div>
+                </div> -->
             </div>
 
             <div class="relative z-10">
@@ -826,7 +827,7 @@ if (guestCountryCode && guestPhone) {
 }
  
                  // Validation
-                 if (!guestName || !roomNumber || !department || !categoryValue || !selectedPriority) {
+                 if ( !roomNumber || !department || !categoryValue || !selectedPriority) {
                      showToast('Please fill all required fields: Guest Name, Room Number, Department, Request Type, Priority', 'error');
                      return;
                  }
