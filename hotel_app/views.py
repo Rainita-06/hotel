@@ -435,10 +435,75 @@ from django.shortcuts import redirect
 # from .models import Location, Family, Type, Floor, Building
 from .models import Location, Floor, Building
 
+# def bulk_import_locations(request):
+#     """Upload CSV and create Location entries"""
+#     if request.method == 'POST':
+#         csv_file = request.FILES.get('csv_file')
+#         if not csv_file:
+#             messages.error(request, "Please upload a CSV file.")
+#             return redirect('locations_list')
+
+#         if not csv_file.name.endswith('.csv'):
+#             messages.error(request, "Invalid file format. Please upload a .csv file.")
+#             return redirect('locations_list')
+
+#         try:
+#             file_data = TextIOWrapper(csv_file.file, encoding='utf-8')
+#             reader = csv.DictReader(file_data)
+#             count = 0
+
+#             for row in reader:
+#                 name = row.get('name')
+#                 family_id = row.get('family_id')
+#                 type_id = row.get('type_id')
+#                 floor_id = row.get('floor_id')
+#                 building_id = row.get('building_id')
+#                 status = row.get('status', 'Active')
+#                 description = row.get('description', '')
+
+#                 if not all([name, family_id, type_id, floor_id, building_id]):
+#                     continue  # Skip incomplete rows
+
+#                 # Create the Location object using foreign key IDs
+#                 Location.objects.create(
+#                     name=name,
+#                     family_id=family_id,
+#                     type_id=type_id,
+#                     floor_id=floor_id,
+#                     building_id=building_id,
+#                     status=status,
+#                     description=description
+#                 )
+#                 count += 1
+
+#             messages.success(request, f"✅ Successfully imported {count} locations.")
+#         except Exception as e:
+#             messages.error(request, f"Error while importing: {str(e)}")
+
+#         return redirect('locations_list')
+
+#     return redirect('locations_list')
+
+import csv
+from io import TextIOWrapper
+from django.shortcuts import redirect
+from django.contrib import messages
+from django.db import transaction
+from .models import Location, Building, Floor, LocationFamily, LocationType
+import csv
+from io import TextIOWrapper
+from django.shortcuts import redirect
+from django.contrib import messages
+from django.db import transaction
+from .models import Location, Building, Floor, LocationFamily, LocationType
+
+
 def bulk_import_locations(request):
-    """Upload CSV and create Location entries"""
+    """Upload CSV and create Location entries using names instead of IDs"""
+
     if request.method == 'POST':
         csv_file = request.FILES.get('csv_file')
+
         if not csv_file:
             messages.error(request, "Please upload a CSV file.")
             return redirect('locations_list')
@@ -450,41 +515,105 @@ def bulk_import_locations(request):
         try:
             file_data = TextIOWrapper(csv_file.file, encoding='utf-8')
             reader = csv.DictReader(file_data)
+
             count = 0
+            skipped = 0
 
-            for row in reader:
-                name = row.get('name')
-                family_id = row.get('family_id')
-                type_id = row.get('type_id')
-                floor_id = row.get('floor_id')
-                building_id = row.get('building_id')
-                status = row.get('status', 'Active')
-                description = row.get('description', '')
+            with transaction.atomic():
 
-                if not all([name, family_id, type_id, floor_id, building_id]):
-                    continue  # Skip incomplete rows
+                for row in reader:
+                    building_name = row.get('building_name')
+                    floor_name = row.get('floor_name')
+                    family_name = row.get('family_name')
+                    type_name = row.get('type_name')
+                    name = row.get('name')
 
-                # Create the Location object using foreign key IDs
-                Location.objects.create(
-                    name=name,
-                    family_id=family_id,
-                    type_id=type_id,
-                    floor_id=floor_id,
-                    building_id=building_id,
-                    status=status,
-                    description=description
-                )
-                count += 1
+                    room_no = row.get('room_no')
+                    capacity = row.get('capacity')
+                    status = (row.get('status')or 'Active').strip()
+                    description = row.get('description', '')
+                    is_occupied = str(row.get('is_occupied', 'False')).lower() in ['true', '1', 'yes']
 
-            messages.success(request, f"✅ Successfully imported {count} locations.")
+                    # Required field validation
+                    if not all([building_name, floor_name, family_name, type_name, name]):
+                        skipped += 1
+                        continue
+
+                    building_name = building_name.strip()
+                    floor_name = floor_name.strip()
+                    family_name = family_name.strip()
+                    type_name = type_name.strip()
+                    name = name.strip()
+
+                    # Validate status against model choices
+                    valid_status = ['Active', 'Maintenance', 'Inactive']
+                    if status not in valid_status:
+                        skipped += 1
+                        continue
+
+                    try:
+                        building = Building.objects.get(name__iexact=building_name)
+
+                        floor = Floor.objects.get(
+                            building=building,
+                            floor_name__iexact=floor_name
+                        )
+
+                        family = LocationFamily.objects.get(name__iexact=family_name)
+
+                        location_type = LocationType.objects.get(
+                            family=family,
+                            name__iexact=type_name
+                        )
+
+                    except (Building.DoesNotExist,
+                            Floor.DoesNotExist,
+                            LocationFamily.DoesNotExist,
+                            LocationType.DoesNotExist):
+                        skipped += 1
+                        continue
+
+                    # Prevent duplicate location per building
+                    if Location.objects.filter(
+                        building=building,
+                        name__iexact=name
+                    ).exists():
+                        skipped += 1
+                        continue
+
+                    # Safe capacity conversion
+                    try:
+                        capacity_value = int(capacity) if capacity else None
+                    except ValueError:
+                        skipped += 1
+                        continue
+
+                    Location.objects.create(
+                        name=name,
+                        building=building,
+                        floor=floor,
+                        family=family,
+                        type=location_type,
+                        room_no=room_no.strip() if room_no else None,
+                        capacity=capacity_value,
+                        status=status,
+                        description=description,
+                        is_occupied=is_occupied
+                    )
+
+                    count += 1
+
+            messages.success(
+                request,
+                f"✅ Successfully imported {count} locations. Skipped {skipped} rows."
+            )
+
         except Exception as e:
-            messages.error(request, f"Error while importing: {str(e)}")
+            messages.error(request, f"❌ Error while importing: {str(e)}")
 
         return redirect('locations_list')
 
     return redirect('locations_list')
-
-
 import csv
 from django.http import HttpResponse
 from .models import Location
@@ -514,6 +643,34 @@ from .models import Location
 
 #     return response
 
+# @admin_required
+# def export_locations_csv(request):
+#     import csv
+#     from django.http import HttpResponse
+#     from .models import Location
+
+#     response = HttpResponse(content_type='text/csv')
+#     response['Content-Disposition'] = 'attachment; filename="locations.csv"'
+
+#     writer = csv.writer(response)
+#     # Write header
+#     writer.writerow(['Name', 'Room No', 'Pavilion', 'Capacity', 'Family', 'Type', 'Floor', 'Building'])
+
+#     # Write data safely
+#     locations = Location.objects.all()
+#     for loc in locations:
+#         writer.writerow([
+#             loc.name,
+#             loc.room_no,
+#             loc.pavilion,
+#             loc.capacity,
+#             getattr(loc, 'family', None) and getattr(loc.family, 'name', '') or '',
+#             getattr(loc, 'type', None) and getattr(loc.type, 'name', '') or '',
+#             getattr(loc, 'floor', None) and getattr(loc.floor, 'floor_number', '') or '',
+#             getattr(loc, 'building', None) and getattr(loc.building, 'name', '') or ''
+#         ])
+
+#     return response
 @admin_required
 def export_locations_csv(request):
     import csv
@@ -521,28 +678,43 @@ def export_locations_csv(request):
     from .models import Location
 
     response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="locations.csv"'
+    response['Content-Disposition'] = 'attachment; filename="locations_export.csv"'
 
     writer = csv.writer(response)
-    # Write header
-    writer.writerow(['Name', 'Room No', 'Pavilion', 'Capacity', 'Family', 'Type', 'Floor', 'Building'])
 
-    # Write data safely
-    locations = Location.objects.all()
+    # ✅ Header must EXACTLY match import keys
+    writer.writerow([
+        'name',
+        'building_name',
+        'floor_name',
+        'family_name',
+        'type_name',
+        'room_no',
+        'status',
+        'description',
+        
+    ])
+
+    locations = Location.objects.select_related(
+        'building', 'floor', 'family', 'type'
+    )
+
     for loc in locations:
         writer.writerow([
             loc.name,
-            loc.room_no,
-            loc.pavilion,
-            loc.capacity,
-            getattr(loc, 'family', None) and getattr(loc.family, 'name', '') or '',
-            getattr(loc, 'type', None) and getattr(loc.type, 'name', '') or '',
-            getattr(loc, 'floor', None) and getattr(loc.floor, 'floor_number', '') or '',
-            getattr(loc, 'building', None) and getattr(loc.building, 'name', '') or ''
+            loc.building.name if loc.building else '',
+            loc.floor.floor_name if loc.floor else '',
+            loc.family.name if loc.family else '',
+            loc.type.name if loc.type else '',
+            
+            loc.room_no or '',
+           
+            loc.status or 'Active',
+            loc.description or '',
+           
         ])
 
     return response
-
 
 # -------------------------------
 # Add/Edit Location
@@ -1371,10 +1543,60 @@ from .models import Building, Floor, LocationFamily, LocationType, Location
 # -------------------------------
 # BULK IMPORT: BUILDINGS
 # -------------------------------
+# def bulk_import_buildings(request):
+#     """Upload CSV and create Building entries"""
+#     if request.method == 'POST':
+#         csv_file = request.FILES.get('csv_file')
+#         if not csv_file:
+#             messages.error(request, "Please upload a CSV file.")
+#             return redirect('building_cards')
+
+#         if not csv_file.name.endswith('.csv'):
+#             messages.error(request, "Invalid file format. Please upload a .csv file.")
+#             return redirect('building_cards')
+
+#         try:
+#             file_data = TextIOWrapper(csv_file.file, encoding='utf-8')
+#             reader = csv.DictReader(file_data)
+#             count = 0
+
+#             for row in reader:
+#                 name = row.get('name')
+#                 description = row.get('description', '')
+#                 status = row.get('status', 'Active')
+
+#                 if not name:
+#                     continue  # Skip incomplete rows
+
+#                 Building.objects.create(
+#                     name=name,
+#                     description=description,
+#                     status=status
+#                 )
+#                 count += 1
+
+#             messages.success(request, f"✅ Successfully imported {count} buildings.")
+#         except Exception as e:
+#             messages.error(request, f"❌ Error while importing buildings: {str(e)}")
+
+#         return redirect('building_cards')
+
+#     return redirect('building_cards')
+
+import csv
+from io import TextIOWrapper
+from django.shortcuts import redirect
+from django.contrib import messages
+from django.db import transaction
+from .models import Building
+
+
 def bulk_import_buildings(request):
-    """Upload CSV and create Building entries"""
+    """Upload CSV and create Building entries with skip & duplicate handling"""
+
     if request.method == 'POST':
         csv_file = request.FILES.get('csv_file')
+
         if not csv_file:
             messages.error(request, "Please upload a CSV file.")
             return redirect('building_cards')
@@ -1386,39 +1608,112 @@ def bulk_import_buildings(request):
         try:
             file_data = TextIOWrapper(csv_file.file, encoding='utf-8')
             reader = csv.DictReader(file_data)
+
             count = 0
+            skipped = 0
 
-            for row in reader:
-                name = row.get('name')
-                description = row.get('description', '')
-                status = row.get('status', 'Active')
+            with transaction.atomic():
 
-                if not name:
-                    continue  # Skip incomplete rows
+                for row in reader:
+                    name = row.get('name')
+                    description = row.get('description', '')
+                    status = row.get('status', 'active')
 
-                Building.objects.create(
-                    name=name,
-                    description=description,
-                    status=status
-                )
-                count += 1
+                    # Required field check
+                    if not name:
+                        skipped += 1
+                        continue
 
-            messages.success(request, f"✅ Successfully imported {count} buildings.")
+                    name = name.strip()
+
+                    # Prevent duplicate (case-insensitive)
+                    if Building.objects.filter(name__iexact=name).exists():
+                        skipped += 1
+                        continue
+
+                    Building.objects.create(
+                        name=name,
+                        description=description,
+                        status=status.lower()
+                    )
+
+                    count += 1
+
+            messages.success(
+                request,
+                f"✅ Successfully imported {count} buildings. Skipped {skipped} rows."
+            )
+
         except Exception as e:
-            messages.error(request, f"❌ Error while importing buildings: {str(e)}")
+            messages.error(
+                request,
+                f"❌ Error while importing buildings: {str(e)}"
+            )
 
         return redirect('building_cards')
 
     return redirect('building_cards')
-
-
 # -------------------------------
 # BULK IMPORT: FLOORS
 # -------------------------------
+# def bulk_import_floors(request):
+#     """Upload CSV and create Floor entries"""
+#     if request.method == 'POST':
+#         csv_file = request.FILES.get('csv_file')
+#         if not csv_file:
+#             messages.error(request, "Please upload a CSV file.")
+#             return redirect('floors_list')
+
+#         if not csv_file.name.endswith('.csv'):
+#             messages.error(request, "Invalid file format. Please upload a .csv file.")
+#             return redirect('floors_list')
+
+#         try:
+#             file_data = TextIOWrapper(csv_file.file, encoding='utf-8')
+#             reader = csv.DictReader(file_data)
+#             count = 0
+
+#             for row in reader:
+#                 floor_name = row.get('floor_name')
+#                 building_id = row.get('building_id')
+#                 floor_number = row.get('floor_number') or 0
+#                 rooms = row.get('rooms') or 0
+#                 occupancy = row.get('occupancy') or 0
+#                 is_active = row.get('is_active', 'True').lower() in ['true', '1', 'yes']
+
+#                 if not floor_name or not building_id:
+#                     continue
+
+#                 Floor.objects.create(
+#                     floor_name=floor_name,
+#                     floor_number=floor_number,
+#                     building_id=building_id,
+#                     rooms=rooms,
+#                     occupancy=occupancy,
+#                     is_active=is_active
+#                 )
+#                 count += 1
+
+#             messages.success(request, f"✅ Successfully imported {count} floors.",extra_tags="floor_import")
+#         except Exception as e:
+#             messages.error(request, f"❌ Error while importing floors: {str(e)}",extra_tags="floor_import")
+
+#         return redirect('floors_list')
+
+#     return redirect('floors_list')
+import csv
+from io import TextIOWrapper
+from django.shortcuts import redirect
+from django.contrib import messages
+from .models import Floor, Building
+
+
 def bulk_import_floors(request):
-    """Upload CSV and create Floor entries"""
+    """Upload CSV and create Floor entries using building_name instead of building_id"""
+
     if request.method == 'POST':
         csv_file = request.FILES.get('csv_file')
+
         if not csv_file:
             messages.error(request, "Please upload a CSV file.")
             return redirect('floors_list')
@@ -1431,44 +1726,110 @@ def bulk_import_floors(request):
             file_data = TextIOWrapper(csv_file.file, encoding='utf-8')
             reader = csv.DictReader(file_data)
             count = 0
+            skipped = 0
 
             for row in reader:
+                building_name = row.get('building_name')
                 floor_name = row.get('floor_name')
-                building_id = row.get('building_id')
                 floor_number = row.get('floor_number') or 0
                 rooms = row.get('rooms') or 0
                 occupancy = row.get('occupancy') or 0
-                is_active = row.get('is_active', 'True').lower() in ['true', '1', 'yes']
+                is_active = str(row.get('is_active', 'True')).lower() in ['true', '1', 'yes']
 
-                if not floor_name or not building_id:
+                # Skip if required fields missing
+                if not building_name or not floor_name:
+                    skipped += 1
+                    continue
+
+                try:
+                    building = Building.objects.get(name=building_name)
+                except Building.DoesNotExist:
+                    skipped += 1
+                    continue
+
+                # Prevent duplicate floor per building
+                if Floor.objects.filter(building=building, floor_name=floor_name).exists():
+                    skipped += 1
                     continue
 
                 Floor.objects.create(
+                    building=building,
                     floor_name=floor_name,
-                    floor_number=floor_number,
-                    building_id=building_id,
-                    rooms=rooms,
-                    occupancy=occupancy,
+                    floor_number=int(floor_number),
+                    rooms=int(rooms),
+                    occupancy=int(occupancy),
                     is_active=is_active
                 )
+
                 count += 1
 
-            messages.success(request, f"✅ Successfully imported {count} floors.",extra_tags="floor_import")
+            messages.success(
+                request,
+                f"✅ Successfully imported {count} floors. Skipped {skipped} rows.",
+                extra_tags="floor_import"
+            )
+
         except Exception as e:
-            messages.error(request, f"❌ Error while importing floors: {str(e)}",extra_tags="floor_import")
+            messages.error(
+                request,
+                f"❌ Error while importing floors: {str(e)}",
+                extra_tags="floor_import"
+            )
 
         return redirect('floors_list')
 
     return redirect('floors_list')
 
-
 # -------------------------------
 # BULK IMPORT: LOCATION FAMILIES
 # -------------------------------
+# def bulk_import_families(request):
+#     """Upload CSV and create LocationFamily entries"""
+#     if request.method == 'POST':
+#         csv_file = request.FILES.get('csv_file')
+#         if not csv_file:
+#             messages.error(request, "Please upload a CSV file.")
+#             return redirect('location_manage_view')
+
+#         if not csv_file.name.endswith('.csv'):
+#             messages.error(request, "Invalid file format. Please upload a .csv file.")
+#             return redirect('location_manage_view')
+
+#         try:
+#             file_data = TextIOWrapper(csv_file.file, encoding='utf-8')
+#             reader = csv.DictReader(file_data)
+#             count = 0
+
+#             for row in reader:
+#                 name = row.get('name')
+#                 if not name:
+#                     continue
+
+#                 LocationFamily.objects.create(name=name)
+#                 count += 1
+
+#             messages.success(request, f"✅ Successfully imported {count} location families.")
+#         except Exception as e:
+#             messages.error(request, f"❌ Error while importing families: {str(e)}")
+
+#         return redirect('location_manage_view')
+
+#     return redirect('location_manage_view')
+
+import csv
+from io import TextIOWrapper
+from django.shortcuts import redirect
+from django.contrib import messages
+from django.db import transaction
+from .models import LocationFamily
+
+
 def bulk_import_families(request):
-    """Upload CSV and create LocationFamily entries"""
+    """Upload CSV and create LocationFamily entries with imported & skipped count"""
+
     if request.method == 'POST':
         csv_file = request.FILES.get('csv_file')
+
         if not csv_file:
             messages.error(request, "Please upload a CSV file.")
             return redirect('location_manage_view')
@@ -1480,32 +1841,103 @@ def bulk_import_families(request):
         try:
             file_data = TextIOWrapper(csv_file.file, encoding='utf-8')
             reader = csv.DictReader(file_data)
+
             count = 0
+            skipped = 0
 
-            for row in reader:
-                name = row.get('name')
-                if not name:
-                    continue
+            with transaction.atomic():
 
-                LocationFamily.objects.create(name=name)
-                count += 1
+                for row in reader:
+                    name = row.get('name')
 
-            messages.success(request, f"✅ Successfully imported {count} location families.")
+                    # Required field check
+                    if not name:
+                        skipped += 1
+                        continue
+
+                    name = name.strip()
+
+                    # Prevent duplicate (case insensitive)
+                    if LocationFamily.objects.filter(name__iexact=name).exists():
+                        skipped += 1
+                        continue
+
+                    LocationFamily.objects.create(name=name)
+                    count += 1
+
+            messages.success(
+                request,
+                f"✅ Successfully imported {count} location families. Skipped {skipped} rows."
+            )
+
         except Exception as e:
-            messages.error(request, f"❌ Error while importing families: {str(e)}")
+            messages.error(
+                request,
+                f"❌ Error while importing families: {str(e)}"
+            )
 
         return redirect('location_manage_view')
 
     return redirect('location_manage_view')
-
-
 # -------------------------------
 # BULK IMPORT: LOCATION TYPES
 # -------------------------------
+# def bulk_import_types(request):
+#     """Upload CSV and create LocationType entries"""
+#     if request.method == 'POST':
+#         csv_file = request.FILES.get('csv_file')
+#         if not csv_file:
+#             messages.error(request, "Please upload a CSV file.")
+#             return redirect('types_list')
+
+#         if not csv_file.name.endswith('.csv'):
+#             messages.error(request, "Invalid file format. Please upload a .csv file.")
+#             return redirect('types_list')
+
+#         try:
+#             file_data = TextIOWrapper(csv_file.file, encoding='utf-8')
+#             reader = csv.DictReader(file_data)
+#             count = 0
+
+#             for row in reader:
+#                 name = row.get('name')
+#                 family_id = row.get('family_id')
+
+#                 if not name or not family_id:
+#                     continue
+
+#                 LocationType.objects.create(name=name, family_id=family_id)
+#                 count += 1
+
+#             messages.success(request, f"✅ Successfully imported {count} location types.")
+#         except Exception as e:
+#             messages.error(request, f"❌ Error while importing types: {str(e)}")
+
+#         return redirect('types_list')
+
+#     return redirect('types_list')
+
+import csv
+from io import TextIOWrapper
+from django.shortcuts import redirect
+from django.contrib import messages
+from django.db import transaction
+from .models import LocationType, LocationFamily
+
+import csv
+from io import TextIOWrapper
+from django.shortcuts import redirect
+from django.contrib import messages
+from django.db import transaction
+from .models import LocationType, LocationFamily
+
+
 def bulk_import_types(request):
-    """Upload CSV and create LocationType entries"""
+    """Upload CSV and create LocationType entries using family_name"""
+
     if request.method == 'POST':
         csv_file = request.FILES.get('csv_file')
+
         if not csv_file:
             messages.error(request, "Please upload a CSV file.")
             return redirect('types_list')
@@ -1517,28 +1949,62 @@ def bulk_import_types(request):
         try:
             file_data = TextIOWrapper(csv_file.file, encoding='utf-8')
             reader = csv.DictReader(file_data)
+
             count = 0
+            skipped = 0
 
-            for row in reader:
-                name = row.get('name')
-                family_id = row.get('family_id')
+            with transaction.atomic():
 
-                if not name or not family_id:
-                    continue
+                for row in reader:
+                    name = row.get('name')
+                    family_name = row.get('family_name')
+                    is_active = str(row.get('is_active', 'True')).lower() in ['true', '1', 'yes']
 
-                LocationType.objects.create(name=name, family_id=family_id)
-                count += 1
+                    # Required fields check
+                    if not name or not family_name:
+                        skipped += 1
+                        continue
 
-            messages.success(request, f"✅ Successfully imported {count} location types.")
+                    name = name.strip()
+                    family_name = family_name.strip()
+
+                    # Get family (case insensitive)
+                    try:
+                        family = LocationFamily.objects.get(name__iexact=family_name)
+                    except LocationFamily.DoesNotExist:
+                        skipped += 1
+                        continue
+
+                    # Prevent duplicate type per family
+                    if LocationType.objects.filter(
+                        family=family,
+                        name__iexact=name
+                    ).exists():
+                        skipped += 1
+                        continue
+
+                    LocationType.objects.create(
+                        name=name,
+                        family=family,
+                        is_active=is_active
+                    )
+
+                    count += 1
+
+            messages.success(
+                request,
+                f"✅ Successfully imported {count} location types. Skipped {skipped} rows."
+            )
+
         except Exception as e:
-            messages.error(request, f"❌ Error while importing types: {str(e)}")
+            messages.error(
+                request,
+                f"❌ Error while importing types: {str(e)}"
+            )
 
         return redirect('types_list')
 
     return redirect('types_list')
-
-
-
 
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import RequestType, RequestFamily, WorkFamily, Workflow, Checklist
