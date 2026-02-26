@@ -43,7 +43,7 @@
 
                     <div>
                         <label class="block text-gray-700 text-sm font-medium font-['Inter']">City</label>
-                        <input type="text" name="city" placeholder="Enter city"
+                        <input type="text" name="city" placeholder="Enter city" required
                             class="w-full h-10 px-3 rounded-lg border border-gray-300 text-gray-700 text-sm">
                     </div>
 <!-- 
@@ -78,7 +78,7 @@
                 <div class="space-y-3">
                     <div>
                         <label class="block text-gray-700 text-sm font-medium font-['Inter']">Address</label>
-                        <textarea name="address" placeholder="Enter address"
+                        <textarea name="address" placeholder="Enter address" required
                             class="w-full h-16 px-3 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm"></textarea>
                     </div>
 
@@ -90,7 +90,7 @@
 
                     <div>
                         <label class="block text-gray-700 text-sm font-medium font-['Inter']">Gender</label>
-                        <select name="gender" class="w-full h-10 px-3 rounded-lg border border-gray-300 text-gray-700 text-sm">
+                        <select name="gender" required class="w-full h-10 px-3 rounded-lg border border-gray-300 text-gray-700 text-sm">
                             <option value="">Select gender</option>
                             <option value="Male">Male</option>
                             <option value="Female">Female</option>
@@ -102,6 +102,20 @@
                         <input type="email" name="email" placeholder="Enter email"
                             class="w-full h-10 px-3 rounded-lg border border-gray-300 text-gray-700 text-sm">
                     </div>
+                    <div>
+
+                    <label class="block text-gray-700 text-sm font-medium">
+    Membership Duration
+  </label>
+  <select name="plan_months" required
+      class="w-full h-10 px-3 rounded-lg border border-gray-300 text-gray-700 text-sm">
+      <option value="">Select duration</option>
+      <option value="1">1 Month</option>
+      <option value="3">3 Months</option>
+      <option value="6">6 Months</option>
+      <option value="12">1 Year</option>
+  </select>
+</div>
                 </div>
             </div>
 

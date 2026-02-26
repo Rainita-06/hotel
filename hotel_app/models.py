@@ -1622,7 +1622,7 @@ class GymMember(models.Model):
     religion = models.CharField(max_length=50, blank=True, null=True)
     gender = models.CharField(max_length=20, blank=True, null=True)  # Male/Female
     occupation = models.CharField(max_length=100, blank=True, null=True)
-    phone = models.CharField(max_length=20, blank=False, null=False)
+    phone = models.CharField(max_length=20,unique=True, blank=False, null=False)
     email = models.CharField(max_length=100, blank=True, null=True)
     pin = models.CharField(max_length=10, blank=True, null=True)
     password = models.CharField(max_length=128, blank=False, null=False)

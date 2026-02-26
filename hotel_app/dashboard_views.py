@@ -3924,7 +3924,7 @@ def ticket_detail(request, ticket_id):
 def my_tickets(request):
     """Render the My Tickets page with dynamic status cards."""
     from django.db.models import Q, Count
-    from .models import ServiceRequest
+    from .models import ServiceRequest,Department,RequestType
     
     # Get the current user's tickets
     user_tickets = ServiceRequest.objects.filter(
@@ -3994,6 +3994,8 @@ def my_tickets(request):
         'priority_filter': priority_filter,
         'status_filter': status_filter,
         'search_query': search_query,
+        'departments': Department.objects.filter(department_id=user_department.department_id) if user_department else Department.objects.none(),
+    'request_types': RequestType.objects.filter(active=True),
     }
     
     return render(request, 'dashboard/my_tickets.html', context)
@@ -4028,7 +4030,7 @@ def gym_report(request):
 def my_tickets(request):
     """Render the My Tickets page with dynamic status cards."""
     from django.db.models import Q, Count
-    from .models import ServiceRequest
+    from .models import ServiceRequest,Department,RequestType
     from django.utils import timezone
     from django.core.paginator import Paginator
     
@@ -4188,6 +4190,8 @@ def my_tickets(request):
         'status_filter': status_filter,
         'search_query': search_query,
         'user_department': user_department,
+        'departments': Department.objects.filter(department_id=user_department.department_id) if user_department else Department.objects.none(),
+    'request_types': RequestType.objects.filter(active=True),
     }
     
     return render(request, 'dashboard/my_tickets.html', context)
@@ -8357,34 +8361,78 @@ def api_room_guest_lookup(request):
     # ==============================
     # 2) SEARCH VOUCHER MODEL (all vouchers, no check-in filter)
     # ==============================
-    voucher_filter = Q(room_no__icontains=query)
-    vouchers = Voucher.objects.filter(voucher_filter).order_by("-created_at")[:10]
+    # voucher_filter = Q(room_no__icontains=query)
+    # vouchers = Voucher.objects.filter(voucher_filter).order_by("-created_at")[:10]
 
-    for voucher in vouchers:
-        room_no = (voucher.room_no or "").strip()
-        key = f"voucher_{voucher.pk}_{room_no}".lower()
-        if key in seen_keys:
-            continue
-        seen_keys.add(key)
+    # for voucher in vouchers:
+    #     room_no = (voucher.room_no or "").strip()
+    #     key = f"voucher_{voucher.pk}_{room_no}".lower()
+    #     if key in seen_keys:
+    #         continue
+    #     seen_keys.add(key)
 
-        loc = location_for_room(room_no)
+    #     loc = location_for_room(room_no)
+    #     building_name, floor_number = extract_location_data(loc)
+    #     is_checked_in = ( voucher.check_in_date and voucher.check_out_date and voucher.check_in_date <= today < voucher.check_out_date ) 
+    #     guest_name = voucher.guest_name if is_checked_in else getattr(voucher, "requester_name", "")
+    #     phone_number=voucher.phone_number if is_checked_in else getattr(voucher, "-", "")
+    #     results.append({
+    #         "room_no": room_no,
+    #         "location_id": loc.pk if loc else None,
+    #         "building": building_name,
+    #         "floor": floor_number,
+    #         "guest": {
+    #             "id": f"voucher_{voucher.id}",
+    #             "phone": phone_number,
+    #             "name": guest_name,
+    #             "country_code": getattr(voucher, "country_code", "") or "",
+    #             "source": "checkin",
+    #         }
+    #     })
+    location_filter = Q(room_no__icontains=query) | Q(name__icontains=query)
+
+    locations = (
+    Location.objects
+    .filter(status="active")
+    .filter(location_filter)
+    .select_related("floor__building", "building")
+    .order_by("room_no")[:10]
+)
+
+    for loc in locations:
+        room_no = (loc.room_no or loc.name or "").strip()
+
         building_name, floor_number = extract_location_data(loc)
-        is_checked_in = ( voucher.check_in_date and voucher.check_out_date and voucher.check_in_date <= today < voucher.check_out_date ) 
-        guest_name = voucher.guest_name if is_checked_in else getattr(voucher, "requester_name", "")
-        phone_number=voucher.phone_number if is_checked_in else getattr(voucher, "-", "")
-        results.append({
-            "room_no": room_no,
-            "location_id": loc.pk if loc else None,
-            "building": building_name,
-            "floor": floor_number,
-            "guest": {
+
+    # Check if voucher exists for this room
+        voucher = Voucher.objects.filter(room_no__iexact=room_no).order_by("-created_at").first()
+
+        guest_data = None
+
+        if voucher:
+            is_checked_in = (
+            voucher.check_in_date and
+            voucher.check_out_date and
+            voucher.check_in_date <= today < voucher.check_out_date
+        )
+
+            if is_checked_in:
+                guest_data = {
                 "id": f"voucher_{voucher.id}",
-                "phone": phone_number,
-                "name": guest_name,
+                "phone": voucher.phone_number or "",
+                "name": voucher.guest_name or "",
                 "country_code": getattr(voucher, "country_code", "") or "",
                 "source": "checkin",
             }
-        })
+
+        results.append({
+        "room_no": room_no,
+        "location_id": loc.pk,
+        "building": building_name,
+        "floor": floor_number,
+        "guest": guest_data,   # None if no active checkin
+        "source": "location"
+    })
 
     return JsonResponse({"success": True, "results": results})
 

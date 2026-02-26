@@ -67,13 +67,43 @@
                         </label>
                     </div>
 
-                    <div class="flex items-center">
-                        <input type="checkbox" {% if not member.is_expired %}disabled{% endif %} disabled
-                            class="h-4 w-4 text-blue-600 rounded border-gray-300 cursor-not-allowed">
-                        <label class="ml-2 block text-gray-700 text-sm font-medium font-['Inter']">
-                            Renew membership for 3 months
-                        </label>
-                    </div>
+                   <div class="mt-3 p-4 border rounded-lg bg-gray-50">
+    <h3 class="text-gray-900 font-semibold mb-3">Membership Details</h3>
+
+    <div class="grid grid-cols-2 gap-3 text-sm">
+
+        <div>
+            <label class="text-gray-600 font-medium">Plan Type</label>
+            <p class="text-gray-800">{{ membership_details.plan_type|default:"Not Selected" }}</p>
+        </div>
+
+        <div>
+            <label class="text-gray-600 font-medium">Start Date</label>
+            <p class="text-gray-800">
+                {{ membership_details.start_date|date:"Y-m-d"|default:"-" }}
+            </p>
+        </div>
+
+        <div>
+            <label class="text-gray-600 font-medium">Expiry Date</label>
+            <p class="text-gray-800">
+                {{ membership_details.expiry_date|date:"Y-m-d"|default:"-" }}
+            </p>
+        </div>
+
+        <div>
+            <label class="text-gray-600 font-medium">Status</label>
+            <p>
+                {% if is_expired %}
+                    <span class="text-red-600 font-semibold">Expired</span>
+                {% else %}
+                    <span class="text-green-600 font-semibold">Active</span>
+                {% endif %}
+            </p>
+        </div>
+
+    </div>
+</div>
 
                     {% if not member.is_expired %}
                         <small class="text-red-500 text-sm block mt-1">

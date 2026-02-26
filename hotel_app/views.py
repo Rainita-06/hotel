@@ -3090,7 +3090,7 @@ from django.http import HttpResponse, JsonResponse
 from .models import GymMember
 from io import BytesIO
 # from config.settings import SITE_BASE_URL
-
+from dateutil.relativedelta import relativedelta
 
 # Generate unique code
 def generate_customer_code():
@@ -3128,8 +3128,30 @@ def add_member(request):
 
         # Generate member code and dates
         customer_code = generate_customer_code()
+        plan_months = request.POST.get("plan_months")
+
+        if not plan_months:
+            return render(request, "add_member.html", {
+        "error": "Please select membership duration."
+    })
+
+        plan_months = int(plan_months)
+
         start_date = timezone.now().date()
-        expiry_date = start_date + timedelta(days=90)
+        expiry_date = start_date + relativedelta(months=plan_months)
+
+        # -----------------------------
+        # QR-code logic (same as voucher)
+        # -----------------------------
+        # Content you want inside the QR
+        if GymMember.objects.filter(phone=phone).exists():
+            return render(
+        request,
+        "add_member.html",
+        {
+            "error": "A member with this phone number already exists.",
+        },
+    )
 
         # -----------------------------
         # QR-code logic (same as voucher)
@@ -3158,6 +3180,7 @@ def add_member(request):
             start_date=start_date,
             expiry_date=expiry_date,
             status="Active",
+            plan_type=f"{plan_months} Month Plan"
              # store base64 string if desired
         )
         qr_content = member.customer_code
@@ -3352,7 +3375,7 @@ from django.contrib import messages
 from .models import GymMember
 from django.utils import timezone
 import qrcode, io, base64
-
+from dateutil.relativedelta import relativedelta
 # ---------- EDIT MEMBER ----------
 from datetime import timedelta
 
@@ -3367,30 +3390,52 @@ def edit_member(request, member_id):
         city = request.POST.get("city")
         password = request.POST.get("password")
         confirm_password = request.POST.get("confirm_password")
+        country_code = request.POST.get("country_code")
 
         if password and confirm_password and password != confirm_password:
             messages.error(request, "❌ Password mismatch.")
             return render(request, "edit_member.html", {"member": member})
+        # Prevent duplicate phone
+        if GymMember.objects.filter(phone=phone).exclude(member_id=member.member_id).exists():
+            messages.error(request, "This phone number is already used by another member.")
+            return render(request, "edit_member.html", {"member": member})
 
+        
         # Update fields
         member.full_name = full_name
         member.address = address
         member.phone = phone
+        member.country_code = country_code
         member.email = email
         member.city = city
         if password:
             member.password = password
         
         # ✅ Extend voucher only if admin ticks/chooses "renew"
-        renew = request.POST.get("renew_membership")  # from a checkbox in form
-        if renew:
-            if not member.is_expired():
-                messages.warning(request, f"⚠️ {member.full_name} membership has not expired yet!")
-                return render(request, "edit_member.html", {"member": member})
+        renew_months = request.POST.get("renew_months")
+
+        if renew_months:
+            renew_months = int(renew_months)
+
             today = timezone.now().date()
-            member.start_date = today
-            member.expiry_date = today + timedelta(days=90)  # 3 months
+
+    # If membership still active → extend from current expiry
+            if member.expiry_date and member.expiry_date > today:
+                base_date = member.expiry_date
+            else:
+                base_date = today
+
+            new_expiry = base_date + relativedelta(months=renew_months)
+
+    # If expired, reset start_date
+            if not member.expiry_date or member.expiry_date < today:
+                member.start_date = today
+
+            member.expiry_date = new_expiry
             member.qr_expired = False
+            member.status = "Active"
+            member.plan_type = f"{renew_months} Month Plan"
+
 
             # 🔄 Re-generate QR
             qr_content = member.customer_code
@@ -3476,9 +3521,25 @@ def view_member(request, member_id):
         .order_by("-visit_at")
         .first()
     )
+    today = timezone.now().date()
+    is_expired = member.expiry_date and member.expiry_date < today
+    
+    # Prepare membership details dictionary
+    membership_details = {
+        "plan_type": member.plan_type,
+        "start_date": member.start_date,
+        "expiry_date": member.expiry_date,
+        "status": "Expired" if is_expired else "Active",
+    }
 
-    # Render the view_member.html template
-    return render(request, 'view_member.html', {'member': member,'last_visit':last_visit})
+    return render(request, "view_member.html", {
+        "member": member,
+        "last_visit": last_visit,
+        "membership_details": membership_details,
+        "is_expired": is_expired,
+    })
+
+
 
 
     
